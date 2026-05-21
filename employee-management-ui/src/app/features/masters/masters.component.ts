@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -60,7 +60,6 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
   imports: [
     CommonModule,
     FormsModule,
-    ReactiveFormsModule,
     NzCardModule,
     NzFormModule,
     NzInputModule,
@@ -233,36 +232,24 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
 
       <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
         (nzOnCancel)="closeAddModal()" [nzFooter]="modalFooter" nzWidth="520" [nzMaskClosable]="false">
-        <form [formGroup]="addForm" nz-form class="add-form">
-          <nz-form-item>
-            <nz-form-label nzRequired nzFor="add-code">Code</nz-form-label>
-            <nz-form-control [nzErrorTip]="codeErrorTip">
-              <input nz-input id="add-code" formControlName="code" placeholder="Enter code (uppercase)" style="text-transform: uppercase;" />
-              <ng-template #codeErrorTip>
-                <span *ngIf="addForm.get('code')?.errors?.['required']">Code is required</span>
-              </ng-template>
-            </nz-form-control>
-          </nz-form-item>
-          <nz-form-item>
-            <nz-form-label nzRequired nzFor="add-value">Display Value</nz-form-label>
-            <nz-form-control [nzErrorTip]="valueErrorTip">
-              <input nz-input id="add-value" formControlName="value" placeholder="Enter display value" />
-              <ng-template #valueErrorTip>
-                <span *ngIf="addForm.get('value')?.errors?.['required']">Display value is required</span>
-              </ng-template>
-            </nz-form-control>
-          </nz-form-item>
-          <nz-form-item>
-            <nz-form-label nzFor="add-sort">Sort Order</nz-form-label>
-            <nz-form-control>
-              <nz-input-number id="add-sort" formControlName="sortOrder" [nzMin]="1" style="width: 100%;"></nz-input-number>
-            </nz-form-control>
-          </nz-form-item>
-        </form>
+        <div class="add-modal-body">
+          <div class="add-field">
+            <label class="add-label">Code <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="addCode" placeholder="Enter code (uppercase)" style="text-transform: uppercase;" class="add-input" />
+          </div>
+          <div class="add-field">
+            <label class="add-label">Display Value <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="addValue" placeholder="Enter display value" class="add-input" />
+          </div>
+          <div class="add-field">
+            <label class="add-label">Sort Order</label>
+            <nz-input-number [(ngModel)]="addSortOrder" [nzMin]="1" style="width: 100%;"></nz-input-number>
+          </div>
+        </div>
         <ng-template #modalFooter>
           <div class="modal-footer-actions">
             <button nz-button nzType="default" (click)="closeAddModal()">Cancel</button>
-            <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="addForm.invalid">
+            <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
               <i nz-icon nzType="plus"></i> Add
             </button>
           </div>
@@ -710,6 +697,12 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       margin-bottom: 0;
     }
 
+    .add-modal-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+    .add-field { display: flex; flex-direction: column; gap: 6px; }
+    .add-label { font-size: 13px; font-weight: 600; color: #333; }
+    .add-label .required { color: #ff4d4f; }
+    .add-input { border-radius: var(--radius-md); padding: 6px 12px; }
+
     .modal-footer-actions {
       display: flex;
       justify-content: flex-end;
@@ -747,21 +740,16 @@ export class MastersComponent implements OnInit {
   tableSearch: string = '';
 
   isAddModalVisible = false;
-  addForm: FormGroup;
+  addCode = '';
+  addValue = '';
+  addSortOrder: number | null = null;
 
   constructor(
     private masterDataService: MasterDataService,
     private http: HttpClient,
     private notification: NzNotificationService,
-    private modal: NzModalService,
-    private fb: FormBuilder
-  ) {
-    this.addForm = this.fb.group({
-      code: ['', [Validators.required]],
-      value: ['', [Validators.required]],
-      sortOrder: [null]
-    });
-  }
+    private modal: NzModalService
+  ) {}
 
   ngOnInit(): void {
     this.loadCategoryCounts();
@@ -839,34 +827,27 @@ export class MastersComponent implements OnInit {
   }
 
   openAddModal(): void {
-    this.addForm.reset({
-      code: '',
-      value: '',
-      sortOrder: this.masterData.length + 1
-    });
+    this.addCode = '';
+    this.addValue = '';
+    this.addSortOrder = this.masterData.length + 1;
     this.isAddModalVisible = true;
   }
 
   closeAddModal(): void {
     this.isAddModalVisible = false;
-    this.addForm.reset();
+    this.addCode = '';
+    this.addValue = '';
+    this.addSortOrder = null;
   }
 
   submitAddForm(): void {
-    if (this.addForm.invalid) {
-      Object.values(this.addForm.controls).forEach(c => {
-        c.markAsDirty();
-        c.updateValueAndValidity();
-      });
-      return;
-    }
+    if (!this.addCode || !this.addValue) return;
 
-    const formValue = this.addForm.value;
     const payload = {
       category: this.selectedCategory,
-      code: formValue.code.toUpperCase(),
-      value: formValue.value,
-      sortOrder: formValue.sortOrder || this.masterData.length + 1
+      code: this.addCode.toUpperCase().trim(),
+      value: this.addValue.trim(),
+      sortOrder: this.addSortOrder || this.masterData.length + 1
     };
 
     this.isSaving = true;
@@ -876,7 +857,9 @@ export class MastersComponent implements OnInit {
         if (response.success) {
           this.notification.success('Success', 'Value added successfully');
           this.isAddModalVisible = false;
-          this.addForm.reset();
+          this.addCode = '';
+          this.addValue = '';
+          this.addSortOrder = null;
           this.masterDataService.refreshCategory(this.selectedCategory);
           this.loadCategoryData();
           this.loadCategoryCounts();
