@@ -1,0 +1,23 @@
+@use '@angular/material' as mat;
+@use 'variables' as vars;
+
+$ems-primary: mat.define-palette((
+  50: #e3e8f0,
+  100: #b8c6da,
+  200: #8aa0c1,
+  300: #5c7aa8,
+  400: #3a5e95,
+  500: #1f3d6e,
+  600: #1a3460,
+  700: #142b50,
+  800: #0f2240,
+  900: #091830,
+  contrast: (50: #000, 100: #000, 200: #000, 300: #fff, 400: #fff, 500: #fff, 600: #fff, 700: #fff, 800: #fff, 900: #fff)
+), 500, 300, 700);
+
+$ems-accent: mat.define-palette(mat.$orange-palette, 700, 300, 900);
+$ems-warn: mat.define-palette(mat.$red-palette);
+
+$ems-theme: mat.define-light-theme((
+  color: (primary: $ems-primary, accent: $ems-accent, warn: $ems-warn)
+));

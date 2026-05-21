@@ -1,0 +1,158 @@
+// =============================================================================
+// RESPONSIVE BREAKPOINT MIXINS
+// =============================================================================
+// Enterprise-grade responsive framework for Employee Management System
+// Breakpoints follow standard device categories
+
+// ===== BREAKPOINT VARIABLES =====
+$breakpoint-xs: 0px;        // Extra small:  < 576px
+$breakpoint-sm: 576px;      // Small:        576px - 767px
+$breakpoint-md: 768px;      // Medium:       768px - 991px
+$breakpoint-lg: 992px;      // Large:        992px - 1199px
+$breakpoint-xl: 1200px;     // Extra large:  1200px - 1399px
+$breakpoint-xxl: 1400px;    // XXL:          1400px+
+
+// ===== CONTAINER MAX-WIDTHS =====
+$container-sm: 540px;
+$container-md: 720px;
+$container-lg: 960px;
+$container-xl: 1140px;
+$container-xxl: 1320px;
+
+// ===== MIXINS =====
+
+/// Responsive breakpoint (min-width)
+/// @param {string} $breakpoint - One of: xs, sm, md, lg, xl, xxl
+@mixin respond-up($breakpoint) {
+  @if $breakpoint == xs {
+    @media (min-width: $breakpoint-xs) { @content; }
+  } @else if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) { @content; }
+  } @else if $breakpoint == md {
+    @media (min-width: $breakpoint-md) { @content; }
+  } @else if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) { @content; }
+  } @else if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) { @content; }
+  } @else if $breakpoint == xxl {
+    @media (min-width: $breakpoint-xxl) { @content; }
+  }
+}
+
+/// Responsive breakpoint (max-width)
+/// @param {string} $breakpoint - One of: xs, sm, md, lg, xl, xxl
+@mixin respond-down($breakpoint) {
+  @if $breakpoint == xs {
+    @media (max-width: ($breakpoint-sm - 1px)) { @content; }
+  } @else if $breakpoint == sm {
+    @media (max-width: ($breakpoint-md - 1px)) { @content; }
+  } @else if $breakpoint == md {
+    @media (max-width: ($breakpoint-lg - 1px)) { @content; }
+  } @else if $breakpoint == lg {
+    @media (max-width: ($breakpoint-xl - 1px)) { @content; }
+  } @else if $breakpoint == xl {
+    @media (max-width: ($breakpoint-xxl - 1px)) { @content; }
+  }
+}
+
+/// Responsive between two breakpoints
+/// @param {string} $from - Starting breakpoint
+/// @param {string} $to - Ending breakpoint
+@mixin respond-between($from, $to) {
+  $from-value: map-get((
+    xs: $breakpoint-xs,
+    sm: $breakpoint-sm,
+    md: $breakpoint-md,
+    lg: $breakpoint-lg,
+    xl: $breakpoint-xl,
+    xxl: $breakpoint-xxl
+  ), $from);
+
+  $to-value: map-get((
+    xs: $breakpoint-xs,
+    sm: $breakpoint-sm,
+    md: $breakpoint-md,
+    lg: $breakpoint-lg,
+    xl: $breakpoint-xl,
+    xxl: $breakpoint-xxl
+  ), $to);
+
+  @if $from-value and $to-value {
+    @media (min-width: $from-value) and (max-width: ($to-value - 1px)) {
+      @content;
+    }
+  }
+}
+
+// ===== RESPONSIVE GRID SYSTEM =====
+
+/// Responsive grid container
+@mixin container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+
+  @include respond-up(sm) {
+    max-width: $container-sm;
+  }
+  @include respond-up(md) {
+    max-width: $container-md;
+  }
+  @include respond-up(lg) {
+    max-width: $container-lg;
+  }
+  @include respond-up(xl) {
+    max-width: $container-xl;
+  }
+  @include respond-up(xxl) {
+    max-width: $container-xxl;
+  }
+}
+
+/// Responsive grid with configurable columns
+/// @param {number} $cols - Number of columns on desktop
+/// @param {number} $gap - Gap between grid items
+@mixin responsive-grid($cols: 2, $gap: 24px) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+
+  @include respond-up(md) {
+    grid-template-columns: repeat($cols, 1fr);
+  }
+}
+
+// ===== RESPONSIVE UTILITY CLASSES =====
+
+// Visibility classes
+.hidden-xs {
+  @include respond-down(xs) { display: none !important; }
+}
+.hidden-sm {
+  @include respond-between(sm, md) { display: none !important; }
+}
+.hidden-md {
+  @include respond-between(md, lg) { display: none !important; }
+}
+.hidden-lg {
+  @include respond-up(lg) { display: none !important; }
+}
+
+.visible-xs {
+  @include respond-up(xs) { display: none !important; }
+  @include respond-down(xs) { display: block !important; }
+}
+.visible-sm {
+  @include respond-up(sm) { display: none !important; }
+  @include respond-between(sm, md) { display: block !important; }
+}
+.visible-md {
+  @include respond-up(md) { display: none !important; }
+  @include respond-between(md, lg) { display: block !important; }
+}
+.visible-lg {
+  @include respond-up(lg) { display: block !important; }
+  @include respond-down(lg) { display: none !important; }
+}

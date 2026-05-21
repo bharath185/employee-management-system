@@ -1,0 +1,624 @@
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+
+import { EmployeeService } from '../../core/services/employee.service';
+import { MasterDataService } from '../../core/services/master-data.service';
+import { Employee } from '../../core/models/employee.model';
+import { calculateAge, getAgeBracket } from '../../shared/pipes/age.pipe';
+import { OnCanDeactivate } from '../../core/guards/can-deactivate.guard';
+
+import { PersonalInfoTabComponent } from './tabs/personal-info-tab/personal-info-tab.component';
+import { DemographicsTabComponent } from './tabs/demographics-tab/demographics-tab.component';
+import { AssetsTabComponent } from './tabs/assets-tab/assets-tab.component';
+import { IdentityTabComponent } from './tabs/identity-tab/identity-tab.component';
+import { EducationTabComponent } from './tabs/education-tab/education-tab.component';
+import { BankTabComponent } from './tabs/bank-tab/bank-tab.component';
+import { EmploymentTabComponent } from './tabs/employment-tab/employment-tab.component';
+import { FamilyTabComponent } from './tabs/family-tab/family-tab.component';
+import { ExperienceRefTabComponent } from './tabs/experience-ref-tab/experience-ref-tab.component';
+import { ExitDocsTabComponent } from './tabs/exit-docs-tab/exit-docs-tab.component';
+import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.component';
+import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+
+@Component({
+  selector: 'app-staff-master-form',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    NzTabsModule,
+    NzButtonModule,
+    NzIconModule,
+    NzMessageModule,
+    NzSpinModule,
+    NzModalModule,
+    PersonalInfoTabComponent,
+    DemographicsTabComponent,
+    AssetsTabComponent,
+    IdentityTabComponent,
+    EducationTabComponent,
+    BankTabComponent,
+    EmploymentTabComponent,
+    FamilyTabComponent,
+    ExperienceRefTabComponent,
+    ExitDocsTabComponent,
+    DocumentsTabComponent,
+    PageHeaderComponent
+  ],
+  template: `
+    <div class="staff-form-container">
+      <app-page-header [icon]="isEditMode ? 'edit' : 'user-add'" [title]="isEditMode ? 'Edit Employee' : 'New Employee'"
+        [subtitle]="isEditMode ? 'Editing: ' + (employeeForm.get('employeeCode')?.value || '') + ' - ' + (employeeForm.get('firstName')?.value || '') + ' ' + (employeeForm.get('surname')?.value || '') : 'Fill in all required fields (*) to create a new employee record'"
+        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Staff Master', link: '/admin/employees'}, {label: isEditMode ? 'Edit Employee' : 'New Employee'}]">
+      </app-page-header>
+
+      <!-- Progress Bar -->
+      <div class="tab-progress" *ngIf="!isEditMode">
+        <div class="tab-progress-bar">
+          <div class="tab-progress-fill" [style.width.%]="completedTabs / totalTabs * 100"></div>
+        </div>
+        <span class="tab-progress-text">{{ completedTabs }} of {{ totalTabs }} tabs completed</span>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="employeeForm">
+        <!-- Tab Group -->
+        <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex" (nzSelectedIndexChange)="onTabChange($event)">
+          <nz-tab nzTitle="Personal Info">
+            <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode"></app-personal-info-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Demographics">
+            <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Assets">
+            <app-assets-tab [form]="employeeForm"></app-assets-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Identity">
+            <app-identity-tab [form]="employeeForm"></app-identity-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Education">
+            <app-education-tab [form]="employeeForm"></app-education-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Bank">
+            <app-bank-tab [form]="employeeForm"></app-bank-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Employment">
+            <app-employment-tab [form]="employeeForm"></app-employment-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Family">
+            <app-family-tab [form]="employeeForm"></app-family-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Experience & Ref.">
+            <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Exit & Docs">
+            <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
+                               (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
+          </nz-tab>
+
+          <nz-tab nzTitle="Documents" [nzDisabled]="!isEditMode">
+            <app-documents-tab [employeeId]="employeeId" [isEditMode]="isEditMode"></app-documents-tab>
+          </nz-tab>
+        </nz-tabset>
+
+        <!-- Bottom Action Bar -->
+        <div class="action-bar">
+          <div class="action-left">
+            <span class="validation-summary" *ngIf="formErrors.length > 0">
+              <i nz-icon nzType="warning"></i> {{ formErrors.length }} validation error(s)
+            </span>
+          </div>
+          <div class="action-right">
+            <button nz-button nzType="default" type="button" routerLink="/admin/employees" class="action-btn">
+              Cancel
+            </button>
+            <button nz-button nzType="default" type="button" (click)="saveDraft()" [disabled]="isSaving" class="action-btn">
+              <i nz-icon nzType="save"></i> Save Draft
+            </button>
+            <button nz-button nzType="primary" type="button" (click)="saveAndNew()" [disabled]="isSaving" class="action-btn" [nzLoading]="isSaving">
+              Save & New
+            </button>
+            <button nz-button nzType="primary" type="button" (click)="saveAndClose()" [disabled]="isSaving" class="action-btn primary-btn" [nzLoading]="isSaving">
+              {{ isEditMode ? 'Update' : 'Save & Close' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  `,
+  styles: [`
+    .staff-form-container { height: calc(100vh - 64px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
+    .staff-form-container ::ng-deep app-page-header { flex-shrink: 0; }
+
+    /* ===== TAB PROGRESS ===== */
+    .tab-progress { display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding: 10px 16px; background: #fff; border-radius: var(--radius-md); border: 1px solid var(--color-border-light); margin-bottom: 12px; }
+    .tab-progress-bar { flex: 1; height: 6px; background: #e8ebf0; border-radius: var(--radius-sm); overflow: hidden; }
+    .tab-progress-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary-500), #2a5298); border-radius: var(--radius-sm); transition: width 0.4s ease; }
+    .tab-progress-text { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+
+    /* ===== FORM (scrollable area) ===== */
+    form { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+
+    /* ===== TABS ===== */
+    .employee-tabs { background: white; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .employee-tabs ::ng-deep .ant-tabs-content-holder { flex: 1; overflow: hidden; min-height: 0; padding: 0; }
+    .employee-tabs ::ng-deep .ant-tabs-content { height: 100%; }
+    .employee-tabs ::ng-deep .ant-tabs-tabpane { height: 100%; overflow-y: auto; padding: 20px 24px; }
+    .employee-tabs ::ng-deep .ant-tabs-tab { font-size: 13px; padding: 8px 16px; margin: 0; }
+    .employee-tabs ::ng-deep .ant-tabs-tab.ant-tabs-tab-active { font-weight: 600; }
+    .employee-tabs ::ng-deep .ant-tabs-tab.ant-tabs-tab-complete .ant-tabs-tab-btn::before { content: '\\2713'; color: #28a745; margin-right: 4px; font-weight: 700; }
+    .employee-tabs ::ng-deep .ant-tabs-nav { padding: 0 24px; margin-bottom: 0; flex-shrink: 0; }
+    .employee-tabs ::ng-deep .ant-tabs-nav::before { border-bottom: 1px solid var(--color-border-light); }
+
+    /* ===== ACTION BAR ===== */
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      padding: 12px 24px;
+      border-radius: var(--radius-lg);
+      margin-top: 12px;
+      border: 1px solid var(--color-border-light);
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+    .action-left { display: flex; align-items: center; }
+    .validation-summary { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #d32f2f; font-weight: 500; background: #fce4ec; padding: 6px 14px; border-radius: var(--radius-md); }
+    .validation-summary i { font-size: 18px; }
+    .action-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .action-btn { min-width: 110px; border-radius: var(--radius-md); }
+    .action-btn i { margin-right: 4px; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .action-bar { flex-direction: column; gap: 12px; }
+      .action-left { width: 100%; }
+      .action-right { width: 100%; justify-content: flex-end; }
+      .action-btn { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; }
+    }
+  `]
+})
+export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactivate {
+  @ViewChild(ExitDocsTabComponent) exitDocsTab!: ExitDocsTabComponent;
+
+  employeeForm: FormGroup;
+  isEditMode = false;
+  employeeId: number | null = null;
+  isSaving = false;
+  masterData: any = {};
+  selectedFile: File | null = null;
+  existingPhotoUrl: string = '';
+  formErrors: string[] = [];
+  selectedTabIndex = 0;
+  private previousTabIndex = 0;
+  private readonly DRAFT_KEY = 'staff_form_draft';
+
+  canDeactivate(): boolean {
+    return !this.employeeForm.dirty;
+  }
+
+  readonly totalTabs = 11;
+
+  get completedTabs(): number {
+    let count = 0;
+    for (let i = 0; i < this.totalTabs; i++) {
+      if (this.isTabComplete(i)) count++;
+    }
+    return count;
+  }
+
+  isTabComplete(index: number): boolean {
+    const controls = this.tabControlMap[index];
+    if (!controls) return false;
+    return controls.some(key => {
+      const val = this.employeeForm.get(key)?.value;
+      return val !== null && val !== undefined && val !== '';
+    });
+  }
+
+  private readonly tabControlMap: string[][] = [
+    ['firstName', 'surname', 'gender', 'dob', 'email', 'mobile', 'employeeCode', 'prefix', 'maritalStatus', 'fatherHusbandName', 'fMH', 'occupationKin', 'occupationKinSub', 'rationCard', 'doj', 'highestQualification', 'levelOfEducation', 'yearOfPassing', 'percentageMarks', 'presentAddress', 'permanentAddress', 'closeRelativeName', 'closeRelativeMobile'],
+    ['religion', 'socialCategory', 'socialSubcategory'],
+    ['hasTv', 'hasFridge', 'hasLaptop', 'hasWifi', 'has2wheeler', 'has4wheeler'],
+    ['bloodGroup', 'aadharNumber', 'panNumber'],
+    ['sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
+    ['bankName', 'accountNumber', 'ifscCode', 'branch'],
+    ['employeeStatus', 'processAssigned', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation', 'languagesCanSpeak', 'designation'],
+    ['fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'spouseName', 'spousePhone'],
+    ['pastExperience', 'organizationName', 'periodOfEmployment', 'ref1Name', 'ref1Relationship', 'ref1Address', 'ref1Mobile', 'ref2Name', 'ref2Relationship', 'ref2Address', 'ref2Mobile'],
+    ['doe', 'deletionMonth', 'exitType', 'exitReason'],
+    []
+  ];
+
+  constructor(
+    private fb: FormBuilder,
+    private employeeService: EmployeeService,
+    private masterDataService: MasterDataService,
+    private route: ActivatedRoute,
+    private router: Router,
+    private message: NzMessageService,
+    private modal: NzModalService
+  ) {
+    this.employeeForm = this.createForm();
+  }
+
+  ngOnInit(): void {
+    this.employeeId = this.route.snapshot.params['id'] ? +this.route.snapshot.params['id'] : null;
+    this.isEditMode = !!this.employeeId;
+
+    if (this.isEditMode && this.employeeId) {
+      this.loadEmployee(this.employeeId);
+    } else if (!this.isEditMode) {
+      this.checkForDraft();
+    }
+
+    // Unsaved changes warning
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+  }
+
+  private beforeUnloadHandler = (event: BeforeUnloadEvent): void => {
+    if (this.employeeForm.dirty) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  };
+
+  private createForm(): FormGroup {
+    return this.fb.group({
+      // Personal Info
+      employeeCode: ['', [Validators.required, Validators.pattern('^[A-Za-z0-9]+$')]],
+      prefix: [''],
+      firstName: ['', [Validators.required, Validators.maxLength(40)]],
+      surname: ['', [Validators.required, Validators.maxLength(40)]],
+      gender: ['', Validators.required],
+      maritalStatus: [''],
+      fatherHusbandName: ['', Validators.maxLength(40)],
+      fMH: [''],
+      occupationKin: [''],
+      occupationKinSub: ['', Validators.maxLength(40)],
+      rationCard: [''],
+      doj: [''],
+      highestQualification: [''],
+      levelOfEducation: [''],
+      yearOfPassing: [''],
+      percentageMarks: [''],
+      dob: ['', Validators.required],
+      age: [{ value: '', disabled: true }],
+      ageBracket: [{ value: '', disabled: true }],
+      presentAddress: ['', Validators.maxLength(256)],
+      permanentAddress: ['', Validators.maxLength(256)],
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(56)]],
+      mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+      closeRelativeName: ['', Validators.maxLength(40)],
+      closeRelativeMobile: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+
+      // Demographics
+      religion: [''],
+      socialCategory: [''],
+      socialSubcategory: [''],
+
+      // Assets
+      hasTv: [''],
+      hasFridge: [''],
+      hasLaptop: [''],
+      hasWifi: [''],
+      has2wheeler: [''],
+      has4wheeler: [''],
+
+      // Identity
+      bloodGroup: [''],
+      aadharNumber: ['', [Validators.pattern(/^[0-9]{12}$/)]],
+      panNumber: ['', [Validators.pattern(/^[A-Za-z]{5}[0-9]{4}[A-Za-z]{1}$/)]],
+
+      // Education
+      sscStatus: [''],
+      intermediateStatus: [''],
+      bachelorsDegree: [''],
+      mastersDegree: [''],
+      aadhaarVerification: [''],
+      panVerification: [''],
+      osv: [''],
+      remarks: ['', Validators.maxLength(140)],
+
+      // Bank
+      bankName: [''],
+      accountNumber: ['', [Validators.pattern(/^[0-9]{9,18}$/)]],
+      ifscCode: ['', [Validators.pattern(/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/)]],
+      branch: ['', Validators.maxLength(40)],
+
+      // Employment
+      employeeStatus: ['', Validators.required],
+      processAssigned: [''],
+      esicNo: ['', Validators.maxLength(10)],
+      aadharSeeding: [''],
+      uanNo: ['', Validators.maxLength(12)],
+      pfNo: ['', Validators.maxLength(22)],
+      uanActivation: [''],
+      languagesCanSpeak: ['', Validators.maxLength(100)],
+      designation: [''],
+
+      // Family
+      fatherName: ['', Validators.maxLength(20)],
+      fatherPhone: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+      motherName: ['', Validators.maxLength(20)],
+      motherPhone: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+      spouseName: ['', Validators.maxLength(20)],
+      spousePhone: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+
+      // Experience
+      pastExperience: [''],
+      organizationName: ['', Validators.maxLength(56)],
+      periodOfEmployment: ['', Validators.maxLength(50)],
+
+      // References
+      ref1Name: ['', Validators.maxLength(20)],
+      ref1Relationship: [''],
+      ref1Address: ['', Validators.maxLength(256)],
+      ref1Mobile: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+      ref2Name: ['', Validators.maxLength(20)],
+      ref2Relationship: [''],
+      ref2Address: ['', Validators.maxLength(256)],
+      ref2Mobile: ['', [Validators.pattern(/^[0-9]{10}$/)]],
+
+      // Exit & Official
+      doe: [''],
+      deletionMonth: ['', [Validators.pattern(/^(0[1-9]|1[0-2])\/[0-9]{4}$/)]],
+      exitType: [''],
+      exitReason: ['', Validators.maxLength(256)]
+    });
+  }
+
+  private loadEmployee(id: number): void {
+    this.employeeService.getEmployeeById(id).subscribe({
+      next: (response) => {
+        const emp = response.data;
+        this.employeeForm.patchValue({
+          ...emp,
+          doj: emp.doj ? new Date(emp.doj) : null,
+          dob: emp.dob ? new Date(emp.dob) : null,
+          doe: emp.doe ? new Date(emp.doe) : null
+        });
+        if (emp.photoPath) {
+          this.existingPhotoUrl = emp.photoPath;
+        }
+        if (emp.age) this.employeeForm.get('age')?.setValue(emp.age);
+        if (emp.ageBracket) this.employeeForm.get('ageBracket')?.setValue(emp.ageBracket);
+      },
+      error: (err) => {
+        this.message.error('Error loading employee data', { nzDuration: 3000 });
+        this.router.navigate(['/admin/employees']);
+      }
+    });
+  }
+
+  onTabChange(index: number): void {
+    if (this.employeeForm.dirty && index !== this.previousTabIndex) {
+      this.modal.confirm({
+        nzTitle: 'Unsaved Changes',
+        nzContent: 'You have unsaved changes. Are you sure you want to switch tabs?',
+        nzOnOk: () => {
+          this.previousTabIndex = index;
+          this.selectedTabIndex = index;
+          this.focusFirstField();
+        },
+        nzOnCancel: () => {
+          this.selectedTabIndex = this.previousTabIndex;
+        }
+      });
+    } else {
+      this.previousTabIndex = index;
+      this.focusFirstField();
+    }
+  }
+
+  private focusFirstField(): void {
+    setTimeout(() => {
+      const firstInput = document.querySelector('.ant-tabs-tabpane-active input, .ant-tabs-tabpane-active nz-select, .ant-tabs-tabpane-active nz-date-picker') as HTMLElement;
+      firstInput?.focus();
+    }, 50);
+  }
+
+  onPhotoChange(file: File | null): void {
+    this.selectedFile = file;
+  }
+
+  private collectFormErrors(): string[] {
+    const errors: string[] = [];
+    Object.keys(this.employeeForm.controls).forEach(key => {
+      const control = this.employeeForm.get(key);
+      if (control?.errors) {
+        Object.keys(control.errors).forEach(errorKey => {
+          errors.push(`${key}: ${errorKey}`);
+        });
+      }
+    });
+    return errors;
+  }
+
+  private buildEmployeeData(): Employee {
+    const raw = this.employeeForm.getRawValue();
+    const employee: Employee = { ...raw };
+
+    // Format dates as ISO strings
+    if (employee.doj && typeof employee.doj !== 'string') {
+      employee.doj = new Date(employee.doj).toISOString().split('T')[0];
+    }
+    if (employee.dob && typeof employee.dob !== 'string') {
+      employee.dob = new Date(employee.dob).toISOString().split('T')[0];
+    }
+    if (employee.doe && typeof employee.doe !== 'string') {
+      employee.doe = new Date(employee.doe).toISOString().split('T')[0];
+    }
+
+    // Auto-calculate age
+    if (employee.dob) {
+      employee.age = calculateAge(employee.dob);
+      employee.ageBracket = getAgeBracket(employee.age);
+    }
+
+    // Convert empty strings to null/undefined
+    Object.keys(employee).forEach(key => {
+      if ((employee as any)[key] === '') (employee as any)[key] = undefined;
+    });
+
+    return employee;
+  }
+
+  validateForm(): boolean {
+    this.formErrors = this.collectFormErrors();
+    Object.keys(this.employeeForm.controls).forEach(key => {
+      this.employeeForm.get(key)?.markAsTouched();
+    });
+    if (this.formErrors.length > 0) {
+      setTimeout(() => {
+        const firstError = document.querySelector('.ant-form-item-has-error');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const input = firstError.querySelector('input, textarea, nz-select, nz-date-picker') as HTMLElement;
+          input?.focus();
+        }
+      }, 100);
+    }
+    return this.formErrors.length === 0;
+  }
+
+  saveDraft(): void {
+    try {
+      const raw = this.employeeForm.getRawValue();
+      localStorage.setItem(this.DRAFT_KEY, JSON.stringify(raw));
+      this.employeeForm.markAsPristine();
+      this.message.success('Draft saved locally', { nzDuration: 2000 });
+    } catch {
+      this.message.error('Failed to save draft. Local storage may be full.', { nzDuration: 3000 });
+    }
+  }
+
+  private checkForDraft(): void {
+    const draft = localStorage.getItem(this.DRAFT_KEY);
+    if (!draft) return;
+    try {
+      const data = JSON.parse(draft);
+      const empCode = data.employeeCode;
+      if (!empCode) { localStorage.removeItem(this.DRAFT_KEY); return; }
+      this.modal.confirm({
+        nzTitle: 'Draft Found',
+        nzContent: `A saved draft for employee "${empCode}" was found. Would you like to restore it?`,
+        nzOkText: 'Restore Draft',
+        nzCancelText: 'Discard',
+        nzOnOk: () => {
+          Object.keys(data).forEach(key => {
+            const control = this.employeeForm.get(key);
+            if (control) {
+              if (key === 'doj' || key === 'dob' || key === 'doe') {
+                control.setValue(data[key] ? new Date(data[key]) : null);
+              } else {
+                control.setValue(data[key]);
+              }
+            }
+          });
+          this.updateAgeFromDob();
+          this.employeeForm.markAsDirty();
+          this.message.success('Draft restored', { nzDuration: 2000 });
+        },
+        nzOnCancel: () => localStorage.removeItem(this.DRAFT_KEY)
+      });
+    } catch { localStorage.removeItem(this.DRAFT_KEY); }
+  }
+
+  private clearDraft(): void {
+    localStorage.removeItem(this.DRAFT_KEY);
+  }
+
+  private updateAgeFromDob(): void {
+    const dob = this.employeeForm.get('dob')?.value;
+    if (dob) {
+      const age = calculateAge(dob);
+      this.employeeForm.get('age')?.setValue(age);
+      this.employeeForm.get('ageBracket')?.setValue(getAgeBracket(age));
+    }
+  }
+
+  saveAndNew(): void {
+    if (!this.isEditMode && !this.validateForm()) {
+      this.message.warning('Please fix validation errors before saving', { nzDuration: 3000 });
+      return;
+    }
+
+    const employee = this.buildEmployeeData();
+    this.isSaving = true;
+
+    const action = this.isEditMode
+      ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
+      : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
+
+    action.subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        this.clearDraft();
+        this.message.success(response.message || 'Saved successfully', { nzDuration: 3000 });
+        this.employeeForm.reset();
+        this.employeeForm.get('employeeCode')?.enable();
+        this.selectedFile = null;
+        this.existingPhotoUrl = '';
+        this.employeeForm.markAsPristine();
+        this.isEditMode = false;
+        this.employeeId = null;
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.message.error(err.message || 'Error saving', { nzDuration: 3000 });
+      }
+    });
+  }
+
+  saveAndClose(): void {
+    if (!this.isEditMode && !this.validateForm()) {
+      this.message.warning('Please fix validation errors before saving', { nzDuration: 3000 });
+      return;
+    }
+
+    const employee = this.buildEmployeeData();
+    this.isSaving = true;
+
+    const action = this.isEditMode
+      ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
+      : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
+
+    action.subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        this.clearDraft();
+        this.message.success(response.message || 'Saved successfully', { nzDuration: 3000 });
+        this.router.navigate(['/admin/employees']);
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.message.error(err.message || 'Error saving', { nzDuration: 3000 });
+      }
+    });
+  }
+}

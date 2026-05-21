@@ -1,0 +1,38 @@
+# Java build artifacts
+target/
+*.class
+*.war
+*.log
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
+.factorypath
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Uploads (local dev)
+uploads/
+
+# Logs
+logs/
+*.log
+
+# Environment files (secrets)
+.env
+.env.local
+*.env

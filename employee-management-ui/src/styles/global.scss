@@ -1,0 +1,50 @@
+@use 'variables' as vars;
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: vars.$font-family;
+  font-size: 14px;
+  color: #333;
+  background-color: vars.$background-color;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+a {
+  color: vars.$primary-color;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Utility classes
+.text-primary { color: vars.$primary-color !important; }
+.text-accent { color: vars.$accent-color !important; }
+.text-warn { color: vars.$warn-color !important; }
+.text-success { color: vars.$success-color !important; }
+.bg-primary { background-color: vars.$primary-color !important; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: 8px; }
+.gap-16 { gap: 16px; }
+.gap-24 { gap: 24px; }
+.p-16 { padding: 16px; }
+.p-24 { padding: 24px; }
+.m-16 { margin: 16px; }
+.mt-16 { margin-top: 16px; }
+.mb-16 { margin-bottom: 16px; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.text-center { text-align: center; }

@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: employee-management-api
+    env: java
+    region: singapore
+    plan: free
+    rootDir: employee-management-api
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/employee-management-api-1.0.0.jar
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SPRING_DATASOURCE_DRIVER
+        value: org.postgresql.Driver
+      - key: SPRING_JPA_DIALECT
+        value: org.hibernate.dialect.PostgreSQLDialect
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: UPLOAD_DIR
+        value: /tmp/uploads/photos
+      - key: UPLOAD_DIR_DOCS
+        value: /tmp/uploads/documents
+      - key: LOG_LEVEL
+        value: INFO
