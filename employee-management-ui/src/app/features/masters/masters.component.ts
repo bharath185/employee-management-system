@@ -231,31 +231,31 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       </div>
 
       <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
-        (nzOnCancel)="closeAddModal()" [nzFooter]="modalFooter" nzWidth="520" [nzMaskClosable]="false">
-        <div class="add-modal-body">
-          <div class="add-field">
-            <label class="add-label">Code <span class="required">*</span></label>
-            <input [(ngModel)]="addCode" placeholder="Enter code (uppercase)"
-              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;text-transform:uppercase;outline:none;box-sizing:border-box;" />
+        (nzOnCancel)="closeAddModal()" nzWidth="520px" [nzMaskClosable]="false">
+        <ng-template nzModalContent>
+          <div class="add-modal-body">
+            <div class="add-field">
+              <label class="add-label">Code <span class="required">*</span></label>
+              <input [(ngModel)]="addCode" placeholder="Enter code (uppercase)" name="addCode"
+                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;text-transform:uppercase;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+            </div>
+            <div class="add-field">
+              <label class="add-label">Display Value <span class="required">*</span></label>
+              <input [(ngModel)]="addValue" placeholder="Enter display value" name="addValue"
+                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+            </div>
+            <div class="add-field">
+              <label class="add-label">Sort Order</label>
+              <input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto" name="addSortOrder"
+                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+            </div>
           </div>
-          <div class="add-field">
-            <label class="add-label">Display Value <span class="required">*</span></label>
-            <input [(ngModel)]="addValue" placeholder="Enter display value"
-              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;" />
-          </div>
-          <div class="add-field">
-            <label class="add-label">Sort Order</label>
-            <input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto"
-              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;" />
-          </div>
-        </div>
-        <ng-template #modalFooter>
-          <div class="modal-footer-actions">
-            <button nz-button nzType="default" (click)="closeAddModal()">Cancel</button>
-            <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
-              <i nz-icon nzType="plus"></i> Add
-            </button>
-          </div>
+        </ng-template>
+        <ng-template nzModalFooter>
+          <button nz-button nzType="default" (click)="closeAddModal()">Cancel</button>
+          <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
+            <i nz-icon nzType="plus"></i> Add
+          </button>
         </ng-template>
       </nz-modal>
     </div>
@@ -705,12 +705,6 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .add-label { font-size: 13px; font-weight: 600; color: #333; }
     .add-label .required { color: #ff4d4f; }
     .add-input { border-radius: var(--radius-md); padding: 6px 12px; }
-
-    .modal-footer-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
 
     @media (max-width: 768px) {
       .masters-page {
