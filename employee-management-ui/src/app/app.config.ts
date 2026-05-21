@@ -10,7 +10,6 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { en_US, provideNzI18n } from 'ng-zorro-antd/i18n';
-import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NgxEchartsModule } from 'ngx-echarts';
 
@@ -60,6 +59,5 @@ export const appConfig: ApplicationConfig = {
       NgxEchartsModule.forRoot({ echarts: () => import('echarts') })
     ),
     provideNzI18n(en_US),
-    provideCharts(withDefaultRegisterables()),
   ]
 };

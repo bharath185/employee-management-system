@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build -- --configuration production"
+  command = "npm install --legacy-peer-deps && npm run build -- --configuration production"
   publish = "dist/employee-management-ui/browser"
 
 [[redirects]]
