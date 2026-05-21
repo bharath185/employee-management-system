@@ -235,15 +235,18 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
         <div class="add-modal-body">
           <div class="add-field">
             <label class="add-label">Code <span class="required">*</span></label>
-            <input nz-input [(ngModel)]="addCode" placeholder="Enter code (uppercase)" style="text-transform: uppercase;" class="add-input" />
+            <input [(ngModel)]="addCode" placeholder="Enter code (uppercase)"
+              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;text-transform:uppercase;outline:none;box-sizing:border-box;" />
           </div>
           <div class="add-field">
             <label class="add-label">Display Value <span class="required">*</span></label>
-            <input nz-input [(ngModel)]="addValue" placeholder="Enter display value" class="add-input" />
+            <input [(ngModel)]="addValue" placeholder="Enter display value"
+              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;" />
           </div>
           <div class="add-field">
             <label class="add-label">Sort Order</label>
-            <nz-input-number [(ngModel)]="addSortOrder" [nzMin]="1" style="width: 100%;"></nz-input-number>
+            <input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto"
+              style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;" />
           </div>
         </div>
         <ng-template #modalFooter>
