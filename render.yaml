@@ -1,12 +1,11 @@
 services:
   - type: web
     name: employee-management-api
-    env: java
+    env: docker
     region: singapore
     plan: free
     rootDir: employee-management-api
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -jar target/employee-management-api-1.0.0.jar
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 8080
