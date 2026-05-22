@@ -222,20 +222,37 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         try {
             Query query = entityManager.createNativeQuery(sql);
             query.setMaxResults(200);
-            @SuppressWarnings("unchecked")
-            List<Object[]> rawResults = query.getResultList();
+            List<?> rawResults = query.getResultList();
 
-            // Extract column names from the query metadata
-            List<String> columns = extractColumnNames(sql, rawResults);
-
-            // Map rows
+            List<String> columns;
             List<Map<String, Object>> rows = new ArrayList<>();
-            for (Object[] row : rawResults) {
-                Map<String, Object> rowMap = new LinkedHashMap<>();
-                for (int i = 0; i < columns.size() && i < row.length; i++) {
-                    rowMap.put(columns.get(i), row[i]);
+
+            if (!rawResults.isEmpty()) {
+                Object first = rawResults.get(0);
+                if (first instanceof Object[]) {
+                    // Multi-column result
+                    Object[][] arrResults = rawResults.toArray(new Object[0][]);
+                    columns = extractColumnNames(sql, arrResults);
+                    for (Object[] row : arrResults) {
+                        Map<String, Object> rowMap = new LinkedHashMap<>();
+                        for (int i = 0; i < columns.size() && i < row.length; i++) {
+                            rowMap.put(columns.get(i), row[i] != null ? row[i] : "");
+                        }
+                        rows.add(rowMap);
+                    }
+                } else {
+                    // Scalar result (e.g., COUNT(*))
+                    columns = extractColumnNames(sql, null);
+                    if (columns.isEmpty()) columns = List.of("result");
+                    for (Object val : rawResults) {
+                        Map<String, Object> rowMap = new LinkedHashMap<>();
+                        rowMap.put(columns.get(0), val != null ? val : "");
+                        rows.add(rowMap);
+                    }
                 }
-                rows.add(rowMap);
+            } else {
+                columns = extractColumnNames(sql, null);
+                if (columns.isEmpty()) columns = List.of("result");
             }
 
             return Text2SqlResponse.builder()
@@ -441,8 +458,7 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         return "SELECT employee_code, first_name, surname, gender, designation, employee_status, mobile, doj FROM employees WHERE is_deleted = false ORDER BY created_at DESC OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
     }
 
-    private List<String> extractColumnNames(String sql, List<Object[]> results) {
-        // Try to extract aliases from SQL
+    private List<String> extractColumnNames(String sql, Object[][] results) {
         List<String> columns = new ArrayList<>();
         String upper = sql.toUpperCase();
 
@@ -453,7 +469,6 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
 
         String selectPart = sql.substring(selectIdx, fromIdx).trim();
 
-        // Split by commas respecting nested parens
         int depth = 0;
         StringBuilder current = new StringBuilder();
         for (char c : selectPart.toCharArray()) {
@@ -470,11 +485,13 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
             columns.add(extractAlias(current.toString().trim()));
         }
 
-        // Fallback: if no columns extracted or count mismatch, use generic names
-        if (columns.isEmpty() || (results.size() > 0 && columns.size() != results.get(0).length)) {
-            columns.clear();
-            for (int i = 0; i < results.get(0).length; i++) {
-                columns.add("column" + (i + 1));
+        // Fallback: mismatch or empty
+        if (results != null && results.length > 0) {
+            if (columns.isEmpty() || columns.size() != results[0].length) {
+                columns.clear();
+                for (int i = 0; i < results[0].length; i++) {
+                    columns.add("column" + (i + 1));
+                }
             }
         }
 

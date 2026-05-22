@@ -9,6 +9,7 @@ import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { AuthService } from '../../core/services/auth.service';
+import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.component';
 
 @Component({
   selector: 'app-admin-layout',
@@ -22,7 +23,8 @@ import { AuthService } from '../../core/services/auth.service';
     NzIconModule,
     NzBreadCrumbModule,
     NzButtonModule,
-    NzDropDownModule
+    NzDropDownModule,
+    ChatWidgetComponent
   ],
   animations: [
     trigger('routeAnimation', [
@@ -118,6 +120,7 @@ import { AuthService } from '../../core/services/auth.service';
         </nz-content>
       </nz-layout>
     </nz-layout>
+    <app-chat-widget></app-chat-widget>
   `,
   styles: [`
     .skip-link {

@@ -18,7 +18,6 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 import { TitleCasePipe } from '../../shared/pipes/title-case.pipe';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
-import { ChatWidgetComponent } from '../chat-widget/chat-widget.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,8 +27,7 @@ import { ChatWidgetComponent } from '../chat-widget/chat-widget.component';
     NzCardModule, NzIconModule, NzButtonModule, NzTableModule, NzStatisticModule, NzGridModule,
     NgxEchartsModule,
     DateFormatPipe, TitleCasePipe,
-    LoadingSpinnerComponent, StatCardComponent,
-    ChatWidgetComponent
+    LoadingSpinnerComponent, StatCardComponent
   ],
   template: `
     <div class="dashboard-container fade-in">
@@ -128,8 +126,6 @@ import { ChatWidgetComponent } from '../chat-widget/chat-widget.component';
           </tbody>
         </nz-table>
       </div>
-
-      <app-chat-widget></app-chat-widget>
     </div>
   `,
   styles: [`
