@@ -101,12 +101,12 @@ import { ChatMessage } from '../../core/models/text2sql.model';
   styles: [`
     :host { position: fixed; bottom: 24px; right: 24px; z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
-    .chat-fab { width: 52px; height: 52px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; padding: 0; }
+    .chat-fab { width: 64px; height: 64px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; padding: 0; }
     .chat-fab:hover { transform: scale(1.08); }
     .chat-fab.open { transform: rotate(90deg); }
-    .chat-fab.open i { font-size: 28px; color: #666; }
-    .fab-icon { width: 28px; height: 28px; object-fit: contain; }
-    .header-icon { width: 20px; height: 20px; object-fit: contain; }
+    .chat-fab.open i { font-size: 32px; color: #666; }
+    .fab-icon { width: 52px; height: 52px; object-fit: contain; }
+    .header-icon { width: 24px; height: 24px; object-fit: contain; }
 
     .chat-panel { position: absolute; bottom: 64px; right: 0; width: 420px; max-height: 580px; background: #fff; border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; overflow: hidden; opacity: 0; transform: translateY(16px) scale(0.96); pointer-events: none; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); transform-origin: bottom right; }
     .chat-panel.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
@@ -122,7 +122,7 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     .chat-messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 
     .welcome-msg { text-align: center; padding: 20px 16px; color: #666; }
-    .welcome-icon { width: 40px; height: 40px; object-fit: contain; margin-bottom: 8px; }
+    .welcome-icon { width: 52px; height: 52px; object-fit: contain; margin-bottom: 8px; }
     .welcome-msg p { font-size: 13px; margin: 0 0 12px; line-height: 1.5; }
     .suggestions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .suggestions button { font-size: 11px; padding: 2px 10px; height: auto; line-height: 1.6; border-radius: 12px; }
