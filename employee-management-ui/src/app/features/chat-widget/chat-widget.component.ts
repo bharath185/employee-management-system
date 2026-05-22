@@ -31,8 +31,8 @@ import { ChatMessage } from '../../core/models/text2sql.model';
       <div class="chat-header">
         <img src="assets/chatbot.png" alt="Chat" class="header-icon">
         <span>Ask about your data</span>
-        <button class="chat-close-btn" (click)="isOpen = false" aria-label="Close">
-          <i nz-icon nzType="minus"></i>
+        <button class="chat-back-btn" (click)="isOpen = false" aria-label="Back to menu">
+          <i nz-icon nzType="arrow-left"></i> Back
         </button>
       </div>
 
@@ -114,8 +114,8 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     .chat-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; background: linear-gradient(135deg, #1f3d6e, #2a5298); color: #fff; font-size: 14px; font-weight: 600; }
     .chat-header i { font-size: 18px; }
     .chat-header span { flex: 1; }
-    .chat-close-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .chat-close-btn:hover { background: rgba(255,255,255,0.35); }
+    .chat-back-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; padding: 3px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
+    .chat-back-btn:hover { background: rgba(255,255,255,0.3); }
 
     .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; min-height: 200px; max-height: 380px; background: #f8f9fb; }
     .chat-messages::-webkit-scrollbar { width: 4px; }
