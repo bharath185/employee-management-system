@@ -22,26 +22,14 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     <button class="chat-fab" (click)="toggleChat()"
       [class.open]="isOpen"
       [attr.aria-label]="isOpen ? 'Close chat' : 'Open chat'">
-      <svg *ngIf="!isOpen" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
-        <line x1="9" y1="11" x2="9" y2="21"></line>
-        <line x1="15" y1="11" x2="15" y2="21"></line>
-        <circle cx="12" cy="5" r="3"></circle>
-        <line x1="12" y1="8" x2="12" y2="11"></line>
-      </svg>
+      <img *ngIf="!isOpen" src="assets/chatbot.png" alt="Chat" class="fab-icon">
       <i *ngIf="isOpen" nz-icon nzType="close"></i>
     </button>
 
     <!-- Chat panel -->
     <div class="chat-panel" [class.open]="isOpen">
       <div class="chat-header">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="10" rx="2" ry="2"></rect>
-          <line x1="9" y1="11" x2="9" y2="21"></line>
-          <line x1="15" y1="11" x2="15" y2="21"></line>
-          <circle cx="12" cy="5" r="3"></circle>
-          <line x1="12" y1="8" x2="12" y2="11"></line>
-        </svg>
+        <img src="assets/chatbot.png" alt="Chat" class="header-icon">
         <span>Ask about your data</span>
         <button class="chat-close-btn" (click)="isOpen = false" aria-label="Close">
           <i nz-icon nzType="minus"></i>
@@ -50,11 +38,7 @@ import { ChatMessage } from '../../core/models/text2sql.model';
 
       <div class="chat-messages" #messageContainer>
         <div class="welcome-msg" *ngIf="messages.length === 0">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#1f3d6e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 18h6"></path>
-            <path d="M10 22h4"></path>
-            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
-          </svg>
+          <img src="assets/chatbot.png" alt="Chat" class="welcome-icon">
           <p>Ask questions about your employee data in plain English!</p>
           <div class="suggestions">
             <button nz-button nzSize="small" nzType="default"
@@ -70,14 +54,6 @@ import { ChatMessage } from '../../core/models/text2sql.model';
 
           <div class="msg-bubble">
             <div class="msg-text">{{ msg.content }}</div>
-
-            <!-- SQL display (collapsible) -->
-            <div *ngIf="msg.type === 'bot' && msg.data?.sql" class="sql-toggle"
-              (click)="msg.data!.showSql = !msg.data!.showSql">
-              <i nz-icon [nzType]="msg.data?.showSql ? 'code' : 'code'"></i>
-              {{ msg.data?.showSql ? 'Hide SQL' : 'Show SQL' }}
-            </div>
-            <pre *ngIf="msg.type === 'bot' && msg.data?.showSql" class="sql-block">{{ msg.data!.sql }}</pre>
 
             <!-- Results table -->
             <div *ngIf="msg.type === 'bot' && msg.data?.rows?.length" class="result-section">
@@ -128,7 +104,8 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     .chat-fab { width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, #1f3d6e, #2a5298); color: #fff; font-size: 22px; cursor: pointer; box-shadow: 0 4px 16px rgba(31,61,110,0.35); display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; }
     .chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(31,61,110,0.45); }
     .chat-fab.open { background: linear-gradient(135deg, #dc3545, #a71d2a); transform: rotate(90deg); }
-    .chat-fab i { font-size: 24px; line-height: 1; }
+    .fab-icon { width: 28px; height: 28px; object-fit: contain; }
+    .header-icon { width: 20px; height: 20px; object-fit: contain; }
 
     .chat-panel { position: absolute; bottom: 64px; right: 0; width: 420px; max-height: 580px; background: #fff; border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; overflow: hidden; opacity: 0; transform: translateY(16px) scale(0.96); pointer-events: none; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); transform-origin: bottom right; }
     .chat-panel.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
@@ -144,7 +121,7 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     .chat-messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 
     .welcome-msg { text-align: center; padding: 20px 16px; color: #666; }
-    .welcome-msg i { font-size: 32px; color: #1f3d6e; margin-bottom: 8px; }
+    .welcome-icon { width: 40px; height: 40px; object-fit: contain; margin-bottom: 8px; }
     .welcome-msg p { font-size: 13px; margin: 0 0 12px; line-height: 1.5; }
     .suggestions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
     .suggestions button { font-size: 11px; padding: 2px 10px; height: auto; line-height: 1.6; border-radius: 12px; }
@@ -163,10 +140,6 @@ import { ChatMessage } from '../../core/models/text2sql.model';
 
     .msg-time { font-size: 10px; color: #999; margin-top: 4px; }
     .user-msg .msg-time { text-align: right; }
-
-    .sql-toggle { font-size: 11px; color: #1f3d6e; cursor: pointer; margin-top: 6px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; background: rgba(31,61,110,0.08); border-radius: 4px; }
-    .sql-toggle:hover { background: rgba(31,61,110,0.15); }
-    .sql-block { background: #1e1e2e; color: #cdd6f4; padding: 10px; border-radius: 8px; font-size: 11px; line-height: 1.5; margin: 6px 0 0; overflow-x: auto; white-space: pre-wrap; max-height: 150px; }
 
     .result-section { margin-top: 8px; }
     .result-count { font-size: 11px; color: #666; margin-bottom: 6px; padding: 4px 8px; background: #f0f4ff; border-radius: 4px; }
@@ -282,7 +255,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
       type: 'bot',
       content,
       timestamp: new Date(),
-      data: { ...data, showSql: false }
+      data: { ...data }
     });
   }
 
