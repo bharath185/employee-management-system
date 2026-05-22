@@ -101,9 +101,10 @@ import { ChatMessage } from '../../core/models/text2sql.model';
   styles: [`
     :host { position: fixed; bottom: 24px; right: 24px; z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
-    .chat-fab { width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, #1f3d6e, #2a5298); color: #fff; font-size: 22px; cursor: pointer; box-shadow: 0 4px 16px rgba(31,61,110,0.35); display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; }
-    .chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(31,61,110,0.45); }
-    .chat-fab.open { background: linear-gradient(135deg, #dc3545, #a71d2a); transform: rotate(90deg); }
+    .chat-fab { width: 52px; height: 52px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; padding: 0; }
+    .chat-fab:hover { transform: scale(1.08); }
+    .chat-fab.open { transform: rotate(90deg); }
+    .chat-fab.open i { font-size: 28px; color: #666; }
     .fab-icon { width: 28px; height: 28px; object-fit: contain; }
     .header-icon { width: 20px; height: 20px; object-fit: contain; }
 
