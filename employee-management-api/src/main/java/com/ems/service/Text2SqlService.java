@@ -325,11 +325,7 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
             .path("content").path("parts").get(0)
             .path("text").asText();
 
-        text = text.replaceAll("```sql\\s*", "")
-            .replaceAll("```\\s*", "")
-            .trim();
-
-        return text;
+        return extractSql(text);
     }
 
     private String callOpenAi(String question) {
@@ -362,11 +358,23 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
             .path("choices").get(0)
             .path("message").path("content").asText();
 
-        content = content.replaceAll("```sql\\s*", "")
-            .replaceAll("```\\s*", "")
-            .trim();
+        return extractSql(content);
+    }
 
-        return content;
+    private String extractSql(String text) {
+        if (text == null) return null;
+        // Strip markdown code fences
+        text = text.replaceAll("```[a-zA-Z]*\\s*", "").replaceAll("```", "").trim();
+        // Find the first SELECT statement
+        int selectIdx = text.toUpperCase().indexOf("SELECT");
+        if (selectIdx < 0) return text;
+        text = text.substring(selectIdx).trim();
+        // Remove trailing text after the statement ends (after semicolon or newline before non-SQL)
+        int semiIdx = text.indexOf(';');
+        if (semiIdx >= 0) {
+            text = text.substring(0, semiIdx).trim();
+        }
+        return text;
     }
 
     private String fallbackRuleBasedSql(String question) {

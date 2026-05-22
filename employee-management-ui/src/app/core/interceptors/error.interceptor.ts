@@ -42,7 +42,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = 'Validation failed. Please check your input.';
             break;
           case 500:
-            errorMessage = 'Server error. Please try again later.';
+            errorMessage = error.error?.message || 'Server error. Please try again later.';
             break;
           default:
             errorMessage = error.error?.message || `Error: ${error.status}`;
