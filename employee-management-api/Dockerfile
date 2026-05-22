@@ -11,3 +11,4 @@ RUN mkdir -p /tmp/uploads/photos /tmp/uploads/documents
 COPY --from=build /app/target/employee-management-api-*.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]
+# Build timestamp: 2026-05-22
