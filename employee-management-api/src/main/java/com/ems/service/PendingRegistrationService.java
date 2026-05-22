@@ -138,7 +138,7 @@ public class PendingRegistrationService {
     }
 
     @Transactional
-    public APIResponse<EmployeeDTO> approve(Long id, String username) {
+    public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String username) {
         PendingRegistration pending = pendingRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Pending registration not found with id: " + id));
 
@@ -146,8 +146,13 @@ public class PendingRegistrationService {
             throw new BadRequestException("Registration is already " + pending.getStatus().name().toLowerCase());
         }
 
-        // Generate employee code
-        String employeeCode = codeGenerator.generateNextCode();
+        if (employeeCode == null || employeeCode.trim().isEmpty()) {
+            throw new BadRequestException("Employee code is required");
+        }
+
+        if (employeeRepository.existsByEmployeeCode(employeeCode.trim())) {
+            throw new com.ems.exception.DuplicateResourceException("Employee code already exists: " + employeeCode);
+        }
 
         // Build EmployeeDTO from pending registration data
         EmployeeDTO employeeDTO = EmployeeDTO.builder()

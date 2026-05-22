@@ -100,7 +100,7 @@ import { environment } from '../../../environments/environment';
                   <i nz-icon nzType="eye"></i>
                 </button>
                 <button nz-button nzType="primary" nzSize="small" *ngIf="reg.status === 'PENDING'"
-                  (click)="approve(reg)" nz-tooltip="Approve" class="btn-action">
+                  (click)="showApproveModal(reg)" nz-tooltip="Approve" class="btn-action">
                   <i nz-icon nzType="check"></i>
                 </button>
                 <button nz-button nzType="default" nzDanger nzSize="small" *ngIf="reg.status === 'PENDING'"
@@ -148,7 +148,7 @@ import { environment } from '../../../environments/environment';
           <nz-descriptions-item nzTitle="Address" [nzSpan]="2">{{ selectedReg.presentAddress || '-' }}</nz-descriptions-item>
         </nz-descriptions>
         <div *ngIf="selectedReg?.status === 'PENDING'" class="detail-actions">
-          <button nz-button nzType="primary" (click)="approve(selectedReg!)">
+          <button nz-button nzType="primary" (click)="showApproveModal(selectedReg!)">
             <i nz-icon nzType="check"></i> Approve
           </button>
           <button nz-button nzType="default" nzDanger (click)="showRejectModal(selectedReg!)" style="margin-left:8px">
@@ -171,6 +171,30 @@ import { environment } from '../../../environments/environment';
         <button nz-button nzType="default" (click)="isRejectModalVisible = false">Cancel</button>
         <button nz-button nzType="primary" nzDanger (click)="confirmReject()" [nzLoading]="isRejecting">
           <i nz-icon nzType="close"></i> Reject
+        </button>
+      </ng-template>
+    </nz-modal>
+
+    <nz-modal [(nzVisible)]="isApproveModalVisible" nzTitle="Approve Registration"
+      (nzOnCancel)="isApproveModalVisible = false" [nzFooter]="approveFooter" nzWidth="440px" [nzMaskClosable]="false">
+      <ng-template nzModalContent>
+        <div class="approve-modal-body">
+          <div style="margin-bottom:16px">
+            <p>Approve <strong>{{ selectedReg?.firstName }} {{ selectedReg?.surname }}</strong> ({{ selectedReg?.registrationCode }})</p>
+            <p style="font-size:13px;color:#666;">Enter the employee code to assign to this joinee.</p>
+          </div>
+          <div class="approve-field">
+            <label class="approve-label">Employee Code <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="approveEmpCode" name="approveEmpCode"
+              placeholder="Enter employee code (e.g. EMP0001)"
+              style="text-transform:uppercase;width:100%;" />
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #approveFooter>
+        <button nz-button nzType="default" (click)="isApproveModalVisible = false">Cancel</button>
+        <button nz-button nzType="primary" (click)="confirmApprove()" [nzLoading]="isApproving" [disabled]="!approveEmpCode?.trim()">
+          <i nz-icon nzType="check"></i> Approve
         </button>
       </ng-template>
     </nz-modal>
@@ -237,6 +261,9 @@ export class PendingRegistrationsComponent implements OnInit {
   isRejectModalVisible = false;
   rejectReason = '';
   isRejecting = false;
+  isApproveModalVisible = false;
+  approveEmpCode = '';
+  isApproving = false;
 
   isQrModalVisible = false;
   qrDataUrl = '';
@@ -276,21 +303,35 @@ export class PendingRegistrationsComponent implements OnInit {
     this.isViewModalVisible = true;
   }
 
-  approve(reg: PendingRegistration) {
-    this.modal.confirm({
-      nzTitle: 'Approve Registration',
-      nzContent: `Approve "${reg.firstName} ${reg.surname}" (${reg.registrationCode})? This will create an employee record.`,
-      nzOkText: 'Approve',
-      nzOnOk: () => {
-        this.pendingService.approve(reg.id).subscribe({
-          next: (res) => {
-            this.notification.success('Approved', res.message);
-            this.isViewModalVisible = false;
-            this.loadData();
-            this.loadPendingCount();
-          },
-          error: (err) => this.notification.error('Error', err.error?.message || 'Failed to approve')
-        });
+  showApproveModal(reg: PendingRegistration) {
+    this.selectedReg = reg;
+    this.approveEmpCode = '';
+    this.isApproveModalVisible = true;
+  }
+
+  confirmApprove() {
+    if (!this.approveEmpCode || !this.approveEmpCode.trim()) {
+      this.notification.error('Error', 'Please enter an employee code');
+      return;
+    }
+    this.isApproving = true;
+    this.pendingService.approve(this.selectedReg!.id, this.approveEmpCode.trim()).subscribe({
+      next: (res) => {
+        this.isApproving = false;
+        this.isApproveModalVisible = false;
+        this.isViewModalVisible = false;
+        this.notification.success('Approved', res.message);
+        this.loadData();
+        this.loadPendingCount();
+      },
+      error: (err) => {
+        this.isApproving = false;
+        const msg = err.error?.message || 'Failed to approve';
+        if (msg.toLowerCase().includes('already exists')) {
+          this.notification.error('Duplicate', msg);
+        } else {
+          this.notification.error('Error', msg);
+        }
       }
     });
   }
