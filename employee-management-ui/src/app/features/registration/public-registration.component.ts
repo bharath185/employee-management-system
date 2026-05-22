@@ -12,8 +12,8 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzCardModule } from 'ng-zorro-antd/card';
+import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
-import { MasterDataService } from '../../core/services/master-data.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -253,18 +253,19 @@ export class PublicRegistrationComponent {
   designations: any[] = [];
 
   constructor(
+    private http: HttpClient,
     private pendingService: PendingRegistrationService,
-    private masterDataService: MasterDataService,
     private notification: NzNotificationService
   ) {}
 
   ngOnInit() {
-    this.masterDataService.getByCategory('GENDER').subscribe(g => {
-      this.genders = g;
+    const api = environment.apiUrl + '/public/register/masters';
+    this.http.get<any>(api + '/GENDER').subscribe(res => {
+      this.genders = res.data || [];
       this.loading = false;
     });
-    this.masterDataService.getByCategory('QUALIFICATION').subscribe(q => this.qualifications = q);
-    this.masterDataService.getByCategory('DESIGNATION').subscribe(d => this.designations = d);
+    this.http.get<any>(api + '/QUALIFICATION').subscribe(res => this.qualifications = res.data || []);
+    this.http.get<any>(api + '/DESIGNATION').subscribe(res => this.designations = res.data || []);
   }
 
   onFileChange(event: any, type: string) {

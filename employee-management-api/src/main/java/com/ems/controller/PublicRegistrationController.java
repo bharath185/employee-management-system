@@ -1,7 +1,9 @@
 package com.ems.controller;
 
 import com.ems.dto.APIResponse;
+import com.ems.dto.MasterDataDTO;
 import com.ems.dto.PendingRegistrationDTO;
+import com.ems.service.MasterDataService;
 import com.ems.service.PendingRegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -9,12 +11,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/public/register")
 @RequiredArgsConstructor
 public class PublicRegistrationController {
 
     private final PendingRegistrationService pendingRegistrationService;
+    private final MasterDataService masterDataService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<PendingRegistrationDTO>> submitRegistration(
@@ -57,5 +62,12 @@ public class PublicRegistrationController {
     public ResponseEntity<APIResponse<String>> getQrData() {
         String formUrl = "/register-new";
         return ResponseEntity.ok(APIResponse.success("QR code URL", formUrl));
+    }
+
+    @GetMapping("/masters/{category}")
+    public ResponseEntity<APIResponse<List<com.ems.dto.MasterDataDTO>>> getMasterData(
+            @PathVariable String category) {
+        List<com.ems.dto.MasterDataDTO> data = masterDataService.getByCategory(category.toUpperCase());
+        return ResponseEntity.ok(APIResponse.success(data));
     }
 }
