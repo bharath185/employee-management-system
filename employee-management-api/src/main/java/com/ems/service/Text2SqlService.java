@@ -32,6 +32,15 @@ public class Text2SqlService {
     @Value("${app.openai.model:gpt-4o-mini}")
     private String openAiModel;
 
+    @Value("${app.gemini.api-key:#{null}}")
+    private String geminiApiKey;
+
+    @Value("${app.gemini.model:gemini-1.5-flash}")
+    private String geminiModel;
+
+    @Value("${app.db.type:postgresql}")
+    private String dbType;
+
     private static final Pattern SELECT_ONLY = Pattern.compile(
         "^\\s*SELECT\\b.*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
@@ -248,10 +257,62 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
     }
 
     private String generateSql(String question) {
-        if (openAiApiKey == null || openAiApiKey.isEmpty()) {
-            return fallbackRuleBasedSql(question);
+        // Try Gemini first (free tier), then OpenAI, then fallback rules
+        if (geminiApiKey != null && !geminiApiKey.isEmpty()) {
+            try {
+                return callGemini(question);
+            } catch (Exception e) {
+                log.warn("Gemini call failed: {}", e.getMessage());
+            }
         }
-        return callOpenAi(question);
+        if (openAiApiKey != null && !openAiApiKey.isEmpty()) {
+            try {
+                return callOpenAi(question);
+            } catch (Exception e) {
+                log.warn("OpenAI call failed: {}", e.getMessage());
+            }
+        }
+        return fallbackRuleBasedSql(question);
+    }
+
+    private String callGemini(String question) {
+        String prompt = SCHEMA_CONTEXT + "\n\nUser question: " + question + "\n\nSQL:";
+
+        Map<String, Object> contentPart = new LinkedHashMap<>();
+        contentPart.put("text", "You are a SQL expert. Convert natural language to SQL for the employee management DB. " +
+            "Use " + dbType + " compatible syntax. Return ONLY raw SQL — no markdown, no backticks.\n\n" + prompt);
+
+        Map<String, Object> part = Map.of("parts", List.of(contentPart));
+
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("contents", List.of(Map.of("parts", List.of(contentPart))));
+        requestBody.put("generationConfig", Map.of(
+            "temperature", 0.1,
+            "maxOutputTokens", 500
+        ));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+            "https://generativelanguage.googleapis.com/v1beta/models/" + geminiModel + ":generateContent?key=" + geminiApiKey,
+            entity, JsonNode.class);
+
+        if (response.getBody() == null) {
+            throw new RuntimeException("Empty response from Gemini");
+        }
+
+        String text = response.getBody()
+            .path("candidates").get(0)
+            .path("content").path("parts").get(0)
+            .path("text").asText();
+
+        text = text.replaceAll("```sql\\s*", "")
+            .replaceAll("```\\s*", "")
+            .trim();
+
+        return text;
     }
 
     private String callOpenAi(String question) {
@@ -268,33 +329,27 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         requestBody.put("messages", messages);
         requestBody.put("temperature", 0.1);
 
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(openAiApiKey);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(openAiApiKey);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                "https://api.openai.com/v1/chat/completions", entity, JsonNode.class);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+            "https://api.openai.com/v1/chat/completions", entity, JsonNode.class);
 
-            if (response.getBody() == null) {
-                return fallbackRuleBasedSql(question);
-            }
-
-            String content = response.getBody()
-                .path("choices").get(0)
-                .path("message").path("content").asText();
-
-            // Strip markdown code fences if present
-            content = content.replaceAll("```sql\\s*", "")
-                .replaceAll("```\\s*", "")
-                .trim();
-
-            return content;
-        } catch (Exception e) {
-            log.warn("OpenAI call failed, using fallback: {}", e.getMessage());
-            return fallbackRuleBasedSql(question);
+        if (response.getBody() == null) {
+            throw new RuntimeException("Empty response from OpenAI");
         }
+
+        String content = response.getBody()
+            .path("choices").get(0)
+            .path("message").path("content").asText();
+
+        content = content.replaceAll("```sql\\s*", "")
+            .replaceAll("```\\s*", "")
+            .trim();
+
+        return content;
     }
 
     private String fallbackRuleBasedSql(String question) {
@@ -307,14 +362,14 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         if (q.contains("active") || q.contains("live")) {
             return "SELECT COUNT(*) as count FROM employees WHERE employee_status = 'LIVE' AND is_deleted = false";
         }
-        if (q.contains("male") || (q.contains("gender") && (q.contains("men") || q.contains("boy")))) {
+        if ((q.contains("male") || q.contains("men") || q.contains("boy")) && !q.contains("female") && !q.contains("women")) {
             return "SELECT COUNT(*) as count FROM employees WHERE gender = 'MALE' AND is_deleted = false";
         }
         if (q.contains("female") || q.contains("women") || q.contains("girl")) {
             return "SELECT COUNT(*) as count FROM employees WHERE gender = 'FEMALE' AND is_deleted = false";
         }
-        if (q.contains("recent") || q.contains("new") || q.contains("latest")) {
-            return "SELECT TOP 10 employee_code, first_name, surname, designation, doj, employee_status FROM employees WHERE is_deleted = false ORDER BY created_at DESC";
+        if ((q.contains("recent") || q.contains("new") || q.contains("latest") || q.contains("last")) && !q.contains("month")) {
+            return "SELECT employee_code, first_name, surname, designation, doj, employee_status FROM employees WHERE is_deleted = false ORDER BY created_at DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY";
         }
         if (q.contains("designation")) {
             return "SELECT designation, COUNT(*) as count FROM employees WHERE is_deleted = false AND designation IS NOT NULL GROUP BY designation ORDER BY count DESC";
@@ -322,10 +377,10 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         if (q.contains("age") && (q.contains("bracket") || q.contains("group") || q.contains("distribution"))) {
             return "SELECT age_bracket, COUNT(*) as count FROM employees WHERE is_deleted = false AND age_bracket IS NOT NULL GROUP BY age_bracket ORDER BY age_bracket";
         }
-        if (q.contains("exit") || q.contains("left") || q.contains("resign")) {
+        if (q.contains("exit") || q.contains("left") || q.contains("resign") || q.contains("depart")) {
             return "SELECT COUNT(*) as count FROM employees WHERE employee_status != 'LIVE' AND is_deleted = false";
         }
-        if (q.contains("department") || q.contains("process")) {
+        if (q.contains("process") || q.contains("department")) {
             return "SELECT process_assigned, COUNT(*) as count FROM employees WHERE is_deleted = false AND process_assigned IS NOT NULL GROUP BY process_assigned ORDER BY count DESC";
         }
         if (q.contains("bank") || q.contains("account")) {
@@ -334,38 +389,32 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         if (q.contains("education") || q.contains("qualification") || q.contains("degree")) {
             return "SELECT highest_qualification, COUNT(*) as count FROM employees WHERE is_deleted = false AND highest_qualification IS NOT NULL GROUP BY highest_qualification ORDER BY count DESC";
         }
-        if (q.contains("city") || q.contains("address") || q.contains("location")) {
-            return "SELECT employee_code, first_name, surname, present_address, permanent_address FROM employees WHERE is_deleted = false AND (present_address IS NOT NULL OR permanent_address IS NOT NULL) ORDER BY employee_code";
-        }
         if (q.contains("religion")) {
             return "SELECT religion, COUNT(*) as count FROM employees WHERE is_deleted = false AND religion IS NOT NULL GROUP BY religion ORDER BY count DESC";
         }
-        if (q.contains("social category") || q.contains("caste") || q.contains("social_sub")) {
+        if (q.contains("social") && (q.contains("category") || q.contains("caste"))) {
             return "SELECT social_category, social_subcategory, COUNT(*) as count FROM employees WHERE is_deleted = false AND social_category IS NOT NULL GROUP BY social_category, social_subcategory ORDER BY count DESC";
         }
         if (q.contains("experience") || q.contains("past")) {
             return "SELECT past_experience, COUNT(*) as count FROM employees WHERE is_deleted = false AND past_experience IS NOT NULL GROUP BY past_experience";
         }
-        if (q.contains("blood") || q.contains("blood group")) {
+        if (q.contains("blood")) {
             return "SELECT blood_group, COUNT(*) as count FROM employees WHERE is_deleted = false AND blood_group IS NOT NULL GROUP BY blood_group ORDER BY blood_group";
         }
-        if (q.contains("aadhar") || (q.contains("aadhaar"))) {
+        if (q.contains("aadhar") || q.contains("aadhaar")) {
             return "SELECT employee_code, first_name, surname, aadhar_number, aadhaar_verification FROM employees WHERE is_deleted = false AND aadhar_number IS NOT NULL ORDER BY employee_code";
         }
         if (q.contains("pan")) {
             return "SELECT employee_code, first_name, surname, pan_number, pan_verification FROM employees WHERE is_deleted = false AND pan_number IS NOT NULL ORDER BY employee_code";
         }
-        if (q.contains("pending registration") || q.contains("pending reg") || q.contains("unapproved")) {
+        if (q.contains("pending") && (q.contains("registration") || q.contains("reg"))) {
             return "SELECT id, first_name, surname, gender, mobile, email, status, created_at FROM pending_registrations WHERE status = 'PENDING' ORDER BY created_at DESC";
         }
-        if (q.contains("approved registration") || q.contains("approved reg")) {
+        if (q.contains("approved") && (q.contains("registration") || q.contains("reg"))) {
             return "SELECT id, first_name, surname, gender, mobile, email, status, created_at FROM pending_registrations WHERE status = 'APPROVED' ORDER BY created_at DESC";
         }
-        if (q.contains("married") || q.contains("marital")) {
+        if (q.contains("married") || q.contains("marital") || q.contains("single")) {
             return "SELECT marital_status, COUNT(*) as count FROM employees WHERE is_deleted = false AND marital_status IS NOT NULL GROUP BY marital_status";
-        }
-        if (q.contains("all employee") || q.contains("list employee") || q.contains("show employee")) {
-            return "SELECT employee_code, first_name, surname, gender, designation, employee_status, mobile, doj FROM employees WHERE is_deleted = false ORDER BY created_at DESC";
         }
         if (q.contains("skill") || q.contains("language")) {
             return "SELECT employee_code, first_name, surname, languages_can_speak FROM employees WHERE is_deleted = false AND languages_can_speak IS NOT NULL ORDER BY employee_code";
@@ -373,15 +422,23 @@ Return ONLY the SQL query, no explanations, no markdown formatting.
         if (q.contains("reference") || q.contains("ref")) {
             return "SELECT employee_code, first_name, surname, ref1_name, ref1_relationship, ref2_name, ref2_relationship FROM employees WHERE is_deleted = false AND ref1_name IS NOT NULL ORDER BY employee_code";
         }
-        if (q.contains("pf") || q.contains("provident fund") || q.contains("uan")) {
+        if (q.contains("pf") || q.contains("provident") || q.contains("uan")) {
             return "SELECT employee_code, first_name, surname, uan_no, pf_no, uan_activation FROM employees WHERE is_deleted = false AND (uan_no IS NOT NULL OR pf_no IS NOT NULL) ORDER BY employee_code";
         }
         if (q.contains("esic")) {
             return "SELECT employee_code, first_name, surname, esic_no FROM employees WHERE is_deleted = false AND esic_no IS NOT NULL ORDER BY employee_code";
         }
+        if (q.contains("new") && q.contains("month")) {
+            return "SELECT COUNT(*) as count FROM employees WHERE is_deleted = false AND created_at >= DATE_TRUNC('month', CURRENT_DATE)";
+        }
+        if (q.contains("gender")) {
+            return "SELECT gender, COUNT(*) as count FROM employees WHERE is_deleted = false AND gender IS NOT NULL GROUP BY gender";
+        }
+        if (q.contains("member") || q.contains("people") || q.contains("worker") || q.contains("staff")) {
+            return "SELECT COUNT(*) as count FROM employees WHERE is_deleted = false";
+        }
 
-        // Generic: try to list all columns as a catch-all
-        return "SELECT employee_code, first_name, surname, gender, designation, employee_status, mobile, doj FROM employees WHERE is_deleted = false ORDER BY created_at DESC LIMIT 20";
+        return "SELECT employee_code, first_name, surname, gender, designation, employee_status, mobile, doj FROM employees WHERE is_deleted = false ORDER BY created_at DESC OFFSET 0 ROWS FETCH NEXT 20 ROWS ONLY";
     }
 
     private List<String> extractColumnNames(String sql, List<Object[]> results) {
