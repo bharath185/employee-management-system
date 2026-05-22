@@ -22,7 +22,7 @@ public interface EmployeeRepository
     @Query("SELECT COUNT(e) FROM Employee e WHERE e.isDeleted = false")
     long countActive();
 
-    @Query("SELECT COUNT(e) FROM Employee e WHERE e.employeeStatus = 'Live' AND e.isDeleted = false")
+    @Query("SELECT COUNT(e) FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false")
     long countLive();
 
     @Query("SELECT COUNT(e) FROM Employee e WHERE e.gender = :gender AND e.isDeleted = false")

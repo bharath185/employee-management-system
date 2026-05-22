@@ -23,8 +23,8 @@ public class DashboardService {
     public DashboardStatsDTO getStats() {
         long total = employeeRepository.countActive();
         long active = employeeRepository.countLive();
-        long male = employeeRepository.countByGender("Male");
-        long female = employeeRepository.countByGender("Female");
+        long male = employeeRepository.countByGender("MALE");
+        long female = employeeRepository.countByGender("FEMALE");
 
         // Count new employees this month
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
