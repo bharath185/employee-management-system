@@ -4,6 +4,14 @@ import { RoleGuard } from './core/guards/role.guard';
 import { CanDeactivateGuard } from './core/guards/can-deactivate.guard';
 
 export const routes: Routes = [
+  // ========== PUBLIC REGISTRATION ==========
+  {
+    path: 'register-new',
+    loadComponent: () => import('./features/registration/public-registration.component')
+      .then(m => m.PublicRegistrationComponent),
+    title: 'New Joinee Registration'
+  },
+
   // ========== AUTH ROUTES ==========
   {
     path: 'auth',
@@ -59,6 +67,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reports/reports.component')
           .then(m => m.ReportsComponent),
         title: 'Reports'
+      },
+      {
+        path: 'pending-registrations',
+        loadComponent: () => import('./features/pending-registrations/pending-registrations.component')
+          .then(m => m.PendingRegistrationsComponent),
+        title: 'Pending Registrations'
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

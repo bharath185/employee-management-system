@@ -70,6 +70,11 @@ import { AuthService } from '../../core/services/auth.service';
               <i nz-icon nzType="audit"></i>
               <span *ngIf="!isCollapsed()">Reports</span>
             </li>
+            <li nz-menu-item routerLink="/admin/pending-registrations"
+                (click)="closeDrawerOnMobile()">
+              <i nz-icon nzType="audit"></i>
+              <span *ngIf="!isCollapsed()">Registrations</span>
+            </li>
           </ul>
           <div class="sidenav-spacer"></div>
           <div class="sidenav-footer" (click)="logout()">

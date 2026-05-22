@@ -267,4 +267,12 @@ public class EmployeeService {
             "errors", errors
         );
     }
+
+    @Transactional
+    public void updateEmployeePhoto(Long id, String photoPath) {
+        Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
+        employee.setPhotoPath(photoPath);
+        employeeRepository.save(employee);
+    }
 }
