@@ -33,18 +33,18 @@ public class DashboardService {
                 e.getCreatedAt().toLocalDate().isAfter(startOfMonth.minusDays(1)))
             .count();
 
-        // Status distribution
+        // Status distribution (normalize to uppercase codes)
         Map<String, Long> statusDistribution = employeeRepository.findAll().stream()
             .filter(e -> !e.getIsDeleted())
             .collect(Collectors.groupingBy(
-                e -> e.getEmployeeStatus() != null ? e.getEmployeeStatus() : "Unknown",
+                e -> e.getEmployeeStatus() != null ? e.getEmployeeStatus().toUpperCase() : "Unknown",
                 Collectors.counting()));
 
-        // Gender distribution
+        // Gender distribution (normalize to uppercase codes)
         Map<String, Long> genderDistribution = employeeRepository.findAll().stream()
             .filter(e -> !e.getIsDeleted())
             .collect(Collectors.groupingBy(
-                e -> e.getGender() != null ? e.getGender() : "Unknown",
+                e -> e.getGender() != null ? e.getGender().toUpperCase() : "Unknown",
                 Collectors.counting()));
 
         // Designation distribution
