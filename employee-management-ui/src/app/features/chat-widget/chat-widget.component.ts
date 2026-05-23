@@ -53,11 +53,10 @@ import { ChatMessage } from '../../core/models/text2sql.model';
           [class.sql-msg]="msg.type === 'sql'">
 
           <div class="msg-bubble">
-            <div class="msg-text">{{ msg.content }}</div>
+            <div class="msg-text" [innerHTML]="msg.content"></div>
 
-            <!-- Results table -->
+            <!-- Results table (secondary, shown alongside conversational message) -->
             <div *ngIf="msg.type === 'bot' && msg.data?.rows?.length" class="result-section">
-              <div class="result-count">{{ msg.data!.explanation }}</div>
               <div class="result-table-wrapper">
                 <nz-table [nzData]="msg.data!.rows" [nzFrontPagination]="false"
                   [nzShowPagination]="msg.data!.rows.length > 10"
@@ -169,12 +168,12 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   messages: (ChatMessage & { data?: any })[] = [];
 
   suggestions = [
+    'Hi!',
     'Total employees?',
     'How many are active?',
     'Show recent employees',
     'Gender distribution',
-    'Designation wise count',
-    'Pending registrations'
+    'Designation wise count'
   ];
 
   private destroy$ = new Subject<void>();
@@ -216,10 +215,11 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.isLoading = false;
           if (response.success && response.data) {
+            const botMsg = response.data.message || response.data.explanation || 'Here you go!';
             if (response.data.rows && response.data.rows.length > 0) {
-              this.addBotMessage(response.data.explanation || this.getDefaultExplanation(text), response.data);
+              this.addBotMessage(this.formatMessage(botMsg), response.data);
             } else {
-              this.addMessage('bot', 'No results found for your query.');
+              this.addMessage('bot', botMsg);
             }
           } else {
             this.addMessage('error', response.data?.errorMessage || response.message || 'Sorry, I could not process that question.');
@@ -235,10 +235,9 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
       });
   }
 
-  private getDefaultExplanation(question: string): string {
-    const q = question.toLowerCase();
-    if (q.includes('how many') || q.includes('count')) return 'Here are the counts:';
-    return 'Here are the results:';
+  private formatMessage(text: string): string {
+    // Convert **bold** to <strong>
+    return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
   private addMessage(type: ChatMessage['type'], content: string): void {

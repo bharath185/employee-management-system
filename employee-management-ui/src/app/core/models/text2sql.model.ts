@@ -5,6 +5,7 @@ export interface Text2SqlRequest {
 export interface Text2SqlResponse {
   question: string;
   sql: string;
+  message: string;
   columns: string[];
   rows: { [key: string]: any }[];
   rowCount: number;
