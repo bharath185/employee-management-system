@@ -20,7 +20,7 @@ services:
       - key: SPRING_JPA_DIALECT
         value: org.hibernate.dialect.PostgreSQLDialect
       - key: CORS_ORIGINS
-        sync: false
+        value: https://ems.prigenix.com
       - key: JWT_SECRET
         generateValue: true
       - key: UPLOAD_DIR
