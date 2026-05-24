@@ -231,9 +231,9 @@ import { AuthService } from '../../core/services/auth.service';
     /* Left illustration */
     .left-illustration {
       position: absolute;
-      left: 6vw;
+      left: 25vw;
       top: 50%;
-      transform: translateY(-50%);
+      transform: translate(-50%, -50%);
       width: 540px;
       max-width: 42vw;
       z-index: 2;
@@ -501,10 +501,10 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1200px) {
-      .left-illustration { left: 3vw; width: 420px; max-width: 38vw; }
+      .left-illustration { left: 22vw; width: 420px; max-width: 38vw; }
     }
     @media (max-width: 1024px) {
-      .left-illustration { width: 360px; max-width: 35vw; }
+      .left-illustration { left: 20vw; width: 360px; max-width: 35vw; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
