@@ -51,6 +51,9 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="particle" style="--s:4px;--l:72%;--c:#1f3d6e;--d:24s;--dy:11s"></div>
         <div class="particle" style="--s:7px;--l:80%;--c:rgba(74,144,217,.2);--d:30s;--dy:14s"></div>
       </div>
+      <div class="login-illustration">
+        <img src="assets/Business Analysis.svg" alt="Business Analysis">
+      </div>
       <div class="login-card">
         <div class="card-body">
           <div class="logo-section">
@@ -204,6 +207,28 @@ import { AuthService } from '../../core/services/auth.service';
 
     .footer-text { text-align: center; margin-top: 24px; font-size: 11px; color: #b0b8c7; }
 
+    .login-illustration {
+      position: absolute;
+      left: 25vw;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      max-width: 42vw;
+      z-index: 2;
+      animation: fadeInUp 0.6s 0.2s ease both;
+      pointer-events: none;
+    }
+    .login-illustration img {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 24px rgba(31,61,110,0.08));
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .bottom-credit {
       position: absolute;
       bottom: 20px;
@@ -220,8 +245,12 @@ import { AuthService } from '../../core/services/auth.service';
     }
     .bottom-credit a:hover { text-decoration: underline; }
 
+    @media (max-width: 1100px) {
+      .login-illustration { width: 480px; left: 22vw; }
+    }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
+      .login-illustration { display: none; }
       .particles { opacity: 0.35; }
     }
     @media (max-width: 480px) {
