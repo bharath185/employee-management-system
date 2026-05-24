@@ -33,122 +33,97 @@ import { AuthService } from '../../core/services/auth.service';
 
       <div class="left-illustration" #illustrationRef>
         <div class="ill-content" [style.transform]="'translate(' + mx + 'px, ' + my + 'px)'">
-          <svg class="ill-svg" viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Gradient defs -->
+          <svg class="ill-svg" viewBox="0 0 540 420" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stop-color="#1f3d6e"/>
-                <stop offset="100%" stop-color="#4a90d9"/>
+              <radialGradient id="orb1" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#4a90d9" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#4a90d9" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="orb2" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#1f3d6e" stop-opacity="0.1"/>
+                <stop offset="100%" stop-color="#1f3d6e" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="cardBg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#f8faff"/>
               </linearGradient>
-              <linearGradient id="barGrad2" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stop-color="#4a90d9"/>
-                <stop offset="100%" stop-color="#7bb3e8"/>
-              </linearGradient>
+              <filter id="cardShadow">
+                <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1f3d6e" flood-opacity="0.08"/>
+              </filter>
+              <filter id="cardShadowHover">
+                <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#1f3d6e" flood-opacity="0.15"/>
+              </filter>
             </defs>
 
-            <!-- Background -->
-            <rect width="520" height="400" rx="20" fill="none"/>
+            <!-- Background gradient orbs -->
+            <circle cx="270" cy="210" r="220" fill="url(#orb1)" class="orb-float" style="animation-delay:0s"/>
+            <circle cx="150" cy="100" r="160" fill="url(#orb2)" class="orb-float" style="animation-delay:2s;animation-direction:reverse"/>
+            <circle cx="400" cy="320" r="140" fill="url(#orb1)" class="orb-float" style="animation-delay:4s;animation-duration:6s"/>
 
-            <!-- Grid lines -->
-            <g stroke="#d0dbe8" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4">
-              <line x1="40" y1="340" x2="480" y2="340"/>
-              <line x1="40" y1="295" x2="480" y2="295"/>
-              <line x1="40" y1="250" x2="480" y2="250"/>
-              <line x1="40" y1="205" x2="480" y2="205"/>
-              <line x1="40" y1="160" x2="480" y2="160"/>
-              <line x1="40" y1="115" x2="480" y2="115"/>
+            <!-- Connection lines between cards -->
+            <g class="connections" opacity="0.2">
+              <line x1="185" y1="125" x2="355" y2="110" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <line x1="355" y1="110" x2="270" y2="250" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <line x1="185" y1="125" x2="270" y2="250" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="4 3"/>
             </g>
 
-            <!-- Y-axis label -->
-            <text x="22" y="345" font-size="9" fill="#8a94a6" font-family="system-ui">0</text>
-            <text x="22" y="250" font-size="9" fill="#8a94a6" font-family="system-ui">50</text>
-            <text x="15" y="165" font-size="9" fill="#8a94a6" font-family="system-ui">100</text>
+            <!-- Floating particle dots along connections -->
+            <circle r="2.5" fill="#1f3d6e" opacity="0.4" class="dot-move" style="offset-path:path('M185,125 L355,110');animation-delay:0s"/>
+            <circle r="2.5" fill="#4a90d9" opacity="0.4" class="dot-move" style="offset-path:path('M355,110 L270,250');animation-delay:1.5s"/>
+            <circle r="2.5" fill="#1f3d6e" opacity="0.4" class="dot-move" style="offset-path:path('M185,125 L270,250');animation-delay:3s"/>
 
-            <!-- Animated bars -->
-            <g class="chart-bars">
-              <rect class="bar bar1" x="70" y="290" width="30" height="50" rx="4" fill="url(#barGrad)" opacity="0.7"/>
-              <rect class="bar bar2" x="120" y="270" width="30" height="70" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
-              <rect class="bar bar3" x="170" y="240" width="30" height="100" rx="4" fill="url(#barGrad)" opacity="0.7"/>
-              <rect class="bar bar4" x="220" y="220" width="30" height="120" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
-              <rect class="bar bar5" x="270" y="200" width="30" height="140" rx="4" fill="url(#barGrad)" opacity="0.7"/>
-              <rect class="bar bar6" x="320" y="190" width="30" height="150" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
-              <rect class="bar bar7" x="370" y="170" width="30" height="170" rx="4" fill="url(#barGrad)" opacity="0.7"/>
+            <!-- Card 1: People / Team -->
+            <g class="feature-card card-1" filter="url(#cardShadow)" style="cursor:pointer">
+              <rect x="100" y="85" width="170" height="80" rx="14" fill="url(#cardBg)" stroke="#e8edf5" stroke-width="1"/>
+              <!-- People icon -->
+              <circle cx="130" cy="110" r="7" fill="#1f3d6e" opacity="0.3"/>
+              <circle cx="155" cy="110" r="7" fill="#4a90d9" opacity="0.3"/>
+              <circle cx="130" cy="110" r="5" fill="#1f3d6e"/>
+              <circle cx="155" cy="110" r="5" fill="#4a90d9"/>
+              <line x1="128" y1="133" x2="157" y2="133" stroke="#1f3d6e" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+              <text x="180" y="108" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Team</text>
+              <text x="180" y="124" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Management</text>
+              <text x="180" y="142" font-size="9" fill="#8a94a6" font-family="system-ui">128 active</text>
             </g>
 
-            <!-- Growth line -->
-            <polyline points="60,340 85,310 130,290 180,260 230,240 285,230 340,220 395,205 440,190"
-                      fill="none" stroke="#1f3d6e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
-                      class="growth-line" style="stroke-dasharray:500;stroke-dashoffset:500;animation:drawLine 2s 0.5s ease forwards"/>
-
-            <!-- Area under growth line -->
-            <path d="M60,340 L85,310 L130,290 L180,260 L230,240 L285,230 L340,220 L395,205 L440,190 L440,340 Z"
-                  fill="url(#barGrad)" opacity="0.08" class="area-fill"/>
-
-            <!-- Growth dots on line -->
-            <circle cx="85" cy="310" r="4" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.1s"/>
-            <circle cx="180" cy="260" r="4" fill="#4a90d9" class="pulse-dot" style="animation-delay: 0.3s"/>
-            <circle cx="285" cy="230" r="4" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.5s"/>
-            <circle cx="395" cy="205" r="4" fill="#4a90d9" class="pulse-dot" style="animation-delay: 0.7s"/>
-            <circle cx="440" cy="190" r="5" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.9s"/>
-
-            <!-- Network nodes -->
-            <g class="network">
-              <line x1="80" y1="130" x2="150" y2="100" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="150" y1="100" x2="250" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="80" y1="130" x2="200" y2="150" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="200" y1="150" x2="250" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="250" y1="80" x2="350" y2="110" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="200" y1="150" x2="350" y2="110" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="350" y1="110" x2="420" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
-              <line x1="80" y1="130" x2="420" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.15" class="net-line"/>
-
-              <circle cx="80" cy="130" r="8" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0s"/>
-              <circle cx="150" cy="100" r="6" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.15s"/>
-              <circle cx="250" cy="80" r="9" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0.3s"/>
-              <circle cx="200" cy="150" r="5" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.45s"/>
-              <circle cx="350" cy="110" r="7" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0.6s"/>
-              <circle cx="420" cy="80" r="6" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.75s"/>
+            <!-- Card 2: Analytics -->
+            <g class="feature-card card-2" filter="url(#cardShadow)" style="cursor:pointer">
+              <rect x="280" y="70" width="160" height="80" rx="14" fill="url(#cardBg)" stroke="#e8edf5" stroke-width="1"/>
+              <!-- Chart icon -->
+              <rect x="300" y="100" width="6" height="18" rx="2" fill="#1f3d6e"/>
+              <rect x="312" y="92" width="6" height="26" rx="2" fill="#4a90d9"/>
+              <rect x="324" y="96" width="6" height="22" rx="2" fill="#1f3d6e"/>
+              <rect x="336" y="86" width="6" height="32" rx="2" fill="#4a90d9"/>
+              <text x="356" y="103" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Reports &</text>
+              <text x="356" y="118" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Analytics</text>
+              <text x="356" y="137" font-size="9" fill="#8a94a6" font-family="system-ui">+23% growth</text>
             </g>
 
-            <!-- Office building -->
-            <g class="building" transform="translate(445,200)">
-              <rect x="0" y="20" width="50" height="140" rx="3" fill="#1a3a5c" opacity="0.15"/>
-              <rect x="0" y="20" width="50" height="140" rx="3" fill="none" stroke="#1a3a5c" stroke-width="1" opacity="0.2"/>
-              <rect x="6" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit"/>
-              <rect x="22" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.2s"/>
-              <rect x="38" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.5s"/>
-              <rect x="6" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.8s"/>
-              <rect x="22" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.1s"/>
-              <rect x="38" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:1.4s"/>
-              <rect x="6" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.4s"/>
-              <rect x="22" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.7s"/>
-              <rect x="38" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.0s"/>
-              <rect x="6" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.3s"/>
-              <rect x="22" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.6s"/>
-              <rect x="38" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.9s"/>
-              <rect x="6" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.2s"/>
-              <rect x="22" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.1s"/>
-              <rect x="38" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.5s"/>
-              <!-- Door -->
-              <rect x="18" y="130" width="14" height="30" rx="2" fill="#0f2740" opacity="0.3"/>
+            <!-- Card 3: Security / Documents -->
+            <g class="feature-card card-3" filter="url(#cardShadow)" style="cursor:pointer">
+              <rect x="190" y="210" width="180" height="80" rx="14" fill="url(#cardBg)" stroke="#e8edf5" stroke-width="1"/>
+              <!-- Shield icon -->
+              <path d="M220,238 L220,252 C220,252 230,258 240,252 L240,238 Z" fill="#1f3d6e" opacity="0.15"/>
+              <path d="M220,238 L220,250 C220,250 230,256 240,250 L240,238 Z" fill="#4a90d9" opacity="0.4"/>
+              <path d="M224,244 L228,248 L236,240" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+              <text x="256" y="243" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Documents &</text>
+              <text x="256" y="258" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">Compliance</text>
+              <text x="256" y="276" font-size="9" fill="#8a94a6" font-family="system-ui">100% secure</text>
             </g>
 
-            <!-- Floating label -->
-            <g class="stats-label" transform="translate(60,80)">
-              <rect x="0" y="0" width="100" height="28" rx="14" fill="#fff" stroke="#1f3d6e" stroke-width="1" opacity="0.9"/>
-              <text x="50" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">120 Employees</text>
-            </g>
-            <g class="stats-label2" transform="translate(310,145)">
-              <rect x="0" y="0" width="88" height="24" rx="12" fill="#fff" stroke="#4a90d9" stroke-width="1" opacity="0.9"/>
-              <text x="44" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#4a90d9" font-family="system-ui">95% Present</text>
+            <!-- Decorative dots row -->
+            <g class="deco-dots" opacity="0.15">
+              <circle cx="200" cy="370" r="3" fill="#1f3d6e"/>
+              <circle cx="220" cy="370" r="3" fill="#4a90d9"/>
+              <circle cx="240" cy="370" r="3" fill="#1f3d6e"/>
+              <circle cx="260" cy="370" r="3" fill="#4a90d9"/>
+              <circle cx="280" cy="370" r="3" fill="#1f3d6e"/>
+              <circle cx="300" cy="370" r="3" fill="#4a90d9"/>
+              <circle cx="320" cy="370" r="3" fill="#1f3d6e"/>
             </g>
 
-            <!-- X-axis labels -->
-            <text x="85" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Jan</text>
-            <text x="165" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Mar</text>
-            <text x="245" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">May</text>
-            <text x="325" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Jul</text>
-            <text x="405" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Sep</text>
+            <!-- Bottom accent bar -->
+            <rect x="200" y="385" width="140" height="3" rx="1.5" fill="#1f3d6e" opacity="0.1"/>
           </svg>
 
           <!-- Bottom text -->
@@ -156,6 +131,8 @@ import { AuthService } from '../../core/services/auth.service';
             <span class="ill-title">Employee Management System</span>
             <span class="ill-sub">Streamline your workforce — manage employees, documents, and reports in one place</span>
           </div>
+        </div>
+      </div>
         </div>
       </div>
 
@@ -256,14 +233,68 @@ import { AuthService } from '../../core/services/auth.service';
     /* Left illustration */
     .left-illustration {
       position: absolute;
-      left: 60px;
+      left: 6vw;
       top: 50%;
       transform: translateY(-50%);
-      width: 520px;
-      max-width: 45vw;
+      width: 540px;
+      max-width: 42vw;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
+    }
+    .ill-content {
+      transition: transform 0.15s ease-out;
+      will-change: transform;
+      pointer-events: auto;
+    }
+    .ill-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Floating gradient orbs */
+    .orb-float {
+      animation: orbFloat 8s ease-in-out infinite alternate;
+    }
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(15px, -15px) scale(1.05); }
+      100% { transform: translate(-10px, 10px) scale(0.95); }
+    }
+
+    /* Feature cards */
+    .feature-card {
+      transition: all 0.3s ease;
+      animation: cardFloat 4s ease-in-out infinite;
+    }
+    .card-1 { animation-delay: 0s; }
+    .card-2 { animation-delay: 1s; }
+    .card-3 { animation-delay: 2s; }
+
+    @keyframes cardFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .feature-card:hover {
+      filter: drop-shadow(0 8px 24px rgba(31,61,110,0.18)) !important;
+    }
+    .feature-card:hover rect:first-child {
+      stroke: #4a90d9 !important;
+      stroke-width: 1.5 !important;
+    }
+
+    /* Moving dots along connection paths */
+    .dot-move {
+      animation: dotTravel 4s linear infinite;
+      offset-distance: 0%;
+    }
+    @keyframes dotTravel {
+      0% { offset-distance: 0%; opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { offset-distance: 100%; opacity: 0; }
     }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(30px); }
@@ -471,8 +502,11 @@ import { AuthService } from '../../core/services/auth.service';
     }
     .bottom-credit a:hover { text-decoration: underline; }
 
+    @media (max-width: 1200px) {
+      .left-illustration { left: 3vw; width: 420px; max-width: 38vw; }
+    }
     @media (max-width: 1024px) {
-      .left-illustration { left: 30px; width: 400px; max-width: 40vw; }
+      .left-illustration { width: 360px; max-width: 35vw; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
