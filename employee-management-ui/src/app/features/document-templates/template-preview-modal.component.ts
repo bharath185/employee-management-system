@@ -44,7 +44,7 @@ import { Employee } from '../../core/models/employee.model';
             </button>
           </div>
           <div class="preview-control-row">
-            <button nz-button nzType="primary" (click)="downloadPdf()" [disabled]="!selectedEmployeeId">
+            <button nz-button nzType="primary" (click)="downloadPdf()" [disabled]="!selectedEmployeeId || !templateId">
               <i nz-icon nzType="download"></i> Download PDF
             </button>
           </div>
@@ -180,8 +180,12 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
   }
 
   downloadPdf(): void {
-    if (!this.selectedEmployeeId || !this.templateId) {
-      this.message.warning('Select an employee and save the template first');
+    if (!this.selectedEmployeeId) {
+      this.message.warning('Select an employee first');
+      return;
+    }
+    if (!this.templateId) {
+      this.message.warning('Save the template first to enable PDF download');
       return;
     }
 
