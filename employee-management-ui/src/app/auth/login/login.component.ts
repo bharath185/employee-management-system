@@ -33,7 +33,7 @@ import { AuthService } from '../../core/services/auth.service';
 
       <div class="left-illustration" #illustrationRef>
         <div class="ill-content" [style.transform]="'translate(' + mx + 'px, ' + my + 'px)'">
-          <svg class="ill-svg" viewBox="0 0 560 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="ill-svg" viewBox="0 0 560 400" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <radialGradient id="orb1" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stop-color="#4a90d9" stop-opacity="0.12"/>
@@ -159,17 +159,25 @@ import { AuthService } from '../../core/services/auth.service';
               <text x="210" y="311" font-size="9" fill="#8a94a6" font-family="system-ui"><tspan fill="#059669" font-weight="600">Present</tspan> 184 · <tspan fill="#dc3545" font-weight="600">Absent</tspan> 8</text>
             </g>
 
-            <!-- Card 4: Notifications / Alerts (small) -->
+            <!-- Card 4: AI Assistant (small) -->
             <g class="feature-card card-4" filter="url(#cardShadow)" style="cursor:pointer">
-              <rect x="50" y="250" width="110" height="55" rx="12" fill="url(#cardBg)" stroke="#e8edf5" stroke-width="1"/>
-              <!-- Bell icon -->
-              <path d="M82,267 C82,267 80,275 78,277 L96,277 C94,275 92,267 92,267 C92,260 84,258 84,258 C84,258 82,260 82,267 Z" fill="none" stroke="#4a90d9" stroke-width="1.5" stroke-linecap="round"/>
-              <path d="M87,258 C87,256 89,255 89,257" fill="none" stroke="#4a90d9" stroke-width="1.5" stroke-linecap="round"/>
-              <!-- Badge -->
-              <circle cx="94" cy="264" r="5" fill="#dc3545"/>
-              <text x="94" y="266" text-anchor="middle" font-size="6" font-weight="700" fill="#fff" font-family="system-ui">3</text>
-              <text x="108" y="273" font-size="10" font-weight="700" fill="#1f3d6e" font-family="system-ui">Alerts</text>
-              <text x="108" y="287" font-size="8" fill="#8a94a6" font-family="system-ui">3 pending</text>
+              <rect x="50" y="250" width="120" height="55" rx="12" fill="url(#cardBg)" stroke="#e8edf5" stroke-width="1"/>
+              <!-- Robot head icon -->
+              <rect x="68" y="260" width="16" height="14" rx="3" fill="#4a90d9" opacity="0.15"/>
+              <rect x="68" y="260" width="16" height="14" rx="3" fill="none" stroke="#4a90d9" stroke-width="1.5"/>
+              <!-- Antenna -->
+              <line x1="76" y1="257" x2="76" y2="253" stroke="#4a90d9" stroke-width="1.5" stroke-linecap="round"/>
+              <circle cx="76" cy="252" r="2" fill="#4a90d9" class="pulse-slow"/>
+              <!-- Eyes -->
+              <circle cx="72" cy="265" r="1.5" fill="#4a90d9"/>
+              <circle cx="80" cy="265" r="1.5" fill="#4a90d9"/>
+              <!-- Smile -->
+              <path d="M72,271 Q76,274 80,271" fill="none" stroke="#4a90d9" stroke-width="1" stroke-linecap="round"/>
+              <!-- Sparkle dots -->
+              <circle cx="64" cy="258" r="1.5" fill="#4a90d9" opacity="0.4" class="pulse-slow" style="animation-delay:0.5s"/>
+              <circle cx="88" cy="256" r="1" fill="#4a90d9" opacity="0.3" class="pulse-slow" style="animation-delay:1s"/>
+              <text x="96" y="275" font-size="10" font-weight="700" fill="#1f3d6e" font-family="system-ui">AI Assistant</text>
+              <text x="96" y="289" font-size="8" fill="#8a94a6" font-family="system-ui">Online ·帮你</text>
             </g>
 
             <!-- Card 5: Documents (small) -->
@@ -187,30 +195,6 @@ import { AuthService } from '../../core/services/auth.service';
               <text x="446" y="281" font-size="8" fill="#8a94a6" font-family="system-ui">73% done</text>
             </g>
 
-            <!-- Decorative small circles (activity dots) -->
-            <g class="deco-dots" opacity="0.12">
-              <circle cx="120" cy="380" r="3" fill="#1f3d6e" class="pulse-slow"/>
-              <circle cx="140" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:0.3s"/>
-              <circle cx="160" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:0.6s"/>
-              <circle cx="180" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:0.9s"/>
-              <circle cx="200" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:1.2s"/>
-              <circle cx="220" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:1.5s"/>
-              <circle cx="240" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:1.8s"/>
-              <circle cx="260" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:2.1s"/>
-              <circle cx="280" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:2.4s"/>
-              <circle cx="300" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:2.7s"/>
-              <circle cx="320" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:3s"/>
-              <circle cx="340" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:3.3s"/>
-              <circle cx="360" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:3.6s"/>
-              <circle cx="380" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:3.9s"/>
-              <circle cx="400" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:4.2s"/>
-              <circle cx="420" cy="380" r="3" fill="#4a90d9" class="pulse-slow" style="animation-delay:4.5s"/>
-              <circle cx="440" cy="380" r="3" fill="#1f3d6e" class="pulse-slow" style="animation-delay:4.8s"/>
-            </g>
-
-            <!-- Bottom accent wave -->
-            <path d="M100,410 Q180,395 280,410 Q380,425 460,410" fill="none" stroke="#1f3d6e" stroke-width="2" opacity="0.06"/>
-            <path d="M100,415 Q180,400 280,415 Q380,430 460,415" fill="none" stroke="#4a90d9" stroke-width="1.5" opacity="0.04"/>
           </svg>
         </div>
       </div>
@@ -491,10 +475,10 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1200px) {
-      .left-illustration { left: 22vw; width: 520px; max-width: 40vw; }
+      .left-illustration { left: 22vw; width: 480px; max-width: 40vw; }
     }
     @media (max-width: 1024px) {
-      .left-illustration { left: 20vw; width: 440px; max-width: 36vw; }
+      .left-illustration { left: 20vw; width: 400px; max-width: 36vw; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
