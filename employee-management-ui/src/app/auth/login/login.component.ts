@@ -298,7 +298,7 @@ import { AuthService } from '../../core/services/auth.service';
       position: absolute;
       left: 25vw;
       top: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, calc(-50% - 15px));
       width: 680px;
       max-width: 46vw;
       z-index: 2;
