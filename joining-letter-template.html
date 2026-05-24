@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Employee Joining Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            color: #003366;
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .logo-underline {
+            display: inline-block;
+            border-bottom: 3px solid #003366;
+            padding-bottom: 2px;
+        }
+
+        .tagline {
+            color: #003366;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .company-name {
+            font-weight: bold;
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+        }
+
+        .addresses {
+            font-size: 11px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .form-title {
+            text-align: center;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        td {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        .label-cell {
+            background: #fff;
+            font-weight: normal;
+            width: 35%;
+        }
+
+        .input-cell {
+            background: #fff;
+            min-height: 30px;
+        }
+
+        .small-cell {
+            width: 15%;
+        }
+
+        .required::after {
+            content: " *";
+            color: #000;
+        }
+
+        .checkbox-group {
+            display: inline-flex;
+            gap: 30px;
+        }
+
+        .checkbox-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox {
+            width: 15px;
+            height: 15px;
+            border: 1px solid #000;
+            display: inline-block;
+        }
+
+        .declaration {
+            margin: 30px 0 20px 0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin: 30px 0;
+        }
+
+        .signature-box {
+            border: 1px solid #000;
+            width: 200px;
+            height: 100px;
+        }
+
+        .signature-label {
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            margin-top: 30px;
+            line-height: 1.6;
+        }
+
+        .footer-company {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 2px;
+            font-size: 13px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            background: #f0f0f0;
+        }
+
+        .inline-fields {
+            display: flex;
+            gap: 10px;
+        }
+
+        .inline-fields > div {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="logo-underline">{{company_name}}</span>
+            </div>
+            <div class="tagline">Transforming Business Support Services</div>
+            <div class="company-name">{{company_name}}</div>
+            <div class="addresses">
+                <strong>Regd Office :</strong> {{company_address}}<br>
+                <strong>BPO :</strong> Ecco Green, I floor, Grand World, Off Karkambadi Road, Tirupati . Andhra Pradesh
+            </div>
+        </div>
+
+        <div class="form-title">New Employee Joining Report</div>
+
+        <table>
+            <tr>
+                <td class="label-cell required">Employee Code</td>
+                <td class="input-cell">{{employee_code}}</td>
+                <td class="label-cell">Date of Joining :</td>
+                <td class="input-cell">{{doj}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell required">Employee name with Surname</td>
+                <td class="input-cell" colspan="3">{{employee_name}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Date of birth</td>
+                <td class="input-cell">{{dob}}</td>
+                <td class="label-cell required">Gender</td>
+                <td class="input-cell">{{gender}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Blood Group</td>
+                <td class="input-cell" colspan="3">{{blood_group}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Father's name</td>
+                <td class="input-cell" colspan="3">{{father_husband_name}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Present Address (with City & Pin Code)</td>
+                <td class="input-cell" colspan="3">{{address}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Permanent Address (with City & Pin Code)</td>
+                <td class="input-cell" colspan="3">{{permanent_address}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Contact No</td>
+                <td class="input-cell" colspan="3">
+                    Landline : <span style="display: inline-block; width: 40%; border-bottom: 1px solid #999; padding: 0 4px;"></span>
+                    &nbsp;&nbsp;&nbsp;Mobile : <span style="display: inline-block; width: 40%; border-bottom: 1px solid #999; padding: 0 4px;">{{mobile}}</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="label-cell">Email ID</td>
+                <td class="input-cell" colspan="3">{{email}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">PAN</td>
+                <td class="input-cell" colspan="3">{{pan_number_employee}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">AADHAR No.</td>
+                <td class="input-cell" colspan="3">{{aadhar_number}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Father Name & Phone number</td>
+                <td class="input-cell" colspan="3">{{father_name}} - {{father_phone}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Mother Name & Phone number</td>
+                <td class="input-cell" colspan="3">{{mother_name}} - {{mother_phone}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Spouse Name & Phone number</td>
+                <td class="input-cell" colspan="3">{{spouse_name}} - {{spouse_phone}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Marital status</td>
+                <td class="input-cell" colspan="3">{{marital_status}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Educational Qualification, with year of passing and % of Aggregate Marks</td>
+                <td class="input-cell" colspan="3">
+                    Qualification: {{highest_qualification}} &nbsp;&nbsp; Year of Passing: {{year_of_passing}} &nbsp;&nbsp; % of Marks: {{percentage_marks}}
+                </td>
+            </tr>
+            <tr>
+                <td class="label-cell">Past Experience – Name of the Organization(s)</td>
+                <td class="input-cell" colspan="3">{{organization_name}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Period of Employment</td>
+                <td class="input-cell" colspan="3">{{period_of_employment}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Designation</td>
+                <td class="input-cell">{{designation}}</td>
+                <td class="label-cell">Reporting to</td>
+                <td class="input-cell">S Babu Reddy</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Employee Bank Account No.</td>
+                <td class="input-cell" colspan="3">{{account_number}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Bank Name & Branch</td>
+                <td class="input-cell" colspan="3">{{bank_name}}, {{branch}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Bank A/c IFSC Code</td>
+                <td class="input-cell" colspan="3">{{ifsc_code}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">PF UAN Number</td>
+                <td class="input-cell" colspan="3">{{uan_no}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell">ESIC Number</td>
+                <td class="input-cell" colspan="3">{{esic_no}}</td>
+            </tr>
+            <tr>
+                <td class="label-cell" style="vertical-align: top;">
+                    Reference 1 Name :<br>
+                    Relationship<br>
+                    Address :<br><br><br>
+                    Mobile No. :
+                </td>
+                <td class="input-cell" style="vertical-align: top;">
+                    {{ref1_name}}<br>
+                    {{ref1_relationship}}<br>
+                    {{ref1_address}}<br><br><br>
+                    {{ref1_mobile}}
+                </td>
+                <td class="label-cell" style="vertical-align: top;">
+                    Reference 2 Name :<br>
+                    Relationship<br>
+                    Address :<br><br><br>
+                    Mobile No. :
+                </td>
+                <td class="input-cell" style="vertical-align: top;">
+                    {{ref2_name}}<br>
+                    {{ref2_relationship}}<br>
+                    {{ref2_address}}<br><br><br>
+                    {{ref2_mobile}}
+                </td>
+            </tr>
+        </table>
+
+        <div class="declaration">
+            I hereby declare that the details furnished above are correct. Wherever required, copies of documents attached.
+        </div>
+
+        <div class="signature-section">
+            <div>
+                <div class="signature-label">(Signature of New Joinee)</div>
+                <div class="signature-label">Date : {{current_date}}</div>
+            </div>
+            <div class="signature-box"></div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-company">{{company_name}}</div>
+            <div><strong>Regd Office :</strong> {{company_address}}</div>
+            <div><strong>BPO :</strong> Ecco Green, I floor, Grand World, Off Karkambadi Road, Tirupati . Andhra Pradesh</div>
+        </div>
+    </div>
+</body>
+</html>

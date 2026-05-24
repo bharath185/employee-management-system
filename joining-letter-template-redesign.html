@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Employee Joining Report — {{company_name}}</title>
+    <style>
+        /* ============================================================
+           CSS CUSTOM PROPERTIES (Theming)
+           ============================================================ */
+        :root {
+            --color-primary:       #1a3a5c;
+            --color-primary-dark:  #0f2740;
+            --color-primary-light: #e8f0f8;
+            --color-accent:        #2b7fc1;
+            --color-accent-light:  #d4e6f5;
+            --color-text:          #1e293b;
+            --color-text-muted:    #475569;
+            --color-border:        #cbd5e1;
+            --color-bg:            #f1f5f9;
+            --color-white:         #ffffff;
+            --color-row-alt:       #f8fafc;
+            --color-header-bg:     #1a3a5c;
+            --color-header-text:   #ffffff;
+            --color-label-bg:      #f1f5f9;
+            --color-label-border:  #e2e8f0;
+            --color-value-border:  #e2e8f0;
+            --color-success:       #059669;
+
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
+            --font-size-xs:   0.6875rem;   /* 11px */
+            --font-size-sm:   0.75rem;     /* 12px */
+            --font-size-base: 0.8125rem;   /* 13px */
+            --font-size-md:   0.875rem;    /* 14px */
+            --font-size-lg:   1rem;        /* 16px */
+            --font-size-xl:   1.125rem;    /* 18px */
+            --font-size-2xl:  1.5rem;      /* 24px */
+
+            --spacing-xs:   0.25rem;
+            --spacing-sm:   0.5rem;
+            --spacing-md:   0.75rem;
+            --spacing-lg:   1rem;
+            --spacing-xl:   1.5rem;
+            --spacing-2xl:  2rem;
+            --spacing-3xl:  2.5rem;
+
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
+
+            --print-margin: 0.4in;
+        }
+
+        /* ============================================================
+           RESET & BASE
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            font-size: var(--font-size-base);
+            color: var(--color-text);
+            background: var(--color-bg);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ============================================================
+           PAGE CONTAINER — full width for PDF
+           ============================================================ */
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            background: var(--color-white);
+            padding: var(--spacing-2xl) var(--spacing-xl);
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            margin-bottom: var(--spacing-xl);
+            position: relative;
+        }
+
+        /* Decorative top accent bar */
+        .header::before {
+            content: '';
+            display: block;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-accent), var(--color-primary), var(--color-accent));
+            border-radius: 2px;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--spacing-lg);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+            position: relative;
+        }
+
+        /* Decorative diamond separator on the border */
+        .header-inner::after {
+            content: '◆';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: var(--color-accent);
+            background: var(--color-white);
+            padding: 0 12px;
+        }
+
+        .header-left {
+            flex: 1;
+        }
+
+        .header-logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--color-primary);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .header-logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            color: var(--color-white);
+            border-radius: var(--radius-md);
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .header-logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .header-logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-logo-text .main {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            color: var(--color-primary);
+        }
+
+        .header-logo-text .sub {
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            color: var(--color-accent);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1px;
+        }
+
+        .header-right {
+            text-align: right;
+            flex-shrink: 0;
+            max-width: 320px;
+        }
+
+        .header-company {
+            font-weight: 700;
+            font-size: var(--font-size-md);
+            color: var(--color-primary-dark);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .header-addresses {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+            line-height: 1.7;
+        }
+
+        .header-addresses strong {
+            color: var(--color-text);
+        }
+
+        .header-addresses .addr-block {
+            margin-top: var(--spacing-xs);
+        }
+
+        /* ============================================================
+           FORM TITLE
+           ============================================================ */
+        .form-title {
+            text-align: center;
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: var(--spacing-xl);
+            letter-spacing: 0.5px;
+            position: relative;
+        }
+
+        .form-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 3px;
+            background: var(--color-accent);
+            margin: var(--spacing-sm) auto 0;
+            border-radius: 2px;
+        }
+
+        /* ============================================================
+           DATA TABLE — clean, readable form grid
+           ============================================================ */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-size-base);
+            margin-bottom: var(--spacing-xl);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .data-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--color-border);
+            vertical-align: middle;
+        }
+
+        /* Label cells — left column */
+        .data-table .label {
+            background: var(--color-label-bg);
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            width: 28%;
+            white-space: nowrap;
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.2px;
+        }
+
+        /* Value / input cells */
+        .data-table .value {
+            background: var(--color-white);
+            color: var(--color-text);
+            font-weight: 500;
+            font-size: var(--font-size-sm);
+        }
+
+        /* Alternating row tint (subtle) */
+        .data-table tbody tr:nth-child(even) td {
+            background-color: var(--color-row-alt);
+        }
+
+        /* But keep label background on alt rows */
+        .data-table tbody tr:nth-child(even) td.label {
+            background: var(--color-label-bg);
+        }
+
+        /* Section dividers — rows that introduce a new section */
+        .data-table .section-head {
+            background: var(--color-primary) !important;
+            color: var(--color-header-text);
+            font-weight: 700;
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-color: var(--color-primary-dark);
+        }
+
+        .data-table .section-head td {
+            background: var(--color-primary) !important;
+            color: var(--color-header-text);
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px var(--spacing-md);
+        }
+
+        /* Inline value groups (e.g., Landline + Mobile on same row) */
+        .inline-group {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .inline-group .field {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 2px;
+        }
+
+        .inline-group .field-label {
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            white-space: nowrap;
+            font-size: var(--font-size-xs);
+        }
+
+        .inline-group .field-value {
+            border-bottom: 1px solid var(--color-border);
+            min-width: 100px;
+            padding: 0 2px;
+            display: inline-block;
+            font-weight: 500;
+        }
+
+        /* Reference columns — compact inline layout inside cells */
+        .ref-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .ref-block .ref-row {
+            display: flex;
+            gap: 4px;
+        }
+
+        .ref-block .ref-label {
+            font-weight: 600;
+            color: var(--color-primary-dark);
+            white-space: nowrap;
+            min-width: 50px;
+            font-size: 10px;
+        }
+
+        .ref-block .ref-value {
+            font-weight: 500;
+            color: var(--color-text);
+            font-size: 11px;
+        }
+
+        /* ============================================================
+           DECLARATION
+           ============================================================ */
+        .declaration {
+            margin: var(--spacing-xl) 0 var(--spacing-lg);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--color-primary-light);
+            border-left: 3px solid var(--color-accent);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            font-size: var(--font-size-sm);
+            line-height: 1.6;
+            color: var(--color-text);
+            font-weight: 500;
+        }
+
+        .declaration strong {
+            color: var(--color-primary-dark);
+        }
+
+        /* ============================================================
+           SIGNATURE SECTION
+           ============================================================ */
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin: var(--spacing-xl) 0 var(--spacing-lg);
+            gap: var(--spacing-xl);
+        }
+
+        .signature-info {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .signature-info .sig-line {
+            font-size: var(--font-size-base);
+            color: var(--color-text);
+        }
+
+        .signature-info .sig-label {
+            font-weight: 600;
+            color: var(--color-primary-dark);
+        }
+
+        .signature-info .sig-date {
+            font-size: var(--font-size-base);
+            color: var(--color-text-muted);
+        }
+
+        .signature-box-wrapper {
+            text-align: center;
+        }
+
+        .signature-box {
+            width: 180px;
+            height: 70px;
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-md);
+            background: var(--color-white);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 4px;
+        }
+
+        .signature-box-label {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .footer {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-sm);
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+            line-height: 1.6;
+        }
+
+        .footer-company {
+            font-weight: 700;
+            font-size: var(--font-size-sm);
+            color: var(--color-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .footer strong {
+            color: var(--color-text);
+        }
+
+        /* ============================================================
+           PRINT STYLES
+           ============================================================ */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: var(--print-margin);
+            }
+
+            * {
+                background: transparent !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+            }
+
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+                font-size: 9pt;
+                line-height: 1.35;
+            }
+
+            .page {
+                width: 100%;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+                background: transparent !important;
+            }
+
+            .header {
+                margin-bottom: 10pt;
+            }
+
+            .header::before {
+                height: 2pt;
+                margin-bottom: 8pt;
+                background: linear-gradient(90deg, #2b7fc1, #1a3a5c, #2b7fc1);
+            }
+
+            .header-inner {
+                border-bottom-color: #999;
+                padding-bottom: 6pt;
+                gap: 8pt;
+            }
+
+            .header-inner::after {
+                background: #fff;
+                color: #2b7fc1;
+                font-size: 8pt;
+            }
+
+            .header-logo-text .main {
+                color: #1a3a5c !important;
+                font-size: 18pt;
+            }
+
+            .header-logo-text .sub {
+                color: #2b7fc1 !important;
+                font-size: 7pt;
+            }
+
+            .header-company {
+                color: #0f2740 !important;
+                font-size: 9pt;
+            }
+
+            .header-addresses {
+                color: #444 !important;
+                font-size: 7.5pt;
+            }
+
+            .form-title {
+                color: #1a3a5c !important;
+                font-size: 12pt;
+                margin-bottom: 10pt;
+            }
+
+            .form-title::after {
+                background: #2b7fc1;
+                height: 2pt;
+                width: 50pt;
+            }
+
+            .data-table {
+                box-shadow: none;
+                border-radius: 0;
+                font-size: 8.5pt;
+                margin-bottom: 8pt;
+            }
+
+            .data-table td {
+                border-color: #666;
+                padding: 2pt 5pt;
+            }
+
+            .data-table .label {
+                background: #f0f0f0 !important;
+                color: #1a3a5c !important;
+                font-size: 8pt;
+            }
+
+            .data-table .value {
+                background: transparent !important;
+                color: #000 !important;
+                font-size: 8.5pt;
+            }
+
+            .data-table tbody tr:nth-child(even) td {
+                background: transparent !important;
+            }
+
+            .data-table tbody tr:nth-child(even) td.label {
+                background: #f0f0f0 !important;
+            }
+
+            .data-table .section-head td {
+                background: #1a3a5c !important;
+                color: #fff !important;
+                font-size: 8pt;
+                padding: 2pt 5pt;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .declaration {
+                background: #f8f8f8 !important;
+                border-left-color: #2b7fc1;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 6pt 10pt;
+                margin: 10pt 0 8pt;
+                font-size: 8.5pt;
+            }
+
+            .signature-section {
+                margin: 14pt 0 8pt;
+            }
+
+            .signature-box {
+                border: 1.5pt dashed #999;
+                height: 60pt;
+                width: 150pt;
+            }
+
+            .signature-box-label {
+                color: #666 !important;
+            }
+
+            .footer {
+                border-top-color: #999;
+                margin-top: 12pt;
+                padding-top: 6pt;
+                color: #666 !important;
+                font-size: 7.5pt;
+            }
+
+            .footer-company {
+                color: #1a3a5c !important;
+                font-size: 8.5pt;
+            }
+
+            .footer strong {
+                color: #333 !important;
+            }
+
+            .inline-group .field-value {
+                border-bottom-color: #999;
+                min-width: 60pt;
+            }
+
+            .ref-block .ref-label {
+                font-size: 7.5pt;
+            }
+
+            .ref-block .ref-value {
+                font-size: 8pt;
+            }
+
+            /* Prevent page breaks inside table rows */
+            .data-table tr {
+                page-break-inside: avoid;
+            }
+
+            /* Force a page break before the footer if needed */
+            .footer {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* ============================================================
+           RESPONSIVE / SCREEN TWEAKS
+           ============================================================ */
+        @media screen and (max-width: 768px) {
+            .page {
+                padding: var(--spacing-lg);
+            }
+
+            .data-table .label {
+                width: 35%;
+            }
+
+            .inline-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-sm);
+            }
+
+            .signature-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--spacing-xl);
+            }
+
+            .header-inner {
+                flex-direction: column;
+                gap: var(--spacing-md);
+            }
+
+            .header-right {
+                text-align: left;
+                max-width: 100%;
+            }
+
+            .header-logo-text .main {
+                font-size: 22px;
+            }
+
+            .header-logo-icon {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .page {
+                padding: var(--spacing-md);
+            }
+
+            .data-table td {
+                padding: var(--spacing-sm) var(--spacing-md);
+                font-size: var(--font-size-sm);
+            }
+
+            .form-title {
+                font-size: var(--font-size-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================
+     PAGE WRAPPER
+     ============================================================ -->
+<div class="page">
+
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="header-left">
+                <div class="header-logo">
+                    <span class="header-logo-icon">
+                        <img src="{{company_logo}}" alt="{{company_name}}" style="display:block;width:100%;height:100%;object-fit:contain;">
+                    </span>
+                    <span class="header-logo-text">
+                        <span class="main">{{company_name}}</span>
+                        <span class="sub">Transforming Business Support Services</span>
+                    </span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-company">{{company_name}}</div>
+                <div class="header-addresses">
+                    <div><strong>Regd Office :</strong> {{company_address}}</div>
+                    <div class="addr-block"><strong>BPO :</strong> Ecco Green, I floor, Grand World, Off Karkambadi Road, Tirupati . Andhra Pradesh</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================================
+         FORM TITLE
+         ============================================================ -->
+    <h1 class="form-title">New Employee Joining Report</h1>
+
+    <!-- ============================================================
+         EMPLOYEE DETAILS
+         ============================================================ -->
+    <table class="data-table">
+        <thead style="display:none;"><tr><td colspan="4"></td></tr></thead>
+        <tbody>
+            <!-- Employee Code & DOJ -->
+            <tr>
+                <td class="label">Employee Code</td>
+                <td class="value">{{employee_code}}</td>
+                <td class="label">Date of Joining :</td>
+                <td class="value">{{doj}}</td>
+            </tr>
+
+            <!-- Employee Name -->
+            <tr>
+                <td class="label">Employee Name with Surname</td>
+                <td class="value" colspan="3">{{employee_name}}</td>
+            </tr>
+
+            <!-- DOB & Gender -->
+            <tr>
+                <td class="label">Date of Birth</td>
+                <td class="value">{{dob}}</td>
+                <td class="label">Gender</td>
+                <td class="value">{{gender}}</td>
+            </tr>
+
+            <!-- Blood Group -->
+            <tr>
+                <td class="label">Blood Group</td>
+                <td class="value" colspan="3">{{blood_group}}</td>
+            </tr>
+
+            <!-- Father's Name -->
+            <tr>
+                <td class="label">Father's Name</td>
+                <td class="value" colspan="3">{{father_husband_name}}</td>
+            </tr>
+
+            <!-- SECTION: Address & Contact -->
+            <tr class="section-head">
+                <td colspan="4">Address &amp; Contact Details</td>
+            </tr>
+
+            <!-- Present Address -->
+            <tr>
+                <td class="label">Present Address (with City &amp; Pin Code)</td>
+                <td class="value" colspan="3">{{address}}</td>
+            </tr>
+
+            <!-- Permanent Address -->
+            <tr>
+                <td class="label">Permanent Address (with City &amp; Pin Code)</td>
+                <td class="value" colspan="3">{{permanent_address}}</td>
+            </tr>
+
+            <!-- Contact No -->
+            <tr>
+                <td class="label">Contact No</td>
+                <td class="value" colspan="3">
+                    <div class="inline-group">
+                        <span class="field">
+                            <span class="field-label">Landline :</span>
+                            <span class="field-value">&nbsp;</span>
+                        </span>
+                        <span class="field">
+                            <span class="field-label">Mobile :</span>
+                            <span class="field-value">{{mobile}}</span>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+
+            <!-- Email -->
+            <tr>
+                <td class="label">Email ID</td>
+                <td class="value" colspan="3">{{email}}</td>
+            </tr>
+
+            <!-- SECTION: Identity Documents -->
+            <tr class="section-head">
+                <td colspan="4">Identity Documents</td>
+            </tr>
+
+            <!-- PAN -->
+            <tr>
+                <td class="label">PAN</td>
+                <td class="value" colspan="3">{{pan_number_employee}}</td>
+            </tr>
+
+            <!-- AADHAR -->
+            <tr>
+                <td class="label">AADHAR No.</td>
+                <td class="value" colspan="3">{{aadhar_number}}</td>
+            </tr>
+
+            <!-- SECTION: Family Details -->
+            <tr class="section-head">
+                <td colspan="4">Family Details</td>
+            </tr>
+
+            <!-- Father -->
+            <tr>
+                <td class="label">Father Name &amp; Phone Number</td>
+                <td class="value" colspan="3">{{father_name}} - {{father_phone}}</td>
+            </tr>
+
+            <!-- Mother -->
+            <tr>
+                <td class="label">Mother Name &amp; Phone Number</td>
+                <td class="value" colspan="3">{{mother_name}} - {{mother_phone}}</td>
+            </tr>
+
+            <!-- Spouse -->
+            <tr>
+                <td class="label">Spouse Name &amp; Phone Number</td>
+                <td class="value" colspan="3">{{spouse_name}} - {{spouse_phone}}</td>
+            </tr>
+
+            <!-- Marital Status -->
+            <tr>
+                <td class="label">Marital Status</td>
+                <td class="value" colspan="3">{{marital_status}}</td>
+            </tr>
+
+            <!-- SECTION: Education & Experience -->
+            <tr class="section-head">
+                <td colspan="4">Education &amp; Experience</td>
+            </tr>
+
+            <!-- Qualification -->
+            <tr>
+                <td class="label">Educational Qualification, with year of passing and % of Aggregate Marks</td>
+                <td class="value" colspan="3">
+                    <span class="inline-group">
+                        <span class="field">
+                            <span class="field-label">Qualification :</span>
+                            <span>{{highest_qualification}}</span>
+                        </span>
+                        <span class="field">
+                            <span class="field-label">Year of Passing :</span>
+                            <span>{{year_of_passing}}</span>
+                        </span>
+                        <span class="field">
+                            <span class="field-label">% of Marks :</span>
+                            <span>{{percentage_marks}}</span>
+                        </span>
+                    </span>
+                </td>
+            </tr>
+
+            <!-- Past Experience -->
+            <tr>
+                <td class="label">Past Experience &ndash; Name of the Organization(s)</td>
+                <td class="value" colspan="3">{{organization_name}}</td>
+            </tr>
+
+            <!-- Period of Employment -->
+            <tr>
+                <td class="label">Period of Employment</td>
+                <td class="value" colspan="3">{{period_of_employment}}</td>
+            </tr>
+
+            <!-- Designation & Reporting -->
+            <tr>
+                <td class="label">Designation</td>
+                <td class="value">{{designation}}</td>
+                <td class="label">Reporting to</td>
+                <td class="value">S Babu Reddy</td>
+            </tr>
+
+            <!-- SECTION: Bank Details -->
+            <tr class="section-head">
+                <td colspan="4">Bank Account Details</td>
+            </tr>
+
+            <!-- Bank Account -->
+            <tr>
+                <td class="label">Employee Bank Account No.</td>
+                <td class="value" colspan="3">{{account_number}}</td>
+            </tr>
+
+            <!-- Bank Name & Branch -->
+            <tr>
+                <td class="label">Bank Name &amp; Branch</td>
+                <td class="value" colspan="3">{{bank_name}}, {{branch}}</td>
+            </tr>
+
+            <!-- IFSC -->
+            <tr>
+                <td class="label">Bank A/c IFSC Code</td>
+                <td class="value" colspan="3">{{ifsc_code}}</td>
+            </tr>
+
+            <!-- SECTION: Statutory Numbers -->
+            <tr class="section-head">
+                <td colspan="4">Statutory Details</td>
+            </tr>
+
+            <!-- UAN -->
+            <tr>
+                <td class="label">PF UAN Number</td>
+                <td class="value" colspan="3">{{uan_no}}</td>
+            </tr>
+
+            <!-- ESIC -->
+            <tr>
+                <td class="label">ESIC Number</td>
+                <td class="value" colspan="3">{{esic_no}}</td>
+            </tr>
+
+            <!-- SECTION: References -->
+            <tr class="section-head">
+                <td colspan="4">References</td>
+            </tr>
+
+            <!-- References (two columns) -->
+            <tr>
+                <td class="label" style="vertical-align: top;">Reference 1</td>
+                <td class="value" style="vertical-align: top;">
+                    <div class="ref-block">
+                        <div class="ref-row"><span class="ref-label">Name :</span><span class="ref-value">{{ref1_name}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Relationship :</span><span class="ref-value">{{ref1_relationship}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Address :</span><span class="ref-value">{{ref1_address}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Mobile :</span><span class="ref-value">{{ref1_mobile}}</span></div>
+                    </div>
+                </td>
+                <td class="label" style="vertical-align: top;">Reference 2</td>
+                <td class="value" style="vertical-align: top;">
+                    <div class="ref-block">
+                        <div class="ref-row"><span class="ref-label">Name :</span><span class="ref-value">{{ref2_name}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Relationship :</span><span class="ref-value">{{ref2_relationship}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Address :</span><span class="ref-value">{{ref2_address}}</span></div>
+                        <div class="ref-row"><span class="ref-label">Mobile :</span><span class="ref-value">{{ref2_mobile}}</span></div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ============================================================
+         DECLARATION
+         ============================================================ -->
+    <div class="declaration">
+        I hereby declare that the details furnished above are correct. Wherever required, copies of documents attached.
+    </div>
+
+    <!-- ============================================================
+         SIGNATURE SECTION
+         ============================================================ -->
+    <div class="signature-section">
+        <div class="signature-info">
+            <div class="sig-line">
+                <span class="sig-label">(Signature of New Joinee)</span>
+            </div>
+            <div class="sig-date">
+                <span class="sig-label">Date :</span> {{current_date}}
+            </div>
+        </div>
+        <div class="signature-box-wrapper">
+            <div class="signature-box"></div>
+            <div class="signature-box-label">Signature</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="footer">
+        <div class="footer-company">{{company_name}}</div>
+        <div><strong>Regd Office :</strong> {{company_address}}</div>
+        <div><strong>BPO :</strong> Ecco Green, I floor, Grand World, Off Karkambadi Road, Tirupati . Andhra Pradesh</div>
+    </footer>
+
+</div>
+<!-- / .page -->
+
+</body>
+</html>

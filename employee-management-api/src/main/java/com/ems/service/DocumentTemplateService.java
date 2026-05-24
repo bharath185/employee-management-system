@@ -16,6 +16,7 @@ import com.ems.repository.EmployeeRepository;
 import com.ems.utils.TemplateEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,9 @@ public class DocumentTemplateService {
     private final DocumentDownloadLogRepository downloadLogRepository;
     private final EmployeeRepository employeeRepository;
     private final CompanyService companyService;
+
+    @Value("${app.base-url:}")
+    private String baseUrl;
 
     // ========== TEMPLATE CRUD ==========
 
@@ -145,6 +149,7 @@ public class DocumentTemplateService {
         Company company = companyService.getCompany();
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
+        filledContent = resolveLogoUrl(filledContent, company);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
 
         log.debug("Document preview generated for template: {}, employee: {}", templateId, employeeId);
@@ -169,6 +174,7 @@ public class DocumentTemplateService {
         Company company = companyService.getCompany();
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
+        filledContent = resolveLogoUrl(filledContent, company);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
 
         // Log the download
@@ -313,6 +319,20 @@ public class DocumentTemplateService {
         } else {
             return (year - 1) + "-" + year;
         }
+    }
+
+    /**
+     * Resolves the {{company_logo}} placeholder with an absolute URL.
+     */
+    private String resolveLogoUrl(String content, Company company) {
+        if (content == null || content.isEmpty()) return content;
+        String logoUrl;
+        if (company != null && company.getLogoPath() != null && !company.getLogoPath().isEmpty()) {
+            logoUrl = baseUrl + "/api/v1/company/logo";
+        } else {
+            logoUrl = "";
+        }
+        return content.replace("{{company_logo}}", logoUrl);
     }
 
     /**

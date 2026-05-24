@@ -29,6 +29,8 @@ services:
         value: /tmp/uploads/documents
       - key: LOG_LEVEL
         value: INFO
+      - key: APP_BASE_URL
+        value: https://api.prigenix.com
 
   - type: web
     name: employee-management-ui

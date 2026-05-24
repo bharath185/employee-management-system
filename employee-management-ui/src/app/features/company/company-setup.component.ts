@@ -330,7 +330,7 @@ export class CompanySetupComponent implements OnInit {
 
   getLogoUrl(): string {
     if (!this.companyForm.logoPath) return '';
-    return environment.apiUrl.replace('/api/v1', '') + this.companyForm.logoPath;
+    return `${environment.apiUrl}/company/logo`;
   }
 
   onLogoError(event: Event): void {

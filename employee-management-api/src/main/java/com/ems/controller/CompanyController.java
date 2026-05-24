@@ -34,11 +34,20 @@ public class CompanyController {
 
     @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<APIResponse<CompanyDTO>> updateCompany(
+    public ResponseEntity<APIResponse<CompanyDTO>> updateCompanyWithLogo(
             @RequestPart("company") CompanyDTO companyDTO,
             @RequestPart(value = "logo", required = false) MultipartFile logo,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         CompanyDTO updated = companyService.updateCompany(companyDTO, logo, currentUser.getUsername());
+        return ResponseEntity.ok(APIResponse.success("Company updated successfully", updated));
+    }
+
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<APIResponse<CompanyDTO>> updateCompanyJson(
+            @RequestBody CompanyDTO companyDTO,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        CompanyDTO updated = companyService.updateCompany(companyDTO, null, currentUser.getUsername());
         return ResponseEntity.ok(APIResponse.success("Company updated successfully", updated));
     }
 
