@@ -55,14 +55,12 @@ export class DocumentTemplateService {
     return this.http.get<APIResponse<{code: string; display: string}[]>>(`${this.apiUrl}/types`);
   }
 
-  generateDocument(templateId: number, employeeId: number, format: string = 'pdf'): Observable<Blob> {
-    let params = new HttpParams()
-      .set('employeeId', employeeId.toString())
-      .set('format', format);
-    return this.http.get(`${this.apiUrl}/${templateId}/generate/${employeeId}`, {
-      params,
-      responseType: 'blob'
-    });
+  generateDocument(templateId: number, employeeId: number, format: string = 'pdf'): Observable<APIResponse<{html: string; format: string; message: string}>> {
+    return this.http.post<APIResponse<{html: string; format: string; message: string}>>(
+      `${this.apiUrl}/${templateId}/generate/${employeeId}`,
+      null,
+      { params: new HttpParams().set('format', format) }
+    );
   }
 
   previewTemplate(templateId: number, employeeId: number): Observable<APIResponse<string>> {

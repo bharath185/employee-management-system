@@ -190,14 +190,17 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
     }
 
     this.templateService.generateDocument(this.templateId, this.selectedEmployeeId, 'pdf').subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `document_${this.selectedEmployeeId}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        this.message.success('Document downloaded');
+      next: (response) => {
+        if (response.success && response.data) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(response.data.html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+          this.message.success('Document generated');
+        }
       },
       error: () => {
         this.message.error('Error generating document');

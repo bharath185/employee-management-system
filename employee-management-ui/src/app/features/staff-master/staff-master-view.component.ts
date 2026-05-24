@@ -588,17 +588,20 @@ export class StaffMasterViewComponent implements OnInit {
 
     this.isDownloading = true;
     this.templateService.generateDocument(this.selectedTemplateId, this.employeeId, format).subscribe({
-      next: (blob) => {
+      next: (response) => {
         this.isDownloading = false;
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `document_${this.employeeId}_${Date.now()}.${format}`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        this.message.success('Document downloaded successfully');
-        this.closeGenerateModal();
-        this.loadDownloadHistory();
+        if (response.success && response.data) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(response.data.html);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+          }
+          this.message.success('Document generated successfully');
+          this.closeGenerateModal();
+          this.loadDownloadHistory();
+        }
       },
       error: () => {
         this.isDownloading = false;
