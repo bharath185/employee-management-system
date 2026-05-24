@@ -43,26 +43,20 @@ public class DocumentTemplateService {
 
     // ========== TEMPLATE CRUD ==========
 
-    public List<DocumentTemplateDTO> getAllTemplates(String templateType, Boolean active) {
-        List<DocumentTemplate> templates;
+    public Page<DocumentTemplateDTO> getAllTemplates(String templateType, Boolean active, Pageable pageable) {
+        Page<DocumentTemplate> templates;
 
         if (templateType != null && !templateType.isEmpty() && active != null) {
-            if (active) {
-                templates = templateRepository.findByIsActiveTrueAndTemplateType(templateType);
-            } else {
-                templates = templateRepository.findByTemplateType(templateType);
-            }
+            templates = templateRepository.findByTemplateTypeAndIsActive(templateType, active, pageable);
         } else if (templateType != null && !templateType.isEmpty()) {
-            templates = templateRepository.findByTemplateType(templateType);
-        } else if (active != null && active) {
-            templates = templateRepository.findByIsActiveTrueOrderByTemplateName();
+            templates = templateRepository.findByTemplateType(templateType, pageable);
+        } else if (active != null) {
+            templates = templateRepository.findByIsActive(active, pageable);
         } else {
-            templates = templateRepository.findAll(Sort.by(Sort.Direction.ASC, "templateName"));
+            templates = templateRepository.findAll(pageable);
         }
 
-        return templates.stream()
-            .map(DocumentTemplateDTO::fromEntity)
-            .collect(Collectors.toList());
+        return templates.map(DocumentTemplateDTO::fromEntity);
     }
 
     public DocumentTemplateDTO getTemplateById(Long id) {

@@ -5,6 +5,9 @@ import com.ems.security.CustomUserDetails;
 import com.ems.service.DocumentTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +29,30 @@ public class DocumentTemplateController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<APIResponse<List<DocumentTemplateDTO>>> getAllTemplates(
+    public ResponseEntity<APIResponse<PagedResponse<DocumentTemplateDTO>>> getAllTemplates(
             @RequestParam(required = false) String templateType,
-            @RequestParam(required = false) Boolean active) {
-        List<DocumentTemplateDTO> templates = documentTemplateService.getAllTemplates(templateType, active);
-        return ResponseEntity.ok(APIResponse.success(templates));
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "templateName,asc") String sort) {
+
+        Sort sorting = Sort.by(sort.contains("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
+            sort.split(",")[0]);
+        Pageable pageable = PageRequest.of(page, size, sorting);
+
+        Page<DocumentTemplateDTO> templatesPage = documentTemplateService.getAllTemplates(templateType, active, pageable);
+
+        PagedResponse<DocumentTemplateDTO> paged = PagedResponse.<DocumentTemplateDTO>builder()
+            .content(templatesPage.getContent())
+            .page(templatesPage.getNumber())
+            .size(templatesPage.getSize())
+            .totalElements(templatesPage.getTotalElements())
+            .totalPages(templatesPage.getTotalPages())
+            .first(templatesPage.isFirst())
+            .last(templatesPage.isLast())
+            .build();
+
+        return ResponseEntity.ok(APIResponse.success(paged));
     }
 
     @GetMapping("/types")
