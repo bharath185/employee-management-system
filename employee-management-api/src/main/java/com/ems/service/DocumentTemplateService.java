@@ -14,10 +14,13 @@ import com.ems.repository.DocumentDownloadLogRepository;
 import com.ems.repository.DocumentTemplateRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.utils.TemplateEngine;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -322,15 +325,34 @@ public class DocumentTemplateService {
     }
 
     /**
-     * Resolves the {{company_logo}} placeholder with an absolute URL.
+     * Resolves the {{company_logo}} placeholder with an absolute URL
+     * derived from the current HTTP request (handles reverse proxy headers).
      */
     private String resolveLogoUrl(String content, Company company) {
         if (content == null || content.isEmpty()) return content;
-        String logoUrl;
+        String logoUrl = "";
         if (company != null && company.getLogoPath() != null && !company.getLogoPath().isEmpty()) {
-            logoUrl = baseUrl + "/api/v1/company/logo";
-        } else {
-            logoUrl = "";
+            try {
+                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+                    .currentRequestAttributes()).getRequest();
+                String fwdProto = request.getHeader("X-Forwarded-Proto");
+                String fwdHost = request.getHeader("X-Forwarded-Host");
+                if (fwdHost != null && !fwdHost.isEmpty()) {
+                    // Behind reverse proxy (Render) — trust forwarded headers
+                    String scheme = (fwdProto != null && !fwdProto.isEmpty()) ? fwdProto : "https";
+                    logoUrl = scheme + "://" + fwdHost + "/api/v1/company/logo";
+                } else {
+                    // Direct request — use server name and port
+                    String scheme = request.getScheme();
+                    String host = request.getServerName();
+                    int port = request.getServerPort();
+                    String portPart = (port == 80 || port == 443) ? "" : ":" + port;
+                    logoUrl = scheme + "://" + host + portPart + request.getContextPath() + "/company/logo";
+                }
+            } catch (Exception e) {
+                logoUrl = baseUrl + "/api/v1/company/logo";
+                log.warn("Could not resolve logo URL from request, using baseUrl fallback: {}", logoUrl);
+            }
         }
         return content.replace("{{company_logo}}", logoUrl);
     }
