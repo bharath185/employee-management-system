@@ -326,7 +326,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
             <label class="form-label">Select Template Type</label>
             <nz-select [(ngModel)]="selectedTemplateType" nzPlaceHolder="Choose template type"
               (ngModelChange)="onTemplateTypeChange()" style="width:100%">
-              <nz-option *ngFor="let t of templateTypes" [nzValue]="t" [nzLabel]="t"></nz-option>
+              <nz-option *ngFor="let t of templateTypes" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
             </nz-select>
           </div>
 
@@ -448,7 +448,7 @@ export class StaffMasterViewComponent implements OnInit {
     { label: '4 Wheeler', key: 'has4wheeler' }
   ];
 
-  templateTypes: string[] = [];
+  templateTypes: {code: string; display: string}[] = [];
   availableTemplates: DocumentTemplate[] = [];
   selectedTemplateType: string = '';
   selectedTemplateId: number | null = null;

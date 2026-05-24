@@ -67,7 +67,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
           <div nz-col nzXs="12" nzSm="6" nzMd="4" nzLg="3" class="filter-field">
             <nz-select [(ngModel)]="filterType" (ngModelChange)="loadTemplates()" nzPlaceHolder="Type">
               <nz-option nzValue="" nzLabel="All Types"></nz-option>
-              <nz-option *ngFor="let t of typeOptions" [nzValue]="t" [nzLabel]="t"></nz-option>
+              <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
             </nz-select>
           </div>
           <div nz-col nzXs="12" nzSm="6" nzMd="4" nzLg="3" class="filter-field">
@@ -270,7 +270,7 @@ export class DocumentTemplateListComponent implements OnInit, OnDestroy {
   filterType = '';
   filterActive = '';
 
-  typeOptions: string[] = [];
+  typeOptions: {code: string; display: string}[] = [];
 
   private searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;

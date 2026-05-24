@@ -51,8 +51,8 @@ export class DocumentTemplateService {
     return this.http.delete<APIResponse<void>>(`${this.apiUrl}/${id}`);
   }
 
-  getTemplateTypes(): Observable<APIResponse<string[]>> {
-    return this.http.get<APIResponse<string[]>>(`${this.apiUrl}/types`);
+  getTemplateTypes(): Observable<APIResponse<{code: string; display: string}[]>> {
+    return this.http.get<APIResponse<{code: string; display: string}[]>>(`${this.apiUrl}/types`);
   }
 
   generateDocument(templateId: number, employeeId: number, format: string = 'pdf'): Observable<Blob> {

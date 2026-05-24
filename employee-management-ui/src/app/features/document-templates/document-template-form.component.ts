@@ -83,7 +83,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
                   <div class="form-group">
                     <label class="form-label">Template Type <span class="required">*</span></label>
                     <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Select type" style="width:100%">
-                      <nz-option *ngFor="let t of typeOptions" [nzValue]="t" [nzLabel]="t"></nz-option>
+                      <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
                     </nz-select>
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export class DocumentTemplateFormComponent implements OnInit {
     active: true
   };
 
-  typeOptions: string[] = [];
+  typeOptions: {code: string; display: string}[] = [];
   placeholders = TEMPLATE_PLACEHOLDERS;
 
   isPreviewVisible = false;
