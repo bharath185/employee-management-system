@@ -341,7 +341,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
           <div class="preview-section" *ngIf="previewHtml">
             <label class="form-label">Preview</label>
             <div class="preview-frame">
-              <iframe [srcdoc]="previewHtml" class="preview-iframe" sandbox="allow-same-origin"></iframe>
+              <iframe [srcdoc]="previewHtml" class="preview-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
             </div>
             <div class="preview-actions">
               <button nz-button nzType="primary" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">

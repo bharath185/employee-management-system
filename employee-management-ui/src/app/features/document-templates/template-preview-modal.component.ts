@@ -52,7 +52,7 @@ import { Employee } from '../../core/models/employee.model';
 
         <div class="preview-content" *ngIf="!isLoadingPreview; else loadingPreview">
           <iframe *ngIf="previewHtml" [srcdoc]="previewHtml" class="preview-iframe"
-            sandbox="allow-same-origin"></iframe>
+            sandbox="allow-same-origin allow-scripts"></iframe>
           <div class="preview-empty" *ngIf="!previewHtml">
             <i nz-icon nzType="file-text" class="empty-icon"></i>
             <p>Select an employee to preview the template</p>
