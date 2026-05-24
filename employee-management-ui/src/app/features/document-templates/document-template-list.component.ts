@@ -15,7 +15,7 @@ import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { NzModalService } from 'ng-zorro-antd/modal';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 
@@ -42,6 +42,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     NzCardModule,
     NzSwitchModule,
     NzToolTipModule,
+    NzModalModule,
     PageHeaderComponent,
     DateFormatPipe
   ],
