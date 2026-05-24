@@ -52,7 +52,9 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="particle" style="--s:7px;--l:80%;--c:rgba(74,144,217,.2);--d:30s;--dy:14s"></div>
       </div>
       <div class="login-illustration">
-        <img src="assets/business-analysis.svg" alt="Business Analysis">
+        <div class="ill-crop">
+          <img src="assets/business-analysis.svg" alt="Business Analysis">
+        </div>
       </div>
       <div class="login-card">
         <div class="card-body">
@@ -218,10 +220,14 @@ import { AuthService } from '../../core/services/auth.service';
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
     }
-    .login-illustration img {
+    .ill-crop {
+      overflow: hidden;
+    }
+    .ill-crop img {
       width: 100%;
       height: auto;
       display: block;
+      margin-top: -8%;
       filter: drop-shadow(0 4px 24px rgba(31,61,110,0.08));
     }
     @keyframes fadeInUp {
