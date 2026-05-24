@@ -36,10 +36,6 @@ import { AuthService } from '../../core/services/auth.service';
           <svg class="ill-svg" viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg">
             <!-- Gradient defs -->
             <defs>
-              <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#1a3a5c" stop-opacity="0.03"/>
-                <stop offset="100%" stop-color="#1a3a5c" stop-opacity="0.08"/>
-              </linearGradient>
               <linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%" stop-color="#1f3d6e"/>
                 <stop offset="100%" stop-color="#4a90d9"/>
@@ -51,7 +47,7 @@ import { AuthService } from '../../core/services/auth.service';
             </defs>
 
             <!-- Background -->
-            <rect width="520" height="400" rx="20" fill="url(#bgGrad)"/>
+            <rect width="520" height="400" rx="20" fill="none"/>
 
             <!-- Grid lines -->
             <g stroke="#d0dbe8" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4">
@@ -210,8 +206,7 @@ import { AuthService } from '../../core/services/auth.service';
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 60px;
+      justify-content: flex-end;
       padding: 40px 80px;
       position: relative;
       overflow: hidden;
@@ -258,11 +253,15 @@ import { AuthService } from '../../core/services/auth.service';
 
     /* Left illustration */
     .left-illustration {
-      flex: 1;
-      max-width: 560px;
-      position: relative;
+      position: absolute;
+      left: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 520px;
+      max-width: 45vw;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
+      pointer-events: none;
     }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(30px); }
@@ -396,7 +395,7 @@ import { AuthService } from '../../core/services/auth.service';
     /* Login card */
     .login-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       background: #fff;
       border-radius: 20px;
       box-shadow: 0 8px 40px rgba(31,61,110,0.1), 0 1px 4px rgba(0,0,0,0.04);
@@ -408,14 +407,14 @@ import { AuthService } from '../../core/services/auth.service';
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .card-body { padding: 40px 32px 24px; }
+    .card-body { padding: 44px 36px 28px; }
 
-    .logo-section { text-align: center; margin-bottom: 16px; }
-    .logo { width: 80px; height: auto; }
-    h1 { font-size: 20px; font-weight: 700; color: #1f3d6e; text-align: center; margin: 0 0 4px; letter-spacing: -0.3px; }
-    .tagline { font-size: 13px; color: #8a94a6; text-align: center; margin: 0 0 24px; }
+    .logo-section { text-align: center; margin-bottom: 20px; }
+    .logo { width: 96px; height: auto; }
+    h1 { font-size: 22px; font-weight: 700; color: #1f3d6e; text-align: center; margin: 0 0 4px; letter-spacing: -0.3px; }
+    .tagline { font-size: 14px; color: #8a94a6; text-align: center; margin: 0 0 28px; }
 
-    .login-form { display: flex; flex-direction: column; gap: 18px; }
+    .login-form { display: flex; flex-direction: column; gap: 20px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field-label { font-size: 13px; font-weight: 600; color: #4a5568; }
     :host ::ng-deep .input-wrap.ant-input-affix-wrapper {
@@ -452,22 +451,20 @@ import { AuthService } from '../../core/services/auth.service';
       box-shadow: 0 6px 20px rgba(31,61,110,0.3) !important;
     }
 
-    .footer-text { text-align: center; margin-top: 20px; font-size: 11px; color: #b0b8c7; }
+    .footer-text { text-align: center; margin-top: 24px; font-size: 11px; color: #b0b8c7; }
 
     @media (max-width: 1024px) {
-      .login-page { gap: 30px; padding: 40px; }
-      .left-illustration { max-width: 420px; }
+      .left-illustration { left: 30px; width: 400px; max-width: 40vw; }
     }
     @media (max-width: 768px) {
-      .login-page { flex-direction: column; justify-content: center; padding: 24px; gap: 30px; }
-      .left-illustration { max-width: 100%; }
+      .login-page { justify-content: center; padding: 24px; }
+      .left-illustration { display: none; }
       .particles { opacity: 0.35; }
     }
     @media (max-width: 480px) {
       .card-body { padding: 32px 20px 24px; }
-      .logo { width: 72px; }
-      h1 { font-size: 19px; }
-      .left-illustration { display: none; }
+      .logo { width: 80px; }
+      h1 { font-size: 20px; }
     }
   `]
 })
