@@ -5,54 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Employee Joining Report — {{company_name}}</title>
     <style>
-        /* ============================================================
-           CSS CUSTOM PROPERTIES (Theming)
-           ============================================================ */
         :root {
             --color-primary:       #1a3a5c;
             --color-primary-dark:  #0f2740;
             --color-primary-light: #e8f0f8;
             --color-accent:        #2b7fc1;
-            --color-accent-light:  #d4e6f5;
             --color-text:          #1e293b;
             --color-text-muted:    #475569;
             --color-border:        #cbd5e1;
             --color-bg:            #f1f5f9;
             --color-white:         #ffffff;
-            --color-row-alt:       #f8fafc;
-            --color-header-bg:     #1a3a5c;
             --color-header-text:   #ffffff;
-            --color-label-bg:      #f1f5f9;
-            --color-label-border:  #e2e8f0;
-            --color-value-border:  #e2e8f0;
-            --color-success:       #059669;
 
             --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
-            --font-size-xs:   0.6875rem;   /* 11px */
-            --font-size-sm:   0.75rem;     /* 12px */
-            --font-size-base: 0.8125rem;   /* 13px */
-            --font-size-md:   0.875rem;    /* 14px */
-            --font-size-lg:   1rem;        /* 16px */
-            --font-size-xl:   1.125rem;    /* 18px */
-            --font-size-2xl:  1.5rem;      /* 24px */
+            --font-size-xs:   0.625rem;
+            --font-size-sm:   0.6875rem;
+            --font-size-base: 0.75rem;
+            --font-size-md:   0.8125rem;
+            --font-size-lg:   0.875rem;
 
-            --spacing-xs:   0.25rem;
-            --spacing-sm:   0.5rem;
-            --spacing-md:   0.75rem;
-            --spacing-lg:   1rem;
-            --spacing-xl:   1.5rem;
-            --spacing-2xl:  2rem;
-            --spacing-3xl:  2.5rem;
+            --spacing-xs:   0.125rem;
+            --spacing-sm:   0.25rem;
+            --spacing-md:   0.5rem;
+            --spacing-lg:   0.625rem;
+            --spacing-xl:   0.75rem;
+            --spacing-2xl:  1rem;
 
-            --radius-sm: 4px;
-            --radius-md: 6px;
-            --radius-lg: 8px;
+            --radius-sm: 3px;
+            --radius-md: 4px;
 
             --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
-            --shadow-md: 0 4px 12px rgba(0,0,0,.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,.10);
 
-            --print-margin: 0.4in;
+            --print-margin: 0.35in;
         }
 
         /* ============================================================
@@ -90,41 +74,27 @@
            HEADER
            ============================================================ */
         .header {
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--spacing-lg);
             position: relative;
         }
 
-        /* Decorative top accent bar */
         .header::before {
             content: '';
             display: block;
-            height: 4px;
-            background: linear-gradient(90deg, var(--color-accent), var(--color-primary), var(--color-accent));
-            border-radius: 2px;
-            margin-bottom: var(--spacing-lg);
+            height: 2px;
+            background: var(--color-accent);
+            border-radius: 1px;
+            margin-bottom: var(--spacing-md);
         }
 
         .header-inner {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: var(--spacing-lg);
-            padding-bottom: var(--spacing-lg);
+            gap: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
             border-bottom: 1px solid var(--color-border);
             position: relative;
-        }
-
-        /* Decorative diamond separator on the border */
-        .header-inner::after {
-            content: '◆';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: var(--color-accent);
-            background: var(--color-white);
-            padding: 0 12px;
         }
 
         .header-left {
@@ -132,27 +102,27 @@
         }
 
         .header-logo {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--color-primary);
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            line-height: 1.2;
+            line-height: 1.1;
             display: flex;
             align-items: center;
-            gap: var(--spacing-md);
+            gap: var(--spacing-sm);
         }
 
         .header-logo-icon {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 42px;
-            height: 42px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+            width: 28px;
+            height: 28px;
+            background: var(--color-primary);
             color: var(--color-white);
-            border-radius: var(--radius-md);
-            font-size: 18px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
             font-weight: 700;
             flex-shrink: 0;
             overflow: hidden;
@@ -171,38 +141,39 @@
         }
 
         .header-logo-text .main {
-            font-size: 24px;
+            font-size: 14px;
             font-weight: 800;
-            letter-spacing: 2.5px;
+            letter-spacing: 1.5px;
             color: var(--color-primary);
+            line-height: 1.2;
         }
 
         .header-logo-text .sub {
             font-size: var(--font-size-xs);
             font-weight: 500;
             color: var(--color-accent);
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            margin-top: 1px;
+            line-height: 1.2;
         }
 
         .header-right {
             text-align: right;
             flex-shrink: 0;
-            max-width: 320px;
+            max-width: 260px;
         }
 
         .header-company {
             font-weight: 700;
-            font-size: var(--font-size-md);
+            font-size: var(--font-size-sm);
             color: var(--color-primary-dark);
-            margin-bottom: var(--spacing-xs);
+            margin-bottom: 1px;
         }
 
         .header-addresses {
             font-size: var(--font-size-xs);
             color: var(--color-text-muted);
-            line-height: 1.7;
+            line-height: 1.5;
         }
 
         .header-addresses strong {
@@ -210,7 +181,7 @@
         }
 
         .header-addresses .addr-block {
-            margin-top: var(--spacing-xs);
+            margin-top: 1px;
         }
 
         /* ============================================================
@@ -218,22 +189,21 @@
            ============================================================ */
         .form-title {
             text-align: center;
-            font-size: var(--font-size-lg);
+            font-size: var(--font-size-md);
             font-weight: 700;
             color: var(--color-primary);
-            margin-bottom: var(--spacing-xl);
+            margin-bottom: var(--spacing-md);
             letter-spacing: 0.5px;
-            position: relative;
         }
 
         .form-title::after {
             content: '';
             display: block;
-            width: 80px;
-            height: 3px;
+            width: 50px;
+            height: 2px;
             background: var(--color-accent);
-            margin: var(--spacing-sm) auto 0;
-            border-radius: 2px;
+            margin: var(--spacing-xs) auto 0;
+            border-radius: 1px;
         }
 
         /* ============================================================
@@ -369,13 +339,13 @@
            DECLARATION
            ============================================================ */
         .declaration {
-            margin: var(--spacing-xl) 0 var(--spacing-lg);
-            padding: var(--spacing-sm) var(--spacing-lg);
+            margin: var(--spacing-lg) 0 var(--spacing-md);
+            padding: var(--spacing-xs) var(--spacing-md);
             background: var(--color-primary-light);
             border-left: 3px solid var(--color-accent);
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
             font-size: var(--font-size-sm);
-            line-height: 1.6;
+            line-height: 1.4;
             color: var(--color-text);
             font-weight: 500;
         }
@@ -391,18 +361,18 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin: var(--spacing-xl) 0 var(--spacing-lg);
-            gap: var(--spacing-xl);
+            margin: var(--spacing-md) 0 var(--spacing-sm);
+            gap: var(--spacing-lg);
         }
 
         .signature-info {
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-md);
+            gap: var(--spacing-sm);
         }
 
         .signature-info .sig-line {
-            font-size: var(--font-size-base);
+            font-size: var(--font-size-sm);
             color: var(--color-text);
         }
 
@@ -412,7 +382,7 @@
         }
 
         .signature-info .sig-date {
-            font-size: var(--font-size-base);
+            font-size: var(--font-size-sm);
             color: var(--color-text-muted);
         }
 
@@ -421,8 +391,8 @@
         }
 
         .signature-box {
-            width: 180px;
-            height: 70px;
+            width: 120px;
+            height: 150px;
             border: 2px dashed var(--color-border);
             border-radius: var(--radius-md);
             background: var(--color-white);
@@ -438,18 +408,7 @@
             margin-top: var(--spacing-xs);
         }
 
-        /* ============================================================
-           FOOTER
-           ============================================================ */
-        .footer {
-            margin-top: var(--spacing-xl);
-            padding-top: var(--spacing-sm);
-            border-top: 1px solid var(--color-border);
-            text-align: center;
-            font-size: var(--font-size-xs);
-            color: var(--color-text-muted);
-            line-height: 1.6;
-        }
+
 
         .footer-company {
             font-weight: 700;
@@ -497,81 +456,75 @@
             }
 
             .header {
-                margin-bottom: 10pt;
+                margin-bottom: 6pt;
             }
 
             .header::before {
-                height: 2pt;
-                margin-bottom: 8pt;
-                background: linear-gradient(90deg, #2b7fc1, #1a3a5c, #2b7fc1);
+                height: 1.5pt;
+                margin-bottom: 4pt;
+                background: #2b7fc1;
             }
 
             .header-inner {
                 border-bottom-color: #999;
-                padding-bottom: 6pt;
-                gap: 8pt;
-            }
-
-            .header-inner::after {
-                background: #fff;
-                color: #2b7fc1;
-                font-size: 8pt;
+                padding-bottom: 4pt;
+                gap: 6pt;
             }
 
             .header-logo-text .main {
                 color: #1a3a5c !important;
-                font-size: 18pt;
+                font-size: 12pt;
             }
 
             .header-logo-text .sub {
                 color: #2b7fc1 !important;
-                font-size: 7pt;
+                font-size: 6.5pt;
             }
 
             .header-company {
                 color: #0f2740 !important;
-                font-size: 9pt;
+                font-size: 8pt;
             }
 
             .header-addresses {
                 color: #444 !important;
-                font-size: 7.5pt;
+                font-size: 7pt;
             }
 
             .form-title {
                 color: #1a3a5c !important;
-                font-size: 12pt;
-                margin-bottom: 10pt;
+                font-size: 10pt;
+                margin-bottom: 6pt;
             }
 
             .form-title::after {
                 background: #2b7fc1;
-                height: 2pt;
-                width: 50pt;
+                height: 1.5pt;
+                width: 36pt;
             }
 
             .data-table {
                 box-shadow: none;
                 border-radius: 0;
-                font-size: 8.5pt;
-                margin-bottom: 8pt;
+                font-size: 7.5pt;
+                margin-bottom: 4pt;
             }
 
             .data-table td {
                 border-color: #666;
-                padding: 2pt 5pt;
+                padding: 1.5pt 4pt;
             }
 
             .data-table .label {
                 background: #f0f0f0 !important;
                 color: #1a3a5c !important;
-                font-size: 8pt;
+                font-size: 7pt;
             }
 
             .data-table .value {
                 background: transparent !important;
                 color: #000 !important;
-                font-size: 8.5pt;
+                font-size: 7.5pt;
             }
 
             .data-table tbody tr:nth-child(even) td {
@@ -585,8 +538,8 @@
             .data-table .section-head td {
                 background: #1a3a5c !important;
                 color: #fff !important;
-                font-size: 8pt;
-                padding: 2pt 5pt;
+                font-size: 7pt;
+                padding: 1.5pt 4pt;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
@@ -596,19 +549,19 @@
                 border-left-color: #2b7fc1;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
-                padding: 6pt 10pt;
-                margin: 10pt 0 8pt;
-                font-size: 8.5pt;
+                padding: 3pt 8pt;
+                margin: 6pt 0 4pt;
+                font-size: 7.5pt;
             }
 
             .signature-section {
-                margin: 14pt 0 8pt;
+                margin: 8pt 0 0;
             }
 
             .signature-box {
                 border: 1.5pt dashed #999;
-                height: 60pt;
-                width: 150pt;
+                height: 128pt;
+                width: 100pt;
             }
 
             .signature-box-label {
@@ -649,11 +602,6 @@
             .data-table tr {
                 page-break-inside: avoid;
             }
-
-            /* Force a page break before the footer if needed */
-            .footer {
-                page-break-inside: avoid;
-            }
         }
 
         /* ============================================================
@@ -691,12 +639,12 @@
             }
 
             .header-logo-text .main {
-                font-size: 22px;
+                font-size: 16px;
             }
 
             .header-logo-icon {
-                width: 36px;
-                height: 36px;
+                width: 28px;
+                height: 28px;
             }
         }
 
@@ -973,10 +921,10 @@
                 <td colspan="4">References</td>
             </tr>
 
-            <!-- References (two columns) -->
+            <!-- References (each in full-width row) -->
             <tr>
                 <td class="label" style="vertical-align: top;">Reference 1</td>
-                <td class="value" style="vertical-align: top;">
+                <td class="value" colspan="3" style="vertical-align: top;">
                     <div class="ref-block">
                         <div class="ref-row"><span class="ref-label">Name :</span><span class="ref-value">{{ref1_name}}</span></div>
                         <div class="ref-row"><span class="ref-label">Relationship :</span><span class="ref-value">{{ref1_relationship}}</span></div>
@@ -984,8 +932,10 @@
                         <div class="ref-row"><span class="ref-label">Mobile :</span><span class="ref-value">{{ref1_mobile}}</span></div>
                     </div>
                 </td>
+            </tr>
+            <tr>
                 <td class="label" style="vertical-align: top;">Reference 2</td>
-                <td class="value" style="vertical-align: top;">
+                <td class="value" colspan="3" style="vertical-align: top;">
                     <div class="ref-block">
                         <div class="ref-row"><span class="ref-label">Name :</span><span class="ref-value">{{ref2_name}}</span></div>
                         <div class="ref-row"><span class="ref-label">Relationship :</span><span class="ref-value">{{ref2_relationship}}</span></div>
@@ -1005,7 +955,7 @@
     </div>
 
     <!-- ============================================================
-         SIGNATURE SECTION
+         PHOTO / SIGNATURE SECTION
          ============================================================ -->
     <div class="signature-section">
         <div class="signature-info">
@@ -1018,18 +968,11 @@
         </div>
         <div class="signature-box-wrapper">
             <div class="signature-box"></div>
-            <div class="signature-box-label">Signature</div>
+            <div class="signature-box-label">Photo</div>
         </div>
     </div>
 
-    <!-- ============================================================
-         FOOTER
-         ============================================================ -->
-    <footer class="footer">
-        <div class="footer-company">{{company_name}}</div>
-        <div><strong>Regd Office :</strong> {{company_address}}</div>
-        <div><strong>BPO :</strong> Ecco Green, I floor, Grand World, Off Karkambadi Road, Tirupati . Andhra Pradesh</div>
-    </footer>
+
 
 </div>
 <!-- / .page -->

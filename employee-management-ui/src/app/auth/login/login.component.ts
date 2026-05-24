@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -17,40 +17,152 @@ import { AuthService } from '../../core/services/auth.service';
     NzCardModule, NzFormModule, NzInputModule, NzButtonModule, NzIconModule
   ],
   template: `
-    <div class="login-page">
+    <div class="login-page" #pageRef>
       <div class="bg-gradient"></div>
       <div class="particles">
         <div class="particle" style="--s:4px;--l:5%;--c:rgba(31,61,110,.3);--d:18s;--dy:0s"></div>
         <div class="particle" style="--s:6px;--l:14%;--c:rgba(74,144,217,.2);--d:22s;--dy:3s"></div>
         <div class="particle" style="--s:3px;--l:22%;--c:#4a90d9;--d:26s;--dy:6s"></div>
         <div class="particle" style="--s:7px;--l:30%;--c:rgba(31,61,110,.15);--d:16s;--dy:1s"></div>
-        <div class="particle" style="--s:2px;--l:38%;--c:#1f3d6e;--d:30s;--dy:9s"></div>
-        <div class="particle" style="--s:5px;--l:46%;--c:rgba(74,144,217,.4);--d:20s;--dy:4s"></div>
+        <div class="particle" style="--s:5px;--l:40%;--c:#1f3d6e;--d:30s;--dy:9s"></div>
         <div class="particle" style="--s:8px;--l:54%;--c:rgba(31,61,110,.3);--d:24s;--dy:10s"></div>
         <div class="particle" style="--s:3px;--l:62%;--c:rgba(74,144,217,.2);--d:28s;--dy:5s"></div>
         <div class="particle" style="--s:6px;--l:70%;--c:#4a90d9;--d:17s;--dy:7s"></div>
         <div class="particle" style="--s:4px;--l:78%;--c:rgba(31,61,110,.15);--d:32s;--dy:11s"></div>
-        <div class="particle" style="--s:5px;--l:10%;--c:#1f3d6e;--d:19s;--dy:2s"></div>
-        <div class="particle" style="--s:2px;--l:18%;--c:rgba(74,144,217,.2);--d:25s;--dy:8s"></div>
-        <div class="particle" style="--s:7px;--l:26%;--c:rgba(31,61,110,.3);--d:21s;--dy:12s"></div>
-        <div class="particle" style="--s:3px;--l:34%;--c:rgba(74,144,217,.4);--d:27s;--dy:4s"></div>
-        <div class="particle" style="--s:5px;--l:42%;--c:#4a90d9;--d:35s;--dy:13s"></div>
-        <div class="particle" style="--s:4px;--l:50%;--c:rgba(31,61,110,.3);--d:15s;--dy:0s"></div>
-        <div class="particle" style="--s:8px;--l:58%;--c:rgba(74,144,217,.2);--d:29s;--dy:14s"></div>
-        <div class="particle" style="--s:2px;--l:66%;--c:#1f3d6e;--d:23s;--dy:6s"></div>
-        <div class="particle" style="--s:6px;--l:74%;--c:rgba(31,61,110,.15);--d:31s;--dy:15s"></div>
-        <div class="particle" style="--s:3px;--l:82%;--c:rgba(74,144,217,.2);--d:18s;--dy:3s"></div>
-        <div class="particle" style="--s:7px;--l:8%;--c:#4a90d9;--d:33s;--dy:16s"></div>
-        <div class="particle" style="--s:5px;--l:16%;--c:rgba(31,61,110,.3);--d:20s;--dy:5s"></div>
-        <div class="particle" style="--s:4px;--l:24%;--c:rgba(74,144,217,.4);--d:26s;--dy:17s"></div>
-        <div class="particle" style="--s:2px;--l:32%;--c:#1f3d6e;--d:16s;--dy:0s"></div>
-        <div class="particle" style="--s:6px;--l:40%;--c:rgba(31,61,110,.15);--d:34s;--dy:18s"></div>
-        <div class="particle" style="--s:8px;--l:48%;--c:rgba(74,144,217,.2);--d:22s;--dy:7s"></div>
-        <div class="particle" style="--s:3px;--l:56%;--c:#4a90d9;--d:28s;--dy:19s"></div>
-        <div class="particle" style="--s:5px;--l:64%;--c:rgba(31,61,110,.3);--d:19s;--dy:9s"></div>
-        <div class="particle" style="--s:4px;--l:72%;--c:#1f3d6e;--d:24s;--dy:11s"></div>
-        <div class="particle" style="--s:7px;--l:80%;--c:rgba(74,144,217,.2);--d:30s;--dy:14s"></div>
       </div>
+
+      <div class="left-illustration" #illustrationRef>
+        <div class="ill-content" [style.transform]="'translate(' + mx + 'px, ' + my + 'px)'">
+          <svg class="ill-svg" viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Gradient defs -->
+            <defs>
+              <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a3a5c" stop-opacity="0.03"/>
+                <stop offset="100%" stop-color="#1a3a5c" stop-opacity="0.08"/>
+              </linearGradient>
+              <linearGradient id="barGrad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="#1f3d6e"/>
+                <stop offset="100%" stop-color="#4a90d9"/>
+              </linearGradient>
+              <linearGradient id="barGrad2" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="#4a90d9"/>
+                <stop offset="100%" stop-color="#7bb3e8"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Background -->
+            <rect width="520" height="400" rx="20" fill="url(#bgGrad)"/>
+
+            <!-- Grid lines -->
+            <g stroke="#d0dbe8" stroke-width="0.5" stroke-dasharray="4 4" opacity="0.4">
+              <line x1="40" y1="340" x2="480" y2="340"/>
+              <line x1="40" y1="295" x2="480" y2="295"/>
+              <line x1="40" y1="250" x2="480" y2="250"/>
+              <line x1="40" y1="205" x2="480" y2="205"/>
+              <line x1="40" y1="160" x2="480" y2="160"/>
+              <line x1="40" y1="115" x2="480" y2="115"/>
+            </g>
+
+            <!-- Y-axis label -->
+            <text x="22" y="345" font-size="9" fill="#8a94a6" font-family="system-ui">0</text>
+            <text x="22" y="250" font-size="9" fill="#8a94a6" font-family="system-ui">50</text>
+            <text x="15" y="165" font-size="9" fill="#8a94a6" font-family="system-ui">100</text>
+
+            <!-- Animated bars -->
+            <g class="chart-bars">
+              <rect class="bar bar1" x="70" y="290" width="30" height="50" rx="4" fill="url(#barGrad)" opacity="0.7"/>
+              <rect class="bar bar2" x="120" y="270" width="30" height="70" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
+              <rect class="bar bar3" x="170" y="240" width="30" height="100" rx="4" fill="url(#barGrad)" opacity="0.7"/>
+              <rect class="bar bar4" x="220" y="220" width="30" height="120" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
+              <rect class="bar bar5" x="270" y="200" width="30" height="140" rx="4" fill="url(#barGrad)" opacity="0.7"/>
+              <rect class="bar bar6" x="320" y="190" width="30" height="150" rx="4" fill="url(#barGrad2)" opacity="0.7"/>
+              <rect class="bar bar7" x="370" y="170" width="30" height="170" rx="4" fill="url(#barGrad)" opacity="0.7"/>
+            </g>
+
+            <!-- Growth line -->
+            <polyline points="60,340 85,310 130,290 180,260 230,240 285,230 340,220 395,205 440,190"
+                      fill="none" stroke="#1f3d6e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                      class="growth-line" style="stroke-dasharray:500;stroke-dashoffset:500;animation:drawLine 2s 0.5s ease forwards"/>
+
+            <!-- Area under growth line -->
+            <path d="M60,340 L85,310 L130,290 L180,260 L230,240 L285,230 L340,220 L395,205 L440,190 L440,340 Z"
+                  fill="url(#barGrad)" opacity="0.08" class="area-fill"/>
+
+            <!-- Growth dots on line -->
+            <circle cx="85" cy="310" r="4" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.1s"/>
+            <circle cx="180" cy="260" r="4" fill="#4a90d9" class="pulse-dot" style="animation-delay: 0.3s"/>
+            <circle cx="285" cy="230" r="4" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.5s"/>
+            <circle cx="395" cy="205" r="4" fill="#4a90d9" class="pulse-dot" style="animation-delay: 0.7s"/>
+            <circle cx="440" cy="190" r="5" fill="#1f3d6e" class="pulse-dot" style="animation-delay: 0.9s"/>
+
+            <!-- Network nodes -->
+            <g class="network">
+              <line x1="80" y1="130" x2="150" y2="100" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="150" y1="100" x2="250" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="80" y1="130" x2="200" y2="150" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="200" y1="150" x2="250" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="250" y1="80" x2="350" y2="110" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="200" y1="150" x2="350" y2="110" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="350" y1="110" x2="420" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.25" class="net-line"/>
+              <line x1="80" y1="130" x2="420" y2="80" stroke="#4a90d9" stroke-width="1" opacity="0.15" class="net-line"/>
+
+              <circle cx="80" cy="130" r="8" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0s"/>
+              <circle cx="150" cy="100" r="6" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.15s"/>
+              <circle cx="250" cy="80" r="9" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0.3s"/>
+              <circle cx="200" cy="150" r="5" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.45s"/>
+              <circle cx="350" cy="110" r="7" fill="#fff" stroke="#1f3d6e" stroke-width="2" class="net-node" style="animation-delay:0.6s"/>
+              <circle cx="420" cy="80" r="6" fill="#fff" stroke="#4a90d9" stroke-width="1.5" class="net-node" style="animation-delay:0.75s"/>
+            </g>
+
+            <!-- Office building -->
+            <g class="building" transform="translate(445,200)">
+              <rect x="0" y="20" width="50" height="140" rx="3" fill="#1a3a5c" opacity="0.15"/>
+              <rect x="0" y="20" width="50" height="140" rx="3" fill="none" stroke="#1a3a5c" stroke-width="1" opacity="0.2"/>
+              <rect x="6" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit"/>
+              <rect x="22" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.2s"/>
+              <rect x="38" y="28" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.5s"/>
+              <rect x="6" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.8s"/>
+              <rect x="22" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.1s"/>
+              <rect x="38" y="44" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:1.4s"/>
+              <rect x="6" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.4s"/>
+              <rect x="22" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.7s"/>
+              <rect x="38" y="60" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.0s"/>
+              <rect x="6" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.3s"/>
+              <rect x="22" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.6s"/>
+              <rect x="38" y="76" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.9s"/>
+              <rect x="6" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:1.2s"/>
+              <rect x="22" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.3" class="window-lit" style="animation-delay:0.1s"/>
+              <rect x="38" y="92" width="10" height="10" rx="1" fill="#4a90d9" opacity="0.6" class="window-lit" style="animation-delay:0.5s"/>
+              <!-- Door -->
+              <rect x="18" y="130" width="14" height="30" rx="2" fill="#0f2740" opacity="0.3"/>
+            </g>
+
+            <!-- Floating label -->
+            <g class="stats-label" transform="translate(60,80)">
+              <rect x="0" y="0" width="100" height="28" rx="14" fill="#fff" stroke="#1f3d6e" stroke-width="1" opacity="0.9"/>
+              <text x="50" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#1f3d6e" font-family="system-ui">120 Employees</text>
+            </g>
+            <g class="stats-label2" transform="translate(310,145)">
+              <rect x="0" y="0" width="88" height="24" rx="12" fill="#fff" stroke="#4a90d9" stroke-width="1" opacity="0.9"/>
+              <text x="44" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#4a90d9" font-family="system-ui">95% Present</text>
+            </g>
+
+            <!-- X-axis labels -->
+            <text x="85" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Jan</text>
+            <text x="165" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Mar</text>
+            <text x="245" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">May</text>
+            <text x="325" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Jul</text>
+            <text x="405" y="360" text-anchor="middle" font-size="8" fill="#8a94a6" font-family="system-ui">Sep</text>
+          </svg>
+
+          <!-- Bottom text -->
+          <div class="ill-bottom">
+            <span class="ill-title">Employee Management System</span>
+            <span class="ill-sub">Streamline your workforce — manage employees, documents, and reports in one place</span>
+          </div>
+        </div>
+      </div>
+
       <div class="login-card">
         <div class="card-body">
           <div class="logo-section">
@@ -98,7 +210,8 @@ import { AuthService } from '../../core/services/auth.service';
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: center;
+      gap: 60px;
       padding: 40px 80px;
       position: relative;
       overflow: hidden;
@@ -143,9 +256,147 @@ import { AuthService } from '../../core/services/auth.service';
       100% { transform: translateY(-110vh); opacity: 0; }
     }
 
+    /* Left illustration */
+    .left-illustration {
+      flex: 1;
+      max-width: 560px;
+      position: relative;
+      z-index: 2;
+      animation: fadeInUp 0.6s 0.2s ease both;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ill-content {
+      transition: transform 0.15s ease-out;
+      will-change: transform;
+    }
+    .ill-svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 20px rgba(31,61,110,0.08));
+    }
+
+    /* Chart bar animation */
+    .chart-bars .bar {
+      transform-origin: bottom;
+      animation: barGrow 0.6s ease both;
+    }
+    .bar1 { animation-delay: 0.1s; }
+    .bar2 { animation-delay: 0.2s; }
+    .bar3 { animation-delay: 0.3s; }
+    .bar4 { animation-delay: 0.4s; }
+    .bar5 { animation-delay: 0.5s; }
+    .bar6 { animation-delay: 0.6s; }
+    .bar7 { animation-delay: 0.7s; }
+
+    @keyframes barGrow {
+      from { transform: scaleY(0); }
+      to { transform: scaleY(1); }
+    }
+
+    /* Growth line drawing */
+    @keyframes drawLine {
+      to { stroke-dashoffset: 0; }
+    }
+
+    .area-fill {
+      animation: areaFade 1s 1s ease both;
+    }
+    @keyframes areaFade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Pulse dots */
+    .pulse-dot {
+      animation: pulse 2s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { r: 4; opacity: 1; }
+      50% { r: 7; opacity: 0.5; }
+    }
+    .pulse-dot:last-child {
+      animation: pulse 2s ease infinite, glow 1.5s ease infinite;
+    }
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(31,61,110,0)); }
+      50% { filter: drop-shadow(0 0 6px rgba(31,61,110,0.4)); }
+    }
+
+    /* Network nodes */
+    .net-node {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: nodePulse 3s ease infinite;
+    }
+    @keyframes nodePulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    .net-node:hover {
+      fill: #4a90d9;
+      stroke: #1f3d6e;
+      stroke-width: 2.5;
+      filter: drop-shadow(0 0 8px rgba(74,144,217,0.5));
+      transform-origin: center;
+    }
+
+    .net-line {
+      transition: opacity 0.3s ease;
+    }
+    .net-node:hover ~ .net-line,
+    .net-node:hover + .net-line {
+      opacity: 0.6 !important;
+    }
+
+    /* Building window animation */
+    .window-lit {
+      animation: windowBlink 3s ease infinite;
+    }
+    @keyframes windowBlink {
+      0%, 100% { opacity: 0.6; }
+      30% { opacity: 0.3; }
+      60% { opacity: 0.7; }
+    }
+
+    /* Stats labels animation */
+    .stats-label {
+      animation: floatLabel 4s ease-in-out infinite;
+    }
+    .stats-label2 {
+      animation: floatLabel 4s ease-in-out 1s infinite;
+    }
+    @keyframes floatLabel {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .ill-bottom {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .ill-title {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f3d6e;
+      letter-spacing: -0.3px;
+    }
+    .ill-sub {
+      display: block;
+      font-size: 13px;
+      color: #8a94a6;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* Login card */
     .login-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       background: #fff;
       border-radius: 20px;
       box-shadow: 0 8px 40px rgba(31,61,110,0.1), 0 1px 4px rgba(0,0,0,0.04);
@@ -157,14 +408,14 @@ import { AuthService } from '../../core/services/auth.service';
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .card-body { padding: 44px 36px 28px; }
+    .card-body { padding: 40px 32px 24px; }
 
-    .logo-section { text-align: center; margin-bottom: 20px; }
-    .logo { width: 96px; height: auto; }
-    h1 { font-size: 22px; font-weight: 700; color: #1f3d6e; text-align: center; margin: 0 0 4px; letter-spacing: -0.3px; }
-    .tagline { font-size: 14px; color: #8a94a6; text-align: center; margin: 0 0 28px; }
+    .logo-section { text-align: center; margin-bottom: 16px; }
+    .logo { width: 80px; height: auto; }
+    h1 { font-size: 20px; font-weight: 700; color: #1f3d6e; text-align: center; margin: 0 0 4px; letter-spacing: -0.3px; }
+    .tagline { font-size: 13px; color: #8a94a6; text-align: center; margin: 0 0 24px; }
 
-    .login-form { display: flex; flex-direction: column; gap: 20px; }
+    .login-form { display: flex; flex-direction: column; gap: 18px; }
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field-label { font-size: 13px; font-weight: 600; color: #4a5568; }
     :host ::ng-deep .input-wrap.ant-input-affix-wrapper {
@@ -201,16 +452,22 @@ import { AuthService } from '../../core/services/auth.service';
       box-shadow: 0 6px 20px rgba(31,61,110,0.3) !important;
     }
 
-    .footer-text { text-align: center; margin-top: 24px; font-size: 11px; color: #b0b8c7; }
+    .footer-text { text-align: center; margin-top: 20px; font-size: 11px; color: #b0b8c7; }
 
+    @media (max-width: 1024px) {
+      .login-page { gap: 30px; padding: 40px; }
+      .left-illustration { max-width: 420px; }
+    }
     @media (max-width: 768px) {
-      .login-page { justify-content: center; padding: 24px; }
+      .login-page { flex-direction: column; justify-content: center; padding: 24px; gap: 30px; }
+      .left-illustration { max-width: 100%; }
       .particles { opacity: 0.35; }
     }
     @media (max-width: 480px) {
       .card-body { padding: 32px 20px 24px; }
-      .logo { width: 80px; }
-      h1 { font-size: 20px; }
+      .logo { width: 72px; }
+      h1 { font-size: 19px; }
+      .left-illustration { display: none; }
     }
   `]
 })
@@ -219,6 +476,9 @@ export class LoginComponent implements OnInit {
   hidePassword = true;
   isLoading = false;
   errorMessage = '';
+
+  mx = 0;
+  my = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -233,6 +493,14 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) this.navigateToHome();
+  }
+
+  @HostListener('mousemove', ['$event'])
+  onMouseMove(e: MouseEvent) {
+    const x = e.clientX / window.innerWidth - 0.5;
+    const y = e.clientY / window.innerHeight - 0.5;
+    this.mx = x * 8;
+    this.my = y * 8;
   }
 
   onSubmit(): void {
