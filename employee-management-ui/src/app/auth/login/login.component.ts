@@ -52,7 +52,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="particle" style="--s:7px;--l:80%;--c:rgba(74,144,217,.2);--d:30s;--dy:14s"></div>
       </div>
       <div class="login-illustration">
-        <img src="assets/Business Analysis.svg" alt="Business Analysis">
+        <img src="assets/business-analysis.svg" alt="Business Analysis">
       </div>
       <div class="login-card">
         <div class="card-body">
