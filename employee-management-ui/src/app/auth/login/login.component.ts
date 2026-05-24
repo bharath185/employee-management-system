@@ -133,8 +133,6 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
         </div>
       </div>
-        </div>
-      </div>
 
       <div class="login-card">
         <div class="card-body">
