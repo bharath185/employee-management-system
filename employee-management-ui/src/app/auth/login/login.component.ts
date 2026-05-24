@@ -52,9 +52,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="particle" style="--s:7px;--l:80%;--c:rgba(74,144,217,.2);--d:30s;--dy:14s"></div>
       </div>
       <div class="login-illustration">
-        <div class="ill-crop">
-          <img src="assets/business-analysis.svg" alt="Business Analysis">
-        </div>
+        <img src="assets/business-analysis.svg" alt="Business Analysis">
       </div>
       <div class="login-card">
         <div class="card-body">
@@ -214,21 +212,16 @@ import { AuthService } from '../../core/services/auth.service';
       left: 25vw;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: 600px;
-      max-width: 42vw;
+      width: 45vw;
+      max-width: 720px;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
     }
-    .ill-crop {
-      overflow: hidden;
-    }
-    .ill-crop img {
+    .login-illustration img {
       width: 100%;
       height: auto;
       display: block;
-      margin-top: -8%;
-      filter: drop-shadow(0 4px 24px rgba(31,61,110,0.08));
     }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(30px); }
@@ -252,7 +245,7 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1100px) {
-      .login-illustration { width: 480px; left: 22vw; }
+      .login-illustration { width: 38vw; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
