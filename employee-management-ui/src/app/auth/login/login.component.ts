@@ -193,6 +193,8 @@ import { AuthService } from '../../core/services/auth.service';
           <p class="footer-text">Employee Management System &copy; 2026</p>
         </div>
       </div>
+
+      <div class="bottom-credit">Developed by <a href="https://www.prigenix.com" target="_blank">Prigenix</a></div>
     </div>
 
     <ng-template #pwdSuffix>
@@ -452,6 +454,22 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .footer-text { text-align: center; margin-top: 24px; font-size: 11px; color: #b0b8c7; }
+
+    .bottom-credit {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #8a94a6;
+      z-index: 2;
+    }
+    .bottom-credit a {
+      color: #1f3d6e;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1024px) {
       .left-illustration { left: 30px; width: 400px; max-width: 40vw; }
