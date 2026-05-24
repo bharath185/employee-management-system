@@ -212,12 +212,6 @@ import { AuthService } from '../../core/services/auth.service';
             <path d="M100,410 Q180,395 280,410 Q380,425 460,410" fill="none" stroke="#1f3d6e" stroke-width="2" opacity="0.06"/>
             <path d="M100,415 Q180,400 280,415 Q380,430 460,415" fill="none" stroke="#4a90d9" stroke-width="1.5" opacity="0.04"/>
           </svg>
-
-          <!-- Bottom text -->
-          <div class="ill-bottom">
-            <span class="ill-title">Employee Management System</span>
-            <span class="ill-sub">Streamline your workforce — manage employees, documents, and reports in one place</span>
-          </div>
         </div>
       </div>
 
@@ -321,8 +315,8 @@ import { AuthService } from '../../core/services/auth.service';
       left: 25vw;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: 560px;
-      max-width: 42vw;
+      width: 680px;
+      max-width: 46vw;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
@@ -419,25 +413,6 @@ import { AuthService } from '../../core/services/auth.service';
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .ill-bottom {
-      margin-top: 20px;
-      text-align: center;
-    }
-    .ill-title {
-      display: block;
-      font-size: 18px;
-      font-weight: 700;
-      color: #1f3d6e;
-      letter-spacing: -0.3px;
-    }
-    .ill-sub {
-      display: block;
-      font-size: 13px;
-      color: #8a94a6;
-      margin-top: 6px;
-      line-height: 1.5;
-    }
-
     /* Login card */
     .login-card {
       width: 100%;
@@ -516,10 +491,10 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1200px) {
-      .left-illustration { left: 22vw; width: 420px; max-width: 38vw; }
+      .left-illustration { left: 22vw; width: 520px; max-width: 40vw; }
     }
     @media (max-width: 1024px) {
-      .left-illustration { left: 20vw; width: 360px; max-width: 35vw; }
+      .left-illustration { left: 20vw; width: 440px; max-width: 36vw; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
