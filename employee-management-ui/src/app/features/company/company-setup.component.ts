@@ -158,8 +158,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
               </div>
               <div class="logo-actions">
                 <input #logoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)" />
-                <button nz-button nzType="default" (click)="logoInput.click()" class="upload-btn">
-                  <i nz-icon nzType="upload"></i> Upload Logo
+                <button nz-button nzType="default" (click)="logoInput.click()" class="upload-btn" [nzLoading]="isLogoUploading">
+                  <i nz-icon nzType="upload"></i> {{ isLogoUploading ? 'Uploading...' : 'Upload Logo' }}
                 </button>
                 <p class="logo-hint">Recommended: 200x200px, PNG or JPG</p>
               </div>
@@ -306,6 +306,7 @@ export class CompanySetupComponent implements OnInit {
 
   incorporatedDate: Date | null = null;
   logoPreviewUrl: string = '';
+  isLogoUploading = false;
   selectedLogo?: File;
   documents: CompanyDocument[] = [];
 
@@ -401,12 +402,28 @@ export class CompanySetupComponent implements OnInit {
   onLogoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.selectedLogo = input.files[0];
+      const file = input.files[0];
+      this.isLogoUploading = true;
+      this.companyService.uploadLogo(file).subscribe({
+        next: (response) => {
+          this.isLogoUploading = false;
+          if (response.success && response.data) {
+            this.companyForm.logoPath = response.data.logoPath;
+            this.logoPreviewUrl = '';
+            this.message.success('Logo uploaded successfully');
+          }
+        },
+        error: (err) => {
+          this.isLogoUploading = false;
+          this.message.error(err.error?.message || 'Error uploading logo');
+        }
+      });
+      // Show local preview immediately while uploading
       const reader = new FileReader();
       reader.onload = (e) => {
         this.logoPreviewUrl = e.target?.result as string;
       };
-      reader.readAsDataURL(this.selectedLogo);
+      reader.readAsDataURL(file);
     }
     input.value = '';
   }
