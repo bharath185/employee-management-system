@@ -7,7 +7,7 @@ RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN mkdir -p /tmp/uploads/photos /tmp/uploads/documents
+RUN mkdir -p /tmp/uploads/photos /tmp/uploads/documents /tmp/uploads/company
 COPY --from=build /app/target/employee-management-api-*.jar app.jar
 EXPOSE 8080
 CMD ["java", "-jar", "app.jar"]

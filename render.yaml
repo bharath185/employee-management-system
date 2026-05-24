@@ -27,6 +27,8 @@ services:
         value: /tmp/uploads/photos
       - key: UPLOAD_DIR_DOCS
         value: /tmp/uploads/documents
+      - key: UPLOAD_DIR_COMPANY
+        value: /tmp/uploads/company
       - key: LOG_LEVEL
         value: INFO
       - key: APP_BASE_URL
