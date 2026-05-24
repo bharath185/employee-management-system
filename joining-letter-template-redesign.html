@@ -339,7 +339,7 @@
         .ref-block {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
         }
 
         .ref-block .ref-row {
@@ -351,6 +351,7 @@
             font-weight: 600;
             color: var(--color-primary-dark);
             white-space: nowrap;
+            flex-shrink: 0;
             min-width: 50px;
             font-size: 10px;
         }
@@ -359,6 +360,9 @@
             font-weight: 500;
             color: var(--color-text);
             font-size: 11px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            min-width: 0;
         }
 
         /* ============================================================
@@ -917,9 +921,11 @@
             <!-- Designation & Reporting -->
             <tr>
                 <td class="label">Designation</td>
-                <td class="value">{{designation}}</td>
+                <td class="value" colspan="3">{{designation}}</td>
+            </tr>
+            <tr>
                 <td class="label">Reporting to</td>
-                <td class="value">S Babu Reddy</td>
+                <td class="value" colspan="3">S Babu Reddy</td>
             </tr>
 
             <!-- SECTION: Bank Details -->
