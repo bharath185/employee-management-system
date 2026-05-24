@@ -2,6 +2,7 @@ package com.ems.dto;
 
 import com.ems.model.DocumentTemplate;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class DocumentTemplateDTO {
     private String description;
     private String content;
     private String variables;
+    @JsonProperty("active")
     private Boolean isActive;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
