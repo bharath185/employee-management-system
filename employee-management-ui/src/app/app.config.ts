@@ -25,7 +25,8 @@ import {
   TagOutline, HeartOutline, IdcardOutline, GoldOutline, BookOutline,
   SolutionOutline, ExperimentOutline, FolderOutline, HomeOutline,
   CameraOutline, MailOutline, EnvironmentOutline, InfoCircleOutline,
-  ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline
+  ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
+  InboxOutline, CheckOutline, StopOutline
 } from '@ant-design/icons-angular/icons';
 
 registerLocaleData(en);
@@ -42,7 +43,8 @@ const icons = [
   TagOutline, HeartOutline, IdcardOutline, GoldOutline, BookOutline,
   SolutionOutline, ExperimentOutline, FolderOutline, HomeOutline,
   CameraOutline, MailOutline, EnvironmentOutline, InfoCircleOutline,
-  ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline
+  ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
+  InboxOutline, CheckOutline, StopOutline
 ];
 
 export const appConfig: ApplicationConfig = {

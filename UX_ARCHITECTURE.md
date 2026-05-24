@@ -1,1856 +1,1548 @@
 # Employee Management System — UX Architecture Specification
 
-> **Version:** 1.0  
-> **Date:** May 18, 2026  
+> **Version:** 2.0  
+> **Date:** May 24, 2026  
 > **Author:** ArchitectUX Agent  
-> **System:** Employee Management System (EMS)  
-> **Theme Color:** `#1f3d6e` (Professional Blue)  
-> **Stack:** Angular 17+ (Standalone) | Angular Material | Spring Boot 3.x | MySQL 8
+> **Module:** Document Template & Company Setup  
+> **Stack:** Angular 17+ (Standalone) | ng-zorro-antd (Ant Design) | Spring Boot 3.x | MySQL 8  
+> **Color System:** Navy Primary `#1f3d6e` / `#2a5298` | Clean Whites | Subtle Shadows
 
 ---
 
 ## Table of Contents
 
-1. [User Personas](#1-user-personas)
-2. [User Journeys](#2-user-journeys)
-3. [Information Architecture](#3-information-architecture)
-4. [Navigation Design](#4-navigation-design)
-5. [Form Design Principles](#5-form-design-principles)
-6. [Responsive Design Strategy](#6-responsive-design-strategy)
-7. [Interaction Design](#7-interaction-design)
-8. [Accessibility](#8-accessibility)
-9. [Error Handling UX](#9-error-handling-ux)
-10. [Empty States](#10-empty-states)
-11. [Screen-by-Screen Wireframe Descriptions](#11-screen-by-screen-wireframe-descriptions)
+1. [Module Scope & Architecture](#1-module-scope--architecture)
+2. [Personas & Permissions Matrix](#2-personas--permissions-matrix)
+3. [Route Design & Sidebar Integration](#3-route-design--sidebar-integration)
+4. [Company Setup — Page Specification](#4-company-setup--page-specification)
+5. [Document Template List — Page Specification](#5-document-template-list--page-specification)
+6. [Template Editor — Page Specification](#6-template-editor--page-specification)
+7. [Employee Document Download — Modal Specification](#7-employee-document-download--modal-specification)
+8. [Download Reports — Page Specification](#8-download-reports--page-specification)
+9. [Interaction & State Design](#9-interaction--state-design)
+10. [Empty, Loading & Error States](#10-empty-loading--error-states)
+11. [Accessibility & Theme](#11-accessibility--theme)
 12. [Developer Handoff Checklist](#12-developer-handoff-checklist)
 
 ---
 
-## 1. User Personas
+## 1. Module Scope & Architecture
 
-### 1.1 Admin User — HR Manager
-
-**Profile:**
-- **Name:** Priya Sharma (representative)
-- **Role:** HR Manager / HR Executive
-- **Technical skill:** Moderate — comfortable with web applications, form-filling, data entry
-- **Frequency of use:** Daily, 4-6 hours per day
-- **Primary device:** Desktop (laptop with 1366px-1920px screens)
-- **Secondary device:** Tablet for approvals on-the-go
-
-**Goals & Needs:**
-- Manage complete employee lifecycle from onboarding to exit
-- Enter and maintain 80+ data fields per employee across 10 categories
-- Search, filter, and export employee data quickly
-- Configure dropdown values (master data) without developer help
-- Generate reports for management reviews
-- Track changes via audit trail
-
-**Pain Points:**
-- Too many fields on a single form are overwhelming
-- Cascading dropdowns that don't update correctly cause data errors
-- Slow search when the employee count grows (100+)
-- Hard to find specific employees without advanced filters
-
-**Success Criteria:**
-- Can add a new employee in under 3 minutes
-- Can find any employee record within 2 clicks
-- Can export a filtered report in under 10 seconds
-- Never loses unsaved work
-
----
-
-### 1.2 Employee User — Staff Member
-
-**Profile:**
-- **Name:** Rajesh Kumar (representative)
-- **Role:** Software Engineer / Team Member
-- **Technical skill:** Varies — basic to moderate
-- **Frequency of use:** Monthly or quarterly (to update profile)
-- **Primary device:** Mobile phone or personal laptop
-
-**Goals & Needs:**
-- View own profile information
-- Update personal contact details (mobile, address)
-- Upload or change profile photo
-- Change password
-- View employment history and documents
-
-**Pain Points:**
-- Complex forms with too many fields they don't understand
-- Can't easily find where to update their mobile number
-- Not sure which fields they are allowed to edit vs. read-only
-- Photo upload fails without clear error messages
-
-**Success Criteria:**
-- Can find profile editing in under 30 seconds
-- Can update mobile number in under 1 minute
-- Knows exactly which fields are editable
-- Receives clear confirmation when changes are saved
-
----
-
-## 2. User Journeys
-
-### Journey 1: Admin Login → Dashboard
-
-**Flow Overview:**
-
-```
-[Login Page] → [Authenticate] → [Dashboard]
-```
-
-**Step-by-Step Detailed Flow:**
-
-| Step | Screen | User Action | System Response | UX Notes |
-|------|--------|-------------|-----------------|----------|
-| 1 | Login | Navigates to `/auth/login` | Display login page with centered card | Full-page layout, no sidebar |
-| 2 | Login | Sees branding elements | Company logo at top, system title | Logo: `assets/logo.jpg`, max 180px wide |
-| 3 | Login | Enters username (employee code) | Text input with clear label | Placeholder: "Enter Employee Code" |
-| 4 | Login | Enters password | Password input with show/hide toggle | Eye icon toggles visibility |
-| 5 | Login | Clicks "Sign In" button | Button shows loading spinner | Button text changes to "Signing in..." |
-| 6 | Login | (Optional) Checks "Remember Me" | Checkbox persists preference | Extends token storage to local/session |
-| 7 | Login | Invalid credentials | Red error message below form | "Invalid username or password. 3 attempts remaining." |
-| 8 | Login | Account locked | Yellow warning message | "Account locked due to 5 failed attempts. Try again after 30 minutes." |
-| 9 | Login | Valid credentials | JWT stored, redirect to dashboard | Access token → localStorage, redirect to `/admin/dashboard` |
-| 10 | Dashboard | View stats overview | 4 stat cards in a row | Total Employees, Active, New This Month, Exited |
-| 11 | Dashboard | View charts | Distribution charts load | Gender pie chart, Status bar chart |
-| 12 | Dashboard | View recent hires | Table of 5 most recent employees | Photo thumb, name, code, designation, DOJ |
-| 13 | Dashboard | Click quick action | Navigate to target page | Quick action buttons: Add Employee, Employee List, Reports |
-
-**Screen Layout — Login Page (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│                                                                 │
-│                    ┌─────────────────────────┐                  │
-│                    │     [COMPANY LOGO]       │                  │
-│                    │                         │                  │
-│                    │   Employee Management   │                  │
-│                    │        System           │                  │
-│                    │                         │                  │
-│                    │  ┌───────────────────┐  │                  │
-│                    │  │ Employee Code     │  │                  │
-│                    │  │ ┌───────────────┐ │  │                  │
-│                    │  │ │ EMP0001       │ │  │                  │
-│                    │  │ └───────────────┘ │  │                  │
-│                    │  └───────────────────┘  │                  │
-│                    │                         │                  │
-│                    │  ┌───────────────────┐  │                  │
-│                    │  │ Password          │  │                  │
-│                    │  │ ┌───────────────┐ │  │                  │
-│                    │  │ │ ••••••••••   👁│ │  │                  │
-│                    │  │ └───────────────┘ │  │                  │
-│                    │  └───────────────────┘  │                  │
-│                    │                         │                  │
-│                    │  ┌────────────────────┐ │                  │
-│                    │  │ ◻ Remember Me      │ │                  │
-│                    │  └────────────────────┘ │                  │
-│                    │                         │                  │
-│                    │  ┌───────────────────┐  │                  │
-│                    │  │    SIGN IN        │  │                  │
-│                    │  └───────────────────┘  │                  │
-│                    │                         │                  │
-│                    │  Forgot password?       │                  │
-│                    └─────────────────────────┘                  │
-│                                                                 │
-│                     © 2026 Company Name                         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Screen Layout — Admin Dashboard (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐│
-│ │LOGO│  Employee Management   │    🔔  👤 Admin User  ⬇️  ││
-│ └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘│
-│ ┌────────┐ ┌──────────────────────────────────────────────────┐│
-│ │ 🏠     │ │  Dashboard                                       ││
-│ │ Dashbd │ │                                                  ││
-│ │        │ │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐││
-│ │ 👥     │ │  │ 1,234   │ │ 1,142   │ │   23    │ │   12    │││
-│ │ Empl.  │ │  │ Total   │ │ Active  │ │ New     │ │ Exited  │││
-│ │        │ │  │Employees │ │Employees│ │ This Mo │ │This Mo  │││
-│ │ 🗂️     │ │  └─────────┘ └─────────┘ └─────────┘ └─────────┘││
-│ │ Master │ │                                                  ││
-│ │        │ │  ┌─────────────────────┐ ┌─────────────────────┐ ││
-│ │ 📊     │ │  │  Gender Dist.       │ │  Status Dist.       │ ││
-│ │ Report │ │  │  ┌─────┐            │ │  ┌─────┐            │ ││
-│ │        │ │  │  │ Pie │            │ │  │ Bar │            │ ││
-│ │ ⚙️     │ │  │  │Chart│            │ │  │Chart│            │ ││
-│ │ Sett.  │ │  │  └─────┘            │ │  └─────┘            │ ││
-│ │        │ │  └─────────────────────┘ └─────────────────────┘ ││
-│ │ ◀ Coll.│ │                                                  ││
-│ └────────┘ │  ┌──────────────────────────────────────────┐    ││
-│            │  │ Recent Employees                          │    ││
-│            │  │ ┌────┬──────────┬──────────┬────────────┐ │    ││
-│            │  │ │Photo│  Name   │  Code    │  DOJ       │ │    ││
-│            │  │ ├────┼──────────┼──────────┼────────────┤ │    ││
-│            │  │ │ 🖼 │ John Doe │ EMP0001 │ 15-Jan-2024│ │    ││
-│            │  │ │ 🖼 │ Jane S.  │ EMP0002 │ 01-Mar-2024│ │    ││
-│            │  │ └────┴──────────┴──────────┴────────────┘ │    ││
-│            │  └──────────────────────────────────────────┘    ││
-│            │                                                  ││
-│            │  Quick Actions: [➕ Add Emp] [👥 All Emps]       ││
-│            │                       [📊 Reports]               ││
-│            └──────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Journey 2: Add New Employee
-
-**Flow Overview:**
-
-```
-[Dashboard / Employee List] → [Click Add Employee] → [Tabbed Form] → [Fill Tabs] → [Save] → [Success]
-```
-
-**Step-by-Step Detailed Flow:**
-
-| Step | Screen | User Action | System Response | UX Notes |
-|------|--------|-------------|-----------------|----------|
-| 1 | Dashboard/List | Clicks "Add Employee" | Navigate to `/admin/employees/new` | Button is primary CTA on dashboard |
-| 2 | Form | Form loads | Tab 1 (Personal Info) active, auto-generates employee code | Skeleton loader for master data |
-| 3 | Personal Info | Fills required fields | Real-time validation on blur | Required fields marked with * |
-| 4 | Personal Info | Enters DOB | Age and Age Bracket auto-calculate | Update on blur, not on every keystroke |
-| 5 | Form | Clicks Tab 2 | Tab switches, form data preserved | Auto-save draft to service (in-memory) |
-| 6 | Demographics | Selects Social Category | Social Subcategory dropdown filters | Cascade update with loading indicator |
-| 7 | Form | Fills remaining tabs | Data accumulates in form model | Progress indicator updates |
-| 8 | Exit & Docs | Uploads photo | Drag-drop zone, preview appears | Max 2MB, jpg/png only, immediate preview |
-| 9 | Form | Clicks "Create" | Client-side validation passes | Button enabled only when form valid |
-| 10 | Form | Validation fails | First tab with errors activated, error fields highlighted | Inline error messages below fields |
-| 11 | Form | All valid | Loading spinner on button, API call | "Creating employee..." |
-| 12 | Form | Success response | Green toast: "Employee created successfully!" | Toast auto-dismisses after 5s |
-| 13 | Form | Redirect | Navigate to employee list or view | Option: "View employee" link in toast |
-
-**Screen Layout — Tabbed Form (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐│
-│ │◀ Back  │  Add New Employee            │ 💾Draft │ ✅Create ││
-│ └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘│
-│                                                                  │
-│  Tab Progress: [1●]──[2○]──[3○]──[4○]──[5○]──[6○]──[7○]──[8○]  │
-│                   [9○]──[10○]                                    │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  [Personal Info] [Demo] [Assets] [Ident] [Edu] [Bank]   │   │
-│  │  [Empl.] [Family] [Exp/Ref] [Exit/Docs]                  │   │
-│  ├──────────────────────────────────────────────────────────┤   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ Employee Code *    │  │ Prefix *           │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │ EMP0158        │ │  │ │ Mr. ▼          │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ First Name *       │  │ Surname *          │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │                │ │  │ │                │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ Gender *           │  │ Marital Status     │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │ Male ▼         │ │  │ │ Married ▼      │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ Father/Husband     │  │ F/M/H              │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │                │ │  │ │ Father ▼       │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ DOB *              │  │ Age (Auto)         │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │ 📅 15-May-1998 │ │  │ │ 28             │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  │  ┌──────────────────────────────────────────────────┐   │   │
-│  │  │ Present Address                                  │   │   │
-│  │  │ ┌────────────────────────────────────────────────┐│   │   │
-│  │  │ │ 123 Main Street, City, State                  ││   │   │
-│  │  │ └────────────────────────────────────────────────┘│   │   │
-│  │  └──────────────────────────────────────────────────┘   │   │
-│  │                                                          │   │
-│  │  ┌────────────────────┐  ┌────────────────────┐         │   │
-│  │  │ Email              │  │ Mobile *           │         │   │
-│  │  │ ┌────────────────┐ │  │ ┌────────────────┐ │         │   │
-│  │  │ │ j@company.com  │ │  │ │ 9876543210     │ │         │   │
-│  │  │ └────────────────┘ │  │ └────────────────┘ │         │   │
-│  │  └────────────────────┘  └────────────────────┘         │   │
-│  │                                                          │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  ⚠️ Unsaved changes will be lost if you navigate away            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Journey 3: Search/Filter Employees
-
-**Flow Overview:**
-
-```
-[Employee List] → [Search/Filter] → [View Results] → [Click Row] → [View Details]
-```
-
-**Step-by-Step Detailed Flow:**
-
-| Step | Screen | User Action | System Response | UX Notes |
-|------|--------|-------------|-----------------|----------|
-| 1 | Employee List | Navigate to `/admin/employees` | Table loads with paginated data | Show loading skeleton first |
-| 2 | List | Types in search box | Debounced (300ms) API call with partial results | Search across name, code, email, mobile |
-| 3 | List | Search results update | Table smoothly animates row changes | No full-page reload |
-| 4 | List | Clicks "Advanced Filters" | Expandable panel slides down | Animated height transition |
-| 5 | Filters | Selects status = "Live" | Table filters immediately | Dropdown applies instantly |
-| 6 | Filters | Selects designation = "Engineer" | Additional filter applied | Multiple filters AND together |
-| 7 | Filters | Clicks "Clear All" | All filters reset, full list reloads | One-click reset |
-| 8 | List | Clicks pagination "Next" | Page 2 loads with same filters | Page number preserved in URL |
-| 9 | List | Clicks employee row | Navigate to `/admin/employees/{id}` | Read-only view mode |
-| 10 | View | Clicks "Edit" | Navigate to `/admin/employees/{id}/edit` | Same form but prefilled |
-| 11 | View | Clicks "Delete" | Confirmation dialog appears | "Are you sure? This employee will be deactivated." |
-
-**Screen Layout — Employee List (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐│
-│ │LOGO│  Employee Management   │    🔔  👤 Admin  ⬇️  ││
-│ └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘│
-│ ┌────────┐ ┌──────────────────────────────────────────────────┐│
-│ │ 🏠     │ │  Employee List         [+ Add Employee] [📥Exp] ││
-│ │ Dashbd │ │                                  [📤Imp]        ││
-│ │        │ │  ┌─Search──────────────────────────────────────┐ ││
-│ │ 👥     │ │  │ 🔍 Search by name, code, email, mobile...  │ ││
-│ │ Empl.  │ │  └────────────────────────────────────────────┘ ││
-│ │        │ │  [▾ Advanced Filters]                           ││
-│ │ 🗂️     │ │  ┌────────────────────────────────────────────┐ ││
-│ │ Master │ │  │ Status: [All ▼] Designation: [All ▼]      │ ││
-│ │        │ │  │ Gender: [All ▼] Religion: [All ▼]         │ ││
-│ │ 📊     │ │  │ DOB From: [📅] To: [📅]  [Clear All]    │ ││
-│ │ Report │ │  └────────────────────────────────────────────┘ ││
-│ │        │ │                                                  ││
-│ │ ⚙️     │ │  ┌────┬──────────┬────────┬─────────┬────────┬┐││
-│ │ Sett.  │ │  │Code│ Name     │Gender  │Designat │Status  ││││
-│ │        │ │  ├────┼──────────┼────────┼─────────┼────────┤│││
-│ │ ◀ ▶    │ │  │▶   │John Doe  │Male    │Engineer │Live    ││││
-│ │        │ │  │▶   │Jane S.   │Female  │Manager  │Live    ││││
-│ │        │ │  │▶   │Bob M.    │Male    │Trainee  │Live    ││││
-│ │        │ │  │▶   │Alice K.  │Female  │Engineer │Quit    ││││
-│ │        │ │  │▶   │Tom R.    │Male    │Sr Eng.  │Live    ││││
-│ │        │ │  └────┴──────────┴────────┴─────────┴────────┘│││
-│ │        │ │                                                  ││
-│ │        │ │  1-5 of 156  ◀ [1] [2] [3] ... [32] ▶          ││
-│ └────────┘ └──────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Journey 4: Employee Self-Service
-
-**Flow Overview:**
-
-```
-[Login as Employee] → [Simplified Dashboard] → [My Profile] → [Edit Limited Fields]
-```
-
-**Step-by-Step Detailed Flow:**
-
-| Step | Screen | User Action | System Response | UX Notes |
-|------|--------|-------------|-----------------|----------|
-| 1 | Login | Employee logs in with own credentials | JWT role = `EMPLOYEE` | Same login page, role-based redirect |
-| 2 | Dashboard | Sees simplified dashboard | Only own stats: name, code, designation, DOJ, photo | No admin stats or charts |
-| 3 | Nav | Sees limited navigation | Only "My Profile" and "Logout" visible | Sidebar shows only relevant options |
-| 4 | Profile | Views own profile | Read-only view of all fields | Fields grouped by tab, no edit mode |
-| 5 | Profile | Clicks "Edit Profile" | Form opens with limited editable fields | Only contact info, address, family are editable |
-| 6 | Edit | Changes mobile number | Field is enabled | Greyed-out fields show lock icon |
-| 7 | Edit | Clicks "Update" | Validation runs, API call made | Success toast: "Profile updated!" |
-| 8 | Profile | Returns to view | Updated data reflected | Optimistic UI update |
-
-**Screen Layout — Employee Dashboard (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐│
-│ │LOGO│  Employee Portal        │    🔔  👤 Rajesh  ⬇️   ││
-│ └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘│
-│ ┌────────┐ ┌──────────────────────────────────────────────────┐│
-│ │        │ │                                                  ││
-│ │ 👤     │ │  ┌────────────────────────────────────────┐     ││
-│ │ My     │ │  │  Welcome, Rajesh Kumar!                 │     ││
-│ │ Profile│ │  │  ┌────────┐                            │     ││
-│ │        │ │  │  │ 🖼     │  Employee Code: EMP0042    │     ││
-│ │ 🔒     │ │  │  │ Photo  │  Designation: Engineer     │     ││
-│ │ Logout │ │  │  └────────┘  Department: Development   │     ││
-│ │        │ │  │              Date of Joining: 01-Jun-24│     ││
-│ └────────┘ │  └────────────────────────────────────────┘     ││
-│            │                                                  ││
-│            │  ┌────────────────────────────────────────┐     ││
-│            │  │  Quick Actions                          │     ││
-│            │  │  [👤 View My Profile] [✏️ Edit Details]  │     ││
-│            │  │  [🔑 Change Password]                    │     ││
-│            │  └────────────────────────────────────────┘     ││
-│            │                                                  ││
-│            │  ┌────────────────────────────────────────┐     ││
-│            │  │  My Details                            │     ││
-│            │  │  ┌──────────────────────────────────┐  │     ││
-│            │  │  │ 📧 Email: rajesh@company.com     │  │     ││
-│            │  │  │ 📞 Mobile: 9876543210             │  │     ││
-│            │  │  │ 🏠 Address: 123 Main Street       │  │     ││
-│            │  │  │ 💉 Blood Group: B+                │  │     ││
-│            │  │  └──────────────────────────────────┘  │     ││
-│            │  └────────────────────────────────────────┘     ││
-│            │                                                  ││
-│            │  ┌────────────────────────────────────────┐     ││
-│            │  │  Recent Activity                        │     ││
-│            │  │  • Profile updated on 15-May-2026       │     ││
-│            │  │  • Password changed on 01-Apr-2026      │     ││
-│            │  └────────────────────────────────────────┘     ││
-│            └──────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Employee Edit Limitations:**
-
-| Tab | Fields Editable by Employee | Read-Only for Employee |
-|-----|----------------------------|----------------------|
-| Personal Info | Email, Mobile, Present Address, Permanent Address, Close Relative Name/Phone | Employee Code, Name, Prefix, DOB, DOJ, Gender, Marital Status, Father/Husband, Occupation |
-| Demographics | None | All fields |
-| Assets | None | All fields |
-| Identity | None | All fields |
-| Education | None | All fields |
-| Bank Details | None | All fields |
-| Employment | None | All fields |
-| Family | Father Name, Father Phone, Mother Name, Mother Phone, Spouse Name, Spouse Phone | — |
-| Experience & Ref | None | All fields |
-| Exit & Docs | Photo upload | All fields |
-
----
-
-### Journey 5: Master Data Management
-
-**Flow Overview:**
-
-```
-[Admin Dashboard] → [Masters Setup] → [Select Category] → [CRUD Operations]
-```
-
-**Step-by-Step Detailed Flow:**
-
-| Step | Screen | User Action | System Response | UX Notes |
-|------|--------|-------------|-----------------|----------|
-| 1 | Dashboard/Sidebar | Clicks "Masters Setup" | Navigate to `/admin/masters` | Default category selected |
-| 2 | Masters | Selects category from dropdown | Table updates with values for that category | Dropdown with all master categories |
-| 3 | Masters | Sees existing values | Sorted by sort_order | Columns: Code, Value, Sort Order, Active, Actions |
-| 4 | Masters | Clicks "Add Value" | Modal/dialog opens | Inline form or side panel |
-| 5 | Add Dialog | Fills Code, Value, Sort Order | Form validation | Code must be unique within category |
-| 6 | Add Dialog | Clicks "Save" | API call, table refreshes, toast: "Value added" | Row appears at correct sort position |
-| 7 | Masters | Clicks edit icon on a row | Row becomes editable inline | Direct inline editing |
-| 8 | Masters | Toggles active/inactive | Visual indicator changes | Inactive items shown with strikethrough/grey |
-| 9 | Masters | Clicks delete icon | Confirmation dialog | "Delete [value]? This may affect existing employee records." |
-| 10 | Masters | Confirms delete | Soft delete (active=false), row hidden | Values are never hard-deleted |
-
-**Screen Layout — Masters Setup (ASCII Wireframe):**
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐│
-│ │◀ Back to Dashboard │  Masters Setup            │              ││
-│ └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘│
-│                                                                  │
-│  Select Category: ┌─────────────────────────┐                    │
-│                   │  GENDER              ▼  │  [+ Add New Value] │
-│                   └─────────────────────────┘                    │
-│                                                                  │
-│  ┌─────┬──────────┬───────────┬──────────┬────────────────────┐ │
-│  │ #   │ Code     │ Value     │ Sort Ord │ Actions            │ │
-│  ├─────┼──────────┼───────────┼──────────┼────────────────────┤ │
-│  │ 1   │ MALE     │ Male      │    1     │ [✏️] [🗑️] [● Active] │ │
-│  │ 2   │ FEMALE   │ Female    │    2     │ [✏️] [🗑️] [● Active] │ │
-│  │ 3   │ OTHER    │ Other     │    3     │ [✏️] [🗑️] [○ Inactive]│ │
-│  └─────┴──────────┴───────────┴──────────┴────────────────────┘ │
-│                                                                  │
-│  ⚠️ Changes to master data reflect immediately in employee forms │
-│     Deleting a value will hide it from dropdowns but existing    │
-│     employee records will retain the value.                      │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 3. Information Architecture
-
-### 3.1 Sitemap
-
-```
-/ (Root)
-│
-├── /auth
-│   └── /auth/login                          → Login Page (public)
-│
-├── /admin (requires ADMIN role)
-│   ├── /admin/dashboard                     → Admin Dashboard
-│   ├── /admin/employees                     → Employee List (table)
-│   │   ├── /admin/employees/new             → Add New Employee (tabbed form)
-│   │   ├── /admin/employees/:id              → View Employee (read-only)
-│   │   └── /admin/employees/:id/edit         → Edit Employee (tabbed form)
-│   ├── /admin/masters                       → Master Data Management
-│   └── /admin/reports                       → Reports & Export
-│
-├── /employee (requires EMPLOYEE role)
-│   ├── /employee/profile                    → View My Profile (read-only)
-│   └── /employee/profile/edit               → Edit My Profile (limited fields)
-│
-└── /**                                       → Wildcard redirect to /auth/login
-```
-
-### 3.2 Content Hierarchy & Page Weight
-
-| Page | Content Loaded | Data Dependencies | Estimated Fields |
-|------|---------------|------------------|-----------------|
-| Login | Logo, form, copyright | None (static) | 3 |
-| Admin Dashboard | 4 stat cards, 2 charts, recent list | `GET /dashboard/stats`, `GET /dashboard/recent` | 8 |
-| Employee List | Search bar, filters, table, pagination | `GET /employees` (paginated) | 6+ per row |
-| Employee Form | 10 tab components, 80 fields, master data dropdowns | `GET /masters/*` (multiple categories) | 80 |
-| Employee View | Read-only display of 80 fields grouped | `GET /employees/{id}` | 80 |
-| Masters Setup | Category dropdown, CRUD table, edit dialog | `GET /masters/{category}` | 3+ per row |
-| Reports | Report type selector, filter controls, results | `GET /employees/export` | Variable |
-| Employee Dashboard | Welcome card, profile summary, quick actions | `GET /employees/{id}` (own) | 10 |
-| Employee Profile | Read-only view (employee's own data) | `GET /employees/{id}` | 80 |
-
-### 3.3 Screen Dependency Graph
-
-```
-[Login] ──(auth success)──> [Role Decision]
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-               [ADMIN]               [EMPLOYEE]
-                    │                     │
-                    ▼                     ▼
-          [Admin Dashboard]      [Employee Dashboard]
-                    │                     │
-        ┌───────────┼───────────┐         │
-        │           │           │         │
-        ▼           ▼           ▼         ▼
-   [Employee    [Masters    [Reports]  [My Profile]
-     List]       Setup]                  │
-        │                                │
-    ┌───┴───┐                       [Edit Profile]
-    │       │
-  [Add]  [View/:id]
-    │       │
-    │   [Edit/:id]
-    │
-  [Save → List]
-```
-
----
-
-## 4. Navigation Design
-
-### 4.1 Navigation Structure
-
-#### Desktop (≥1200px) — Full Left Sidebar + Top Toolbar
+### 1.1 Module Boundaries
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ [Logo]  Employee Management System          [🔍] [🔔] [👤 ⬇️] │  ← Top Toolbar (64px)
-├──────┬───────────────────────────────────────────────────────┤
-│      │                                                       │
-│ 🏠   │  Page Content                                        │
-│ Dashboard│                                                    │  ← Sidebar (260px)
-│      │                                                       │
-│ 👥   │                                                       │
-│ Employees│                                                    │
-│      │                                                       │
-│ 🗂️   │                                                       │
-│ Masters│                                                     │
-│      │                                                       │
-│ 📊   │                                                       │
-│ Reports│                                                     │
-│      │                                                       │
-│ ◀    │                                                       │  ← Collapse toggle
-└──────┴───────────────────────────────────────────────────────┘
+│                    Document & Company Module                   │
+│                                                              │
+│  ┌─────────────────────┐  ┌──────────────────────────────┐   │
+│  │   Company Setup     │  │    Document Templates          │   │
+│  │  (Superadmin only)  │  │    (Admin: CRUD)               │   │
+│  │                     │  │                                 │   │
+│  │  • Company profile  │  │  • Template list + filters     │   │
+│  │  • Logo upload      │  │  • Template editor (content)   │   │
+│  │  • Legal documents  │  │  • Placeholder system          │   │
+│  └─────────────────────┘  │  • Preview & generation        │   │
+│                            └──────────────────────────────┘   │
+│                                                              │
+│  ┌─────────────────────┐  ┌──────────────────────────────┐   │
+│  │   Doc Generation    │  │    Download Reports            │   │
+│  │  (from Employee     │  │    (Admin: view only)          │   │
+│  │   Profile View)     │  │                                 │   │
+│  │                     │  │  • Download summary stats      │   │
+│  │  • Modal workflow   │  │  • Filterable log table       │   │
+│  │  • Template select  │  │  • Export to Excel            │   │
+│  │  • Live preview     │  │  • Per-employee tracking      │   │
+│  │  • PDF/DOCX export  │  │                                 │   │
+│  └─────────────────────┘  └──────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Sidebar Menu Items (Admin):**
+### 1.2 Data Entities
 
-| Icon | Label | Route | Active Pattern |
-|------|-------|-------|----------------|
-| 🏠 | Dashboard | `/admin/dashboard` | Exact match |
-| 👥 | Employees | `/admin/employees` | Prefix match (includes `/admin/employees/new`, `/:id`, `/:id/edit`) |
-| 🗂️ | Masters Setup | `/admin/masters` | Exact match |
-| 📊 | Reports | `/admin/reports` | Exact match |
+| Entity | Backend Model | Angular Model | Key Fields |
+|--------|--------------|---------------|------------|
+| **Company** | `Company.java` | `company.model.ts` | `companyName`, `address`, `phone`, `email`, `website`, `registrationNumber`, `gstNumber`, `panNumber`, `tanNumber`, `cinNumber`, `incorporatedDate`, `logoPath`, `authorizedSignatory` |
+| **CompanyDocument** | `CompanyDocument.java` | `company.model.ts` | `documentType`, `fileName`, `filePath`, `fileSize`, `uploadedAt` |
+| **DocumentTemplate** | `DocumentTemplate.java` | `document-template.model.ts` | `templateName`, `templateType`, `description`, `content` (HTML), `variables` (JSON), `isActive` |
+| **DownloadLog** | `DocumentDownloadLog.java` | `document-template.model.ts` | `employeeId`, `templateId`, `financialYear`, `downloadedAt`, `downloadedBy` |
+| **DownloadStats** | `DownloadStatsDTO.java` | `document-template.model.ts` | `perEmployee`, `perTemplate`, `perFinancialYear` |
 
-**Sidebar Menu Items (Employee):**
+### 1.3 API Contract Summary
 
-| Icon | Label | Route | Active Pattern |
-|------|-------|-------|----------------|
-| 👤 | My Profile | `/employee/profile` | Prefix match |
+| Method | Endpoint | Purpose | Auth |
+|--------|----------|---------|------|
+| `GET` | `/api/v1/company` | Get company profile | ADMIN |
+| `PUT` | `/api/v1/company` | Update company (multipart: company JSON + logo file) | ADMIN |
+| `POST` | `/api/v1/company/logo` | Upload logo only | ADMIN |
+| `GET` | `/api/v1/company/logo` | Download logo file | ADMIN |
+| `GET` | `/api/v1/company/documents` | List legal documents | ADMIN |
+| `POST` | `/api/v1/company/documents` | Upload legal document | ADMIN |
+| `DELETE` | `/api/v1/company/documents/{id}` | Delete legal document | ADMIN |
+| `GET` | `/api/v1/document-templates` | List templates (filterable) | ADMIN |
+| `GET` | `/api/v1/document-templates/types` | Get template type enums | ADMIN |
+| `GET` | `/api/v1/document-templates/{id}` | Get single template | ADMIN |
+| `POST` | `/api/v1/document-templates` | Create template | ADMIN |
+| `PUT` | `/api/v1/document-templates/{id}` | Update template | ADMIN |
+| `DELETE` | `/api/v1/document-templates/{id}` | Deactivate template | ADMIN |
+| `POST` | `/api/v1/document-templates/{id}/generate/{employeeId}` | Generate & log document | ADMIN, EMPLOYEE |
+| `GET` | `/api/v1/document-templates/preview/{id}?employeeId={eid}` | Preview filled document | ADMIN, EMPLOYEE |
+| `GET` | `/api/v1/document-templates/download-logs` | Paginated download logs | ADMIN |
+| `GET` | `/api/v1/document-templates/download-logs/stats` | Download statistics | ADMIN |
+| `GET` | `/api/v1/document-templates/download-logs/employee/{employeeId}` | Per-employee logs | ADMIN |
+| `GET` | `/api/v1/document-templates/download-logs/financial-years` | Distinct FY list | ADMIN |
 
-#### Tablet (768-1199px) — Icon-Only Sidebar + Top Toolbar
+---
 
+## 2. Personas & Permissions Matrix
+
+### 2.1 Role-Based Access
+
+| Feature | Superadmin (ADMIN) | Admin (ADMIN) | Employee (EMPLOYEE) |
+|---------|-------------------|---------------|---------------------|
+| **Company Setup** | ✅ Full CRUD | ❌ Not visible | ❌ Not visible |
+| **Template List** | ✅ View all | ✅ View all | ❌ Not visible |
+| **Template Create/Edit** | ✅ Full CRUD | ✅ Full CRUD | ❌ Not visible |
+| **Template Delete** | ✅ Deactivate | ✅ Deactivate | ❌ Not visible |
+| **Generate Document** | ✅ For any employee | ✅ For any employee | ✅ For self only |
+| **Preview Document** | ✅ For any employee | ✅ For any employee | ✅ For self only |
+| **Download Reports** | ✅ Full access | ✅ Full access | ❌ Not visible |
+| **View Download History** | ✅ Per employee | ✅ Per employee | ✅ Own history |
+
+### 2.2 Sidebar Visibility Matrix
+
+| Menu Item | Superadmin | Admin | Employee |
+|-----------|-----------|-------|----------|
+| Dashboard | ✅ | ✅ | ✅ (own) |
+| Employees | ✅ | ✅ | ❌ |
+| Master Data | ✅ | ✅ | ❌ |
+| Reports | ✅ | ✅ | ❌ |
+| Registrations | ✅ | ✅ | ❌ |
+| **Company Setup** | ✅ | ❌ | ❌ |
+| **Document Templates** | ✅ | ✅ | ❌ |
+| My Profile | ✅ | ✅ | ✅ |
+
+---
+
+## 3. Route Design & Sidebar Integration
+
+### 3.1 New Routes to Add
+
+```typescript
+// In admin children routes array (app.routes.ts)
+{
+  path: 'company',
+  loadComponent: () => import('./features/company/company-setup.component')
+    .then(m => m.CompanySetupComponent),
+  title: 'Company Setup'
+},
+{
+  path: 'document-templates',
+  loadComponent: () => import('./features/document-templates/document-template-list.component')
+    .then(m => m.DocumentTemplateListComponent),
+  title: 'Document Templates'
+},
+{
+  path: 'document-templates/new',
+  loadComponent: () => import('./features/document-templates/template-editor.component')
+    .then(m => m.TemplateEditorComponent),
+  title: 'New Template'
+},
+{
+  path: 'document-templates/:id/edit',
+  loadComponent: () => import('./features/document-templates/template-editor.component')
+    .then(m => m.TemplateEditorComponent),
+  title: 'Edit Template'
+},
+{
+  path: 'document-templates/:id',
+  loadComponent: () => import('./features/document-templates/template-editor.component')
+    .then(m => m.TemplateEditorComponent),
+  title: 'View Template'
+}
+```
+
+### 3.2 Updated Sidebar Menu Items
+
+Add these menu items to `AdminLayoutComponent` after the Registrations item:
+
+```html
+<!-- === DOCUMENTS GROUP (with divider) === -->
+<li nz-menu-divider *ngIf="!isCollapsed()"></li>
+<li nz-menu-item routerLink="/admin/company" *ngIf="userRole === 'SUPERADMIN'"
+    (click)="closeDrawerOnMobile()">
+  <i nz-icon nzType="bank"></i>
+  <span *ngIf="!isCollapsed()">Company Setup</span>
+</li>
+<li nz-menu-item routerLink="/admin/document-templates"
+    (click)="closeDrawerOnMobile()">
+  <i nz-icon nzType="file-text"></i>
+  <span *ngIf="!isCollapsed()">Document Templates</span>
+</li>
+```
+
+**Sidebar Impact Analysis:**
+- Company Setup gets a `bank` icon, only visible to SUPERADMIN role
+- Document Templates gets a `file-text` icon, visible to all ADMIN roles
+- A subtle divider separates these items from core HR functions
+- Add `userRole` signal to track the current user's role at login
+
+### 3.3 Route Transition Behaviors
+
+| Transition | Animation | Notes |
+|-----------|-----------|-------|
+| List → Editor | Slide left (detail forward) | Content of list fades, editor slides in |
+| Editor → List | Slide right (back) | Unsaved changes dialog if form dirty |
+| Any → Company Setup | Fade | No list dependency |
+| Employee View → Doc Modal | Overlay modal | Staying on employee page |
+
+---
+
+## 4. Company Setup — Page Specification
+
+### 4.1 Page Layout (Enhanced from Existing)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Page Header: [bank icon] "Company Setup"                    │
+│  Breadcrumb: Dashboard > Company Setup           [💾 Save]  │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌─────────────────────────────────┐  ┌───────────────────┐  │
+│  │  Company Information             │  │  Company Logo      │  │
+│  │  ┌────────────┬────────────┐    │  │                    │  │
+│  │  │ Name *     │ Phone      │    │  │  ┌───────────┐    │  │
+│  │  │ [________] │ [________] │    │  │  │           │    │  │
+│  │  ├────────────┼────────────┤    │  │  │  LOGO     │    │  │
+│  │  │ Email      │ Website    │    │  │  │  AREA     │    │  │
+│  │  │ [________] │ [________] │    │  │  │ (160x160) │    │  │
+│  │  ├────────────┴────────────┤    │  │  │           │    │  │
+│  │  │ Address (full width)    │    │  │  └───────────┘    │  │
+│  │  │ [textarea 2 rows]       │    │  │  [Upload Logo]    │  │
+│  │  └─────────────────────────┘    │  │  200x200 PNG/JPG  │  │
+│  └─────────────────────────────────┘  └───────────────────┘  │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │  Registration Details                                     │ │
+│  │  ┌────────────┬────────────┬────────────┬────────────┐   │ │
+│  │  │Reg No      │ GST        │ PAN        │ TAN        │   │ │
+│  │  │[________]  │ [________] │ [________] │ [________] │   │ │
+│  │  ├────────────┼────────────┼────────────┼────────────┤   │ │
+│  │  │ CIN        │ Inc. Date  │ Auth. Signatory           │   │ │
+│  │  │ [________] │ [📅____]  │ [____________________]    │   │ │
+│  │  └────────────┴────────────┴──────────────────────────┘   │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │  Legal Documents                     [+ Upload Document] │ │
+│  │  ┌──────────────┬──────────┬────────────┬────────────┐   │ │
+│  │  │ Type         │ File     │ Uploaded   │ Actions    │   │ │
+│  │  ├──────────────┼──────────┼────────────┼────────────┤   │ │
+│  │  │[GST_CERT]tag │gst.pdf   │ 2 Jan 2026 │ [🗑️]       │   │ │
+│  │  │[PAN_CARD]tag │pan.pdf   │ 2 Jan 2026 │ [🗑️]       │   │ │
+│  │  └──────────────┴──────────┴────────────┴────────────┘   │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Component Behavior
+
+#### Form Fields & Validation
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| Company Name | Text input | ✅ Yes | Max 200 chars |
+| Phone | Text input | No | Pattern: optional, max 20 chars |
+| Email | Email input | No | Email format |
+| Website | Text input | No | URL format |
+| Address | Textarea (2 rows) | No | Max 500 chars |
+| Registration Number | Text input | No | Max 100 chars |
+| GST Number | Text input | No | Pattern: `^\d{2}[A-Z]{5}\d{4}[A-Z]{1}\d[Z]{1}[A-Z\d]{1}$` |
+| PAN Number | Text input | No | Pattern: `^[A-Z]{5}\d{4}[A-Z]{1}$` |
+| TAN Number | Text input | No | Pattern: `^[A-Z]{4}\d{5}[A-Z]{1}$` |
+| CIN Number | Text input | No | Pattern: `^[A-Z]{1}\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}$` |
+| Incorporated Date | Date picker | No | Valid date |
+| Authorized Signatory | Text input | No | Max 100 chars |
+
+#### Logo Upload UX
+
+```
+┌──────────────────────────────────────┐
+│  Logo Section                         │
+│                                       │
+│  State: Empty                         │
+│  ┌────────────────────────────┐      │
+│  │          🏦                │      │
+│  │   No logo uploaded         │      │
+│  │                            │      │
+│  │   Dashed border, 160x160   │      │
+│  └────────────────────────────┘      │
+│                                       │
+│  [📤 Upload Logo]                     │
+│  Recommended: 200x200px, PNG or JPG   │
+│                                       │
+│  ─────────────────────────────────    │
+│                                       │
+│  State: Uploaded                      │
+│  ┌────────────────────────────┐      │
+│  │                            │      │
+│  │     [Image preview]        │      │
+│  │                            │      │
+│  │   Solid border, 160x160    │      │
+│  └────────────────────────────┘      │
+│                                       │
+│  [📤 Replace Logo]                    │
+│                                       │
+│  ─────────────────────────────────    │
+│                                       │
+│  State: Hover/Drag Over               │
+│  ┌────────────────────────────┐      │
+│  │     Border → primary       │      │
+│  │     Background → #f0f4ff   │      │
+│  │     "Drop to replace"      │      │
+│  └────────────────────────────┘      │
+└──────────────────────────────────────┘
+```
+
+**Logo Upload Behavior:**
+- Click triggers file picker (accept: `image/*`)
+- Drag-and-drop support on the preview area
+- Immediate client-side preview via `FileReader.readAsDataURL()`
+- File validation: Max 2MB, image/jpeg or image/png only
+- On error: `nz-message.warning('Invalid file')` 
+- Logo is NOT uploaded separately; sent with the company save as multipart
+- After save, logo updates in sidebar header immediately
+
+#### Legal Documents Table
+
+**Empty State:**
 ```
 ┌──────────────────────────────────────────────┐
-│ [Logo] EMS                   [🔍] [🔔] [👤]  │
-├────┬─────────────────────────────────────────┤
-│ 🏠 │ Page Content                            │
-│ 👥 │                                          │  ← Sidebar (64px, icons only)
-│ 🗂️ │                                          │
-│ 📊 │                                          │
-└────┴─────────────────────────────────────────┘
-```
-
-On tablet:
-- Sidebar collapses to show icons only (64px width)
-- Tooltip appears on hover showing menu label
-- Active icon is highlighted with accent color indicator (left border)
-- A hamburger menu button appears in the top toolbar as an alternative
-
-#### Mobile (<768px) — Bottom Navigation Bar + Hamburger Menu
-
-```
-┌──────────────────────────────────────────────┐
-│                                              │
-│  ┌──────────────────────────────────────┐   │
-│  │ ← Back    Page Title           👤    │   │  ← Top bar (56px)
-│  └──────────────────────────────────────┘   │
-│                                              │
-│              Page Content                    │
-│                                              │
-│                                              │
-│                                              │
-│                                              │
-│                                              │
-│                                              │
-│                                              │
-├──────────────────────────────────────────────┤
-│  🏠    👥    🗂️    📊    ☰                 │  ← Bottom nav (56px)
+│  Legal Documents                [+ Upload]    │
+│                                               │
+│              📥                              │
+│       No documents uploaded                   │
+│       Upload GST certificate, PAN card,       │
+│       incorporation certificate, etc.         │
+│                                               │
+│               [📤 Upload Document]             │
 └──────────────────────────────────────────────┘
 ```
 
-On mobile:
-- Bottom navigation bar shows 4 icons + hamburger
-- Hamburger opens an overlay menu (from left or bottom sheet)
-- Top bar shows back button, page title, optional actions
-- Content area between top bar and bottom nav
-
-### 4.2 Breadcrumb Pattern
-
-Breadcrumbs appear on all sub-pages below the toolbar, above the page title:
-
+**Upload Modal:**
 ```
-Dashboard > Employees > John Doe
-Dashboard > Employees > Add New Employee
-Dashboard > Masters Setup
-My Profile > Edit Details
-```
-
-**Breadcrumb Component:**
-- Home (icon) always shown as first item
-- Current page is not a link (plain text, bold)
-- Separator: `>` (chevron) with 8px margin
-- Responsive: On mobile, show only last 2 levels
-- Clicking any breadcrumb link navigates without full page reload
-
-### 4.3 Active Route Indicators
-
-| State | Visual Indicator |
-|-------|-----------------|
-| Active menu item | Left border accent (4px solid `#ff6f00`), background tint (`rgba(31,61,110,0.08)`) |
-| Hover state | Background tint (`rgba(31,61,110,0.04)`) |
-| Collapsed (tablet) | Active icon has accent color, tooltip shows label |
-| Mobile bottom nav | Active icon has accent color, label below icon |
-
----
-
-## 5. Form Design Principles
-
-### 5.1 Tabbed Interface Design
-
-**Why 10 Tabs?**
-The 80 fields are grouped into logical clusters. Presenting them as 10 tabs instead of a single 80-field form:
-- Reduces cognitive load (~8 fields per tab average vs. 80 at once)
-- Allows users to focus on one category at a time
-- Maps directly to the data domains defined in the architecture
-- Improves mobile usability (one tab = one scrollable section)
-
-**Tab Bar Behavior:**
-- Tabs are displayed as a horizontal scrollable bar (overflow on small screens)
-- Tab labels are truncated at 15 characters with ellipsis if needed
-- Active tab underlined with accent color (3px)
-- Completed tabs show a green checkmark badge (when all required fields in that tab are filled)
-- Tabs with validation errors show a red error count badge
-
-**Tab Progress Indicator:**
-```
-[● Personal]──[○ Demo]──[○ Assets]──[○ Ident]──[○ Edu]──[○ Bank]
- [○ Empl.]──[○ Family]──[○ Exp/Ref]──[○ Exit/Docs]
-
-Legend: ● = Active  ● = Complete with check  ● = Has errors
+┌────────────────────────────────────────┐
+│  Upload Legal Document                  │
+├────────────────────────────────────────┤
+│                                          │
+│  Document Type *                         │
+│  ┌──────────────────────────────────┐   │
+│  │ [▼ GST Certificate            ]  │   │
+│  └──────────────────────────────────┘   │
+│                                          │
+│  File *                                  │
+│  ┌──────────────────────────────────┐   │
+│  │ 📤 Click to select file          │   │
+│  │   or drag & drop                 │   │
+│  └──────────────────────────────────┘   │
+│                                          │
+│         [Cancel]     [📤 Upload]         │
+└────────────────────────────────────────┘
 ```
 
-### 5.2 Field Layout Rules
+**Document Type Options:** `GST_CERTIFICATE`, `PAN_CARD`, `INCORPORATION`, `TAX_RETURN`, `AUDIT_REPORT`, `OTHER`
 
-| Rule | Description |
-|------|-------------|
-| **2-column grid** | Most tabs use a 2-column layout for efficient space use |
-| **Full-width exceptions** | Address fields (textarea), Remarks, Photo upload span full width |
-| **3-column for short forms** | Demographics (3 fields), Identity (3 fields) use 3-column |
-| **Label position** | Above the field (stacked) — best for readability and mobile |
-| **Required indicator** | Red asterisk `*` before the label text |
-| **Field height** | 48px for inputs, 120px for textareas |
-| **Field width** | Equal width within same row, flex: 1 |
-| **Gap** | 24px between columns, 20px between rows |
+**Delete Behavior:**
+- Click trash icon → nz-modal.confirm with danger styling
+- Title: "Delete Document"
+- Content: `Are you sure you want to delete "{doc.fileName}"?`
+- On confirm: API call → success message → table refresh
 
-### 5.3 Field Validation Behavior
+### 4.3 State Transitions
 
-| Event | Behavior |
-|-------|----------|
-| **On blur** | Single field validates immediately after user leaves it |
-| **On input** | Error clears as user starts typing (only if previously errored) |
-| **On tab switch** | All visible fields on current tab validate; if errors, tab switch is blocked with toast |
-| **On submit** | Full form validates; first tab with errors is activated and scrolled to first error |
-| **On load (edit)** | All existing data passes validation; no pre-emptive errors |
+| State | Visual | Behavior |
+|-------|--------|----------|
+| **Loading** | 2 skeleton cards (form fields shimmer) | `isLoading = true` |
+| **Loaded (empty)** | All fields empty, logo placeholder, no docs | First-time setup |
+| **Loaded (data)** | Prefilled fields, logo visible, docs listed | Edit mode |
+| **Saving** | Save button shows spinner, fields disabled | `isSaving = true` |
+| **Save success** | Green message: "Company updated successfully" | Toast auto-dismiss |
+| **Save error** | Red message: specific error from API | Fields remain editable |
+| **Uploading doc** | Modal upload button shows spinner | File input disabled |
+| **Doc upload success** | Modal closes, table refreshes | Green toast message |
+| **Doc upload error** | Error message in modal | Modal stays open |
 
-### 5.4 Auto-Calculation Specifications
-
-| Calculation | Trigger | Rule | Display |
-|-------------|---------|------|---------|
-| **Age from DOB** | DOB field blur | `age = current_year - dob_year` (adjust for month/day) | Read-only integer field, updates immediately |
-| **Age Bracket** | Age changes | `≤25` → "25 & Below", `26-30` → "26 to 30", `31-35` → "31 to 35", `36-40` → "36 to 40", `41-50` → "41 to 50", `51+` → "51 & Above" | Read-only text field |
-| **Employee Code** | On form load (new) | Auto-generated: `EMP` + 4-digit sequential | Input field populated, user can override? (ADMIN decision: editable) |
-
-### 5.5 Dependent Dropdowns (Cascading)
-
-**Social Category → Social Subcategory:**
-```
-Social Category: [BC ▼]         (onChange)
-Social Subcategory: [BC-A ▼]    (filters to BC-A, BC-B, BC-C, BC-D)
-```
-
-| Parent Selection | Available Subcategory Options |
-|-----------------|------------------------------|
-| BC | BC-A, BC-B, BC-C, BC-D |
-| OBC | OBC-A, OBC-B |
-| SC | SC-A, SC-B |
-| ST | ST |
-| OC | OC-A |
-
-**Behavior:**
-- When parent changes, child resets to empty/placeholder
-- Loading spinner shown briefly while subcategory options reload
-- If no subcategories for selected category, child shows "No options" and disables
-
-### 5.6 Photo Upload Specifications
-
-```
-┌────────────────────────────────┐
-│         Photo Upload           │
-│                                │
-│    ┌──────────────────┐       │
-│    │                  │       │
-│    │   📷 Drag & Drop │       │
-│    │   or Click to    │       │
-│    │   Upload         │       │
-│    │                  │       │
-│    │   JPG, PNG only  │       │
-│    │   Max 2MB        │       │
-│    │                  │       │
-│    └──────────────────┘       │
-│                                │
-│    Preview:                    │
-│    ┌──────────────────┐       │
-│    │     [Image]      │       │
-│    │                  │       │
-│    │  Photo_Name.jpg  │       │
-│    │  [Remove]        │       │
-│    └──────────────────┘       │
-└────────────────────────────────┘
-```
-
-| Feature | Specification |
-|---------|--------------|
-| Upload zone | Click-to-browse or drag-and-drop |
-| Accepted types | `image/jpeg`, `image/png` |
-| Max file size | 2MB (display warning if exceeded) |
-| Preview | Immediate client-side preview using FileReader API |
-| Cropping | Not required (Phase 2) |
-| Default | Silhouette/placeholder if no photo |
-| Remove | X button on preview removes file from upload queue |
-
-### 5.7 Form Action Bar
-
-Every form page has a consistent action bar at the top:
-
-```
-[← Back/Cancel]  [💾 Save Draft]  [✅ Create/Update]
-```
-
-| Button | Style | Behavior |
-|--------|-------|----------|
-| Cancel/Back | Stroked (outline), neutral | Navigate back; if dirty, show unsaved changes warning dialog |
-| Save Draft | Flat, secondary | Saves current form state to service (in-memory or to server) |
-| Create/Update | Raised, primary | Full validation then API call; disabled when form is invalid |
-
-**"Save Draft" Implementation:**
-- On new form: stores form values in `localStorage` keyed by `draft_employee`
-- On edit form: auto-saves to service's BehaviorSubject every 30 seconds while user is typing
-- Draft indicator shown: `💾 Draft saved at 14:32`
-
----
-
-## 6. Responsive Design Strategy
-
-### 6.1 Breakpoint System
-
-| Breakpoint | Name | Target Devices | Layout Changes |
-|-----------|------|---------------|----------------|
-| ≥1200px | Desktop XL | Large monitors | Full sidebar, expanded tables, 2-3 column forms |
-| 1024-1199px | Desktop | Standard laptops | Full sidebar, standard tables, 2-column forms |
-| 768-1023px | Tablet Landscape ~ Tablet Portrait | iPads, tablets | Icon-only sidebar, reduced table, 1-2 column forms |
-| 480-767px | Mobile Large | Phablets, large phones | Bottom nav, card list, 1-column forms |
-| <480px | Mobile Small | Small phones | Bottom nav (4 icons), stack everything |
-
-### 6.2 Responsive Behavior by Component
-
-#### Sidebar
-
-| Breakpoint | State | Width | Content |
-|-----------|-------|-------|---------|
-| ≥1024px | Expanded | 260px | Icons + Labels |
-| 768-1023px | Collapsed | 64px | Icons only (tooltips on hover) |
-| <768px | Hidden / Overlay | Full overlay | Slide-in drawer from left, triggered by hamburger ☰ |
-
-#### Employee Table
-
-| Breakpoint | Display Mode | Columns Visible |
-|-----------|-------------|----------------|
-| ≥1024px | Full table | Code, Name, Gender, Designation, Status, DOJ, Actions |
-| 768-1023px | Scrollable table | Code, Name, Designation, Status (horizontal scroll) |
-| <768px | Card list | Each employee shown as a card with key info |
-
-**Mobile Card Layout (replaces table):**
-
-```
-┌──────────────────────────────────────────┐
-│  🖼  👤 EMP0042 — Rajesh Kumar          │
-│      Engineer · Live                     │
-│      📧 rajesh@comp.com  📞 9876543210   │
-│      [View] [Edit]                       │
-├──────────────────────────────────────────┤
-│  🖼  👤 EMP0001 — John Doe              │
-│      Sr Engineer · Live                  │
-│      📧 john@comp.com  📞 9876543211     │
-│      [View] [Edit]                       │
-└──────────────────────────────────────────┘
-```
-
-#### Tabbed Form
-
-| Breakpoint | Column Layout | Tab Bar |
-|-----------|--------------|---------|
-| ≥1024px | 2-column grid for fields | Full tab bar visible |
-| 768-1023px | 2-column → 1-column on narrow tables | Scrollable tab bar (arrows) |
-| <768px | 1-column always | Scrollable tab bar, swipeable |
-
-#### Dashboard Stats
+### 4.4 Responsive Behavior
 
 | Breakpoint | Layout |
 |-----------|--------|
-| ≥1024px | 4 cards in a row (grid of 4) |
-| 768-1023px | 2×2 grid |
-| <768px | 1 card per row (stacked) |
-
-#### Photo Upload
-
-| Breakpoint | Upload Zone |
-|-----------|-------------|
-| ≥768px | Full drag-drop zone (300x200px) |
-| <768px | Click-to-upload only (compact, 150x150px) |
-
-### 6.3 Touch Targets
-
-| Element | Minimum Touch Target | Spec |
-|---------|---------------------|------|
-| Buttons | 48×48px | Standard Material button with padding |
-| Form inputs | 48px height | Mat-form-field default |
-| Sidebar items | 48px height | Full-width clickable area |
-| Bottom nav items | 56×56px (icon + label) | Touch-friendly spacing |
-| Table rows | 48px minimum | Clickable entire row |
-| Dropdown options | 48px height | Mat-option default |
-| Toggle switches | 44px height | Material slide-toggle |
-| Icon buttons | 48×48px | Extra padding around icon |
+| ≥1024px | 2-column: 2/3 form + 1/3 logo+docs |
+| 768-1023px | Single column stacked: form, logo, docs |
+| <768px | Single column, full width inputs |
 
 ---
 
-## 7. Interaction Design
+## 5. Document Template List — Page Specification
 
-### 7.1 Micro-Interactions & Animations
+### 5.1 Enhanced Page Layout
 
-| Interaction | Animation | Duration | Timing Function |
-|-------------|-----------|----------|-----------------|
-| Tab switch | Content fades in, slide 8px up | 250ms | ease-out |
-| Sidebar collapse | Width transition (260px ↔ 64px) | 300ms | ease-in-out |
-| Page navigation | Router-outlet fade transition | 200ms | ease |
-| Modal open | Scale up from center (0.95→1.0) + fade | 200ms | ease-out |
-| Toast notification | Slide in from top-right | 300ms | ease-out |
-| Button loading | Spinner replaces icon/text | Instant | — |
-| Search results | Table rows fade out/in | 200ms | ease |
-| Filter panel | Height expand (0→auto) | 300ms | ease-out |
-| Drag-drop hover | Zone border color changes | 150ms | ease |
-| Hover on cards | Elevation increase (2→8dp) | 200ms | ease |
-| Error shake | Horizontal shake on invalid field | 300ms | ease |
-
-### 7.2 Loading States
-
-| State | Component | Visual |
-|-------|-----------|--------|
-| Page load | Entire page | Angular Material `<mat-spinner>` centered (48px), after 500ms show skeleton |
-| Component loading | Stats cards | Skeleton cards (grey shimmer animation, 4 rounded rectangles) |
-| Table loading | Employee list | 5 skeleton rows (alternating grey bars) |
-| Form loading | Tab form | Skeleton form fields (6 input-shaped grey bars in 2-column layout) |
-| Save in progress | Submit button | Button text replaced with spinner + "Saving..." |
-| Export loading | Export button | Button disabled, shows "Preparing report..." |
-| Photo upload | Upload zone | Progress bar below zone (0-100%) |
-| Master data load | Dropdown | Dropdown shows "Loading..." disabled state |
-
-**Skeleton Screen Specification:**
 ```
-┌──────────────────────────────────────────────┐
-│  ┌──────────────────────┐                     │
-│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │ ← 40% width bar    │  (Page title skeleton)
-│  └──────────────────────┘                     │
-│                                               │
-│  ┌────────────┐  ┌────────────┐              │
-│  │ ▓▓▓▓▓▓▓▓▓▓ │  │ ▓▓▓▓▓▓▓▓▓▓ │              │  (2-column skeleton)
-│  └────────────┘  └────────────┘              │
-│  ┌────────────┐  ┌────────────┐              │
-│  │ ▓▓▓▓▓▓▓▓▓▓ │  │ ▓▓▓▓▓▓▓▓▓▓ │              │
-│  └────────────┘  └────────────┘              │
-│  ┌──────────────────────────────┐             │
-│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │             │  (Full-width skeleton)
-│  └──────────────────────────────┘             │
-└──────────────────────────────────────────────┘
-
-Animation: Shimmer gradient moving left to right over 1.5s, repeating
-Color: #e0e0e0 base, #f0f0f0 highlight
+┌──────────────────────────────────────────────────────────────┐
+│  Page Header: [file-text icon] "Document Templates"          │
+│  Breadcrumb: Dashboard > Document Templates     [+ Add]     │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌── Filter Bar ───────────────────────────────────────────┐ │
+│  │  [🔍 Search...____]  [Type: All ▼]  [Status: All ▼]    │ │
+│  │                                         [Clear Filters] │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  ┌── Table ─────────────────────────────────────────────────┐ │
+│  │  Template Name │ Type              │ Desc      │ Active  │ │
+│  │  ──────────────┼───────────────────┼───────────┼─────────┤ │
+│  │ 🔗 Joining     │ [JOINING] tag     │ Offer...  │ [✅]    │ │
+│  │    Letter       │                   │           │  ON    │ │
+│  │ 🔗 Relieving   │ [RELIEVING] tag   │ Exit...   │ [✅]    │ │
+│  │    Letter       │                   │           │  ON    │ │
+│  │ 🔗 Experience  │ [EXP] tag         │ Cert...   │ [❌]    │ │
+│  │                 │                   │           │  OFF   │ │
+│  │ ...with pagination 1-10 of 25 ◀ [1][2][3] ▶             │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  Tabs: [📄 Templates]  [📊 Reports]                         │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### 7.3 Toast Notification Specifications
+### 5.2 Filter Behavior
 
-| Type | Icon | Background | Duration | Position |
-|------|------|-----------|----------|----------|
-| Success | ✅ | Green (#4caf50) | 5s or until click | Top-right (desktop), top-center (mobile) |
-| Error | ❌ | Red (#d32f2f) | Until dismissed | Top-right (desktop), top-center (mobile) |
-| Warning | ⚠️ | Amber (#ff9800) | 7s or until click | Top-right (desktop), top-center (mobile) |
-| Info | ℹ️ | Blue (#2196f3) | 5s | Top-right (desktop), top-center (mobile) |
+| Filter | Type | Behavior |
+|--------|------|----------|
+| Search | Text input (debounced 300ms) | Searches template name, description |
+| Type | Select dropdown | Populated from `GET /types`, "All Types" default |
+| Status | Select dropdown | Options: All, Active, Inactive |
+| Clear Filters | Button | Resets all filters to default, reloads list |
 
-**Toast Actions:**
-- Success toast: Optional action button (e.g., "View Employee")
-- Error toast: "Retry" button where applicable
-- All toasts: Close (X) button in corner
-- Stack: Multiple toasts stack vertically with 8px gap
+### 5.3 Table Columns
 
-### 7.4 Confirmation Dialogs
+| Column | Width | Content | Sortable |
+|--------|-------|---------|----------|
+| Template Name | 25% | Bold text, `templateName` | ✅ |
+| Type | 15% | Color-coded `nz-tag` | ✅ |
+| Description | 35% | Truncated text, max 2 lines | ❌ |
+| Active | 10% | `nz-switch` toggle (inline) | ❌ |
+| Created | 15% | Date formatted `dd MMM yyyy` | ✅ |
+| Actions | 80px | `nz-dropdown` with 3-dot menu | ❌ |
 
-| Action | Dialog Title | Message | Buttons |
-|--------|-------------|---------|---------|
-| Delete Employee | Delete Employee? | "This will deactivate [Name] ([Code]). Their data will be preserved for audit purposes." | Cancel, Delete (red) |
-| Cancel with unsaved changes | Unsaved Changes | "You have unsaved changes. Do you want to discard them?" | Stay (secondary), Discard (warn) |
-| Delete Master Value | Delete Master Value? | "Delete [Value]? Existing employee records using this value will retain it, but it will no longer appear in dropdowns." | Cancel, Delete |
+### 5.4 Type Color Mapping
 
-**Dialog Component:**
-- Title: 20px, medium weight
-- Message: 14px, regular weight, secondary text color
-- Actions: Right-aligned, Cancel first (stroked), Confirm last (raised)
-- Backdrop: Semi-transparent black (0.32 opacity)
-- ESC key and click-outside close the dialog (unless it's a destructive action requiring explicit confirmation)
+| Template Type | Tag Color |
+|--------------|-----------|
+| JOINING_LETTER | `blue` |
+| RELIEVING_LETTER | `orange` |
+| EXPERIENCE_LETTER | `purple` |
+| OFFER_LETTER | `green` |
+| APPOINTMENT_LETTER | `geekblue` |
+| SALARY_SLIP | `cyan` |
+| CONFIRMATION_LETTER | `lime` |
+| TRANSFER_LETTER | `gold` |
+| PROMOTION_LETTER | `volcano` |
+| WARNING_LETTER | `red` |
+| SHOW_CAUSE | `magenta` |
+| NOC | `blue-inverse` |
+| BONUS_LETTER | `green-inverse` |
+| INCREMENT_LETTER | `cyan-inverse` |
+| OTHER | `default` |
 
-### 7.5 Keyboard Shortcuts
+### 5.5 Row Actions Dropdown
 
-| Shortcut | Context | Action |
-|----------|---------|--------|
-| `Ctrl + S` | Employee Form | Save (if in create/edit mode) |
-| `Ctrl + D` | Employee Form | Save Draft |
-| `Escape` | Any dialog/modal | Close dialog |
-| `Ctrl + F` | Employee List | Focus search bar |
-| `Tab` / `Shift + Tab` | Any form | Navigate between fields |
-| `Enter` | Login form | Submit login |
-| `Ctrl + P` | Report page | Print report |
-| `Ctrl + E` | Employee List | Focus "Add Employee" button |
-| `?` | Any page | Show keyboard shortcuts help overlay |
+```
+┌──────────────────────────┐
+│  [3-dot menu button]     │
+├──────────────────────────┤
+│  ✏️  Edit                │ → /admin/document-templates/:id/edit
+│  📋  View                │ → /admin/document-templates/:id
+│  ─────────────────────── │
+│  ✅ Activate / ⏸ Deact. │ → toggleActive(tpl)
+│  ─────────────────────── │
+│  🗑️  Delete (red text)   │ → confirm → deactivate soft delete
+└──────────────────────────┘
+```
 
-### 7.6 Debounce & Throttle Specifications
+### 5.6 Active Toggle Behavior
 
-| Interaction | Method | Delay | Rationale |
-|-------------|--------|-------|-----------|
-| Search input | Debounce | 300ms | Avoid excessive API calls while typing |
-| Window resize | Debounce | 150ms | Responsive layout recalculations |
-| Auto-save draft | Throttle | 30s | Save periodically without interrupting workflow |
-| Scroll-based lazy load | Throttle | 200ms | Performance for infinite scroll |
-| Button double-click prevention | Immediate disable | 0ms | Disable button on first click, re-enable after response |
+- Click switch → immediately calls `updateTemplate(id, { active: !tpl.active })`
+- Optimistic UI: toggle instantly, revert on error
+- Loading state: switch shows small spinner
+- Success: message "Template activated/deactivated"
+- Error: revert toggle, show error message
 
 ---
 
-## 8. Accessibility
+## 6. Template Editor — Page Specification
 
-### 8.1 WCAG 2.1 Compliance Target
-
-| Level | Target | Status |
-|-------|--------|--------|
-| A | All criteria | ✅ Mandatory |
-| AA | All criteria | ✅ Mandatory |
-| AAA | Some criteria | 🎯 Aspirational |
-
-### 8.2 Heading Hierarchy
-
-Every page must have a clear heading hierarchy:
-
-| Page | H1 | H2 | H3 |
-|------|----|----|-----|
-| Login | "Employee Management System" | — | — |
-| Admin Dashboard | "Dashboard" | "Overview", "Recent Employees", "Quick Actions" | Stat card values |
-| Employee List | "Employees" | "Search & Filter" | — |
-| Add Employee | "Add New Employee" | "Personal Info" (tab title) | Field labels |
-| Edit Employee | "Edit Employee" | "Bank Details" (tab title) | Field labels |
-| View Employee | "John Doe" | "Personal Information", "Bank Details", etc. | — |
-| Masters Setup | "Masters Setup" | "GENDER" (selected category) | — |
-| Reports | "Reports" | Report results | — |
-| Employee Dashboard | "Welcome, Rajesh" | "Quick Actions", "My Details" | — |
-| Employee Profile | "My Profile" | "Personal Information", "Employment" | Field groupings |
-
-### 8.3 ARIA Implementation Requirements
-
-| Element | ARIA Attribute | Value / Pattern |
-|---------|---------------|-----------------|
-| Sidebar nav | `role="navigation"`, `aria-label="Main navigation"` | |
-| Sidebar toggle | `aria-expanded="true/false"`, `aria-label="Collapse sidebar"` | |
-| Tab list | `role="tablist"`, `aria-label="Employee form sections"` | |
-| Tab | `role="tab"`, `aria-selected="true/false"`, `aria-controls="tab-panel-1"` | |
-| Tab panel | `role="tabpanel"`, `aria-labelledby="tab-1"` | |
-| Modal dialog | `role="dialog"`, `aria-modal="true"`, `aria-labelledby="dialog-title"` | |
-| Table | `role="table"`, `aria-label="Employee list"` | |
-| Search input | `role="searchbox"`, `aria-label="Search employees"` | |
-| Error message | `role="alert"`, `aria-live="assertive"` | |
-| Progress bar | `role="progressbar"`, `aria-valuenow`, `aria-valuemin="0"`, `aria-valuemax="100"` | |
-| Toast | `role="alert"`, `aria-live="polite"` | |
-| Filter panel | `aria-expanded="true/false"` on toggle button | |
-| Required field | `aria-required="true"` | |
-| Field with error | `aria-invalid="true"`, `aria-describedby="error-id"` | |
-| Breadcrumb | `aria-label="Breadcrumb"`, `role="navigation"` | |
-| Loading state | `aria-busy="true"` on container element | |
-
-### 8.4 Color Contrast Requirements
-
-| Token | Light Theme | Dark Theme | Ratio (AA) |
-|-------|------------|------------|------------|
-| Text primary | `#1f3d6e` on `#ffffff` | `#ffffff` on `#121212` | 10.2:1 ✅ |
-| Text secondary | `#5f6368` on `#ffffff` | `#b0b0b0` on `#121212` | 4.8:1 ✅ |
-| Link/Accent | `#ff6f00` on `#ffffff` | `#ffab40` on `#121212` | 4.5:1 ✅ |
-| Error text | `#d32f2f` on `#ffffff` | `#ef5350` on `#121212` | 4.5:1 ✅ |
-| Disabled text | `#9e9e9e` on `#ffffff` | `#616161` on `#121212` | 3.1:1 ❌ (acceptable for disabled) |
-| Placeholder | `#9e9e9e` on `#ffffff` | `#616161` on `#121212` | 3.1:1 ❌ (acceptable for placeholder) |
-
-### 8.5 Focus Management
-
-| Scenario | Focus Target | Behavior |
-|----------|-------------|----------|
-| Page load | First focusable element or H1 | Skip to main content link available |
-| Open modal | First focusable element in modal | Focus trap within modal |
-| Close modal | Element that triggered the modal | Return focus to trigger |
-| Tab switch | First field in new tab | Focus moves to first input |
-| Form submit (error) | First invalid field | Scroll to field, focus it, announce error |
-| Delete confirm | Cancel button (safe choice) | Focus on least destructive action |
-| Toast appears | Toast container | Screen reader announces via `aria-live="polite"` |
-| Sidebar toggle | Sidebar nav or hamburger | Focus on first menu item after toggle |
-
-### 8.6 Skip Navigation Link
-
-A "Skip to main content" link is the first focusable element on every page:
-
-```html
-<a href="#main-content" class="skip-link">Skip to main content</a>
-```
-
-**Styling:**
-- Visually hidden until focused
-- On focus: appears at top of page, z-index 10000, background white, color primary
-- Target: `<main id="main-content">` wrapping the router outlet
-
-### 8.7 Screen Reader Announcements
-
-| Event | Announcement Text | Technique |
-|-------|------------------|-----------|
-| Page loaded | "Dashboard loaded. 156 total employees." | `aria-live="polite"` on main |
-| Tab changed | "Personal Info tab selected. 25 fields." | `role="tabpanel"` + `aria-live` |
-| Form saved | "Employee created successfully." | Toast with `role="alert"` |
-| Error occurred | "Error: Invalid email format." | `aria-live="assertive"` on error |
-| Search results | "15 employees match your search." | `aria-live="polite"` |
-| Photo uploaded | "Photo uploaded successfully." | Announced when upload completes |
-| Navigation | Navigation updates active state | `aria-current="page"` on active link |
-
----
-
-## 9. Error Handling UX
-
-### 9.1 HTTP Error Code Mapping
-
-| HTTP Code | User-Facing Message | Action | Screen |
-|-----------|--------------------|--------|--------|
-| 401 Unauthorized | "Your session has expired. Please log in again." | Auto-redirect to `/auth/login` after 3s countdown | Any authenticated page |
-| 403 Forbidden | "Access Denied. You do not have permission to view this page." | Show "Go to Dashboard" button | Protected pages |
-| 404 Not Found | "Employee not found. The record may have been deleted or you may have an incorrect link." | Show "Back to Employee List" button | Employee view/edit |
-| 409 Conflict | "An employee with this code already exists." | Inline error on Employee Code field | Employee form |
-| 422 Validation | "Please correct the errors below before saving." | Scroll to first error, highlight fields | Employee form |
-| 500 Server Error | "Something went wrong. Please try again." | Show "Retry" button | Any page |
-| 503 Service Unavailable | "The service is temporarily unavailable. Please try again later." | Auto-retry after 30s or manual retry | Any page |
-| 413 Payload Too Large | "The photo file is too large. Maximum size is 2MB." | Inline error on photo upload | Employee form |
-| 415 Unsupported Media | "Only JPG and PNG files are accepted." | Inline error on photo upload | Employee form |
-| Network Error | "Unable to connect to the server. Please check your internet connection." | Persistent banner, retry on click | All pages |
-
-### 9.2 Validation Error Display
-
-#### Inline Field Errors
+### 6.1 Page Layout
 
 ```
-┌──────────────────────────────┐
-│ Email                        │
-│ ┌──────────────────────────┐ │
-│ │ invalid-email            │ │
-│ └──────────────────────────┘ │
-│ ❌ Please enter a valid email │ ← Error text, 12px, red (#d32f2f)
-└──────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  Page Header: [file-text icon] "New Template" / "Edit: name" │
+│  Breadcrumb: Templates > New Template     [🗑️ Delete]       │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌── Top Fields Row ───────────────────────────────────────┐ │
+│  │  Name: [___________________________]   Type: [▼ JOINING] │ │
+│  │  Desc: [___________________________]   Active: [✅]      │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  ┌── Placeholder Sidebar ──────┐  ┌── Content Editor ─────┐ │
+│  │  📋 Available Placeholders   │  │                       │ │
+│  │                              │  │  Template Content:    │ │
+│  │  🔹 EMPLOYEE                │  │  (HTML with variables) │ │
+│  │  ┌────────────────────────┐ │  │                       │ │
+│  │  │ [Employee Name]  +     │ │  │  ┌─────────────────┐  │ │
+│  │  │ [Employee Code]  +     │ │  │  │ <h1>{{company_ │  │ │
+│  │  │ [Designation]    +     │ │  │  │ name}}</h1>    │  │ │
+│  │  │ [Date of Joining] +    │ │  │  │ <p>Date:       │  │ │
+│  │  │ [Gender]         +     │ │  │  │ {{current_date}}│  │ │
+│  │  │ [Address]        +     │ │  │  │ </p>          │  │ │
+│  │  │ [Mobile]         +     │ │  │  │ <p>To,         │  │ │
+│  │  │ [Email]          +     │ │  │  │ {{employee_   │  │ │
+│  │  └────────────────────────┘ │  │  │ name}}</p>    │  │ │
+│  │                              │  │  │ ...            │  │ │
+│  │  🔹 COMPANY                 │  │  └─────────────────┘  │ │
+│  │  ┌────────────────────────┐ │  │                       │ │
+│  │  │ [Company Name]    +    │ │  │  Line: 24 | Col: 12  │ │
+│  │  │ [Company Address] +    │ │  └───────────────────────┘ │
+│  │  │ [GST Number]      +    │ │                            │
+│  │  └────────────────────────┘ │                            │
+│  │                              │                            │
+│  │  🔹 SYSTEM                  │                            │
+│  │  ┌────────────────────────┐ │                            │
+│  │  │ [Current Date]    +    │ │                            │
+│  │  │ [Financial Year]  +    │ │                            │
+│  │  │ [Authorized       +   │ │                            │
+│  │  │  Signatory]           │ │                            │
+│  │  └────────────────────────┘ │                            │
+│  └─────────────────────────────┘                            │
+│                                                               │
+│  [💾 Save]  [👁️ Preview with Sample Data]  [✕ Cancel]       │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-- Error appears below the field, 12px font size, red color
-- Field border turns red
-- Error icon (❗) shown at the right of the input
-- Multiple errors can stack below a single field
-- Error clears as user types valid input
+### 6.2 Placeholder Insert System
 
-#### Tab-Level Error Badge
-
-When a tab has validation errors on save/submit:
-- Tab label shows red badge with error count: `Personal Info (3)`
-- First tab with errors is auto-activated
-- First error field is scrolled into view and focused
-
-#### Form-Level Error Summary
-
-Appears at top of form when submitted with errors:
-
-```
-┌──────────────────────────────────────────────┐
-│ ❌ Please fix the following errors:          │
-│   • Tab 1 (Personal Info) — 3 errors         │
-│   • Tab 6 (Bank Details) — 1 error           │
-│   Click a tab to jump to its errors.         │
-└──────────────────────────────────────────────┘
-```
-
-### 9.3 Session Expiry UX
-
-**Warning Threshold:** 5 minutes before token expiry
+#### Available Placeholders (from `TEMPLATE_PLACEHOLDERS` constant)
 
 ```
 ┌──────────────────────────────────────────┐
-│ ⏰ Your session will expire in 5 minutes  │
-│                    [Extend Session]       │
+│  📋 Available Placeholders                │
+│                                           │
+│  🔹 EMPLOYEE             (expandable)     │
+│    Group header with collapse toggle      │
+│                                           │
+│  [Employee Name]   ➕                     │
+│  [Employee Code]   ➕                     │
+│  [Designation]     ➕                     │
+│  [Date of Joining] ➕                     │
+│  [Date of Exit]    ➕                     │
+│  [Gender]          ➕                     │
+│  [Address]         ➕                     │
+│  [Mobile]          ➕                     │
+│  [Email]           ➕                     │
+│                                           │
+│  🔹 COMPANY           (expandable)        │
+│  [Company Name]      ➕                   │
+│  [Company Address]   ➕                   │
+│  [Company Logo URL]  ➕                   │
+│  [GST Number]        ➕                   │
+│  [PAN Number]        ➕                   │
+│  [CIN Number]        ➕                   │
+│                                           │
+│  🔹 SYSTEM            (expandable)        │
+│  [Current Date]      ➕                   │
+│  [Financial Year]    ➕                   │
+│  [Authorized         ➕                   │
+│   Signatory]                              │
 └──────────────────────────────────────────┘
 ```
 
-- Yellow banner appears at top of page
-- "Extend Session" button makes a silent API call to refresh token
-- If no action, after 5 minutes token expires and auto-redirects to login
-- Unsaved work: Before redirect, save draft to `localStorage` with key `unsaved_<page>`
-- On return to login page: Check for unsaved draft, show banner: "You have unsaved work from your last session. [Restore]"
+**Insert Mechanism:**
+- Clicking `➕` on a placeholder chip inserts `{{placeholder_key}}` at the cursor position in the editor
+- Uses `textarea.selectionStart` / `execCommand` or Monaco-like editor API
+- After insert, cursor moves to end of inserted text
+- Placeholder chips have micro-animation (scale 0.95→1.0) on click feedback
 
-### 9.4 Network Error UX
+#### Editor Controls
+
+**Desktop (≥1024px):**
+- Two-column layout: left sidebar (280px) for placeholders, right for editor
+- Editor is a large textarea (min 500px height) with monospace font
+- Line count indicator at bottom-right corner
+
+**Tablet (768-1023px):**
+- Collapsible placeholder panel — toggle with button `[📋] Placeholders`
+- Panel slides in from left as an overlay
+- Editor takes full width
+
+**Mobile (<768px):**
+- Placeholder chips shown as a horizontal scrollable row above editor
+- Each chip is compact (pill button)
+- Editor takes full width, 400px min height
+
+### 6.3 Form Fields
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| Template Name | Text input | ✅ Yes | Max 200 chars, trimmed |
+| Template Type | Select dropdown | ✅ Yes | From `GET /types` options |
+| Description | Text input | No | Max 500 chars |
+| Active | Switch toggle | No | Default: ON (true) |
+| Template Content | Textarea (large) | ✅ Yes | Min 10 chars, HTML content |
+
+### 6.4 Preview Modal
 
 ```
-┌──────────────────────────────────────────────────┐
-│ 🔴 No internet connection                         │
-│ Some features may be unavailable. Data will be    │
-│ saved locally and synced when connection resumes. │
-│                                         [Dismiss] │
-└──────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  👁️ Preview: Joining Letter — John Doe (EM001)              │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────── PDF PREVIEW ──────────────────────────────┐   │
+│  │                                                        │   │
+│  │              ACME Corp                                 │   │
+│  │         123 Business Park, City                        │   │
+│  │         GST: 29ABCDE1234Z1Z5                           │   │
+│  │                                                        │   │
+│  │  ──────────────────────────────────────────────────    │   │
+│  │                                                        │   │
+│  │  Date: 24-05-2026                                      │   │
+│  │                                                        │   │
+│  │  To,                                                    │   │
+│  │  John Doe                                               │   │
+│  │  EM001                                                  │   │
+│  │  Engineer                                               │   │
+│  │                                                        │   │
+│  │  Subject: Joining Letter                                │   │
+│  │                                                        │   │
+│  │  Dear John Doe,                                         │   │
+│  │                                                        │   │
+│  │  We are pleased to inform you that you have been       │   │
+│  │  appointed as Engineer at ACME Corp...                  │   │
+│  │                                                        │   │
+│  │  ──────────────────────────────────────────────────    │   │
+│  │                                                        │   │
+│  │  For ACME Corp                                         │   │
+│  │  (Authorized Signatory)                                 │   │
+│  │                                                        │   │
+│  └────────────────────────────────────────────────────────┘   │
+│                                                               │
+│         [🗑️ Close]              [📄 Download PDF]            │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-- Persistent red banner at top of page
-- Form inputs remain usable (local state preserved)
-- Submit button shows "Save Offline" (stores to localStorage)
-- When connection returns, banner updates to green: "Connection restored. [Sync Now]"
-- After successful sync, toast: "Your changes have been synced."
+**Preview trigger:** Clicking "Preview with Sample Data" opens a modal that:
+1. Randomly selects first employee from current list as sample data
+2. Calls `GET /preview/{id}?employeeId={sampleId}` 
+3. Displays returned HTML in an `iframe` or `div` with `[innerHTML]` sanitized
+4. Shows employee name in modal header
 
-### 9.5 API Timeout UX
+**Preview States:**
+| State | Display |
+|-------|---------|
+| Generating | Spin loader in modal body |
+| Ready | Rendered HTML preview |
+| No sample employee | "No employees found. Add an employee first to preview." |
+| Error | "Failed to generate preview. Check template content." |
 
-| Scenario | Timeout | UX |
-|----------|---------|-----|
-| Employee list load | 15s | Show spinner for 10s, then "Taking longer than expected..." message |
-| Employee save | 30s | Button spinner persists; after 20s show "Still saving..." |
-| Photo upload | 60s | Progress bar freezes; show retry/remove option |
-| Export | 120s | Show "Preparing your report..." with indeterminate progress bar |
+### 6.5 Form State Management
+
+| State | Behavior |
+|-------|----------|
+| **New mode** | Empty fields, "Save" button text, "New Template" title |
+| **Edit mode** | Prefilled from API, "Update" button text, "Edit: {name}" title |
+| **View mode** | Read-only fields, "Edit" button → switches to edit mode |
+| **Dirty form** | "You have unsaved changes" warning on navigate away |
+| **Saving** | Button spinner, fields disabled |
+| **Save success** | Toast + redirect to list |
+| **Save error** | Toast with error message, fields remain editable |
+| **Delete** | Confirm dialog → deactivate → redirect to list |
 
 ---
 
-## 10. Empty States
+## 7. Employee Document Download — Modal Specification
 
-### 10.1 No Employees (Empty Database)
+### 7.1 Trigger Points
 
-**When:** First time user logs in, no employees have been added yet.
+This modal is triggered from **two locations**:
+
+**A. From Employee View Page (StaffMasterViewComponent)**
+- Add a "Generate Document" button in the profile actions area
+- Button appears for both ADMIN and EMPLOYEE roles
+- For EMPLOYEE, only their own profile
+
+**B. From Employee List Page (StaffMasterListComponent)**
+- Add a document icon action in the row actions dropdown
+- Opens same modal for selected employee
+
+### 7.2 Modal Layout
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  📄 Generate Document — John Doe (EM001)                    │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  Select Template:                                             │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  [▼ Joining Letter — JOINING_LETTER                   ]  │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│  Only active templates shown, grouped by type category       │
+│                                                               │
+│  ┌─── DOCUMENT PREVIEW ────────────────────────────────────┐ │
+│  │                                                          │ │
+│  │  [HTML content displayed in a bordered, scrollable box   │ │
+│  │   with white background, A4-like proportions,            │ │
+│  │   max-height: 400px, overflow-y: auto]                   │ │
+│  │                                                          │ │
+│  │  ACME Corp                                               │ │
+│  │  Date: 24-05-2026                                        │ │
+│  │  To, John Doe                                            │ │
+│  │  Subject: Letter of Appointment                          │ │
+│  │  ...                                                     │ │
+│  │                                                          │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  Download Statistics:                                         │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  📥 Downloads this FY: 3   |   Last: 15-Apr-2026       │  │
+│  │  📊 Most used: Joining Letter (12 downloads)            │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                               │
+│         [✕ Cancel]     [📄 Download PDF]  [📝 Download DOCX] │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 7.3 Template Selection Behavior
+
+| Aspect | Behavior |
+|--------|----------|
+| Options source | `GET /document-templates?active=true` |
+| Display | `templateName — TemplateType` format |
+| Default | First template in list (alphabetical) |
+| Empty | "No active templates found. Contact admin." — disabled state |
+| Change | On selection change → preview auto-refreshes (debounced 300ms) |
+
+### 7.4 Preview Behavior
+
+- On modal open and template select: call `GET /preview/{templateId}?employeeId={empId}`
+- Display returned HTML in a scrollable preview area
+- Preview area has a subtle border, white background, 16px padding
+- Loading state: skeleton placeholder in preview area
+- Error state: "Preview unavailable" with error details
+
+### 7.5 Download Behavior
+
+| Format | Action | API Endpoint |
+|--------|--------|-------------|
+| PDF | `POST /generate/{id}/{empId}?format=pdf` | Returns HTML → client converts to PDF via `window.print()` or jsPDF |
+| DOCX | `POST /generate/{id}/{empId}?format=docx` | Future: returns DOCX blob |
+
+**Download flow:**
+1. Click "Download PDF" → button shows spinner
+2. API call to `POST /generate/{templateId}/{employeeId}?format=pdf`
+3. API logs the download, returns filled HTML string
+4. Client opens HTML in new window and triggers print (for PDF save)
+5. OR client uses `html2pdf.js` library to convert and download
+6. Success: toast "Document generated and downloaded"
+7. After download: refresh download stats section in modal
+8. Close modal → stats on employee page should update when re-opened
+
+### 7.6 Download Statistics Section
+
+**Placement:** Below preview, left-aligned, compact card
+
+```
+┌────────────────────────────────────────────────────────┐
+│  📥 Downloads this FY: 3   |   Last: 15-Apr-2026      │
+│  📊 Most used: Joining Letter (12 total)               │
+└────────────────────────────────────────────────────────┘
+```
+
+- Calls `GET /download-logs/employee/{employeeId}` on modal open
+- Counts entries where `financialYear` matches current FY
+- Shows "No downloads yet this FY" if count is 0
+
+### 7.7 Download History (Expandable)
+
+Below the stats, an optional expandable section:
+
+```
+▼ Download History (3 records)
+┌────────────────────────────────────────────────────────┐
+│ Date              | Template         | Format | User  │
+│ 15-Apr-2026       | Joining Letter   | PDF    | ADMIN │
+│ 10-Mar-2026       | Relieving Letter | PDF    | ADMIN │
+│ 02-Jan-2026       | Experience Cert  | PDF    | ADMIN │
+└────────────────────────────────────────────────────────┘
+```
+
+- Collapsed by default
+- Click "Download History (N records)" to expand
+- Fetched from `GET /download-logs/employee/{employeeId}`
+- Sorted by date descending
+
+### 7.8 Responsive Behavior
+
+| Breakpoint | Modal Width | Layout |
+|-----------|-------------|--------|
+| ≥1024px | 720px | Full preview + stats |
+| 768-1023px | 90vw | Preview scrollable |
+| <768px | 95vw | Stacked, compact preview |
+
+---
+
+## 8. Download Reports — Page Specification
+
+### 8.1 Page Layout (Tab within Document Templates)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Tabs: [📄 Templates]  [📊 Reports]                         │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌── Summary Cards Row ────────────────────────────────────┐ │
+│  │  ┌──────────┐  ┌────────────────┐  ┌────────────────┐  │ │
+│  │  │   125     │  │  Joining       │  │  Priya Sharma  │  │ │
+│  │  │  Total    │  │  Most Used     │  │  Most Active   │  │ │
+│  │  │ Downloads │  │  Template      │  │  Employee      │  │ │
+│  │  └──────────┘  └────────────────┘  └────────────────┘  │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  ┌── Filters Row ───────────────────────────────────────────┐ │
+│  │  Financial Year: [▼ 2026-2027]                           │ │
+│  │  Template Type:  [▼ All Templates]                       │ │
+│  │  Employee:       [▼ Search employee...]                  │ │
+│  │                                               [📥 Export] │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                               │
+│  ┌── Download Log Table ────────────────────────────────────┐ │
+│  │  Date & Time         │ Employee  │ Template    │ By     │ │
+│  │  ────────────────────┼───────────┼─────────────┼────────┤ │ │
+│  │  23-May-2026 10:30   │ EM001     │ Joining     │ ADMIN  │ │
+│  │                      │ John Doe  │ Letter      │        │ │
+│  │  22-May-2026 14:15   │ EM002     │ Relieving   │ ADMIN  │ │
+│  │                      │ Jane S.   │ Letter      │        │ │
+│  │  21-May-2026 09:00   │ EM003     │ Experience  │ ADMIN  │ │
+│  │                      │ Bob M.    │ Certificate │        │ │
+│  │                                                           │ │
+│  │  ...with pagination 1-10 of 125 ◀ [1][2][3]...[13] ▶    │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 8.2 Summary Card Specifications
+
+Use the existing `app-stat-card` component with variant customization:
+
+| Card | Icon | Value Source | Footer |
+|------|------|-------------|--------|
+| Total Downloads | `download` | `GET /download-logs/stats` → sum of all counts | Current FY |
+| Most Used Template | `file-text` | Highest count from `perTemplate` | `N downloads` |
+| Most Active Employee | `user` | Highest count from `perEmployee` | `N downloads` |
+
+**Stat Card Styling Enhancement:**
+```scss
+.stat-downloads::before { background: linear-gradient(90deg, #1f3d6e, #2a5298); }
+.stat-most-used::before { background: linear-gradient(90deg, #4a90d9, #5ba0e8); }
+.stat-most-active::before { background: linear-gradient(90deg, #28a745, #34ce57); }
+```
+
+### 8.3 Filter Controls
+
+| Filter | Component | Source | Behavior |
+|--------|-----------|--------|----------|
+| Financial Year | `nz-select` | `GET /download-logs/financial-years` | Default: current FY |
+| Template Type | `nz-select` | `GET /document-templates/types` | Default: "All" |
+| Employee | `nz-select` with search | `GET /employees` (basic list) | Searchable, selects by ID |
+
+**Filter Logic:**
+- All filters are optional
+- API call with all non-null filter params
+- "Clear Filters" button resets all to defaults
+- Default FY: calculated in client as `currentYear + "-" + (currentYear+1)` for Apr-Mar
+
+### 8.4 Download Log Table
+
+| Column | Width | Content | Sort |
+|--------|-------|---------|------|
+| Date & Time | 20% | `dd-MMM-yyyy HH:mm` | ✅ Desc by default |
+| Employee | 30% | Employee code + name (two lines) | ❌ |
+| Template | 25% | Template name with type tag | ❌ |
+| Downloaded By | 15% | Username | ❌ |
+| Financial Year | 10% | `nz-tag` style FY tag | ✅ |
+
+**Employee column format:**
+```html
+<div class="employee-cell">
+  <span class="emp-code">EM001</span>
+  <span class="emp-name">John Doe</span>
+</div>
+```
+
+### 8.5 Export to Excel
+
+**Flow:**
+1. Click "Export" button (visible when data loaded)
+2. Button shows spinner "Preparing..."
+3. Call same download-logs endpoint with all current filters
+4. Transform JSON response to CSV/Excel using `xlsx` library or create CSV blob
+5. Trigger download: `filename = "download-reports-{FY}.xlsx"`
+6. Toast: "Report exported successfully"
+
+**Export Format:**
+| Column Header | Data Field |
+|--------------|-----------|
+| Date & Time | `downloadedAt` |
+| Employee Code | (resolved from employeeId) |
+| Employee Name | (resolved from employeeId) |
+| Template Name | (resolved from templateId) |
+| Template Type | (resolved from templateId) |
+| Downloaded By | `downloadedBy` |
+| Financial Year | `financialYear` |
+
+### 8.6 Empty State (No Downloads)
 
 ```
 ┌──────────────────────────────────────────────┐
-│                                              │
-│                                              │
-│              ┌──────────────────┐            │
-│              │                  │            │
-│              │   👥 (Illust.)   │            │
-│              │                  │            │
-│              └──────────────────┘            │
-│                                              │
-│         No Employees Yet                      │
-│         Your employee directory is empty.     │
-│         Start by adding your first employee   │
-│         to begin building your records.       │
-│                                              │
-│         [➕ Add Your First Employee]           │
-│                                              │
-│         Or import from Excel                  │
-│         [📤 Import Employees]                 │
-│                                              │
+│                                               │
+│              📥                              │
+│                                               │
+│          No Downloads Yet                      │
+│                                               │
+│    Document downloads will appear here        │
+│    once employees start generating            │
+│    documents from their profiles.             │
+│                                               │
+│    [📄 Go to Document Templates]              │
+│                                               │
 └──────────────────────────────────────────────┘
 ```
 
-- Friendly illustration (team/people icon, 120px)
-- Heading: "No Employees Yet"
-- Subtitle: "Your employee directory is empty."
-- Primary CTA: "Add Your First Employee" → navigates to `/admin/employees/new`
-- Secondary CTA: "Import Employees" → opens import dialog
+---
 
-### 10.2 No Search Results
+## 9. Interaction & State Design
 
-**When:** Search/filter returns zero matches.
+### 9.1 Navigation & Flow Diagram
+
+```
+                      ┌─────────────────────┐
+                      │  Admin Dashboard    │
+                      └──────────┬──────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              ▼                  ▼                   ▼
+   ┌─────────────────┐  ┌────────────────┐  ┌──────────────────┐
+   │  Company Setup   │  │ Doc Templates  │  │ Employee View    │
+   │  /admin/company  │  │  /admin/doc-   │  │  /admin/employees│
+   │                  │  │  templates     │  │  /:id            │
+   └────────┬─────────┘  └───────┬────────┘  └────────┬─────────┘
+            │                    │                     │
+            │              ┌─────┴──────┐              │
+            │              ▼            ▼              │
+            │    ┌────────────────┐  ┌──────────┐     │
+            │    │  Template      │  │  Reports  │     │
+            │    │  Editor        │  │  Tab      │     │
+            │    │  /:id/edit     │  │           │     │
+            │    │  /new          │  └──────────┘     │
+            │    └────────────────┘                   │
+            │                                         │
+            │                                    ┌────┴──────┐
+            │                                    ▼           ▼
+            │                            ┌──────────────────────┐
+            │                            │  Generate Document  │
+            │                            │  (Modal Overlay)     │
+            └────────────────────────────┴──────────────────────┘
+```
+
+### 9.2 State Transition Map
+
+```
+[Any State]
+    │
+    ├──→ Loading ───→ Ready ───→ Saving ───→ Success → [Redirect/Refresh]
+    │                    │           │
+    │                    │           └──→ Error → [Stay on page]
+    │                    │
+    │                    └──→ Dirty ───→ [Navigate away] → Unsaved Warning
+    │                                      │
+    │                                      ├──→ Stay → [Back to form]
+    │                                      └──→ Discard → [Navigate]
+    │
+    └──→ Empty State ───→ User Action → [Loading → Ready]
+```
+
+### 9.3 Progress Indicators for Multi-Step Flows
+
+**Company Setup Completion Check** (Dashboard integration):
+```
+┌──────────────────────────────────────────────────────────────┐
+│  ⚙️  Setup Checklist                                         │
+│     ✅ Company name provided                                 │
+│     ⬜ Logo uploaded                                         │
+│     ⬜ GST details added                                     │
+│     ⬜ Legal documents uploaded                              │
+│                                                              │
+│     Status: 25% complete — [Go to Company Setup]             │
+└──────────────────────────────────────────────────────────────┘
+```
+
+This widget appears on the Admin Dashboard when company setup is incomplete (shown only to SUPERADMIN role).
+
+### 9.4 Keyboard Shortcuts
+
+| Shortcut | Context | Action |
+|----------|---------|--------|
+| `Ctrl + S` | Template Editor | Save template |
+| `Ctrl + P` | Preview modal | Print/Download PDF |
+| `Escape` | Any modal | Close modal |
+| `Ctrl + F` | Template List | Focus search |
+| `Tab` / `Shift + Tab` | Editor | Indent/outdent content (future) |
+
+### 9.5 Debounce & Throttle Specifications
+
+| Interaction | Method | Delay |
+|------------|--------|-------|
+| Template search | Debounce | 300ms |
+| Preview refresh on template change | Debounce | 300ms |
+| Auto-save draft (template editor) | Throttle | 30s |
+| Window resize | Debounce | 150ms |
+
+---
+
+## 10. Empty, Loading & Error States
+
+### 10.1 Empty States
+
+#### A. Company — First Time Setup
+**Who sees it:** Superadmin on first login
+**Where:** `/admin/company`
+**Trigger:** Company record exists with default name "My Company"
 
 ```
 ┌──────────────────────────────────────────────┐
-│                                              │
-│              ┌──────────────────┐            │
-│              │                  │            │
-│              │   🔍 (Illust.)   │            │
-│              │                  │            │
-│              └──────────────────┘            │
-│                                              │
-│         No Employees Match Your Search        │
-│         Try adjusting your search terms       │
-│         or clearing filters.                  │
-│                                              │
+│                                               │
+│              🏦  (120px icon)                 │
+│                                               │
+│         Welcome! Set Up Your Company          │
+│                                               │
+│    Your company profile hasn't been           │
+│    configured yet. Add your company           │
+│    details to get started.                    │
+│                                               │
+│    ✅ Required: Company Name                  │
+│    ✅ Recommended: Logo, GST, PAN             │
+│                                               │
+│         [Get Started →]                       │
+│                                               │
+└──────────────────────────────────────────────┘
+```
+
+#### B. Company Setup Notification (Dashboard)
+**Who sees it:** Superadmin on dashboard
+**Where:** `/admin/dashboard`, sidebar indicator
+
+```
+Sidebar badge: "Company Setup" ⚠️ (red dot)
+Dashboard card:
+┌──────────────────────────────────────────────┐
+│  ⚙️  Company Setup Incomplete                │
+│  Your company profile is using default       │
+│  values. Complete the setup to enable        │
+│  branded document templates.                 │
+│                                               │
+│         [Complete Setup →]                    │
+└──────────────────────────────────────────────┘
+```
+
+#### C. No Templates
+**Who sees it:** Admin
+**Where:** `/admin/document-templates`
+
+```
+┌──────────────────────────────────────────────┐
+│                                               │
+│          📄  (120px icon)                     │
+│                                               │
+│         No Templates Found                    │
+│                                               │
+│    Get started by creating your first         │
+│    document template for employee letters     │
+│    and certificates.                          │
+│                                               │
+│         [➕ Create Your First Template]        │
+│                                               │
+└──────────────────────────────────────────────┘
+```
+
+#### D. No Search Results (Templates)
+**Who sees it:** Admin
+**Where:** `/admin/document-templates` — after search/filter
+
+```
+┌──────────────────────────────────────────────┐
+│                                               │
+│            🔍  (80px icon)                    │
+│                                               │
+│         No Templates Match Your Search        │
+│                                               │
+│    Try adjusting your search terms or         │
+│    filters.                                   │
+│                                               │
+│    Active filters: [Type: JOINING]            │
+│                                               │
 │         [Clear All Filters]                   │
-│                                              │
+│                                               │
 └──────────────────────────────────────────────┘
 ```
 
-- Show the applied filters below the heading for clarity
-- "Clear All Filters" button resets all search/filter inputs
-- If search term only: "No results for 'xyz'. Try a different search term."
-
-### 10.3 Empty Master Data Category
-
-**When:** A master data category has no values configured yet.
+#### E. No Active Templates (for document generation)
+**Who sees it:** Admin/Employee
+**Where:** Generate Document modal
 
 ```
 ┌──────────────────────────────────────────────┐
-│                                              │
-│              ┌──────────────────┐            │
-│              │                  │            │
-│              │   🗂️ (Illust.)   │            │
-│              │                  │            │
-│              └──────────────────┘            │
-│                                              │
-│         No Data Configured                    │
-│         The "GENDER" category has no          │
-│         values. Add values to make them       │
-│         available in employee forms.          │
-│                                              │
-│         [➕ Add First Value]                   │
-│                                              │
+│                                               │
+│     No active templates available.            │
+│     Contact your administrator to create      │
+│     document templates.                       │
+│                                               │
+│         [✕ Close]                             │
+│                                               │
 └──────────────────────────────────────────────┘
 ```
 
-- Shows the specific category name in the message
-- "Add First Value" button opens the CRUD dialog
-
-### 10.4 No Recent Activity (Dashboard)
-
-**When:** Employee dashboard shows no recent activity.
+#### F. No Downloads Yet
+**Who sees it:** Admin
+**Where:** Reports tab, employee download history
 
 ```
 ┌──────────────────────────────────────────────┐
-│                                              │
-│         No Recent Changes                     │
-│         Your profile information is up to     │
-│         date. Any changes you make will       │
-│         appear here.                          │
-│                                              │
-│         [👤 View My Profile]                  │
-│                                              │
+│                                               │
+│           📥  (80px icon)                     │
+│                                               │
+│         No Downloads Yet                      │
+│                                               │
+│    Document downloads will appear here        │
+│    once documents are generated.              │
+│                                               │
 └──────────────────────────────────────────────┘
 ```
 
-### 10.5 No Audit Trail Entries
+### 10.2 Loading States
 
-**When:** Viewing audit log for an employee with no tracked changes.
+#### A. Page Load — Skeleton Pattern
+
+```
+Company Setup Skeleton:
+┌────────────────────────────────────────────────┐
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  (title placeholder 200px)   │
+│                                                │
+│  ┌────────────────────┐  ┌──────────────────┐ │
+│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓   │ │
+│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓   │ │
+│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │  │  (logo circle)   │ │
+│  │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │  └──────────────────┘ │
+│  └────────────────────┘                       │
+└────────────────────────────────────────────────┘
+```
+
+**Skeleton shimmer:** `background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%)` with `background-size: 200% 100%` and `animation: shimmer 1.5s infinite`
+
+#### B. Table Loading — Skeleton Rows
+
+```
+Document Template List — Loading:
+┌────────────────────────────────────────────────┐
+│  ▓▓▓▓▓   ▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓   ▓▓   │  ← 5 shimmer rows
+│  ▓▓▓▓▓   ▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓   ▓▓   │
+│  ▓▓▓▓▓   ▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓   ▓▓   │
+│  ▓▓▓▓▓   ▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓   ▓▓   │
+│  ▓▓▓▓▓   ▓▓▓▓▓   ▓▓▓▓▓▓▓▓▓▓▓▓▓   ▓▓▓   ▓▓   │
+└────────────────────────────────────────────────┘
+```
+
+#### C. Action Loading
+
+| Action | Visual |
+|--------|--------|
+| Save button | `nzLoading` directive on button |
+| Table refresh | `nzLoading` on `nz-table` |
+| Preview generation | Skeleton in preview area |
+| Document download | Button shows spinner + "Generating..." |
+| Document upload (company) | Modal button shows spinner |
+| Filter change | `nzLoading` on table, data refresh |
+
+### 10.3 Error States
+
+#### A. API Failure — Page Level
 
 ```
 ┌──────────────────────────────────────────────┐
-│                                              │
-│         No Changes Recorded                   │
-│         This employee's record has not been   │
-│         modified since creation.              │
-│                                              │
+│  ❌  Failed to load data                       │
+│     {error message from API}                  │
+│                                               │
+│         [🔄 Retry]                            │
 └──────────────────────────────────────────────┘
 ```
+
+- Appears as inline error card at top of content area
+- "Retry" button re-triggers the initial API call
+- After 3 consecutive failures, show "Service unavailable. Please try again later."
+
+#### B. API Failure — Toast Level (Non-Critical)
+
+For save/update operations:
+- Red toast: `nz-notification.error('Error', '{message}', { nzDuration: 5000 })`
+- Data remains in current state
+- User can retry the action
+
+#### C. Validation Errors — Form Level
+
+| Error Type | Display |
+|-----------|---------|
+| Required field | Red border on input, "This field is required" below |
+| Format error | Red border, "Invalid format. Expected: {pattern}" |
+| Duplicate name | Toast: "A template with this name already exists" |
+| Content too short | Red border on textarea, "Template content must be at least 10 characters" |
+
+#### D. File Upload Errors
+
+| Error | Message |
+|-------|---------|
+| File too large | "File exceeds maximum size of 2MB" |
+| Wrong format | "Only PDF, JPG, and PNG files are accepted" |
+| Upload failed | "Failed to upload file. Please try again." |
+| Network error | "Network error. Please check your connection." |
 
 ---
 
-## 11. Screen-by-Screen Wireframe Descriptions
+## 11. Accessibility & Theme
 
-### 11.1 Login Screen
+### 11.1 WCAG 2.1 AA Compliance
 
-**Layout:**
-- Full-viewport centered layout
-- Background: Gradient from `#1f3d6e` (top) to `#0f2440` (bottom) OR clean white depending on theme
-- Card: 420px max-width, white background, 24px border-radius, 8dp elevation
-- Logo: Centered at top of card, 160px wide, 48px bottom margin
-- Title: "Employee Management System", 24px, bold
-- Subtitle: "Sign in to your account", 14px, secondary color
-- Form fields: Stacked vertically, 16px bottom margin
-- "Remember Me" checkbox: Below password field
-- "Sign In" button: Full width, 48px height, primary color, 8px top margin
-- Footer: Copyright text, 12px, secondary color
-- Links: "Forgot password?" right-aligned below button
+All existing accessibility patterns from the main UX architecture apply. Module-specific considerations:
 
-**States:**
-- Default: Clean form, empty fields
-- Loading: Button shows spinner, fields disabled
-- Error: Red error message above button (fade in)
-- Locked: Yellow warning message, fields disabled
+| Element | ARIA Attribute | Value |
+|---------|---------------|-------|
+| Template editor textarea | `aria-label` | "Template content editor" |
+| Placeholder insert buttons | `aria-label` | "Insert {placeholder name} placeholder" |
+| Preview iframe | `title` | "Document preview" |
+| Summary stat cards | `role="status"` | Live region for dynamic counts |
+| Download modal | `role="dialog"`, `aria-modal="true"` | Focus trap |
+| Template type tags | `aria-label` | "Template type: {type}" |
 
-### 11.2 Admin Dashboard
+### 11.2 Keyboard Navigation
 
-**Layout:**
-- Page title: "Dashboard", 28px, bold
-- Stats row: 4 cards in CSS Grid (repeat 4, 1fr), 16px gap
-  - Each card: 180px height, white, 8px border-radius, 4dp elevation
-  - Stat number: 36px, bold, primary color
-  - Stat label: 14px, secondary color
-  - Icon: 32px, opacity 0.2, behind the number
-- Chart row: 2 cards side by side (1fr 1fr), 16px gap
-  - Left: Gender Distribution (pie chart)
-  - Right: Status Distribution (bar chart)
-  - Each chart card: 320px height
-- Recent employees: Full-width card below charts
-  - Title: "Recent Employees", right-aligned "View All" link
-  - Table with 5 columns, 5 rows
-- Quick actions: 3 buttons in a row
+| Element | Tab Order | Keyboard Interaction |
+|---------|-----------|---------------------|
+| Template list search | 1st focusable | Enter triggers search |
+| Filter selects | 2-4th | Arrow keys to navigate |
+| Table rows | Skip (not tabbable) | Click to navigate |
+| Action dropdown buttons | Next after table | Enter/Space opens menu |
+| Editor textarea | Next after sidebar | Tab inserts 2 spaces |
+| Placeholder buttons | After editor | Enter/Space inserts at cursor |
+| Save/Preview/Cancel | End of form | Enter to activate |
 
-**States:**
-- Loading: 4 skeleton stat cards, 2 skeleton chart cards, skeleton table
-- Loaded: Animated counters (numbers count up from 0)
-- Empty: No employees → empty state with CTA
-- Error: Red banner "Failed to load dashboard data. [Retry]"
+### 11.3 Color & Theme Consistency
 
-### 11.3 Employee List (Table View)
+The module uses existing CSS variables defined in `styles.scss`:
 
-**Layout:**
-- Page title: "Employees", right-aligned action buttons (Add, Export, Import)
-- Search bar: Full-width, rounded, search icon prefix, clearable
-- Advanced filters: Toggleable panel below search
-  - Row 1: Status (dropdown), Designation (dropdown), Gender (dropdown)
-  - Row 2: Religion (dropdown), DOB Range (date pickers)
-  - "Clear All" link right-aligned
-- Table: Angular Material `mat-table`
-  - Columns: Photo (thumbnail 40px), Code, Name, Gender, Designation, Status, DOJ, Actions (3 icon buttons)
-  - Sortable headers (click to sort ascending/descending)
-  - Row hover: light highlight
-  - Click anywhere on row: navigate to view
-- Paginator: Below table
-  - Items per page: 10, 25, 50
-  - Page numbers with first/last shortcuts
-  - Showing "1-10 of 156"
+| Token | Light Theme | Dark Theme |
+|-------|------------|------------|
+| Page background | `var(--color-bg)` `#f4f6f9` | `#121212` |
+| Card background | `var(--color-card)` `#ffffff` | `#1e1e1e` |
+| Primary text | `var(--color-text-primary)` `#1a1a2e` | `#e0e0e0` |
+| Secondary text | `var(--color-text-secondary)` `#6c757d` | `#b0b0b0` |
+| Primary accent | `var(--color-primary-500)` `#1f3d6e` | `#4a90d9` |
+| Border | `var(--color-border)` `#dee2e6` | `#333333` |
+| Danger | `var(--color-danger)` `#dc3545` | `#ef5350` |
+| Success | `var(--color-success)` `#28a745` | `#4caf50` |
 
-**States:**
-- Loading: Skeleton table (5 rows of shimmer)
-- Loaded: Data rows with hover states
-- Empty: Empty state per section 10.2
-- No results: Search-specific empty state
-- Error: "Failed to load employees" with retry button
+**Theme toggle behavior:** The existing theme toggle (light/dark/system) in the admin layout header is respected. All new components use CSS variables exclusively — no hardcoded colors.
 
-### 11.4 Employee Form (Add/Edit)
+### 11.4 Focus Management
 
-**Layout:**
-- Header bar: Back button, title ("Add New Employee" or "Edit Employee"), action buttons (Save Draft, Create/Update)
-- Tab bar: Horizontal scrollable tabs with badges
-- Tab content: Reactive form fields in 2/3-column grid
-  - Each tab component manages its own field layout
-  - Last tab (Exit & Docs): Photo upload zone included
-- Footer: Unsaved changes warning banner (shown when form is dirty)
-
-**Tab Details:**
-
-*Tab 1 — Personal Info (25 fields):*
-```
-┌────────────────────┬────────────────────┐
-│ Employee Code *    │ Prefix *           │
-├────────────────────┼────────────────────┤
-│ First Name *       │ Surname *          │
-├────────────────────┼────────────────────┤
-│ Gender *           │ Marital Status     │
-├────────────────────┼────────────────────┤
-│ Father/Husband     │ F/M/H              │
-├────────────────────┼────────────────────┤
-│ Occupation of Kin  │ Subcategory        │
-├────────────────────┼────────────────────┤
-│ Ration Card        │                    │
-├────────────────────┼────────────────────┤
-│ DOJ                │ Highest Qual.      │
-├────────────────────┼────────────────────┤
-│ Level of Education │ Year of Passing    │
-├────────────────────┼────────────────────┤
-│ % of Marks         │                    │
-├────────────────────┼────────────────────┤
-│ DOB *              │ Age (auto)         │
-├────────────────────┼────────────────────┤
-│ Age Bracket (auto) │                    │
-├────────────────────┴────────────────────┤
-│ Present Address (full width)            │
-├────────────────────┬────────────────────┤
-│ Permanent Address  │ (full width)       │
-├────────────────────┼────────────────────┤
-│ Email              │ Mobile *           │
-├────────────────────┼────────────────────┤
-│ Close Relative     │ Relative Mobile    │
-└────────────────────┴────────────────────┘
-```
-
-*Tab 2 — Demographics (3 fields):*
-```
-┌────────────────────┬────────────────────┬────────────────────┐
-│ Religion           │ Social Category    │ Social Subcategory │
-└────────────────────┴────────────────────┴────────────────────┘
-```
-
-*Tab 3 — Assets (6 fields):* 3-column grid with Yes/No toggle switches
-
-*Tab 4 — Identity (3 fields):* 3-column grid: Blood Group (dropdown), Aadhar, PAN
-
-*Tab 5 — Education (8 fields):* 4-column for Yes/No toggles, full-width Remarks textarea
-
-*Tab 6 — Bank Details (4 fields):* 2-column grid
-
-*Tab 7 — Employment (8 fields):* 2-column grid
-
-*Tab 8 — Family (6 fields):* 3 groups of name+phone pairs
-
-*Tab 9 — Experience & References (11 fields):* Section with Experience toggle, Reference cards
-
-*Tab 10 — Exit & Documents (5 fields):* Designation, DOE, Deletion Month, Exit Type, Exit Reason, Photo upload
-
-**States:**
-- Loading: Skeleton form fields
-- New mode: Empty fields, auto-generated employee code
-- Edit mode: Prefilled fields, "Create" button changes to "Update"
-- Saving: Button spinner, fields disabled
-- Validation error: First error tab activated, error fields highlighted
-- Success: Toast + redirect
-- Error: Toast with retry option
-
-### 11.5 Employee View (Read-Only)
-
-**Layout:**
-- Back link: "← Back to Employee List"
-- Photo card: Left sidebar (280px), shows photo with "Change Photo" button (admin) or read-only (employee)
-- Name/header: Full name (prefix + first + surname), employee code, status badge
-- Tabbed view: Same 10 tabs as form but all fields read-only
-  - Fields displayed as label: value pairs
-  - Values not editable (no input fields)
-  - Copy-to-clipboard button on key fields (Employee Code, Aadhar, PAN)
-- Action buttons: "Edit", "Delete" (admin), or "Edit Profile" (employee)
-
-**States:**
-- Loading: Skeleton layout
-- Loaded: Cards with data
-- Photo missing: Silhouette placeholder
-- Deleted employee: Red "Deactivated" banner across top
-
-### 11.6 Masters Setup
-
-**Layout:**
-- Back link or breadcrumb
-- Page title: "Masters Setup"
-- Category selector: Full-width dropdown (mat-select) with all master categories
-- Add button: "[+ Add New Value]" right-aligned
-- Table: Code (bold), Value, Sort Order, Active toggle, Actions (Edit, Delete)
-- Inline editing: Clicking edit icon makes the row's Value and Sort Order fields editable inline
-- Add dialog: Modal with Code (required), Value (required), Sort Order (number, auto)
-
-**States:**
-- Loading: Skeleton table
-- Loaded: Data rows
-- Empty: Empty state per section 10.3
-- Saving: Button spinner in dialog
-
-### 11.7 Reports Page
-
-**Layout:**
-- Page title: "Reports"
-- Report type selector: Card grid with 4 options
-  - "Employee Directory" — Full employee list export
-  - "Active Employees" — Only active employees
-  - "Exit Report" — Employees who have exited
-  - "Custom Report" — Select specific fields
-- Filter section: Appears after selecting report type
-  - Date range (from/to)
-  - Status filter
-  - Designation filter
-- Preview area: Shows first 10 rows of the report
-- Export button: "Export to Excel" — triggers download
-
-**States:**
-- No report selected: "Select a report type to begin"
-- Loading: "Generating preview..."
-- Ready: Preview table + "Download" button
-- Empty: "No data matches your filter criteria"
-- Exporting: Progress bar "Preparing your file..."
-- Complete: File download dialog
+| Scenario | Focus Target | Behavior |
+|----------|-------------|----------|
+| Template Editor opens | Template Name input | Auto-focus on first field |
+| Editor loads in edit mode | Template Name input | Prefilled, focus on first field |
+| Preview modal opens | Close button (safe choice) | Focus trap in modal |
+| Preview modal closes | "Preview" button on editor | Return focus to trigger |
+| Delete confirm dialog | Cancel button | Focus on least destructive action |
+| Template list loads | Search input | Focus remains on page title |
+| Error in form | First invalid field | Scroll to and focus |
 
 ---
 
 ## 12. Developer Handoff Checklist
 
-### 12.1 Priority Order for Implementation
+### 12.1 File Structure
 
-| Priority | Component | Dependencies | Estimated Effort |
-|----------|-----------|-------------|-----------------|
-| P0 | Login Page + Auth Flow | AuthService, JWT interceptor | 1 day |
-| P0 | Admin Layout (Sidebar + Header) | Router, Layout components | 2 days |
-| P0 | Dashboard (Stats + Charts) | DashboardService, chart lib | 3 days |
-| P0 | Employee List (Table + Search + Filters) | EmployeeService, MatTable | 3 days |
-| P0 | Employee Form (10 tabs) | EmployeeService, MasterDataService | 8 days |
-| P1 | Employee View (Read-only) | EmployeeService | 2 days |
-| P1 | Master Data CRUD | MasterDataService | 2 days |
-| P1 | Employee Layout (Self-service) | AuthGuard, EmployeeService | 2 days |
-| P2 | Photo Upload | PhotoService | 1 day |
-| P2 | Reports Page + Export | ExportImportService | 3 days |
-| P2 | Empty States | Conditional rendering | 1 day |
-| P3 | Keyboard Shortcuts | Global event listener | 1 day |
-| P3 | Animations & Transitions | Angular animations | 2 days |
-| P3 | Offline support | Service worker | 2 days |
+```
+src/app/features/
+├── company/
+│   └── company-setup.component.ts        ← EXISTING (enhance with UX spec)
+├── document-templates/
+│   ├── document-template-list.component.ts  ← EXISTING (enhance with UX spec)
+│   └── template-editor.component.ts         ← NEW
+│
+src/app/core/services/
+├── company.service.ts                       ← EXISTING (complete)
+├── document-template.service.ts             ← EXISTING (complete)
+└── download-tracking.service.ts             ← EXISTING (complete)
+```
 
-### 12.2 Key Angular Material Components to Use
+### 12.2 Priority Order for Implementation
 
-| Feature | Material Component | Notes |
-|---------|-------------------|-------|
-| Sidebar | `mat-sidenav`, `mat-sidenav-container` | Responsive + collapsible |
-| Tabs | `mat-tab-group`, `mat-tab` | With `mat-tab-header` for badges |
-| Table | `mat-table` with `mat-sort`, `mat-paginator` | Full featured |
-| Search | `mat-form-field` with `mat-icon` prefix | Debounced manually |
-| Date picker | `mat-datepicker` with `mat-datepicker-toggle` | |
-| Select | `mat-select` with `mat-option` | For all dropdowns |
-| Dialog | `mat-dialog` | For confirmations and masters add |
-| Toast | `mat-snack-bar` | For all notifications |
-| Chips | `mat-chip-list` | For multi-select (languages) |
-| Progress | `mat-progress-bar`, `mat-spinner` | Loading states |
-| Slide toggle | `mat-slide-toggle` | For Yes/No assets fields |
-| Badge | `mat-badge` | For tab error counts |
+| Priority | Component | Dependencies | Effort |
+|----------|-----------|-------------|--------|
+| **P0** | Routes: add company + document-templates to `app.routes.ts` | AdminLayoutComponent | 0.5 day |
+| **P0** | Sidebar: add Company Setup + Document Templates menu items | AdminLayoutComponent | 0.5 day |
+| **P0** | Company Setup: validation, logo drag-drop, document upload | CompanyService | 1 day |
+| **P0** | Template List: filters, pagination, active toggle | DocumentTemplateService | 1 day |
+| **P1** | Template Editor: form, placeholder sidebar, insert mechanism | DocumentTemplateService | 2 days |
+| **P1** | Preview Modal: sample data, iframe display, error handling | DocumentTemplateService | 1 day |
+| **P1** | Generate Document Modal: from employee view | EmployeeService, DocumentTemplateService | 1.5 days |
+| **P2** | Download Reports Tab: stat cards, log table, filters | DownloadTrackingService | 2 days |
+| **P2** | Export to Excel | DownloadTrackingService | 0.5 day |
+| **P2** | Empty States: all 6 empty state variants | Conditional rendering | 0.5 day |
+| **P2** | Dashboard Company Setup Check widget | CompanyService | 0.5 day |
+| **P3** | Employee self-service: "My Documents" tab | EmployeeService | 1 day |
 
-### 12.3 Responsive CSS Breakpoints (Sass Mixins)
+### 12.3 ng-zorro-antd Component Usage
+
+| Feature | Component | Module |
+|---------|-----------|--------|
+| Table | `nz-table` | `NzTableModule` |
+| Search input | `nz-input` + `nz-input-group` | `NzInputModule` |
+| Select | `nz-select` / `nz-option` | `NzSelectModule` |
+| Button | `nz-button` | `NzButtonModule` |
+| Switch | `nz-switch` | `NzSwitchModule` |
+| Tag | `nz-tag` | `NzTagModule` |
+| Modal | `nz-modal` | `NzModalModule` |
+| Dropdown | `nz-dropdown` / `nz-dropdown-menu` | `NzDropDownModule` |
+| Card | `nz-card` | `NzCardModule` |
+| Statistic | `nz-statistic` | `NzStatisticModule` |
+| Date picker | `nz-date-picker` | `NzDatePickerModule` |
+| Tooltip | `nz-tooltip` | `NzToolTipModule` |
+| Notification/Toast | `NzNotificationService` / `NzMessageService` | `NzNotificationModule` / `NzMessageModule` |
+| Breadcrumb | `nz-breadcrumb` | `NzBreadCrumbModule` |
+| Spin | `nz-spin` | `NzSpinModule` |
+
+### 12.4 Shared Components to Reuse
+
+| Component | Current Location | Usage |
+|-----------|-----------------|-------|
+| `PageHeaderComponent` | `shared/components/page-header` | All 4 module pages |
+| `StatCardComponent` | `shared/components/stat-card` | Reports summary cards |
+| `LoadingSpinnerComponent` | `shared/components/loading-spinner` | All page loads |
+| `DateFormatPipe` | `shared/pipes/date-format.pipe` | Date formatting in tables |
+| `TitleCasePipe` | `shared/pipes/title-case.pipe` | Display value formatting |
+
+### 12.5 CSS Implementation Notes
+
+**New module-specific CSS variables to add to `styles.scss`:**
+
+```css
+:root {
+  /* Document module tokens */
+  --editor-min-height: 500px;
+  --preview-max-height: 400px;
+  --placeholder-sidebar-width: 280px;
+  
+  /* Template type tag colors */
+  --tag-joining: #1890ff;
+  --tag-relieving: #fa8c16;
+  --tag-experience: #722ed1;
+  --tag-offer: #52c41a;
+  --tag-appointment: #2f54eb;
+  --tag-salary: #13c2c2;
+  --tag-confirmation: #a0d911;
+  --tag-transfer: #faad14;
+  --tag-promotion: #fa541c;
+  --tag-warning: #eb2f96;
+  --tag-noc: #1d39c4;
+}
+```
+
+**Module-specific section styles (consistent with existing patterns):**
 
 ```scss
-// _mixins.scss
-
-// Mobile first approach
-@mixin mobile-only {
-  @media (max-width: 767px) { @content; }
+// Template editor layout
+.editor-layout {
+  display: grid;
+  grid-template-columns: var(--placeholder-sidebar-width) 1fr;
+  gap: 24px;
+  
+  @media (max-width: 1023px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-@mixin tablet-up {
-  @media (min-width: 768px) { @content; }
+// Placeholder sidebar
+.placeholder-sidebar {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  
+  .placeholder-group-header {
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-primary-500);
+    border-bottom: 1px solid var(--color-border-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .placeholder-chips {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .placeholder-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-alt);
+    font-size: 12px;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    
+    &:hover {
+      border-color: var(--color-primary-200);
+      background: var(--color-primary-50);
+    }
+    
+    .insert-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary-500);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+  }
 }
 
-@mixin tablet-only {
-  @media (min-width: 768px) and (max-width: 1199px) { @content; }
+// Document preview area
+.preview-area {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  max-height: var(--preview-max-height);
+  overflow-y: auto;
+  padding: 24px;
+  font-family: 'Times New Roman', serif;
+  font-size: 12pt;
+  line-height: 1.6;
 }
 
-@mixin desktop-up {
-  @media (min-width: 1200px) { @content; }
-}
-
-// Target specific breakpoint
-@mixin breakpoint($min, $max: null) {
-  @if $max {
-    @media (min-width: $min) and (max-width: $max) { @content; }
-  } @else {
-    @media (min-width: $min) { @content; }
+// Summary card customization for reports
+.report-stat-card {
+  .stat-box {
+    border-left: 4px solid var(--color-primary-500);
   }
 }
 ```
 
-### 12.4 Theme Token Implementation
+### 12.6 Route Guards & Permissions
 
-The CSS design system should follow the architecture document's `_variables.scss` with these additions for the UX layer:
+| Route | Guard | Role Check | Notes |
+|-------|-------|-----------|-------|
+| `/admin/company` | AuthGuard + RoleGuard | `roles: ['ADMIN']` + UI `*ngIf="isSuperadmin"` | Backend also checks role |
+| `/admin/document-templates/**` | AuthGuard + RoleGuard | `roles: ['ADMIN']` | All admin roles |
+| Generate from `/admin/employees/:id` | AuthGuard + RoleGuard | `roles: ['ADMIN', 'EMPLOYEE']` | EMPLOYEE can only access own ID |
 
-```scss
-// UX-specific tokens
-$sidebar-width: 260px;
-$sidebar-collapsed: 64px;
-$header-height: 64px;
-$mobile-header-height: 56px;
-$bottom-nav-height: 56px;
-$card-border-radius: 8px;
-$card-elevation: 2;
-$card-hover-elevation: 8;
-$transition-speed: 300ms;
-$toast-success-bg: #4caf50;
-$toast-error-bg: #d32f2f;
-$toast-warning-bg: #ff9800;
-$toast-info-bg: #2196f3;
-$skeleton-base: #e0e0e0;
-$skeleton-shimmer: #f0f0f0;
-$empty-state-illustration-size: 120px;
+### 12.7 Data Flow Diagrams
+
+#### Template Creation Flow
+```
+[Template Editor Form]
+    │
+    ├──→ Client Validation
+    │      ├── Fail → [Show inline errors]
+    │      └── Pass → [Continue]
+    │
+    └──→ POST /api/v1/document-templates
+           │
+           ├── 201 Created → [Toast: "Template created"]
+           │                  [Redirect to /admin/document-templates]
+           │
+           └── 4xx/5xx → [Toast: error message]
+                           [Stay on editor, data preserved]
 ```
 
-### 12.5 Route Guard Integration
+#### Document Generation Flow
+```
+[Employee View Page]
+    │
+    └──→ [Click "Generate Document"]
+           │
+           └──→ [Open Modal]
+                   │
+                   ├──→ GET /document-templates?active=true
+                   │     → [Populate template dropdown]
+                   │
+                   ├──→ [Select Template]
+                   │     → GET /preview/{id}?employeeId={empId}
+                   │     → [Show preview in iframe]
+                   │
+                   ├──→ GET /download-logs/employee/{empId}
+                   │     → [Show "Downloads this FY" count]
+                   │
+                   └──→ [Click "Download PDF"]
+                         → POST /generate/{id}/{empId}?format=pdf
+                         → [Receive HTML → Open in new window → Print]
+                         → [Toast: "Document downloaded"]
+```
 
-| Route | Guard(s) | Data Roles | Redirect If Fails |
-|-------|----------|------------|-------------------|
-| `/admin/**` | `AuthGuard` + `RoleGuard` | `['ADMIN']` | `/auth/login` or `/employee/profile` |
-| `/employee/**` | `AuthGuard` + `RoleGuard` | `['EMPLOYEE']` | `/auth/login` or `/admin/dashboard` |
-| `/auth/login` | None (public) | — | Already logged in → redirect to role home |
+### 12.8 Testing Scenarios
 
-### 12.6 Form Validation Summary (80 Fields)
-
-| Validation Type | Fields | Count |
-|----------------|--------|-------|
-| Required | employee_code, first_name, surname, gender, dob, mobile | 6 |
-| Pattern (regex) | employee_code (`^[A-Z0-9]{8}$`), mobile (`^\d{10}$`), aadhar (`^\d{12}$`), pan (`^[A-Z]{5}\d{4}[A-Z]$`), ifsc (`^[A-Z]{4}0[A-Z0-9]{6}$`), account_number (`^\d{9,18}$`), email (standard), year_of_passing (number 1950-2027), percentage (0-100) | 10 |
-| Dependent dropdown | social_subcategory ← social_category | 1 cascade |
-| Auto-calculated | age (from dob), age_bracket (from age) | 2 computed |
-| Yes/No (from master) | ration_card, has_tv...has_4wheeler, ssc_status...osv, past_experience, aadhar_seeding, uan_activation | 15 |
-| Text max length | first_name(40), surname(40), present_address(256), etc. | ~20 fields |
-| File validation | photo (jpg/png, max 2MB) | 1 |
+| Scenario | Steps | Expected Result |
+|----------|-------|-----------------|
+| First-time company setup | Login as superadmin → navigate to `/admin/company` | Empty state shown, all fields blank |
+| Complete company profile | Fill all fields → upload logo → upload GST cert → save | Success toast, logo visible in sidebar |
+| Edit company profile | Change company name → save | Existing data prefilled, update succeeds |
+| Create template | Navigate to templates → click Add → fill form → use placeholders → save | Template appears in list |
+| Edit template | Click edit on a template → modify content → save | Updates reflected in list |
+| Preview template | Click Preview → select template → view | Modal shows filled preview with sample data |
+| Generate document | Go to employee view → click Generate → select template → Download | PDF downloads, log created |
+| View download logs | Go to Templates → Reports tab → check filters | Stats and logs displayed correctly |
+| Export reports | Apply filters → click Export | Excel file downloads |
+| Delete template | Click delete → confirm | Template deactivated (soft delete) |
+| Incomplete company notification | Login as superadmin with incomplete company | Warning on dashboard + sidebar dot |
 
 ---
 
-## Appendices
-
-### A. CSS Design System Foundation
-
-```css
-:root {
-  /* Primary palette */
-  --primary-50: #e3e8f0;
-  --primary-100: #b8c6da;
-  --primary-200: #8aa0c1;
-  --primary-300: #5c7aa8;
-  --primary-400: #3a5e95;
-  --primary-500: #1f3d6e;
-  --primary-600: #1a3460;
-  --primary-700: #142b50;
-  --primary-800: #0f2240;
-  --primary-900: #091830;
-
-  /* Accent */
-  --accent-50: #fff3e0;
-  --accent-100: #ffe0b2;
-  --accent-200: #ffcc80;
-  --accent-300: #ffb74d;
-  --accent-400: #ffa726;
-  --accent-500: #ff6f00;
-  --accent-600: #f57c00;
-  --accent-700: #e65100;
-
-  /* Semantic colors */
-  --success: #4caf50;
-  --warning: #ff9800;
-  --error: #d32f2f;
-  --info: #2196f3;
-
-  /* Text */
-  --text-primary: #1f3d6e;
-  --text-secondary: #5f6368;
-  --text-disabled: #9e9e9e;
-  --text-on-primary: #ffffff;
-
-  /* Background */
-  --bg-page: #f4f6f9;
-  --bg-card: #ffffff;
-  --bg-sidebar: #0f2240;
-  --bg-header: #ffffff;
-
-  /* Borders */
-  --border-color: #e0e0e0;
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 16px;
-
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
-
-  /* Typography */
-  --font-family: 'Roboto', 'Segoe UI', sans-serif;
-  --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-lg: 18px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 28px;
-  --font-size-4xl: 36px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
-
-  /* Layout */
-  --sidebar-width: 260px;
-  --sidebar-collapsed: 64px;
-  --header-height: 64px;
-  --max-content-width: 1400px;
-}
-
-[data-theme="dark"] {
-  --text-primary: #e0e0e0;
-  --text-secondary: #b0b0b0;
-  --text-disabled: #616161;
-  --bg-page: #121212;
-  --bg-card: #1e1e1e;
-  --bg-sidebar: #1e1e1e;
-  --bg-header: #1e1e1e;
-  --border-color: #333333;
-}
-```
-
-### B. Loading Skeleton Component Template
-
-```html
-<!-- Loading skeleton for a form with 2-column layout -->
-<div class="skeleton-form" aria-busy="true" aria-label="Loading form">
-  <div class="skeleton-title"></div>
-  <div class="skeleton-row">
-    <div class="skeleton-field"></div>
-    <div class="skeleton-field"></div>
-  </div>
-  <div class="skeleton-row">
-    <div class="skeleton-field"></div>
-    <div class="skeleton-field"></div>
-  </div>
-  <div class="skeleton-row">
-    <div class="skeleton-field skeleton-full"></div>
-  </div>
-</div>
-```
-
-```scss
-.skeleton-form {
-  padding: 24px;
-}
-
-.skeleton-title {
-  height: 32px;
-  width: 200px;
-  margin-bottom: 24px;
-  background: var(--skeleton-base);
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.skeleton-field {
-  height: 48px;
-  background: var(--skeleton-base);
-  border-radius: 4px;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-full {
-  grid-column: 1 / -1;
-}
-
-@keyframes shimmer {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-```
-
-### C. Toast Notification Component Template
-
-```html
-<!-- Toast notification structure -->
-<div class="toast-container toast-success" role="alert" aria-live="polite">
-  <div class="toast-icon">✅</div>
-  <div class="toast-content">
-    <div class="toast-title">Success</div>
-    <div class="toast-message">Employee created successfully!</div>
-  </div>
-  <button class="toast-action" aria-label="View employee">View</button>
-  <button class="toast-close" aria-label="Dismiss notification">✕</button>
-</div>
-```
-
-### D. Confirmation Dialog Template
-
-```html
-<!-- Confirmation dialog structure -->
-<div class="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-  <div class="dialog">
-    <h2 id="dialog-title" class="dialog-title">Delete Employee?</h2>
-    <p class="dialog-message">
-      This will deactivate <strong>John Doe (EMP0001)</strong>.
-      Their data will be preserved for audit purposes.
-    </p>
-    <div class="dialog-actions">
-      <button class="btn btn-stroked" autofocus>Cancel</button>
-      <button class="btn btn-raised btn-danger">Delete</button>
-    </div>
-  </div>
-</div>
-```
-
----
-
-> **Document Version:** 1.0  
+> **Document Version:** 2.0  
 > **Author:** ArchitectUX Agent  
-> **Review Date:** May 18, 2026  
-> **Next Steps:** Hand off to LuxuryDeveloper for implementation. Begin with P0 items: Login, Layout, Dashboard, Employee List, and the 10-tab Employee Form.
+> **Review Date:** May 24, 2026  
+> **Priority Implementation:** Routes → Sidebar → Template List → Template Editor → Company Setup → Generate Modal → Reports  
+> **Handoff Ready:** ✅ All designs align with existing ng-zorro-antd patterns, CSS variables, and backend APIs

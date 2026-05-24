@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -14,6 +15,10 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzTableModule } from 'ng-zorro-antd/table';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { EmployeeService } from '../../core/services/employee.service';
 import { Employee } from '../../core/models/employee.model';
@@ -21,12 +26,16 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 import { TitleCasePipe } from '../../shared/pipes/title-case.pipe';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { environment } from '../../../environments/environment';
+import { DocumentTemplateService } from '../../core/services/document-template.service';
+import { DownloadTrackingService } from '../../core/services/download-tracking.service';
+import { DocumentTemplate, DownloadLog } from '../../core/models/document-template.model';
 
 @Component({
   selector: 'app-staff-master-view',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterLink,
     NzCardModule,
     NzButtonModule,
@@ -39,13 +48,15 @@ import { environment } from '../../../environments/environment';
     NzDescriptionsModule,
     NzAvatarModule,
     NzBreadCrumbModule,
+    NzModalModule,
+    NzSelectModule,
+    NzTableModule,
     DateFormatPipe,
     TitleCasePipe,
     LoadingSpinnerComponent
   ],
   template: `
     <div class="view-container fade-in">
-      <!-- Breadcrumb -->
       <nz-breadcrumb>
         <nz-breadcrumb-item>
           <a routerLink="/admin/dashboard">Dashboard</a>
@@ -58,7 +69,6 @@ import { environment } from '../../../environments/environment';
         </nz-breadcrumb-item>
       </nz-breadcrumb>
 
-      <!-- Profile Card -->
       <nz-card class="profile-card" *ngIf="employee" nzBorderless>
         <div class="profile-card-inner">
           <div class="profile-avatar-section">
@@ -94,7 +104,6 @@ import { environment } from '../../../environments/environment';
 
       <app-loading-spinner [loading]="isLoading" message="Loading employee details..."></app-loading-spinner>
 
-      <!-- Detail Tabs -->
       <div *ngIf="!isLoading && employee" class="detail-tabs-wrapper">
         <nz-tabset class="detail-tabs">
           <nz-tab nzTitle="Personal Info">
@@ -263,18 +272,97 @@ import { environment } from '../../../environments/environment';
               </nz-descriptions>
             </div>
           </nz-tab>
+
+          <!-- Documents Tab -->
+          <nz-tab nzTitle="Documents">
+            <div class="tab-content">
+              <div class="documents-tab-header">
+                <h3 class="documents-tab-title">Generate Documents</h3>
+                <button nz-button nzType="primary" (click)="showGenerateModal()">
+                  <i nz-icon nzType="file-text"></i> Generate Document
+                </button>
+              </div>
+
+              <nz-divider></nz-divider>
+
+              <h4 class="doc-history-title">Recent Downloads</h4>
+              <nz-table #historyTable [nzData]="downloadHistory" [nzFrontPagination]="true" [nzPageSize]="5"
+                nzSize="small" [nzNoResult]="noHistory" class="history-table">
+                <thead>
+                  <tr>
+                    <th>Template</th>
+                    <th>Format</th>
+                    <th>Financial Year</th>
+                    <th>Downloaded At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let log of historyTable.data">
+                    <td>{{ log.templateName || 'Template #' + log.templateId }}</td>
+                    <td><nz-tag [nzColor]="log.format === 'pdf' ? 'red' : 'blue'">{{ (log.format || '').toUpperCase() }}</nz-tag></td>
+                    <td>{{ log.financialYear }}</td>
+                    <td>{{ log.downloadedAt | dateFormat }}</td>
+                  </tr>
+                </tbody>
+              </nz-table>
+              <ng-template #noHistory>
+                <div class="no-history">
+                  <i nz-icon nzType="inbox"></i>
+                  <p>No documents downloaded yet</p>
+                </div>
+              </ng-template>
+            </div>
+          </nz-tab>
         </nz-tabset>
       </div>
     </div>
+
+    <!-- Generate Document Modal -->
+    <nz-modal [(nzVisible)]="isGenerateModalVisible" nzTitle="Generate Document"
+      (nzOnCancel)="closeGenerateModal()" nzWidth="700px" [nzFooter]="null">
+      <ng-template nzModalContent>
+        <div class="gen-modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Template Type</label>
+            <nz-select [(ngModel)]="selectedTemplateType" nzPlaceHolder="Choose template type"
+              (ngModelChange)="onTemplateTypeChange()" style="width:100%">
+              <nz-option *ngFor="let t of templateTypes" [nzValue]="t" [nzLabel]="t"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="form-group" *ngIf="availableTemplates.length > 0">
+            <label class="form-label">Select Template</label>
+            <nz-select [(ngModel)]="selectedTemplateId" nzPlaceHolder="Choose template"
+              (ngModelChange)="onTemplateSelect()" style="width:100%">
+              <nz-option *ngFor="let tpl of availableTemplates" [nzValue]="tpl.id" [nzLabel]="tpl.templateName"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="preview-section" *ngIf="previewHtml">
+            <label class="form-label">Preview</label>
+            <div class="preview-frame">
+              <iframe [srcdoc]="previewHtml" class="preview-iframe" sandbox="allow-same-origin"></iframe>
+            </div>
+            <div class="preview-actions">
+              <button nz-button nzType="primary" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">
+                <i nz-icon nzType="download"></i> Download PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="preview-empty" *ngIf="!previewHtml && selectedTemplateId">
+            <i nz-icon nzType="loading" class="loading-icon"></i>
+            <p>Generating preview...</p>
+          </div>
+        </div>
+      </ng-template>
+    </nz-modal>
   `,
   styles: [`
     :host { display: block; }
     .view-container { max-width: 1200px; margin: 0 auto; }
-
-    /* ===== BREADCRUMB ===== */
     nz-breadcrumb { margin-bottom: 16px; }
 
-    /* ===== PROFILE CARD ===== */
     .profile-card { border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
     .profile-card-inner { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
     .profile-avatar-section { position: relative; flex-shrink: 0; }
@@ -298,16 +386,12 @@ import { environment } from '../../../environments/environment';
     .status-badge-view.other { background: #f5f5f5; color: #5a6268; }
     .status-badge-view.other .dot { background: #adb5bd; }
 
-    /* ===== DETAIL TABS ===== */
     .detail-tabs-wrapper { background: #fff; border-radius: var(--radius-lg); box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--color-border-light); overflow: hidden; }
     .detail-tabs { padding: 0; }
     .tab-content { padding: 24px; }
-
-    /* ===== TAB DESCRIPTIONS ===== */
     .tab-descriptions { margin-bottom: 20px; }
     .tab-descriptions:last-child { margin-bottom: 0; }
 
-    /* ===== ASSETS GRID ===== */
     .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .asset-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 16px; background: #f8f9fc; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); transition: all 0.2s; }
     .asset-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
@@ -318,7 +402,27 @@ import { environment } from '../../../environments/environment';
     .asset-label { font-size: 14px; font-weight: 600; color: #333; }
     .asset-status { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.3px; }
 
-    /* ===== RESPONSIVE ===== */
+    /* Documents Tab */
+    .documents-tab-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .documents-tab-title { font-size: 18px; font-weight: 600; color: var(--color-primary-500); margin: 0; }
+    .doc-history-title { font-size: 14px; font-weight: 600; color: #333; margin: 0 0 12px; }
+    .history-table { width: 100%; }
+    .no-history { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; }
+    .no-history i { font-size: 32px; color: #d9d9d9; }
+    .no-history p { font-size: 13px; color: #999; margin: 0; }
+
+    /* Generate Modal */
+    .gen-modal-body { display: flex; flex-direction: column; gap: 20px; padding: 8px 0; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 13px; font-weight: 600; color: #333; }
+    .preview-section { display: flex; flex-direction: column; gap: 12px; }
+    .preview-frame { border: 1px solid #e8ebf0; border-radius: var(--radius-md); overflow: hidden; }
+    .preview-iframe { width: 100%; height: 400px; border: none; }
+    .preview-actions { display: flex; gap: 8px; }
+    .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; }
+    .loading-icon { font-size: 32px; color: var(--color-primary-500); }
+    .preview-empty p { font-size: 13px; color: #666; margin: 0; }
+
     @media (max-width: 768px) {
       .profile-main { flex-direction: column; align-items: center; text-align: center; margin-top: 40px; }
       .profile-meta { justify-content: center; }
@@ -333,6 +437,7 @@ import { environment } from '../../../environments/environment';
 export class StaffMasterViewComponent implements OnInit {
   employee: Employee | null = null;
   isLoading = false;
+  employeeId: number | null = null;
 
   assetFields = [
     { label: 'TV', key: 'hasTv' },
@@ -343,17 +448,34 @@ export class StaffMasterViewComponent implements OnInit {
     { label: '4 Wheeler', key: 'has4wheeler' }
   ];
 
+  templateTypes: string[] = [];
+  availableTemplates: DocumentTemplate[] = [];
+  selectedTemplateType: string = '';
+  selectedTemplateId: number | null = null;
+  previewHtml: string = '';
+  isDownloading = false;
+
+  downloadHistory: DownloadLog[] = [];
+
+  isGenerateModalVisible = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private employeeService: EmployeeService,
-    private notification: NzNotificationService
+    private notification: NzNotificationService,
+    private templateService: DocumentTemplateService,
+    private downloadTrackingService: DownloadTrackingService,
+    private message: NzMessageService,
+    private modal: NzModalService
   ) {}
 
   ngOnInit(): void {
     const id = this.route.snapshot.params['id'];
     if (id) {
-      this.loadEmployee(+id);
+      this.employeeId = +id;
+      this.loadEmployee(this.employeeId);
+      this.loadTemplateTypes();
     }
   }
 
@@ -364,12 +486,34 @@ export class StaffMasterViewComponent implements OnInit {
         this.isLoading = false;
         if (response.success) {
           this.employee = response.data;
+          this.loadDownloadHistory();
         }
       },
-      error: (err) => {
+      error: () => {
         this.isLoading = false;
         this.notification.error('Error', 'Error loading employee details');
         this.router.navigate(['/admin/employees']);
+      }
+    });
+  }
+
+  private loadTemplateTypes(): void {
+    this.templateService.getTemplateTypes().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.templateTypes = response.data || [];
+        }
+      }
+    });
+  }
+
+  private loadDownloadHistory(): void {
+    if (!this.employeeId) return;
+    this.downloadTrackingService.getEmployeeLogs(this.employeeId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.downloadHistory = response.data || [];
+        }
       }
     });
   }
@@ -390,5 +534,76 @@ export class StaffMasterViewComponent implements OnInit {
   get photoUrl(): string {
     if (!this.employee?.photoPath) return '';
     return environment.apiUrl.replace('/api/v1', '') + this.employee.photoPath;
+  }
+
+  showGenerateModal(): void {
+    this.selectedTemplateType = '';
+    this.selectedTemplateId = null;
+    this.previewHtml = '';
+    this.availableTemplates = [];
+    this.isGenerateModalVisible = true;
+  }
+
+  closeGenerateModal(): void {
+    this.isGenerateModalVisible = false;
+    this.selectedTemplateType = '';
+    this.selectedTemplateId = null;
+    this.previewHtml = '';
+  }
+
+  onTemplateTypeChange(): void {
+    this.selectedTemplateId = null;
+    this.previewHtml = '';
+    if (!this.selectedTemplateType) {
+      this.availableTemplates = [];
+      return;
+    }
+    this.templateService.getTemplates({ templateType: this.selectedTemplateType, page: 0, size: 100 }).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.availableTemplates = response.data.content.filter(t => t.active);
+        }
+      }
+    });
+  }
+
+  onTemplateSelect(): void {
+    if (!this.selectedTemplateId || !this.employeeId) return;
+    this.previewHtml = '';
+
+    this.templateService.previewTemplate(this.selectedTemplateId, this.employeeId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.previewHtml = response.data;
+        }
+      },
+      error: () => {
+        this.message.error('Error generating preview');
+      }
+    });
+  }
+
+  downloadDocument(format: string): void {
+    if (!this.selectedTemplateId || !this.employeeId) return;
+
+    this.isDownloading = true;
+    this.templateService.generateDocument(this.selectedTemplateId, this.employeeId, format).subscribe({
+      next: (blob) => {
+        this.isDownloading = false;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `document_${this.employeeId}_${Date.now()}.${format}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.message.success('Document downloaded successfully');
+        this.closeGenerateModal();
+        this.loadDownloadHistory();
+      },
+      error: () => {
+        this.isDownloading = false;
+        this.message.error('Error generating document');
+      }
+    });
   }
 }

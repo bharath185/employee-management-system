@@ -67,6 +67,25 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
               <i nz-icon nzType="setting"></i>
               <span *ngIf="!isCollapsed()">Master Data</span>
             </li>
+            <li nz-menu-item routerLink="/admin/company"
+                (click)="closeDrawerOnMobile()">
+              <i nz-icon nzType="bank"></i>
+              <span *ngIf="!isCollapsed()">Company Setup</span>
+            </li>
+            <li nz-submenu nzTitle="Document Templates" nzIcon="file-text" class="side-submenu">
+              <ul>
+                <li nz-menu-item routerLink="/admin/document-templates"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="file-text"></i>
+                  <span *ngIf="!isCollapsed()">Templates</span>
+                </li>
+                <li nz-menu-item routerLink="/admin/document-templates/reports"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="bar-chart"></i>
+                  <span *ngIf="!isCollapsed()">Reports</span>
+                </li>
+              </ul>
+            </li>
             <li nz-menu-item routerLink="/admin/reports"
                 (click)="closeDrawerOnMobile()">
               <i nz-icon nzType="audit"></i>
@@ -235,6 +254,44 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     :host ::ng-deep .ant-menu-item-selected i {
       color: #ffffff;
     }
+
+    :host ::ng-deep .ant-menu-submenu {
+      color: rgba(255,255,255,0.8) !important;
+    }
+    :host ::ng-deep .ant-menu-submenu-title {
+      height: 44px !important;
+      line-height: 44px !important;
+      margin: 2px 8px !important;
+      border-radius: var(--radius-md) !important;
+      color: rgba(255,255,255,0.8) !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px;
+      font-size: 14px;
+    }
+    :host ::ng-deep .ant-menu-submenu-title:hover {
+      background: rgba(255,255,255,0.12) !important;
+      color: #ffffff !important;
+    }
+    :host ::ng-deep .ant-menu-submenu-title .ant-menu-submenu-arrow {
+      color: rgba(255,255,255,0.6);
+    }
+    :host ::ng-deep .ant-menu-submenu-selected > .ant-menu-submenu-title {
+      color: #ffffff !important;
+    }
+    :host ::ng-deep .ant-menu-submenu-open > .ant-menu-submenu-title {
+      background: rgba(255,255,255,0.08);
+    }
+    :host ::ng-deep .ant-menu-submenu .ant-menu-item {
+      padding-left: 44px !important;
+    }
+    :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-submenu-title {
+      justify-content: center;
+      padding: 0 !important;
+      margin: 2px auto !important;
+      width: 40px !important;
+    }
+
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item {
       justify-content: center !important;
       padding: 0 !important;

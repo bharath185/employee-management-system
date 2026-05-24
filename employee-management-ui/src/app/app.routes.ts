@@ -69,6 +69,36 @@ export const routes: Routes = [
         title: 'Reports'
       },
       {
+        path: 'company',
+        loadComponent: () => import('./features/company/company-setup.component')
+          .then(m => m.CompanySetupComponent),
+        title: 'Company Setup'
+      },
+      {
+        path: 'document-templates',
+        loadComponent: () => import('./features/document-templates/document-template-list.component')
+          .then(m => m.DocumentTemplateListComponent),
+        title: 'Document Templates'
+      },
+      {
+        path: 'document-templates/new',
+        loadComponent: () => import('./features/document-templates/document-template-form.component')
+          .then(m => m.DocumentTemplateFormComponent),
+        title: 'New Template'
+      },
+      {
+        path: 'document-templates/:id/edit',
+        loadComponent: () => import('./features/document-templates/document-template-form.component')
+          .then(m => m.DocumentTemplateFormComponent),
+        title: 'Edit Template'
+      },
+      {
+        path: 'document-templates/reports',
+        loadComponent: () => import('./features/document-templates/document-template-reports.component')
+          .then(m => m.DocumentTemplateReportsComponent),
+        title: 'Download Reports'
+      },
+      {
         path: 'pending-registrations',
         loadComponent: () => import('./features/pending-registrations/pending-registrations.component')
           .then(m => m.PendingRegistrationsComponent),
