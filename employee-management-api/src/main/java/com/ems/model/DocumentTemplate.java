@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -38,6 +40,7 @@ public class DocumentTemplate {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "variables", columnDefinition = "JSON")
     private String variables;
 
