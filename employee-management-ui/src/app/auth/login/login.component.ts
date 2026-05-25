@@ -103,7 +103,8 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 40px 80px;
+      padding: 40px 100px;
+      gap: 60px;
       position: relative;
       overflow: hidden;
     }
@@ -214,7 +215,6 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       justify-content: center;
       max-width: 50%;
-      padding-right: 40px;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
@@ -246,10 +246,10 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1100px) {
-      .login-illustration { padding-right: 20px; }
+      .login-page { padding: 40px 60px; gap: 30px; }
     }
     @media (max-width: 768px) {
-      .login-page { justify-content: center; padding: 24px; }
+      .login-page { justify-content: center; padding: 24px; gap: 0; }
       .login-illustration { display: none; }
       .particles { opacity: 0.35; }
     }
