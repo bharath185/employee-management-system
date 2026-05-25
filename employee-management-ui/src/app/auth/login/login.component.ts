@@ -102,7 +102,7 @@ import { AuthService } from '../../core/services/auth.service';
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
       padding: 40px 80px;
       position: relative;
       overflow: hidden;
@@ -150,6 +150,7 @@ import { AuthService } from '../../core/services/auth.service';
     .login-card {
       width: 100%;
       max-width: 440px;
+      flex-shrink: 0;
       background: #fff;
       border-radius: 20px;
       box-shadow: 0 8px 40px rgba(31,61,110,0.1), 0 1px 4px rgba(0,0,0,0.04);
@@ -208,12 +209,12 @@ import { AuthService } from '../../core/services/auth.service';
     .footer-text { text-align: center; margin-top: 24px; font-size: 11px; color: #b0b8c7; }
 
     .login-illustration {
-      position: absolute;
-      left: 25vw;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 45vw;
-      max-width: 720px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 50%;
+      padding-right: 40px;
       z-index: 2;
       animation: fadeInUp 0.6s 0.2s ease both;
       pointer-events: none;
@@ -245,7 +246,7 @@ import { AuthService } from '../../core/services/auth.service';
     .bottom-credit a:hover { text-decoration: underline; }
 
     @media (max-width: 1100px) {
-      .login-illustration { width: 38vw; }
+      .login-illustration { padding-right: 20px; }
     }
     @media (max-width: 768px) {
       .login-page { justify-content: center; padding: 24px; }
