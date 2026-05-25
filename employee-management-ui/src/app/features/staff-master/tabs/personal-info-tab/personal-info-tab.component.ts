@@ -149,10 +149,14 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
 
           <nz-form-item>
             <nz-form-label nzRequired>Date of Birth *</nz-form-label>
-            <nz-form-control nzErrorTip="Date of birth is required">
+            <nz-form-control [nzErrorTip]="dobError">
               <nz-date-picker [formControl]="form.get('dob')!" nzFormat="dd/MM/yyyy" (ngModelChange)="onDobChange()"></nz-date-picker>
             </nz-form-control>
           </nz-form-item>
+          <ng-template #dobError let-control>
+            <ng-container *ngIf="control.hasError('required')">Date of birth is required</ng-container>
+            <ng-container *ngIf="control.hasError('minAge')">Employee must be at least {{ control.errors?.['minAge']?.requiredAge }} years old (current: {{ control.errors?.['minAge']?.actualAge }})</ng-container>
+          </ng-template>
 
           <nz-form-item>
             <nz-form-label>Age</nz-form-label>

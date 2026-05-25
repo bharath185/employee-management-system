@@ -14,6 +14,18 @@ import { MasterDataService } from '../../core/services/master-data.service';
 import { Employee } from '../../core/models/employee.model';
 import { calculateAge, getAgeBracket } from '../../shared/pipes/age.pipe';
 import { OnCanDeactivate } from '../../core/guards/can-deactivate.guard';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+export function minAgeValidator(minAge: number): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const age = calculateAge(control.value);
+    if (age < minAge) {
+      return { minAge: { requiredAge: minAge, actualAge: age } };
+    }
+    return null;
+  };
+}
 
 import { PersonalInfoTabComponent } from './tabs/personal-info-tab/personal-info-tab.component';
 import { DemographicsTabComponent } from './tabs/demographics-tab/demographics-tab.component';
@@ -306,7 +318,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       levelOfEducation: [''],
       yearOfPassing: [''],
       percentageMarks: [''],
-      dob: ['', Validators.required],
+      dob: ['', [Validators.required, minAgeValidator(18)]],
       age: [{ value: '', disabled: true }],
       ageBracket: [{ value: '', disabled: true }],
       presentAddress: ['', Validators.maxLength(256)],
