@@ -103,8 +103,8 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 40px 100px;
-      gap: 60px;
+      padding: 40px 120px;
+      gap: 80px;
       position: relative;
       overflow: hidden;
     }
