@@ -24,7 +24,7 @@ public class MasterDataService {
     }
 
     public List<String> getAllCategories() {
-        return masterDataRepository.findDistinctCategoryByOrderByCategory();
+        return masterDataRepository.findDistinctCategories();
     }
 
     public MasterDataDTO create(MasterDataDTO dto) {
