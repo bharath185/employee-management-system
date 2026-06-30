@@ -1,8 +1,7 @@
 // =============================================================================
 // COMPONENT-SPECIFIC STYLES
+// SmartHR-Inspired Enterprise Component Library
 // =============================================================================
-// Employee Management System - Enterprise Component Library
-// Designed for Workday/SAP SuccessFactors-grade polish
 
 // ===== 0. UTILITY CLASSES =====
 
@@ -79,19 +78,19 @@
 .section-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--color-primary-500);
+  color: #2563eb;
   margin: 0 0 20px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 10px;
-  border-bottom: 1.5px solid var(--color-bg-dark);
+  border-bottom: 1.5px solid #bfdbfe;
 
   &::before {
     content: '';
     width: 3px;
     height: 18px;
-    background: var(--color-primary-500);
+    background: #2563eb;
     border-radius: 2px;
     flex-shrink: 0;
   }
@@ -99,12 +98,12 @@
 
 /// Form section card wrapper
 .form-section {
-  background: var(--color-card);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 24px;
   margin-bottom: 20px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8eaed;
 
   .form-section-header {
     display: flex;
@@ -112,13 +111,13 @@
     gap: 12px;
     margin-bottom: 20px;
     padding-bottom: 14px;
-    border-bottom: 2px solid var(--color-primary-500);
+    border-bottom: 2px solid #2563eb;
 
     .form-section-icon {
       width: 36px;
       height: 36px;
       border-radius: 8px;
-      background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-secondary) 100%);
+      background: #2563eb;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -129,7 +128,7 @@
     .form-section-title {
       font-size: 16px;
       font-weight: 600;
-      color: var(--color-primary-500);
+      color: #2563eb;
       margin: 0;
       letter-spacing: 0.3px;
     }
@@ -150,14 +149,14 @@ nz-form-item {
   display: block;
   text-align: right;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #adb5bd;
   margin-top: 4px;
 }
 
 .hint-text {
   display: block;
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: #adb5bd;
   margin-top: 4px;
 }
 
@@ -184,29 +183,26 @@ nz-form-item {
   align-items: center;
   gap: 12px;
   padding: 32px 24px;
-  border: 2px dashed #c5cad4;
-  border-radius: 16px;
-  background: var(--color-bg-alt);
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
 
   &:hover {
-    border-color: var(--color-primary-500);
-    background: var(--color-primary-50);
-    box-shadow: 0 4px 16px var(--shadow-primary);
+    border-color: #2563eb;
+    background: #eff6ff;
   }
 
   &.dragover {
-    border-color: var(--color-primary-500);
-    background: var(--color-primary-50);
-    box-shadow: 0 4px 20px var(--shadow-primary-lg);
-    transform: scale(1.01);
+    border-color: #2563eb;
+    background: #eff6ff;
   }
 
   &.has-image {
     border-style: solid;
-    border-color: var(--color-primary-500);
+    border-color: #2563eb;
     background: #f8faff;
   }
 
@@ -214,18 +210,17 @@ nz-form-item {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--color-primary-50);
+    background: #eff6ff;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-primary-500);
+    color: #2563eb;
     font-size: 28px;
     transition: all 0.3s ease;
 
     .photo-upload-area:hover & {
-      background: var(--color-primary-500);
+      background: #2563eb;
       color: #ffffff;
-      transform: scale(1.1);
     }
   }
 
@@ -235,13 +230,13 @@ nz-form-item {
     .primary-text {
       font-size: 15px;
       font-weight: 600;
-      color: var(--color-primary-500);
+      color: #2563eb;
       margin: 0 0 4px;
     }
 
     .secondary-text {
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: #6c757d;
       margin: 0;
     }
   }
@@ -251,14 +246,9 @@ nz-form-item {
     height: 140px;
     border-radius: 50%;
     object-fit: cover;
-    border: 4px solid var(--color-primary-500);
-    box-shadow: var(--shadow-primary-lg);
+    border: 4px solid #2563eb;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
     transition: all 0.3s ease;
-
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 30px var(--shadow-primary);
-    }
   }
 
   .photo-upload-actions {
@@ -283,7 +273,7 @@ nz-form-item {
   }
 }
 
-// ===== 3. DASHBOARD STAT CARDS =====
+// ===== 2. DASHBOARD STAT CARDS =====
 
 .dashboard-stats-grid {
   display: grid;
@@ -301,21 +291,15 @@ nz-form-item {
 }
 
 .stat-card {
-  background: var(--color-card);
-  border-radius: 14px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 24px;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
-  transition: all 0.3s ease;
-  border: 1px solid var(--color-border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8eaed;
 
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-  }
-
-  // Gradient top accent line
+  // Top accent line
   &::before {
     content: '';
     position: absolute;
@@ -326,12 +310,12 @@ nz-form-item {
     pointer-events: none;
   }
 
-  &.stat-primary::before { background: linear-gradient(90deg, var(--color-primary-500), var(--color-secondary)); }
-  &.stat-success::before { background: linear-gradient(90deg, #28a745, #34ce57); }
-  &.stat-warning::before { background: linear-gradient(90deg, #ffc107, #ffcd39); }
-  &.stat-danger::before { background: linear-gradient(90deg, #dc3545, #e04d5a); }
-  &.stat-info::before { background: linear-gradient(90deg, #4a90d9, #6ba3e0); }
-  &.stat-accent::before { background: linear-gradient(90deg, var(--color-secondary), var(--color-accent)); }
+  &.stat-primary::before { background: #2563eb; }
+  &.stat-success::before { background: #10b981; }
+  &.stat-warning::before { background: #f59e0b; }
+  &.stat-danger::before { background: #ef4444; }
+  &.stat-info::before { background: #06b6d4; }
+  &.stat-accent::before { background: #1f3d6e; }
 
   .stat-card-inner {
     display: flex;
@@ -347,7 +331,7 @@ nz-form-item {
   .stat-label {
     font-size: 13px;
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     margin: 0 0 6px;
@@ -356,7 +340,7 @@ nz-form-item {
   .stat-value {
     font-size: 32px;
     font-weight: 800;
-    color: var(--color-text-primary);
+    color: #1a1a2e;
     margin: 0 0 4px;
     line-height: 1.1;
   }
@@ -372,17 +356,17 @@ nz-form-item {
     margin-top: 4px;
 
     &.positive {
-      color: #28a745;
-      background: rgba(40, 167, 69, 0.1);
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
     }
 
     &.negative {
-      color: #dc3545;
-      background: rgba(220, 53, 69, 0.1);
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
     }
 
     &.neutral {
-      color: var(--color-text-secondary);
+      color: #6c757d;
       background: rgba(108, 117, 125, 0.1);
     }
   }
@@ -390,78 +374,44 @@ nz-form-item {
   .stat-icon {
     width: 52px;
     height: 52px;
-    border-radius: 12px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 26px;
     flex-shrink: 0;
 
-    &.icon-primary {
-      background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
-      color: var(--color-primary-500);
-    }
-    &.icon-success {
-      background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-      color: #28a745;
-    }
-    &.icon-warning {
-      background: linear-gradient(135deg, #fff8e1, #ffecb3);
-      color: #ff8f00;
-    }
-    &.icon-danger {
-      background: linear-gradient(135deg, #fce4ec, #f8bbd0);
-      color: #dc3545;
-    }
-    &.icon-info {
-      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-      color: #1565c0;
-    }
-    &.icon-accent {
-      background: linear-gradient(135deg, #ede7f6, #d1c4e9);
-      color: var(--color-secondary);
-    }
+    &.icon-primary { background: #eff6ff; color: #2563eb; }
+    &.icon-success { background: #ecfdf5; color: #10b981; }
+    &.icon-warning { background: #fffbeb; color: #f59e0b; }
+    &.icon-danger { background: #fef2f2; color: #ef4444; }
+    &.icon-info { background: #ecfeff; color: #06b6d4; }
+    &.icon-accent { background: #eef2f8; color: #1f3d6e; }
   }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -30%;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: rgba(31, 61, 110, 0.03);
-    pointer-events: none;
-  }
-
-  &.stat-success::after { background: rgba(40, 167, 69, 0.03); }
-  &.stat-warning::after { background: rgba(255, 193, 7, 0.03); }
-  &.stat-danger::after { background: rgba(220, 53, 69, 0.03); }
 }
 
 // ===== 4. EMPLOYEE TABLE =====
 
 .table-container {
-  background: var(--color-card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-md);
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid #e8eaed;
 
   .table-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid #e8eaed;
     flex-wrap: wrap;
     gap: 12px;
 
     .table-title {
       font-size: 18px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #2563eb;
       margin: 0;
       display: flex;
       align-items: center;
@@ -470,8 +420,8 @@ nz-form-item {
       .table-count {
         font-size: 13px;
         font-weight: 500;
-        color: var(--color-text-secondary);
-        background: var(--color-bg);
+        color: #6c757d;
+        background: #f5f6fa;
         padding: 2px 12px;
         border-radius: 20px;
       }
@@ -484,8 +434,6 @@ nz-form-item {
       flex-wrap: wrap;
     }
   }
-
-  // Table styles are now handled by Ant Design's nz-table
 }
 
 // Status badges for tables
@@ -507,52 +455,33 @@ nz-form-item {
   }
 
   &.status-active {
-    background: rgba(40, 167, 69, 0.1);
-    color: #1e7e34;
-
-    &::before {
-      background: #28a745;
-      box-shadow: 0 0 6px rgba(40, 167, 69, 0.5);
-    }
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    &::before { background: #10b981; }
   }
 
   &.status-inactive {
     background: rgba(108, 117, 125, 0.1);
-    color: #5a6268;
-
-    &::before {
-      background: #6c757d;
-    }
+    color: #6c757d;
+    &::before { background: #6c757d; }
   }
 
   &.status-pending {
-    background: rgba(255, 193, 7, 0.15);
-    color: #b38600;
-
-    &::before {
-      background: #ffc107;
-      box-shadow: 0 0 6px rgba(255, 193, 7, 0.5);
-    }
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
+    &::before { background: #f59e0b; }
   }
 
   &.status-terminated {
-    background: rgba(220, 53, 69, 0.1);
-    color: #b02a37;
-
-    &::before {
-      background: #dc3545;
-      box-shadow: 0 0 6px rgba(220, 53, 69, 0.4);
-    }
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    &::before { background: #ef4444; }
   }
 
   &.status-onleave {
-    background: rgba(74, 144, 217, 0.1);
-    color: #1f6cb5;
-
-    &::before {
-      background: #4a90d9;
-      box-shadow: 0 0 6px rgba(74, 144, 217, 0.4);
-    }
+    background: rgba(6, 182, 212, 0.1);
+    color: #0891b2;
+    &::before { background: #06b6d4; }
   }
 }
 
@@ -579,7 +508,7 @@ nz-form-item {
   padding: 8px 20px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 6px;
   min-width: 100px;
   height: 40px;
   transition: all 0.2s ease;
@@ -588,89 +517,79 @@ nz-form-item {
   letter-spacing: 0.3px;
 
   &.btn-primary {
-    background: var(--color-primary-500);
+    background: #2563eb;
     color: #ffffff;
-    box-shadow: var(--shadow-primary);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 
     &:hover {
-      background: var(--color-secondary);
-      box-shadow: var(--shadow-primary-lg);
-      transform: translateY(-1px);
-    }
-
-    &:active {
-      transform: translateY(0);
-      box-shadow: var(--shadow-primary);
+      background: #1d4ed8;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
     }
 
     &:disabled {
-      background: var(--color-primary-200);
+      background: #bfdbfe;
       box-shadow: none;
       cursor: not-allowed;
     }
   }
 
   &.btn-secondary {
-    background: var(--color-card);
-    color: var(--color-primary-500);
-    border: 1.5px solid var(--color-border);
+    background: #ffffff;
+    color: #1a1a2e;
+    border: 1.5px solid #e8eaed;
 
     &:hover {
-      background: var(--color-bg-alt);
-      border-color: var(--color-primary-500);
+      border-color: #2563eb;
     }
 
     &:disabled {
-      color: var(--color-text-muted);
-      border-color: var(--color-border-light);
+      color: #adb5bd;
+      border-color: #f1f3f5;
       cursor: not-allowed;
     }
   }
 
   &.btn-success {
-    background: #28a745;
+    background: #10b981;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
 
     &:hover {
-      background: #34ce57;
-      box-shadow: 0 4px 16px rgba(40, 167, 69, 0.35);
-      transform: translateY(-1px);
+      background: #059669;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
     }
 
     &:disabled {
-      background: #92cf9e;
+      background: #a7f3d0;
       box-shadow: none;
       cursor: not-allowed;
     }
   }
 
   &.btn-danger {
-    background: #dc3545;
+    background: #ef4444;
     color: #ffffff;
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.25);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
 
     &:hover {
-      background: #e04d5a;
-      box-shadow: 0 4px 16px rgba(220, 53, 69, 0.35);
-      transform: translateY(-1px);
+      background: #dc2626;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
     }
 
     &:disabled {
-      background: #e88e96;
+      background: #fca5a5;
       box-shadow: none;
       cursor: not-allowed;
     }
   }
 
   &.btn-warning {
-    background: #ffc107;
-    color: #332b00;
-    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.25);
+    background: #f59e0b;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
 
     &:hover {
-      background: #ffcd39;
-      transform: translateY(-1px);
+      background: #d97706;
     }
   }
 
@@ -692,7 +611,7 @@ nz-form-item {
     min-width: 40px;
     width: 40px;
     padding: 0;
-    border-radius: 8px;
+    border-radius: 6px;
   }
 }
 
@@ -708,33 +627,32 @@ nz-form-item {
   cursor: pointer;
   transition: all 0.2s ease;
   background: transparent;
-  color: var(--color-text-secondary);
+  color: #6c757d;
 
   &:hover {
-    background: var(--color-primary-50);
-    color: var(--color-primary-500);
+    background: #eff6ff;
+    color: #2563eb;
   }
 
   &.btn-icon-danger:hover {
-    background: #fce4ec;
-    color: #dc3545;
+    background: #fef2f2;
+    color: #ef4444;
   }
 
   &.btn-icon-success:hover {
-    background: #e8f5e9;
-    color: #28a745;
+    background: #ecfdf5;
+    color: #10b981;
   }
-
 }
 
 // ===== 6. FILTER SECTION =====
 
 .filter-section {
-  background: var(--color-card);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 8px;
   margin-bottom: 24px;
-  border: 1px solid var(--color-border-light);
-  box-shadow: var(--shadow-md);
+  border: 1px solid #e8eaed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 
   .filter-header {
@@ -747,7 +665,7 @@ nz-form-item {
     transition: background 0.2s ease;
 
     &:hover {
-      background: var(--color-bg-alt);
+      background: #f8fafc;
     }
 
     .filter-header-left {
@@ -756,19 +674,19 @@ nz-form-item {
       gap: 10px;
 
       .filter-icon {
-        color: var(--color-primary-500);
+        color: #2563eb;
         font-size: 20px;
       }
 
       .filter-title {
         font-size: 15px;
         font-weight: 600;
-        color: var(--color-primary-500);
+        color: #1a1a2e;
         margin: 0;
       }
 
       .filter-active-count {
-        background: var(--color-primary-500);
+        background: #2563eb;
         color: #ffffff;
         font-size: 11px;
         font-weight: 700;
@@ -780,7 +698,7 @@ nz-form-item {
     }
 
     .filter-toggle-icon {
-      color: var(--color-text-secondary);
+      color: #6c757d;
       transition: transform 0.3s ease;
 
       &.expanded {
@@ -817,23 +735,23 @@ nz-form-item {
       gap: 12px;
       margin-top: 20px;
       padding-top: 16px;
-      border-top: 1px solid var(--color-border-light);
+      border-top: 1px solid #e8eaed;
 
       .filter-apply-btn {
         min-width: 120px;
       }
 
       .filter-clear-btn {
-        color: var(--color-text-secondary);
+        color: #6c757d;
       }
 
       .filter-results-count {
         margin-left: auto;
         font-size: 13px;
-        color: var(--color-text-secondary);
+        color: #6c757d;
 
         strong {
-          color: var(--color-primary-500);
+          color: #2563eb;
           font-weight: 600;
         }
       }
@@ -872,25 +790,10 @@ nz-form-item {
       justify-content: center;
       font-size: 32px;
 
-      &.icon-danger {
-        background: #fce4ec;
-        color: #dc3545;
-      }
-
-      &.icon-warning {
-        background: #fff8e1;
-        color: #ff8f00;
-      }
-
-      &.icon-info {
-        background: #e3f2fd;
-        color: #1565c0;
-      }
-
-      &.icon-success {
-        background: #e8f5e9;
-        color: #28a745;
-      }
+      &.icon-danger { background: #fef2f2; color: #ef4444; }
+      &.icon-warning { background: #fffbeb; color: #f59e0b; }
+      &.icon-info { background: #eff6ff; color: #2563eb; }
+      &.icon-success { background: #ecfdf5; color: #10b981; }
     }
   }
 
@@ -898,28 +801,28 @@ nz-form-item {
     text-align: center;
     font-size: 20px;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: #1a1a2e;
     margin: 0 0 8px;
   }
 
   .dialog-message {
     text-align: center;
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: #6c757d;
     margin: 0 0 8px;
     line-height: 1.6;
     padding: 0 16px;
 
     strong {
-      color: var(--color-text-primary);
+      color: #1a1a2e;
     }
   }
 
   .dialog-warning-text {
     text-align: center;
     font-size: 12px;
-    color: #dc3545;
-    background: #fce4ec;
+    color: #ef4444;
+    background: #fef2f2;
     padding: 8px 16px;
     border-radius: 8px;
     margin: 12px 16px 0;
@@ -967,7 +870,7 @@ nz-form-item {
       width: 80px;
       height: 80px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #1f3d6e, #2a5298);
+      background: #2563eb;
       color: #ffffff;
       display: flex;
       align-items: center;
@@ -998,8 +901,7 @@ nz-form-item {
           align-items: center;
           gap: 4px;
         }
-
-        }
+      }
     }
 
     .detail-header-actions {
@@ -1009,24 +911,23 @@ nz-form-item {
   }
 
   .detail-section {
-    background: var(--color-card);
-    border-radius: 12px;
+    background: #ffffff;
+    border-radius: 8px;
     padding: 28px;
     margin-bottom: 20px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--color-border-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8eaed;
 
     .detail-section-title {
       font-size: 16px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #2563eb;
       margin: 0 0 20px;
       padding-bottom: 12px;
-      border-bottom: 2px solid var(--color-primary-500);
+      border-bottom: 2px solid #2563eb;
       display: flex;
       align-items: center;
       gap: 10px;
-
     }
 
     .detail-grid {
@@ -1051,7 +952,7 @@ nz-form-item {
       .detail-item-label {
         font-size: 12px;
         font-weight: 600;
-        color: var(--color-text-secondary);
+        color: #6c757d;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
@@ -1059,14 +960,14 @@ nz-form-item {
       .detail-item-value {
         font-size: 15px;
         font-weight: 500;
-        color: var(--color-text-primary);
+        color: #1a1a2e;
         padding: 8px 12px;
-        background: var(--color-bg-alt);
+        background: #f8fafc;
         border-radius: 6px;
-        border: 1px solid var(--color-border-light);
+        border: 1px solid #f1f3f5;
 
         &.empty-value {
-          color: var(--color-text-muted);
+          color: #adb5bd;
           font-style: italic;
           font-weight: 400;
         }
@@ -1089,29 +990,28 @@ nz-form-item {
     width: 88px;
     height: 88px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--color-primary-50), var(--color-bg-alt));
+    background: #eff6ff;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 24px;
-    box-shadow: var(--shadow-primary);
 
     i[nz-icon] {
       font-size: 40px;
-      color: var(--color-primary-300);
+      color: #93c5fd;
     }
   }
 
   .empty-state-title {
     font-size: 20px;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: #1a1a2e;
     margin: 0 0 8px;
   }
 
   .empty-state-message {
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: #6c757d;
     margin: 0 0 28px;
     max-width: 400px;
     line-height: 1.6;
@@ -1140,8 +1040,8 @@ nz-form-item {
     .page-header-icon {
       width: 44px;
       height: 44px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-400));
+      border-radius: 8px;
+      background: #2563eb;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1153,14 +1053,14 @@ nz-form-item {
       h1 {
         font-size: 24px;
         font-weight: 700;
-        color: var(--color-text-primary);
+        color: #1a1a2e;
         margin: 0;
         line-height: 1.2;
       }
 
       .page-header-subtitle {
         font-size: 13px;
-        color: var(--color-text-secondary);
+        color: #6c757d;
         margin: 2px 0 0;
       }
     }
@@ -1176,10 +1076,10 @@ nz-form-item {
 // ===== 11. LOADING SKELETON =====
 
 .skeleton-loader {
-  background: var(--color-card);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 24px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
   .skeleton-header {
     display: flex;
@@ -1191,7 +1091,7 @@ nz-form-item {
       width: 48px;
       height: 48px;
       border-radius: 50%;
-      background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-primary-50) 50%, var(--color-bg-dark) 75%);
+      background: linear-gradient(90deg, #e8eaed 25%, #f5f6fa 50%, #e8eaed 75%);
       background-size: 200% 100%;
       animation: skeletonShimmer 1.5s infinite;
     }
@@ -1200,7 +1100,7 @@ nz-form-item {
       width: 200px;
       height: 20px;
       border-radius: 4px;
-      background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-primary-50) 50%, var(--color-bg-dark) 75%);
+      background: linear-gradient(90deg, #e8eaed 25%, #f5f6fa 50%, #e8eaed 75%);
       background-size: 200% 100%;
       animation: skeletonShimmer 1.5s infinite;
     }
@@ -1215,7 +1115,7 @@ nz-form-item {
       flex: 1;
       height: 16px;
       border-radius: 4px;
-      background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-primary-50) 50%, var(--color-bg-dark) 75%);
+      background: linear-gradient(90deg, #e8eaed 25%, #f5f6fa 50%, #e8eaed 75%);
       background-size: 200% 100%;
       animation: skeletonShimmer 1.5s infinite;
     }
@@ -1228,8 +1128,8 @@ nz-form-item {
 
     .skeleton-stat {
       height: 100px;
-      border-radius: 12px;
-      background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-primary-50) 50%, var(--color-bg-dark) 75%);
+      border-radius: 8px;
+      background: linear-gradient(90deg, #e8eaed 25%, #f5f6fa 50%, #e8eaed 75%);
       background-size: 200% 100%;
       animation: skeletonShimmer 1.5s infinite;
     }
@@ -1239,9 +1139,9 @@ nz-form-item {
 // ===== 11b. TABLE SKELETON =====
 
 .skeleton-table {
-  background: var(--color-card);
-  border-radius: 12px;
-  border: 1px solid var(--color-border-light);
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e8eaed;
   overflow: hidden;
 
   .skeleton-table-header {
@@ -1249,7 +1149,7 @@ nz-form-item {
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid #e8eaed;
 
     .skeleton-title-block {
       display: flex;
@@ -1260,7 +1160,7 @@ nz-form-item {
         width: 160px;
         height: 20px;
         border-radius: 4px;
-        background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-bg-alt) 50%, var(--color-bg-dark) 75%);
+        background: linear-gradient(90deg, #e8eaed 25%, #ffffff 50%, #e8eaed 75%);
         background-size: 200% 100%;
         animation: skeletonShimmer 1.5s infinite;
       }
@@ -1271,13 +1171,13 @@ nz-form-item {
     display: flex;
     padding: 14px 20px;
     gap: 16px;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid #e8eaed;
 
     .skeleton-cell {
       flex: 1;
       height: 14px;
       border-radius: 4px;
-      background: linear-gradient(90deg, var(--color-bg-dark) 25%, var(--color-bg-alt) 50%, var(--color-bg-dark) 75%);
+      background: linear-gradient(90deg, #e8eaed 25%, #ffffff 50%, #e8eaed 75%);
       background-size: 200% 100%;
       animation: skeletonShimmer 1.5s infinite;
 
@@ -1289,37 +1189,33 @@ nz-form-item {
 }
 
 @keyframes skeletonShimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 // ===== 12. TOAST / NOTIFICATION OVERRIDES =====
 
 .mat-mdc-snack-bar-container {
   &.success-snackbar {
-    --mdc-snackbar-container-color: #28a745;
+    --mdc-snackbar-container-color: #10b981;
     --mat-mdc-snack-bar-button-color: #ffffff;
     --mdc-snackbar-supporting-text-color: #ffffff;
   }
 
   &.error-snackbar {
-    --mdc-snackbar-container-color: #dc3545;
+    --mdc-snackbar-container-color: #ef4444;
     --mat-mdc-snack-bar-button-color: #ffffff;
     --mdc-snackbar-supporting-text-color: #ffffff;
   }
 
   &.warning-snackbar {
-    --mdc-snackbar-container-color: #ffc107;
-    --mat-mdc-snack-bar-button-color: #332b00;
-    --mdc-snackbar-supporting-text-color: #332b00;
+    --mdc-snackbar-container-color: #f59e0b;
+    --mat-mdc-snack-bar-button-color: #ffffff;
+    --mdc-snackbar-supporting-text-color: #ffffff;
   }
 
   &.info-snackbar {
-    --mdc-snackbar-container-color: #1f3d6e;
+    --mdc-snackbar-container-color: #2563eb;
     --mat-mdc-snack-bar-button-color: #ffffff;
     --mdc-snackbar-supporting-text-color: #ffffff;
   }
@@ -1328,11 +1224,11 @@ nz-form-item {
 // ===== 13. CHART CONTAINER =====
 
 .chart-container {
-  background: var(--color-card);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 24px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e8eaed;
 
   .chart-header {
     display: flex;
@@ -1343,7 +1239,7 @@ nz-form-item {
     .chart-title {
       font-size: 16px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1a1a2e;
       margin: 0;
     }
 
@@ -1359,81 +1255,6 @@ nz-form-item {
   }
 }
 
-// ===== 14. STEPPER / WIZARD =====
-
-.wizard-container {
-  .mat-step-header {
-    .mat-step-label {
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .mat-step-label.mat-step-label-active {
-      color: #1f3d6e;
-      font-weight: 600;
-    }
-
-    .mat-step-icon {
-      background: #c5cad4;
-
-      &.mat-step-icon-selected,
-      &.mat-step-icon-state-edit {
-        background: #1f3d6e;
-      }
-    }
-  }
-
-  .wizard-content {
-    padding: 24px 0;
-  }
-
-  .wizard-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 24px;
-    border-top: 1px solid #eef0f4;
-    margin-top: 24px;
-  }
-}
-
-// ===== 15. BREADCRUMB =====
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 13px;
-
-  a {
-    color: var(--color-text-secondary);
-    text-decoration: none;
-    transition: color 0.2s;
-
-    &:hover {
-      color: var(--color-primary-500);
-      text-decoration: underline;
-    }
-  }
-
-  .breadcrumb-separator {
-    color: var(--color-text-muted);
-    font-size: 14px;
-  }
-
-  .breadcrumb-current {
-    color: var(--color-primary-500);
-    font-weight: 600;
-  }
-}
-
-// ===== 16. POPOVER / TOOLTIP ENHANCEMENTS =====
-
-.mat-mdc-tooltip {
-  font-size: 12px !important;
-}
-
 // ===== 17. INPUT FOCUS & VALIDATION STATES =====
 
 .ant-input:focus,
@@ -1441,14 +1262,14 @@ nz-form-item {
 .ant-picker-focused,
 .ant-input-number-focused,
 .ant-input-affix-wrapper-focused {
-  box-shadow: 0 0 0 3px var(--color-primary-50) !important;
-  border-color: var(--color-primary-500) !important;
+  box-shadow: 0 0 0 3px #eff6ff !important;
+  border-color: #2563eb !important;
 }
 
 .ant-input-status-error,
 .ant-select-status-error .ant-select-selector,
 .ant-picker-status-error {
-  box-shadow: 0 0 0 3px var(--color-danger-light) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
 nz-form-item {

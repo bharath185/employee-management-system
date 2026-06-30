@@ -9,6 +9,7 @@ import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 
+import { AuthService } from '../../core/services/auth.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { MasterDataService } from '../../core/services/master-data.service';
 import { Employee } from '../../core/models/employee.model';
@@ -158,48 +159,95 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     </div>
   `,
   styles: [`
-    .staff-form-container { height: calc(100vh - 64px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
+    .staff-form-container { height: calc(100vh - 56px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
     .staff-form-container ::ng-deep app-page-header { flex-shrink: 0; }
 
     /* ===== TAB PROGRESS ===== */
-    .tab-progress { display: flex; align-items: center; gap: 12px; flex-shrink: 0; padding: 10px 16px; background: #fff; border-radius: var(--radius-md); border: 1px solid var(--color-border-light); margin-bottom: 12px; }
-    .tab-progress-bar { flex: 1; height: 6px; background: #e8ebf0; border-radius: var(--radius-sm); overflow: hidden; }
-    .tab-progress-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary-500), #2a5298); border-radius: var(--radius-sm); transition: width 0.4s ease; }
-    .tab-progress-text { font-size: 12px; color: var(--color-text-muted); white-space: nowrap; }
+    :host ::ng-deep .tab-progress {
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .tab-progress-bar { flex: 1; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+    .tab-progress-fill { height: 100%; background: #2563eb; border-radius: 3px; transition: width 0.4s ease; }
+    .tab-progress-text { font-size: 12px; color: #6c757d; white-space: nowrap; }
 
     /* ===== FORM (scrollable area) ===== */
     form { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
     /* ===== TABS ===== */
-    .employee-tabs { background: white; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-    .employee-tabs ::ng-deep .ant-tabs-content-holder { flex: 1; overflow: hidden; min-height: 0; padding: 0; }
-    .employee-tabs ::ng-deep .ant-tabs-content { height: 100%; }
-    .employee-tabs ::ng-deep .ant-tabs-tabpane { height: 100%; overflow-y: auto; padding: 20px 24px; }
-    .employee-tabs ::ng-deep .ant-tabs-tab { font-size: 13px; padding: 8px 16px; margin: 0; }
-    .employee-tabs ::ng-deep .ant-tabs-tab.ant-tabs-tab-active { font-weight: 600; }
-    .employee-tabs ::ng-deep .ant-tabs-tab.ant-tabs-tab-complete .ant-tabs-tab-btn::before { content: '\\2713'; color: #28a745; margin-right: 4px; font-weight: 700; }
-    .employee-tabs ::ng-deep .ant-tabs-nav { padding: 0 24px; margin-bottom: 0; flex-shrink: 0; }
-    .employee-tabs ::ng-deep .ant-tabs-nav::before { border-bottom: 1px solid var(--color-border-light); }
+    .employee-tabs {
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+    :host ::ng-deep .employee-tabs .ant-tabs-content-holder { flex: 1; overflow: hidden; min-height: 0; padding: 0; }
+    :host ::ng-deep .employee-tabs .ant-tabs-content { height: 100%; }
+    :host ::ng-deep .employee-tabs .ant-tabs-tabpane { height: 100%; overflow-y: auto; padding: 20px 24px; }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab {
+      font-size: 13px; padding: 8px 16px; margin: 0;
+      color: #6c757d !important;
+      transition: color 0.2s ease;
+    }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab:hover {
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-active {
+      color: #2563eb !important; font-weight: 600;
+    }
+    :host ::ng-deep .employee-tabs .ant-tabs-ink-bar {
+      background: #2563eb !important;
+      height: 3px !important;
+      border-radius: 2px;
+    }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-complete .ant-tabs-tab-btn::before { content: '\\2713'; color: #10b981; margin-right: 4px; font-weight: 700; }
+    :host ::ng-deep .employee-tabs .ant-tabs-nav {
+      padding: 0 24px; margin-bottom: 0; flex-shrink: 0;
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e8eaed !important;
+    }
 
     /* ===== ACTION BAR ===== */
     .action-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #fff;
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
       padding: 12px 24px;
-      border-radius: var(--radius-lg);
       margin-top: 12px;
-      border: 1px solid var(--color-border-light);
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
       flex-shrink: 0;
     }
     .action-left { display: flex; align-items: center; }
-    .validation-summary { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #d32f2f; font-weight: 500; background: #fce4ec; padding: 6px 14px; border-radius: var(--radius-md); }
-    .validation-summary i { font-size: 18px; }
+    .validation-summary { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #ef4444; font-weight: 500; background: #fef2f2; padding: 6px 14px; border-radius: 8px; }
+    .validation-summary i { font-size: 18px; color: #ef4444; }
     .action-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .action-btn { min-width: 110px; border-radius: var(--radius-md); }
+    .action-btn { min-width: 110px; border-radius: 8px; }
     .action-btn i { margin-right: 4px; }
+    .action-bar button[nz-button][nzType="default"] {
+      background: #ffffff !important;
+      border: 1px solid #d1d5db !important;
+      color: #1a1a2e !important;
+      border-radius: 8px;
+    }
+    .action-bar button[nz-button][nzType="default"]:hover {
+      border-color: #2563eb !important;
+      color: #2563eb !important;
+    }
+    .action-bar button[nz-button][nzType="primary"] {
+      background: #2563eb !important;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+      border-radius: 6px;
+    }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
@@ -269,13 +317,18 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     private route: ActivatedRoute,
     private router: Router,
     private message: NzMessageService,
-    private modal: NzModalService
+    private modal: NzModalService,
+    private authService: AuthService
   ) {
     this.employeeForm = this.createForm();
   }
 
   ngOnInit(): void {
     this.employeeId = this.route.snapshot.params['id'] ? +this.route.snapshot.params['id'] : null;
+    if (!this.employeeId) {
+      const user = this.authService.getCurrentUser();
+      if (user?.id) this.employeeId = user.id;
+    }
     this.isEditMode = !!this.employeeId;
 
     if (this.isEditMode && this.employeeId) {
@@ -303,6 +356,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     return this.fb.group({
       // Personal Info
       employeeCode: ['', [Validators.required, Validators.pattern('^[A-Za-z0-9]+$')]],
+      userRole: [''],
       prefix: [''],
       firstName: ['', [Validators.required, Validators.maxLength(40)]],
       surname: ['', [Validators.required, Validators.maxLength(40)]],

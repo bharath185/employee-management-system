@@ -36,3 +36,21 @@ logs/
 .env
 .env.local
 *.env
+
+# Claude / AI config
+.claude/
+
+# Screenshots
+screenshots/
+
+# PID files
+*.pid
+*.pid
+
+# Embedded submodules (accidental)
+awesome-claude-code-subagents/
+
+# AI documentation (not source code)
+SUMMARY.md
+UI_DESIGN_SYSTEM.md
+BACKEND_REVIEW.md

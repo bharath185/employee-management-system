@@ -50,28 +50,29 @@ export interface BreadcrumbItem {
       gap: 14px;
     }
     .page-header-icon {
-      width: 46px;
-      height: 46px;
-      border-radius: var(--radius-lg);
-      background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-400));
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: #2563eb;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
-      font-size: 22px;
+      font-size: 20px;
       flex-shrink: 0;
-      margin-top: 2px;
+      margin-top: 4px;
     }
     .page-header-text h1 {
       font-size: 24px;
       font-weight: 700;
-      color: var(--color-text-primary);
+      color: #1a1a2e;
       margin: 0;
       line-height: 1.2;
+      letter-spacing: -0.3px;
     }
     .page-header-subtitle {
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: #6c757d;
       margin: 4px 0 0;
     }
     .page-header-right {
@@ -82,6 +83,21 @@ export interface BreadcrumbItem {
     }
     nz-breadcrumb {
       margin-bottom: 4px;
+    }
+    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-link,
+    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-separator {
+      color: #6c757d !important;
+      font-size: 13px;
+    }
+    :host ::ng-deep nz-breadcrumb a {
+      color: #2563eb !important;
+      transition: color 0.2s ease;
+    }
+    :host ::ng-deep nz-breadcrumb a:hover {
+      color: #1d4ed8 !important;
+    }
+    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-separator {
+      margin: 0 4px;
     }
   `]
 })

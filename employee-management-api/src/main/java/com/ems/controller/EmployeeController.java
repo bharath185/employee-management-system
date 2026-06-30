@@ -46,7 +46,7 @@ public class EmployeeController {
 
         // EMPLOYEE role can only see their own profile
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))) {
             EmployeeDTO emp = employeeService.getEmployeeById(currentUser.getEmployeeId());
             PagedResponse<EmployeeDTO> paged = PagedResponse.<EmployeeDTO>builder()
                 .content(List.of(emp))
@@ -79,7 +79,7 @@ public class EmployeeController {
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         // EMPLOYEE can only view their own profile
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(id)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));
@@ -117,7 +117,7 @@ public class EmployeeController {
             @Valid @RequestBody EmployeeDTO employeeDTO,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(id)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));
@@ -134,7 +134,7 @@ public class EmployeeController {
             @RequestPart(value = "photo", required = false) MultipartFile photo,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(id)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));
@@ -159,7 +159,7 @@ public class EmployeeController {
             @RequestParam("photo") MultipartFile photo,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(id)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));

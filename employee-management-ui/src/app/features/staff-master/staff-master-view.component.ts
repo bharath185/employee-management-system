@@ -20,6 +20,7 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
+import { AuthService } from '../../core/services/auth.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { Employee } from '../../core/models/employee.model';
 import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
@@ -362,66 +363,201 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     :host { display: block; }
     .view-container { max-width: 1200px; margin: 0 auto; }
     nz-breadcrumb { margin-bottom: 16px; }
+    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-link,
+    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-separator {
+      color: #6c757d !important;
+    }
+    :host ::ng-deep nz-breadcrumb a {
+      color: #2563eb !important;
+    }
+    :host ::ng-deep nz-breadcrumb a:hover {
+      color: #1d4ed8 !important;
+    }
 
-    .profile-card { border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; }
-    .profile-card-inner { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .profile-avatar-section { position: relative; flex-shrink: 0; }
-    .profile-avatar { width: 80px; height: 80px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100)); display: flex; align-items: center; justify-content: center; }
-    .avatar-initials { font-size: 28px; font-weight: 700; color: var(--color-primary-500); }
-    .profile-avatar-img { width: 80px; height: 80px; border-radius: var(--radius-full); object-fit: cover; }
-    .status-dot-lg { position: absolute; bottom: 2px; right: 2px; width: 16px; height: 16px; border-radius: var(--radius-full); border: 3px solid #fff; }
-    .status-dot-lg.status-live { background: #28a745; }
+    :host ::ng-deep .profile-card {
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    :host ::ng-deep .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #2563eb;
+      pointer-events: none;
+    }
+    .status-dot-lg { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ffffff; }
+    .status-dot-lg.status-live { background: #10b981; }
     .status-dot-lg.status-other { background: #adb5bd; }
+    .profile-card-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 4px 0; }
+    .profile-avatar-section { position: relative; flex-shrink: 0; }
+    .profile-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: #2563eb;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .avatar-initials { font-size: 28px; font-weight: 700; color: #fff; }
+    .profile-avatar-img {
+      width: 80px; height: 80px; border-radius: var(--radius-full);
+      object-fit: cover; border: 3px solid #dbeafe;
+    }
     .profile-info { flex: 1; min-width: 200px; }
-    .profile-info h1 { font-size: 22px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 2px; }
-    .profile-code { font-size: 13px; color: var(--color-text-muted); margin-bottom: 10px; font-family: 'Cascadia Code', Consolas, monospace; }
+    .profile-info h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 2px; letter-spacing: -0.3px; }
+    .profile-code { font-size: 13px; color: #6c757d; margin-bottom: 10px; font-family: var(--font-mono); }
     .profile-meta { display: flex; flex-wrap: wrap; gap: 16px; }
-    .meta-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text-secondary); }
-    .meta-item i { font-size: 15px; color: var(--color-primary-500); opacity: 0.7; }
+    .meta-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #6c757d; }
+    .meta-item i { font-size: 15px; color: #2563eb; }
     .profile-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .profile-actions button[nz-button][nzType="primary"] {
+      background: #2563eb !important;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+      border-radius: 6px;
+    }
     .status-badge-view { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; }
     .status-badge-view .dot { width: 8px; height: 8px; border-radius: var(--radius-full); }
-    .status-badge-view.live { background: #e8f5e9; color: #1e7e34; }
-    .status-badge-view.live .dot { background: #28a745; }
-    .status-badge-view.other { background: #f5f5f5; color: #5a6268; }
+    .status-badge-view.live { background: #ecfdf5; color: #059669; }
+    .status-badge-view.live .dot { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+    .status-badge-view.other { background: #f8fafc; color: #6c757d; }
     .status-badge-view.other .dot { background: #adb5bd; }
 
-    .detail-tabs-wrapper { background: #fff; border-radius: var(--radius-lg); box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--color-border-light); overflow: hidden; }
-    .detail-tabs { padding: 0; }
+    :host ::ng-deep .detail-tabs-wrapper {
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      overflow: hidden;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-nav {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e8eaed !important;
+      padding: 0 16px;
+      margin-bottom: 0;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-tab {
+      color: #6c757d !important;
+      font-size: 13px;
+      padding: 12px 16px;
+      transition: color 0.2s ease;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-tab:hover {
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-tab.ant-tabs-tab-active {
+      color: #2563eb !important;
+      font-weight: 600;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-ink-bar {
+      background: #2563eb !important;
+      height: 3px !important;
+      border-radius: 2px;
+    }
     .tab-content { padding: 24px; }
-    .tab-descriptions { margin-bottom: 20px; }
-    .tab-descriptions:last-child { margin-bottom: 0; }
+    :host ::ng-deep .tab-descriptions {
+      margin-bottom: 20px;
+    }
+    :host ::ng-deep .tab-descriptions:last-child { margin-bottom: 0; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-title {
+      color: #2563eb !important;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-view {
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      overflow: hidden;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-label {
+      background: #f8fafc !important;
+      color: #6c757d !important;
+      font-weight: 500;
+      font-size: 13px;
+      border-bottom: 1px solid #e8eaed !important;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-content {
+      background: #ffffff !important;
+      color: #1a1a2e !important;
+      border-bottom: 1px solid #e8eaed !important;
+    }
 
     .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .asset-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 16px; background: #f8f9fc; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); transition: all 0.2s; }
-    .asset-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    .asset-card.owned { border-color: #c8e6c9; background: #f1f8f1; }
+    .asset-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 16px; background: #ffffff; border-radius: 8px; border: 1px solid #e8eaed; transition: all 0.25s ease; }
+    .asset-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: #f8fafc; }
+    .asset-card.owned { border-color: #a7f3d0; background: #ecfdf5; }
     .asset-icon { font-size: 32px; }
-    .asset-card.owned .asset-icon { color: #2e7d32; }
-    .asset-card:not(.owned) .asset-icon { color: #c62828; }
-    .asset-label { font-size: 14px; font-weight: 600; color: #333; }
-    .asset-status { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.3px; }
+    .asset-card.owned .asset-icon { color: #10b981; }
+    .asset-card:not(.owned) .asset-icon { color: #fca5a5; }
+    .asset-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+    .asset-status { font-size: 11px; font-weight: 500; color: #6c757d; text-transform: uppercase; letter-spacing: 0.3px; }
 
     /* Documents Tab */
     .documents-tab-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .documents-tab-title { font-size: 18px; font-weight: 600; color: var(--color-primary-500); margin: 0; }
-    .doc-history-title { font-size: 14px; font-weight: 600; color: #333; margin: 0 0 12px; }
-    .history-table { width: 100%; }
+    .documents-tab-title { font-size: 18px; font-weight: 600; color: #2563eb; margin: 0; }
+    .doc-history-title { font-size: 14px; font-weight: 600; color: #1a1a2e; margin: 0 0 12px; }
+    :host ::ng-deep .history-table .ant-table {
+      background: transparent !important;
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .history-table .ant-table-thead > tr > th {
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e8eaed !important;
+      color: #6c757d !important;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    :host ::ng-deep .history-table .ant-table-tbody > tr > td {
+      border-bottom: 1px solid #e8eaed !important;
+      color: #1a1a2e !important;
+      background: transparent !important;
+    }
+    :host ::ng-deep .history-table .ant-table-tbody > tr:hover > td {
+      background: #f1f5f9 !important;
+    }
     .no-history { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; }
-    .no-history i { font-size: 32px; color: #d9d9d9; }
-    .no-history p { font-size: 13px; color: #999; margin: 0; }
+    .no-history i { font-size: 32px; color: #d1d5db; }
+    .no-history p { font-size: 13px; color: #6c757d; margin: 0; }
 
     /* Generate Modal */
+    :host ::ng-deep .ant-modal-content {
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 16px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+    :host ::ng-deep .ant-modal-header {
+      background: #ffffff !important;
+      border-bottom: 1px solid #e8eaed !important;
+      border-radius: 16px 16px 0 0 !important;
+    }
+    :host ::ng-deep .ant-modal-title {
+      color: #1a1a2e !important;
+      font-weight: 600;
+    }
+    :host ::ng-deep .ant-modal-close {
+      color: #6c757d !important;
+    }
+    :host ::ng-deep .ant-modal-close:hover {
+      color: #2563eb !important;
+    }
     .gen-modal-body { display: flex; flex-direction: column; gap: 20px; padding: 8px 0; }
     .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 13px; font-weight: 600; color: #333; }
+    .form-label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
     .preview-section { display: flex; flex-direction: column; gap: 12px; }
-    .preview-frame { border: 1px solid #e8ebf0; border-radius: var(--radius-md); overflow: hidden; }
+    .preview-frame { border: 1px solid #e8eaed; border-radius: 12px; overflow: hidden; }
     .preview-iframe { width: 100%; height: 400px; border: none; }
     .preview-actions { display: flex; gap: 8px; }
     .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; }
-    .loading-icon { font-size: 32px; color: var(--color-primary-500); }
-    .preview-empty p { font-size: 13px; color: #666; margin: 0; }
+    .loading-icon { font-size: 32px; color: #2563eb; }
+    .preview-empty p { font-size: 13px; color: #6c757d; margin: 0; }
 
     @media (max-width: 768px) {
       .profile-main { flex-direction: column; align-items: center; text-align: center; margin-top: 40px; }
@@ -463,6 +599,7 @@ export class StaffMasterViewComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private employeeService: EmployeeService,
+    private authService: AuthService,
     private notification: NzNotificationService,
     private templateService: DocumentTemplateService,
     private downloadTrackingService: DownloadTrackingService,
@@ -471,12 +608,18 @@ export class StaffMasterViewComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const id = this.route.snapshot.params['id'];
-    if (id) {
-      this.employeeId = +id;
+    this.employeeId = this.getEmployeeId();
+    if (this.employeeId) {
       this.loadEmployee(this.employeeId);
       this.loadTemplateTypes();
     }
+  }
+
+  private getEmployeeId(): number | null {
+    const id = this.route.snapshot.params['id'];
+    if (id) return +id;
+    const user = this.authService.getCurrentUser();
+    return user?.id ?? null;
   }
 
   private loadEmployee(id: number): void {

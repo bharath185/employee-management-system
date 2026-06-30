@@ -5,8 +5,10 @@ import com.ems.exception.BadRequestException;
 import com.ems.exception.DuplicateResourceException;
 import com.ems.exception.ResourceNotFoundException;
 import com.ems.model.Employee;
+import com.ems.model.User;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.EmployeeSpecification;
+import com.ems.repository.UserRepository;
 import com.ems.utils.AgeCalculator;
 import com.ems.utils.EmployeeCodeGenerator;
 import com.ems.utils.ExcelHelper;
@@ -19,6 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +43,8 @@ public class EmployeeService {
     private final PhotoUtils photoUtils;
     private final ExcelHelper excelHelper;
     private final EntityManager entityManager;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Page<EmployeeDTO> getAllEmployees(int page, int size, String sort,
             String search, String employeeCode, String firstName,
@@ -83,14 +88,22 @@ public class EmployeeService {
         }
 
         return employeeRepository.findAll(spec, pageable)
-            .map(EmployeeDTO::fromEntity);
+            .map(emp -> enrichWithRole(EmployeeDTO.fromEntity(emp)));
+    }
+
+    private EmployeeDTO enrichWithRole(EmployeeDTO dto) {
+        if (dto.getId() != null) {
+            userRepository.findByEmployeeId(dto.getId())
+                .ifPresent(u -> dto.setUserRole(u.getRole()));
+        }
+        return dto;
     }
 
     public EmployeeDTO getEmployeeById(Long id) {
         Employee employee = employeeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Employee not found with id: " + id));
-        return EmployeeDTO.fromEntity(employee);
+        return enrichWithRole(EmployeeDTO.fromEntity(employee));
     }
 
     @Transactional
@@ -117,7 +130,25 @@ public class EmployeeService {
         Employee saved = employeeRepository.save(employee);
         log.info("Employee created: {}", saved.getEmployeeCode());
 
-        return EmployeeDTO.fromEntity(saved);
+        if (employeeDTO.getUserRole() != null && !employeeDTO.getUserRole().isEmpty()) {
+            createOrUpdateUser(saved, employeeDTO.getUserRole());
+        }
+
+        return enrichWithRole(EmployeeDTO.fromEntity(saved));
+    }
+
+    @Transactional
+    public void createOrUpdateUser(Employee employee, String role) {
+        User user = userRepository.findByEmployeeId(employee.getId())
+            .orElse(User.builder()
+                .username(employee.getEmployeeCode())
+                .password(passwordEncoder.encode("Admin@123"))
+                .employeeId(employee.getId())
+                .build());
+        user.setRole(role);
+        user.setEnabled(true);
+        user.setAccountNonLocked(true);
+        userRepository.save(user);
     }
 
     @Transactional
@@ -150,8 +181,14 @@ public class EmployeeService {
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Employee not found after update"));
 
+        if (employeeDTO.getUserRole() != null && !employeeDTO.getUserRole().isEmpty()) {
+            createOrUpdateUser(updated, employeeDTO.getUserRole());
+        } else if (employeeDTO.getUserRole() != null && employeeDTO.getUserRole().isEmpty()) {
+            userRepository.findByEmployeeId(id).ifPresent(userRepository::delete);
+        }
+
         log.info("Employee updated: {}", updated.getEmployeeCode());
-        return EmployeeDTO.fromEntity(updated);
+        return enrichWithRole(EmployeeDTO.fromEntity(updated));
     }
 
     @Transactional

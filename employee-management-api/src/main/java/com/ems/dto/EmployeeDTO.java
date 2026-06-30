@@ -105,6 +105,8 @@ public class EmployeeDTO {
     private String ref2Mobile;
     private String designation;
 
+    private String userRole;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate doe;
     private String deletionMonth;

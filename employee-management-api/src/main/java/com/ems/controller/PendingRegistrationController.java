@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/pending-registrations")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
 public class PendingRegistrationController {
 
     private final PendingRegistrationService pendingRegistrationService;

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm install && npm run build -- --configuration=production",
+  "outputDirectory": "dist/employee-management-ui/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

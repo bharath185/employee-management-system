@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 
 @Injectable({
@@ -12,31 +14,29 @@ export class AuthGuard implements CanActivate {
     private router: Router
   ) {}
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
     if (this.authService.isAuthenticated()) {
-      return true;
+      return of(true);
     }
 
-    // Try to refresh token
     const refreshToken = this.authService.getRefreshToken();
     if (refreshToken) {
-      this.authService.refreshToken().subscribe({
-        next: () => true,
-        error: () => {
+      return this.authService.refreshToken().pipe(
+        map(() => true),
+        catchError(() => {
           this.authService.logout();
           this.router.navigate(['/auth/login'], {
             queryParams: { returnUrl: state.url }
           });
-          return false;
-        }
-      });
-      return true;
+          return of(false);
+        })
+      );
     }
 
     this.authService.logout();
     this.router.navigate(['/auth/login'], {
       queryParams: { returnUrl: state.url }
     });
-    return false;
+    return of(false);
   }
 }

@@ -1,17 +1,16 @@
 :root {
-  --primary: #1f3d6e;
-  --primary-light: #2a5298;
-  --primary-dark: #152a4d;
-  --primary-gradient: linear-gradient(135deg, #1f3d6e 0%, #2a5298 100%);
-  --bg-light: #f0f2f5;
+  --primary: #2563eb;
+  --primary-light: #3b82f6;
+  --primary-dark: #1d4ed8;
+  --bg-light: #f5f6fa;
   --bg-card: #ffffff;
   --text: #1a1a2e;
   --text-secondary: #6c757d;
-  --border: #e8e8e8;
-  --success: #52c41a;
-  --warning: #faad14;
-  --danger: #ff4d4f;
-  --info: #1890ff;
+  --border: #e8eaed;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #2563eb;
 }
 
 body {
@@ -25,7 +24,7 @@ body {
 }
 
 .ant-layout-sider {
-  background: var(--primary-gradient) !important;
+  background: #1f3d6e !important;
 }
 
 .ant-layout-sider .ant-menu {
@@ -39,6 +38,7 @@ body {
 .ant-layout-sider .ant-menu-item-selected {
   background: rgba(255,255,255,0.15) !important;
   color: #fff !important;
+  box-shadow: inset 3px 0 0 #2563eb;
 }
 
 .ant-layout-sider .ant-menu-item:hover {
@@ -59,10 +59,7 @@ body {
 .ant-card {
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.ant-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border: 1px solid #e8eaed;
 }
 
 .page-header {
@@ -82,23 +79,13 @@ body {
 .page-header .header-icon {
   width: 40px;
   height: 40px;
-  background: var(--primary-gradient);
+  background: #2563eb;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 20px;
-}
-
-.gradient-stat {
-  background: var(--primary-gradient) !important;
-  color: #fff !important;
-}
-
-.gradient-stat .ant-statistic-title,
-.gradient-stat .ant-statistic-content {
-  color: rgba(255,255,255,0.9) !important;
 }
 
 .breadcrumb-bar {
@@ -111,7 +98,7 @@ body {
 
 .section-card .ant-card-head {
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, #f8f9fc, #eef2f7);
+  background: #f8fafc;
 }
 
 .status-live {

@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/dashboard")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'HR')")
 @RequiredArgsConstructor
 public class DashboardController {
 

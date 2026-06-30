@@ -1,39 +1,49 @@
-import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class RoleGuard implements CanActivate {
+export const roleGuard: CanActivateFn = (route) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
-
-  canActivate(route: ActivatedRouteSnapshot): boolean {
-    const requiredRoles = route.data['roles'] as string[];
-    const userRole = this.authService.getUserRole();
-
-    if (!userRole || !requiredRoles) {
-      this.router.navigate(['/auth/login']);
-      return false;
-    }
-
-    if (requiredRoles.includes(userRole)) {
-      return true;
-    }
-
-    // Redirect based on actual role
-    if (userRole === 'ADMIN') {
-      this.router.navigate(['/admin/dashboard']);
-    } else if (userRole === 'EMPLOYEE') {
-      this.router.navigate(['/employee/profile']);
-    } else {
-      this.router.navigate(['/auth/login']);
-    }
-
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/auth/login']);
     return false;
   }
-}
+
+  const userRole = authService.getUserRole();
+
+  // Support both singular 'role' and plural 'roles' (array)
+  const requiredRole = route.data['role'] as string;
+  const requiredRoles = route.data['roles'] as string[];
+
+  if (requiredRoles) {
+    if (!requiredRoles.includes(userRole || '')) {
+      if (userRole === 'ADMIN' || userRole === 'HR') {
+        router.navigate(['/admin/dashboard']);
+      } else {
+        router.navigate(['/employee/profile']);
+      }
+      return false;
+    }
+    return true;
+  }
+
+  if (requiredRole) {
+    if (requiredRole === 'ADMIN' && userRole !== 'ADMIN') {
+      if (userRole === 'HR') {
+        router.navigate(['/admin/dashboard']);
+      } else {
+        router.navigate(['/employee/profile']);
+      }
+      return false;
+    }
+    if (requiredRole === 'HR' && !['ADMIN', 'HR'].includes(userRole || '')) {
+      router.navigate(['/employee/profile']);
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+};

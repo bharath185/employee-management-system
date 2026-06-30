@@ -41,6 +41,18 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
           </nz-form-item>
 
           <nz-form-item>
+            <nz-form-label>Login Role</nz-form-label>
+            <nz-form-control>
+              <nz-select [formControl]="form.get('userRole')!" nzPlaceHolder="No login access" nzAllowClear>
+                <nz-option nzValue="EMPLOYEE" nzLabel="EMPLOYEE"></nz-option>
+                <nz-option nzValue="HR" nzLabel="HR"></nz-option>
+                <nz-option nzValue="ADMIN" nzLabel="ADMIN"></nz-option>
+              </nz-select>
+              <small style="color:#999;display:block;margin-top:4px">Creates/updates login account (username = employee code, default password: Admin&#64;123)</small>
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
             <nz-form-label>Prefix</nz-form-label>
             <nz-form-control>
               <nz-select [formControl]="form.get('prefix')!" nzPlaceHolder="Select prefix">
@@ -294,13 +306,67 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
   `,
   styles: [`
     .tab-container { padding: 24px 0; }
-    .form-section { background: #fff; border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--color-border-light); }
-    .form-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid var(--color-primary-500); }
-    .form-section-icon { width: 34px; height: 34px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-primary-500), #2a5298); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+    .form-section {
+      background: #ffffff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 12px !important;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    }
+    .form-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid #dbeafe; }
+    .form-section-icon { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #2563eb, #1d4ed8); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
     .form-section-icon i { font-size: 18px; }
-    .form-section-title { font-size: 15px; font-weight: 600; color: var(--color-primary-500); margin: 0; }
-    .char-count { display: block; text-align: right; font-size: 12px; color: #999; margin-top: 4px; }
+    .form-section-title { font-size: 15px; font-weight: 600; color: #2563eb; margin: 0; }
+    .char-count { display: block; text-align: right; font-size: 12px; color: #6c757d; margin-top: 4px; }
     nz-form-item { margin-bottom: 0; }
+    :host ::ng-deep .ant-form-item-label > label {
+      color: #495057 !important;
+    }
+    :host ::ng-deep .ant-input {
+      background: #ffffff !important;
+      border: 1px solid #d1d5db !important;
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .ant-input:hover,
+    :host ::ng-deep .ant-input:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1) !important;
+    }
+    :host ::ng-deep .ant-select-selector {
+      background: #ffffff !important;
+      border: 1px solid #d1d5db !important;
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .ant-select-selection-placeholder {
+      color: #adb5bd !important;
+    }
+    :host ::ng-deep .ant-select-arrow {
+      color: #6c757d !important;
+    }
+    :host ::ng-deep .ant-picker {
+      background: #ffffff !important;
+      border: 1px solid #d1d5db !important;
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .ant-picker input {
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .ant-picker:hover,
+    :host ::ng-deep .ant-picker-focused {
+      border-color: #2563eb !important;
+    }
+    :host ::ng-deep .ant-checkbox-wrapper {
+      color: #495057 !important;
+    }
+    :host ::ng-deep .ant-checkbox-inner {
+      background: #ffffff !important;
+      border-color: #d1d5db !important;
+    }
+    :host ::ng-deep .ant-checkbox-checked .ant-checkbox-inner {
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+    }
   `]
 })
 export class PersonalInfoTabComponent implements OnInit {

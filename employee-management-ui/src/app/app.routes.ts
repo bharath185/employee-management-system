@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './core/guards/auth.guard';
-import { RoleGuard } from './core/guards/role.guard';
+import { roleGuard } from './core/guards/role.guard';
 import { CanDeactivateGuard } from './core/guards/can-deactivate.guard';
 
 export const routes: Routes = [
@@ -23,8 +23,8 @@ export const routes: Routes = [
     path: 'admin',
     loadComponent: () => import('./layouts/admin-layout/admin-layout.component')
       .then(m => m.AdminLayoutComponent),
-    canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['ADMIN'] },
+    canActivate: [AuthGuard, roleGuard],
+    data: { roles: ['ADMIN', 'HR'] },
     children: [
       {
         path: 'dashboard',
@@ -60,7 +60,9 @@ export const routes: Routes = [
         path: 'masters',
         loadComponent: () => import('./features/masters/masters.component')
           .then(m => m.MastersComponent),
-        title: 'Master Data'
+        title: 'Master Data',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       {
         path: 'reports',
@@ -72,37 +74,73 @@ export const routes: Routes = [
         path: 'company',
         loadComponent: () => import('./features/company/company-setup.component')
           .then(m => m.CompanySetupComponent),
-        title: 'Company Setup'
+        title: 'Company Setup',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       {
         path: 'document-templates',
         loadComponent: () => import('./features/document-templates/document-template-list.component')
           .then(m => m.DocumentTemplateListComponent),
-        title: 'Document Templates'
+        title: 'Document Templates',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       {
         path: 'document-templates/new',
         loadComponent: () => import('./features/document-templates/document-template-form.component')
           .then(m => m.DocumentTemplateFormComponent),
-        title: 'New Template'
+        title: 'New Template',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       {
         path: 'document-templates/:id/edit',
         loadComponent: () => import('./features/document-templates/document-template-form.component')
           .then(m => m.DocumentTemplateFormComponent),
-        title: 'Edit Template'
+        title: 'Edit Template',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       {
         path: 'document-templates/reports',
         loadComponent: () => import('./features/document-templates/document-template-reports.component')
           .then(m => m.DocumentTemplateReportsComponent),
-        title: 'Download Reports'
+        title: 'Download Reports',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
+      },
+      {
+        path: 'payroll',
+        loadComponent: () => import('./features/payroll/salary-list.component')
+          .then(m => m.SalaryListComponent),
+        title: 'Salary Management'
+      },
+      {
+        path: 'leave',
+        loadComponent: () => import('./features/leave/leave-management.component')
+          .then(m => m.LeaveManagementComponent),
+        title: 'Leave Management'
+      },
+      {
+        path: 'statutory-reports',
+        loadComponent: () => import('./features/statutory-reports/statutory-reports.component')
+          .then(m => m.StatutoryReportsComponent),
+        title: 'Statutory Reports'
       },
       {
         path: 'pending-registrations',
         loadComponent: () => import('./features/pending-registrations/pending-registrations.component')
           .then(m => m.PendingRegistrationsComponent),
         title: 'Pending Registrations'
+      },
+      {
+        path: 'access-control',
+        loadComponent: () => import('./features/access-control/access-control.component')
+          .then(m => m.AccessControlComponent),
+        title: 'Access Control',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
@@ -113,9 +151,15 @@ export const routes: Routes = [
     path: 'employee',
     loadComponent: () => import('./layouts/employee-layout/employee-layout.component')
       .then(m => m.EmployeeLayoutComponent),
-    canActivate: [AuthGuard, RoleGuard],
+    canActivate: [AuthGuard, roleGuard],
     data: { roles: ['EMPLOYEE'] },
     children: [
+      {
+        path: 'dashboard',
+        loadComponent: () => import('./features/employee-dashboard/employee-dashboard.component')
+          .then(m => m.EmployeeDashboardComponent),
+        title: 'Dashboard'
+      },
       {
         path: 'profile',
         loadComponent: () => import('./features/staff-master/staff-master-view.component')
@@ -128,7 +172,13 @@ export const routes: Routes = [
           .then(m => m.StaffMasterFormComponent),
         title: 'Edit Profile'
       },
-      { path: '', redirectTo: 'profile', pathMatch: 'full' }
+      {
+        path: 'leave',
+        loadComponent: () => import('./features/my-leave/my-leave.component')
+          .then(m => m.MyLeaveComponent),
+        title: 'My Leave'
+      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
 

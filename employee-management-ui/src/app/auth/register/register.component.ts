@@ -27,8 +27,9 @@ import { environment } from '../../../environments/environment';
   ],
   template: `
     <div class="register-container">
+      <div class="bg-light"></div>
       <div class="register-card-wrapper">
-        <nz-card class="register-card" nzBordered="false">
+        <div class="register-card">
           <div class="register-header">
             <img src="assets/logo.png" alt="Company Logo" class="logo">
             <h1>Create Admin Account</h1>
@@ -96,7 +97,7 @@ import { environment } from '../../../environments/environment';
               <a routerLink="/auth/login">Sign in</a>
             </div>
           </form>
-        </nz-card>
+        </div>
       </div>
     </div>
   `,
@@ -106,16 +107,27 @@ import { environment } from '../../../environments/environment';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0f2440 0%, var(--color-primary-500) 50%, #3a5a8f 100%);
       padding: 16px;
+      position: relative;
+      background: #f5f6fa;
     }
     .register-card-wrapper {
       width: 100%;
       max-width: 460px;
+      position: relative;
+      z-index: 2;
     }
     .register-card {
-      border-radius: var(--radius-lg);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      padding: 36px;
+      animation: cardIn 0.5s ease both;
+      background: #ffffff;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .register-header {
       text-align: center;
@@ -129,12 +141,13 @@ import { environment } from '../../../environments/environment';
     }
     h1 {
       font-size: 22px;
-      font-weight: 600;
-      color: var(--color-primary-500);
+      font-weight: 700;
+      color: #1a1a2e;
       margin: 0 0 8px;
+      letter-spacing: -0.3px;
     }
     .subtitle {
-      color: #5f6368;
+      color: #6c757d;
       font-size: 14px;
       margin: 0;
     }
@@ -143,40 +156,83 @@ import { environment } from '../../../environments/environment';
       flex-direction: column;
       gap: 16px;
     }
+    :host ::ng-deep .ant-input-group-wrapper.ant-input-affix-wrapper {
+      background: #ffffff !important;
+      border: 1px solid #d1d5db !important;
+      border-radius: 10px !important;
+      padding: 0 14px !important;
+      height: 44px;
+      transition: all 0.2s ease;
+    }
+    :host ::ng-deep .ant-input-group-wrapper.ant-input-affix-wrapper:hover {
+      border-color: #2563eb !important;
+    }
+    :host ::ng-deep .ant-input-group-wrapper.ant-input-affix-wrapper-focused,
+    :host ::ng-deep .ant-input-group-wrapper.ant-input-affix-wrapper:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+    }
+    :host ::ng-deep .ant-input-group-wrapper .ant-input-prefix {
+      color: #6c757d !important;
+    }
+    :host ::ng-deep .ant-input-group-wrapper input {
+      background: transparent !important;
+      color: #1a1a2e !important;
+    }
+    :host ::ng-deep .ant-input-group-wrapper input::placeholder {
+      color: #9ca3af !important;
+    }
     .register-button {
       margin-top: 8px;
+      height: 46px;
+      border-radius: 6px;
+      border: none !important;
+      background: #2563eb !important;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .register-button:not(:disabled):hover {
+      background: #1d4ed8 !important;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3) !important;
     }
     .password-toggle {
       cursor: pointer;
-      color: #999;
+      color: #6c757d;
     }
+    .password-toggle:hover { color: #2563eb; }
     .error-message, .success-message {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 13px;
       padding: 10px 12px;
-      border-radius: var(--radius-sm);
+      border-radius: 8px;
     }
     .error-message {
-      color: #d32f2f;
-      background: #fce4e4;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
     }
+    .error-message i { color: #ef4444; }
     .success-message {
-      color: #2e7d32;
-      background: #e8f5e9;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
     }
+    .success-message i { color: #10b981; }
     .login-link {
       text-align: center;
       font-size: 14px;
-      color: #666;
+      color: #6c757d;
       margin-top: 8px;
     }
     .login-link a {
-      color: var(--color-primary-500);
+      color: #2563eb;
       text-decoration: none;
       font-weight: 500;
     }
+    .login-link a:hover { color: #1d4ed8; text-decoration: underline; }
     @media (max-width: 480px) {
       .register-card {
         padding: 24px 16px;

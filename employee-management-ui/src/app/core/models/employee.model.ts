@@ -82,6 +82,7 @@ export interface Employee {
   photoPath?: string;
   createdAt?: string;
   updatedAt?: string;
+  userRole?: string;
 }
 
 export interface EmployeeListDTO {
@@ -97,4 +98,5 @@ export interface EmployeeListDTO {
   mobile?: string;
   dob?: string;
   photoPath?: string;
+  userRole?: string;
 }

@@ -24,7 +24,15 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private router: Router
-  ) {}
+  ) {
+    window.addEventListener('storage', (event) => {
+      if (event.key === this.TOKEN_KEY && !event.newValue) {
+        this.isAuthenticatedSubject.next(false);
+        this.currentUserSubject.next(null);
+        this.router.navigate(['/auth/login']);
+      }
+    });
+  }
 
   private baseUrl = environment.apiUrl;
 
@@ -57,18 +65,51 @@ export class AuthService {
   }
 
   getUserRole(): string | null {
-    const user = this.getStoredUser();
     const token = this.getAccessToken();
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         const roles: string[] = payload.roles || [];
-        return roles.some(r => r === 'ROLE_ADMIN') ? 'ADMIN' : 'EMPLOYEE';
+        if (roles.includes('ROLE_ADMIN')) return 'ADMIN';
+        if (roles.includes('ROLE_HR')) return 'HR';
+        return 'EMPLOYEE';
       } catch {
         return null;
       }
     }
     return null;
+  }
+
+  isAdmin(): boolean { return this.getUserRole() === 'ADMIN'; }
+  isHr(): boolean { return this.getUserRole() === 'HR'; }
+  isEmployee(): boolean { return this.getUserRole() === 'EMPLOYEE'; }
+  canManageStaff(): boolean { const r = this.getUserRole(); return r === 'ADMIN' || r === 'HR'; }
+  canDeleteStaff(): boolean { return this.getUserRole() === 'ADMIN'; }
+  canManageSalary(): boolean { const r = this.getUserRole(); return r === 'ADMIN' || r === 'HR'; }
+  canDeleteSalary(): boolean { return this.getUserRole() === 'ADMIN'; }
+  canAccessReports(): boolean { const r = this.getUserRole(); return r === 'ADMIN' || r === 'HR'; }
+  canManageSettings(): boolean { return this.getUserRole() === 'ADMIN'; }
+
+  can(resource: string, action: 'canView' | 'canAdd' | 'canEdit' | 'canDelete'): boolean {
+    const role = this.getUserRole();
+    if (!role) return false;
+    if (role === 'ADMIN') return true;
+    return this.fallbackCheck(resource, action);
+  }
+
+  private fallbackCheck(resource: string, action: string): boolean {
+    const role = this.getUserRole();
+    if (role === 'ADMIN') return true;
+    if (role === 'HR') {
+      if (resource === 'company' || resource === 'masters' || resource === 'doc_templates') return false;
+      if (action === 'canDelete' && (resource === 'staff_master' || resource === 'payroll')) return false;
+      if (resource === 'reports' && action !== 'canView') return false;
+      return true;
+    }
+    if (resource === 'reports' || resource === 'company' || resource === 'masters' || resource === 'doc_templates' || resource === 'registrations' || resource === 'payroll') return false;
+    if (resource === 'leave') return action === 'canView' || action === 'canAdd';
+    if (resource === 'staff_master') return action === 'canView';
+    return false;
   }
 
   isAuthenticated(): boolean {
@@ -110,6 +151,10 @@ export class AuthService {
     } catch {
       return true;
     }
+  }
+
+  getCurrentUser(): LoginResponse['employee'] | null {
+    return this.currentUserSubject.getValue();
   }
 
   private getStoredUser(): LoginResponse['employee'] | null {
