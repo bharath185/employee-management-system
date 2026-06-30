@@ -613,19 +613,53 @@ public class DataSeeder implements CommandLineRunner {
             <div class="document-header"><h1>APPOINTMENT LETTER</h1></div>
             <div class="document-content">
             <p>Date: <b>{{current_date}}</b></p>
-            <p>To,<br><b>{{employee_name}}</b><br>{{address}}</p>
-            <p>Dear <b>{{employee_name}}</b>,</p>
-            <p>We are pleased to appoint you as <b>{{designation}}</b> at <b>{{company_name}}</b>.</p>
+            <p>Ref: EMP/{{employee_code}}/{{current_year}}</p>
+            <p>To,<br><b>{{prefix}} {{employee_name}}</b><br>{{address}}</p>
+            <p>Dear <b>{{prefix}} {{employee_name}}</b>,</p>
+            <p>We are pleased to appoint you as <b>{{designation}}</b> at <b>{{company_name}}</b>, based on your application and subsequent interview. We believe your skills and experience will be valuable to our organisation.</p>
+
+            <p><b>Personal Details:</b></p>
+            <table style="width:100%; border-collapse: collapse;">
+            <tr><td style="width:40%;"><b>Employee Code:</b></td><td>{{employee_code}}</td></tr>
+            <tr><td><b>Date of Birth:</b></td><td>{{dob}}</td></tr>
+            <tr><td><b>Father / Husband Name:</b></td><td>{{father_husband_name}}</td></tr>
+            <tr><td><b>Gender:</b></td><td>{{gender}}</td></tr>
+            <tr><td><b>Marital Status:</b></td><td>{{marital_status}}</td></tr>
+            <tr><td><b>Blood Group:</b></td><td>{{blood_group}}</td></tr>
+            <tr><td><b>Mobile:</b></td><td>{{mobile}}</td></tr>
+            <tr><td><b>Email:</b></td><td>{{email}}</td></tr>
+            <tr><td><b>PAN:</b></td><td>{{pan_number_employee}}</td></tr>
+            <tr><td><b>Aadhaar:</b></td><td>{{aadhar_number}}</td></tr>
+            <tr><td><b>Highest Qualification:</b></td><td>{{highest_qualification}}</td></tr>
+            <tr><td><b>Permanent Address:</b></td><td>{{permanent_address}}</td></tr>
+            </table>
+
             <p><b>Terms of Appointment:</b></p>
             <ol>
-            <li>You will be on probation for 6 months from the date of joining.</li>
-            <li>Your working hours will be 9:00 AM to 6:00 PM, Monday to Friday.</li>
-            <li>You will be entitled to all benefits as per company policy.</li>
+            <li><b>Date of Joining:</b> {{doj}}.</li>
+            <li><b>Designation:</b> You are appointed as <b>{{designation}}</b>.</li>
+            <li><b>Probation Period:</b> You will be on probation for 6 months from the date of joining, extendable at the discretion of the management.</li>
+            <li><b>Working Hours:</b> 9:00 AM to 6:00 PM, Monday to Friday (5 days a week).</li>
+            <li><b>Compensation:</b> Your compensation will be as per the offer letter and company policy.</li>
+            <li><b>Leave:</b> You will be entitled to leave as per company policy.</li>
+            <li><b>Code of Conduct:</b> You are expected to adhere to the company's code of conduct and all applicable policies.</li>
+            <li><b>Confidentiality:</b> You shall maintain strict confidentiality of all company information and trade secrets.</li>
             </ol>
-            <p>Please sign a copy of this letter as acceptance.</p>
+
+            <p><b>Documents to Submit on Joining:</b></p>
+            <ol>
+            <li>Educational certificates (original for verification + self-attested copies).</li>
+            <li>Previous employer experience and relieving letters.</li>
+            <li>PAN card and Aadhaar card copies.</li>
+            <li>Bank account details for salary processing.</li>
+            <li>Passport-size photographs (2 nos.).</li>
+            </ol>
+
+            <p>Please sign a copy of this letter as acceptance of the terms and conditions mentioned above.</p>
+
             <div class="signature-section">
             <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
+            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}<br>{{company_address}}<br>{{company_phone}} | {{company_email}}</p>
             </div></div>""";
     }
 
