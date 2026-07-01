@@ -123,6 +123,12 @@ export const routes: Routes = [
         title: 'Leave Management'
       },
       {
+        path: 'attendance',
+        loadComponent: () => import('./features/attendance/attendance.component')
+          .then(m => m.AttendanceComponent),
+        title: 'Attendance'
+      },
+      {
         path: 'statutory-reports',
         loadComponent: () => import('./features/statutory-reports/statutory-reports.component')
           .then(m => m.StatutoryReportsComponent),

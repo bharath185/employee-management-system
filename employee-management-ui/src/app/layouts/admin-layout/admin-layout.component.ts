@@ -89,6 +89,12 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
               <i nz-icon nzType="calendar"></i>
               <span *ngIf="!isCollapsed()">Leave</span>
             </li>
+            <li nz-menu-item routerLink="/admin/attendance"
+                *ngIf="can('attendance')"
+                (click)="closeDrawerOnMobile()">
+              <i nz-icon nzType="schedule"></i>
+              <span *ngIf="!isCollapsed()">Attendance</span>
+            </li>
             <li nz-submenu nzTitle="Document Templates" nzIcon="file-text" class="side-submenu"
                 *ngIf="can('doc_templates')">
               <ul>
