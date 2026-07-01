@@ -6,31 +6,32 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
-import { EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
+import { MonthlyAttendance, DayColumn, EmployeeAttendance, SummaryRow, AttendanceRecord } from '../../core/models/attendance.models';
 import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-attendance',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, NzTableModule, NzButtonModule,
-    NzSelectModule, NzIconModule, NzTagModule, NzSpinModule
+    CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
+    NzIconModule, NzTagModule, NzCardModule, NzSpinModule
   ],
   template: `
     <div class="page-header">
-      <h2>Attendance</h2>
+      <h2>Attendance - {{ data?.monthLabel || '' }}</h2>
       <div class="header-actions">
         <div class="month-nav">
           <button nz-button nzType="text" (click)="changeMonth(-1)">
             <i nz-icon nzType="left"></i>
           </button>
-          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onYearMonthChange()" style="width:90px">
+          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" style="width:90px">
             <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
           </nz-select>
-          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onYearMonthChange()" style="width:120px">
+          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" style="width:130px">
             <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
           </nz-select>
           <button nz-button nzType="text" (click)="changeMonth(1)">
@@ -53,59 +54,115 @@ import { saveAs } from 'file-saver';
       </div>
     </div>
 
-    <nz-table #attTable [nzData]="employees" [nzLoading]="loading" nzBordered nzSize="small" [nzScroll]="{ x: scrollX }">
+    <div class="summary-cards" *ngIf="data">
+      <nz-card *ngFor="let row of data.summaryRows || []" class="summary-card" [ngStyle]="{'border-top': '3px solid ' + summaryColor(row.label)}">
+        <div class="summary-card-label">{{ row.label }}</div>
+        <div class="summary-card-value">{{ row.total }}</div>
+      </nz-card>
+    </div>
+
+    <nz-table #attTable
+      [nzData]="data?.employees || []"
+      [nzLoading]="loading"
+      [nzFrontPagination]="false"
+      [nzShowPagination]="!!(data && data.totalEmployees > size)"
+      [nzPageIndex]="page + 1"
+      [nzPageSize]="size"
+      [nzTotal]="(data && data.totalEmployees) || 0"
+      (nzPageIndexChange)="onPageIndexChange($event)"
+      (nzPageSizeChange)="onPageSizeChange($event)"
+      nzBordered
+      nzSize="small"
+      [nzScroll]="{ x: scrollX }"
+      [nzShowSizeChanger]="true"
+      [nzPageSizeOptions]="[10, 20, 50, 100]">
       <thead>
         <tr>
-          <th style="min-width:180px;position:sticky;left:0;z-index:2;background:#fafafa">Employee</th>
-          <th *ngFor="let d of dayNumbers" style="width:38px;text-align:center;padding:4px 2px">{{ d }}</th>
-          <th style="width:90px;text-align:center">Summary</th>
+          <th rowSpan="2" style="min-width:50px;text-align:center">S.No</th>
+          <th rowSpan="2" style="min-width:50px">Gender</th>
+          <th rowSpan="2" style="min-width:90px">EmpCode</th>
+          <th rowSpan="2" style="min-width:160px">Employee Name</th>
+          <th rowSpan="2" style="min-width:100px">Department</th>
+          <th rowSpan="2" style="min-width:80px">DOJ</th>
+          <th rowSpan="2" style="min-width:55px">Vintage</th>
+          <th [attr.colSpan]="(data && data.dayColumns.length) || 31" style="text-align:center">
+            {{ data?.monthLabel || '' }} (26 prev - 25 current)
+          </th>
+          <th rowSpan="2" style="min-width:55px;text-align:center">Total P</th>
+          <th rowSpan="2" style="min-width:55px;text-align:center">Leaves</th>
+          <th rowSpan="2" style="min-width:55px;text-align:center">Total ML</th>
+          <th rowSpan="2" style="min-width:55px;text-align:center">Total Lv</th>
+        </tr>
+        <tr>
+          <th *ngFor="let col of data?.dayColumns; let i = index"
+              style="width:32px;text-align:center;padding:2px 0;font-size:11px"
+              [class.weekend]="col.dayOfWeek === 'Sun'"
+              [class.saturday]="col.dayOfWeek === 'Sat'">
+            <div class="day-col-header">
+              <span class="day-week">{{ col.dayOfWeek }}</span>
+              <span class="day-num">{{ col.dayNumber }}</span>
+            </div>
+          </th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let emp of attTable.data">
-          <td style="position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap">
-            <strong>{{ emp.employeeCode }}</strong> {{ emp.employeeName }}
-          </td>
-          <td *ngFor="let d of dayNumbers" style="text-align:center;padding:2px">
+          <td style="text-align:center">{{ emp.serialNo }}</td>
+          <td>{{ emp.gender }}</td>
+          <td><strong>{{ emp.employeeCode }}</strong></td>
+          <td style="white-space:nowrap">{{ emp.employeeName }}</td>
+          <td>{{ emp.department }}</td>
+          <td style="font-size:11px">{{ emp.doj }}</td>
+          <td style="text-align:center">{{ emp.vintage }}</td>
+          <td *ngFor="let s of emp.days; let di = index" style="text-align:center;padding:2px">
             <ng-container *ngIf="!isEditMode">
-              <nz-tag *ngIf="emp.days[d]" [nzColor]="statusColor(emp.days[d])" style="margin:0;font-size:11px;line-height:16px;height:18px;min-width:22px;text-align:center">
-                {{ emp.days[d] }}
-              </nz-tag>
-              <span *ngIf="!emp.days[d]" style="color:#ccc">-</span>
+              <nz-tag *ngIf="s" [nzColor]="statusColor(s)" class="cell-tag">{{ s }}</nz-tag>
+              <span *ngIf="!s" class="cell-empty">-</span>
             </ng-container>
             <nz-select *ngIf="isEditMode"
-                       [(ngModel)]="emp.days[d]"
-                       (ngModelChange)="markChanged(emp.employeeId, d, $event)"
-                       nzSize="small"
-                       style="width:42px"
-                       [nzDropdownMatchSelectWidth]="false">
+              [(ngModel)]="emp.days[di]"
+              (ngModelChange)="markChanged(emp.employeeId, di, $event)"
+              nzSize="small" style="width:36px" [nzDropdownMatchSelectWidth]="false">
               <nz-option nzValue="" nzLabel="-"></nz-option>
               <nz-option nzValue="P" nzLabel="P"></nz-option>
               <nz-option nzValue="A" nzLabel="A"></nz-option>
               <nz-option nzValue="L" nzLabel="L"></nz-option>
+              <nz-option nzValue="ML" nzLabel="ML"></nz-option>
               <nz-option nzValue="H" nzLabel="H"></nz-option>
               <nz-option nzValue="WO" nzLabel="WO"></nz-option>
+              <nz-option nzValue="R" nzLabel="R"></nz-option>
+              <nz-option nzValue="CO" nzLabel="CO"></nz-option>
             </nz-select>
           </td>
-          <td style="text-align:center;font-size:11px;line-height:1.6">
-            <nz-tag nzColor="green" style="margin:1px;font-size:10px">P:{{ emp.totalPresent }}</nz-tag>
-            <nz-tag nzColor="red" style="margin:1px;font-size:10px">A:{{ emp.totalAbsent }}</nz-tag>
-            <nz-tag nzColor="orange" style="margin:1px;font-size:10px">L:{{ emp.totalLeave }}</nz-tag>
-          </td>
+          <td style="text-align:center"><nz-tag nzColor="green" class="cell-tag">{{ emp.totalPresent }}</nz-tag></td>
+          <td style="text-align:center"><nz-tag nzColor="orange" class="cell-tag">{{ emp.totalLeave }}</nz-tag></td>
+          <td style="text-align:center"><nz-tag nzColor="purple" class="cell-tag">{{ emp.totalML }}</nz-tag></td>
+          <td style="text-align:center"><b>{{ emp.totalLeave + emp.totalML }}</b></td>
         </tr>
       </tbody>
     </nz-table>
   `,
   styles: [`
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-    .page-header h2 { margin: 0; font-size: 20px; font-weight: 600; }
-    .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .month-nav { display: flex; align-items: center; gap: 4px; background: #fff; border: 1px solid #e8eaed; border-radius: 8px; padding: 2px 4px; }
-    .action-buttons { display: flex; align-items: center; gap: 8px; }
-    :host ::ng-deep .ant-table-thead > tr > th { background: #fafafa !important; font-size: 12px; font-weight: 600; }
-    :host ::ng-deep .ant-table-tbody > tr > td { padding: 4px 6px; }
-    :host ::ng-deep .ant-select-small { font-size: 11px; }
-    :host ::ng-deep .ant-select-item { font-size: 11px; }
+    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+    .page-header h2 { margin:0; font-size:20px; font-weight:600; }
+    .header-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .month-nav { display:flex; align-items:center; gap:2px; background:#fff; border:1px solid #e8eaed; border-radius:8px; padding:2px 4px; }
+    .action-buttons { display:flex; align-items:center; gap:6px; }
+    .summary-cards { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .summary-card { flex:1; min-width:120px; text-align:center; border-radius:6px; }
+    .summary-card-label { font-size:11px; color:#888; text-transform:uppercase; letter-spacing:0.5px; }
+    .summary-card-value { font-size:22px; font-weight:700; color:#1a1a2e; margin-top:4px; }
+    .day-col-header { display:flex; flex-direction:column; align-items:center; line-height:1.2; }
+    .day-week { font-size:9px; color:#888; }
+    .day-num { font-size:12px; font-weight:600; }
+    .weekend { background:#fff1f0 !important; }
+    .saturday { background:#f6f8fa !important; }
+    .cell-tag { margin:0; font-size:11px; line-height:16px; height:18px; min-width:22px; text-align:center; }
+    .cell-empty { color:#ddd; font-size:12px; }
+    :host ::ng-deep .ant-table-thead > tr > th { background:#fafafa !important; font-size:12px; font-weight:600; padding:4px 6px; }
+    :host ::ng-deep .ant-table-tbody > tr > td { padding:3px 5px; font-size:12px; }
+    :host ::ng-deep .ant-select-small { font-size:11px; }
+    :host ::ng-deep .ant-table-pagination { margin-top:12px; }
   `]
 })
 export class AttendanceComponent implements OnInit {
@@ -113,7 +170,11 @@ export class AttendanceComponent implements OnInit {
   saving = false;
   selectedYear: number;
   selectedMonth: number;
-  employees: EmployeeAttendance[] = [];
+  currentCycleYear: number;
+  currentCycleMonth: number;
+  page = 0;
+  size = 50;
+  data: MonthlyAttendance | null = null;
   isEditMode = false;
   changedRecords: Set<string> = new Set();
 
@@ -124,7 +185,6 @@ export class AttendanceComponent implements OnInit {
     { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
     { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
   ];
-  dayNumbers: number[] = [];
   scrollX = '';
 
   constructor(
@@ -132,67 +192,74 @@ export class AttendanceComponent implements OnInit {
     private msg: NzMessageService
   ) {
     const now = new Date();
-    this.selectedYear = now.getFullYear();
-    this.selectedMonth = now.getMonth() + 1;
+    this.currentCycleYear = now.getFullYear();
+    this.currentCycleMonth = now.getMonth() + 1;
+    if (now.getDate() >= 26) {
+      this.currentCycleMonth++;
+      if (this.currentCycleMonth > 12) {
+        this.currentCycleMonth = 1;
+        this.currentCycleYear++;
+      }
+    }
+    this.selectedYear = this.currentCycleYear;
+    this.selectedMonth = this.currentCycleMonth;
   }
 
   get isCurrentMonth(): boolean {
-    const now = new Date();
-    return this.selectedYear === now.getFullYear() && this.selectedMonth === now.getMonth() + 1;
+    return this.selectedYear === this.currentCycleYear && this.selectedMonth === this.currentCycleMonth;
   }
 
   ngOnInit(): void {
     const now = new Date();
-    const startYear = now.getFullYear() - 2;
-    const endYear = now.getFullYear() + 1;
-    for (let y = startYear; y <= endYear; y++) {
+    for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
       this.yearList.push(y);
     }
-    this.updateDayNumbers();
     this.loadData();
   }
 
-  updateDayNumbers(): void {
-    const daysInMonth = new Date(this.selectedYear, this.selectedMonth, 0).getDate();
-    this.dayNumbers = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    this.scrollX = (180 + this.dayNumbers.length * 38 + 90 + 50).toString();
-  }
-
-  onYearMonthChange(): void {
+  onFilterChange(): void {
     this.isEditMode = false;
     this.changedRecords.clear();
-    this.updateDayNumbers();
+    this.page = 0;
     this.loadData();
   }
 
   changeMonth(delta: number): void {
     this.selectedMonth += delta;
-    if (this.selectedMonth > 12) {
-      this.selectedMonth = 1;
-      this.selectedYear++;
-    } else if (this.selectedMonth < 1) {
-      this.selectedMonth = 12;
-      this.selectedYear--;
-    }
-    this.onYearMonthChange();
+    if (this.selectedMonth > 12) { this.selectedMonth = 1; this.selectedYear++; }
+    else if (this.selectedMonth < 1) { this.selectedMonth = 12; this.selectedYear--; }
+    this.onFilterChange();
+  }
+
+  onPageIndexChange(index: number): void {
+    this.page = index - 1;
+    this.loadData();
+  }
+
+  onPageSizeChange(size: number): void {
+    this.size = size;
+    this.page = 0;
+    this.loadData();
   }
 
   loadData(): void {
     this.loading = true;
-    this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth).subscribe({
+    this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth, this.page, this.size).subscribe({
       next: (res) => {
-        this.employees = res.data?.employees || [];
+        this.data = res.data;
+        const cols = 7 + (this.data?.dayColumns?.length || 31) + 4;
+        this.scrollX = (cols * 40 + 200).toString();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
-        this.msg.error('Failed to load attendance data');
+        this.msg.error('Failed to load data');
       }
     });
   }
 
-  markChanged(employeeId: number, day: number, status: string): void {
-    this.changedRecords.add(`${employeeId}_${day}`);
+  markChanged(employeeId: number, dayIndex: number, status: string): void {
+    this.changedRecords.add(`${employeeId}_${dayIndex}`);
   }
 
   toggleEdit(): void {
@@ -205,20 +272,19 @@ export class AttendanceComponent implements OnInit {
   }
 
   saveChanges(): void {
+    if (!this.data) return;
     const records: AttendanceRecord[] = [];
-    const dateStr = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+    const baseDate = this.data.dayColumns[0]?.date;
+    if (!baseDate) return;
 
-    for (const emp of this.employees) {
+    for (const emp of this.data.employees) {
       for (const key of this.changedRecords) {
-        const [empId, day] = key.split('_').map(Number);
-        if (empId === emp.employeeId) {
-          const status = emp.days[day] || '';
+        const [empId, dayIdx] = key.split('_').map(Number);
+        if (empId === emp.employeeId && dayIdx < emp.days.length) {
+          const status = emp.days[dayIdx] || '';
           if (status) {
-            records.push({
-              employeeId: emp.employeeId,
-              date: `${dateStr}-${String(day).padStart(2, '0')}`,
-              status
-            });
+            const col = this.data.dayColumns[dayIdx];
+            records.push({ employeeId: emp.employeeId, date: col.date, status });
           }
         }
       }
@@ -226,21 +292,21 @@ export class AttendanceComponent implements OnInit {
 
     if (records.length === 0) {
       this.isEditMode = false;
-      this.msg.info('No changes to save');
+      this.msg.info('No changes');
       return;
     }
 
     this.saving = true;
     this.attendanceService.bulkUpdate(records).subscribe({
       next: () => {
-        this.msg.success(`Saved ${records.length} attendance record(s)`);
+        this.msg.success(`Saved ${records.length} record(s)`);
         this.isEditMode = false;
         this.changedRecords.clear();
         this.saving = false;
         this.loadData();
       },
       error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to save attendance');
+        this.msg.error(err.error?.message || 'Save failed');
         this.saving = false;
       }
     });
@@ -248,40 +314,50 @@ export class AttendanceComponent implements OnInit {
 
   exportExcel(): void {
     this.attendanceService.exportExcel(this.selectedYear, this.selectedMonth).subscribe({
-      next: (blob) => {
-        saveAs(blob, `Attendance_${this.selectedYear}_${String(this.selectedMonth).padStart(2, '0')}.xlsx`);
-      },
-      error: () => this.msg.error('Failed to export attendance')
+      next: (blob) => saveAs(blob, `Attendance_${this.data?.monthLabel || ''}.xlsx`),
+      error: () => this.msg.error('Export failed')
     });
   }
 
   importExcel(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
-    const file = input.files[0];
     this.loading = true;
-    this.attendanceService.importExcel(file, this.selectedYear, this.selectedMonth).subscribe({
+    this.attendanceService.importExcel(input.files[0], this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
-        this.msg.success(`Import completed: ${res.data?.imported || 0} records`);
+        this.msg.success(`Imported ${res.data?.imported || 0} records`);
         this.loading = false;
         input.value = '';
         this.loadData();
       },
       error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to import attendance');
+        this.msg.error(err.error?.message || 'Import failed');
         this.loading = false;
         input.value = '';
       }
     });
   }
 
-  statusColor(status: string): string {
-    switch (status) {
+  summaryColor(label: string): string {
+    switch (label) {
+      case 'Present': return '#52c41a';
+      case 'Leaves': return '#fa8c16';
+      case 'ML': return '#722ed1';
+      case 'Resigns': return '#f5222d';
+      default: return '#1890ff';
+    }
+  }
+
+  statusColor(s: string): string {
+    switch (s) {
       case 'P': return 'green';
       case 'A': return 'red';
       case 'L': return 'orange';
+      case 'ML': return 'purple';
       case 'H': return 'blue';
       case 'WO': return 'default';
+      case 'R': return 'red';
+      case 'CO': return 'cyan';
       default: return 'default';
     }
   }

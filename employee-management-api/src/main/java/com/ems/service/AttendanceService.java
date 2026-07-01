@@ -1,8 +1,6 @@
 package com.ems.service;
 
-import com.ems.dto.AttendanceDTO;
-import com.ems.dto.EmployeeAttendanceDTO;
-import com.ems.dto.MonthlyAttendanceDTO;
+import com.ems.dto.*;
 import com.ems.exception.ResourceNotFoundException;
 import com.ems.model.AttendanceRecord;
 import com.ems.model.Employee;
@@ -12,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +18,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,56 +32,118 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
 
-    public MonthlyAttendanceDTO getMonthlyAttendance(int year, int month) {
-        List<Employee> employees = employeeRepository.findAll();
-        List<AttendanceRecord> records = attendanceRepository.findByYearAndMonth(year, month);
+    private static final String[] MONTH_ABBR = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
 
-        Map<Long, Map<Integer, String>> recordMap = new HashMap<>();
-        for (AttendanceRecord r : records) {
-            recordMap.computeIfAbsent(r.getEmployee().getId(), k -> new HashMap<>())
-                .put(r.getAttendanceDate().getDayOfMonth(), r.getStatus());
+    private String monthAbbr(int m) { return MONTH_ABBR[m - 1]; }
+
+    public MonthlyAttendanceDTO getMonthlyAttendance(int year, int month, int page, int size) {
+        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
+        LocalDate monthEnd = LocalDate.of(year, month, 25);
+        return buildGrid(year, month, monthStart, monthEnd, page, size);
+    }
+
+    private MonthlyAttendanceDTO buildGrid(int year, int month, LocalDate monthStart, LocalDate monthEnd, int page, int size) {
+        int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
+
+        List<DayColumnDTO> dayColumns = new ArrayList<>();
+        for (int i = 0; i < numDays; i++) {
+            LocalDate d = monthStart.plusDays(i);
+            dayColumns.add(DayColumnDTO.builder()
+                .date(d.toString())
+                .dayOfWeek(d.getDayOfWeek().name().substring(0, 1).toUpperCase() +
+                    d.getDayOfWeek().name().substring(1, 3).toLowerCase())
+                .dayNumber(d.getDayOfMonth())
+                .build());
         }
 
-        int daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth();
+        int totalEmployees = (int) employeeRepository.count();
+        List<Employee> employees = employeeRepository.findAll(PageRequest.of(page, size)).getContent();
+
+        List<AttendanceRecord> allRecords = attendanceRepository.findByAttendanceDateBetween(monthStart, monthEnd);
+
+        int[] presentCounts = new int[numDays];
+        int[] leaveCounts = new int[numDays];
+        int[] mlCounts = new int[numDays];
+        int[] resignCounts = new int[numDays];
+
+        Map<Long, Map<Integer, String>> recordMap = new HashMap<>();
+        for (AttendanceRecord r : allRecords) {
+            int dayIndex = (int) ChronoUnit.DAYS.between(monthStart, r.getAttendanceDate());
+            if (dayIndex < 0 || dayIndex >= numDays) continue;
+            recordMap.computeIfAbsent(r.getEmployee().getId(), k -> new HashMap<>())
+                .put(dayIndex, r.getStatus());
+            switch (r.getStatus()) {
+                case "P" -> presentCounts[dayIndex]++;
+                case "L" -> leaveCounts[dayIndex]++;
+                case "ML" -> mlCounts[dayIndex]++;
+                case "R" -> resignCounts[dayIndex]++;
+            }
+        }
+
+        List<SummaryRowDTO> summaryRows = new ArrayList<>();
+        summaryRows.add(makeSummary("Present", presentCounts));
+        summaryRows.add(makeSummary("Leaves", leaveCounts));
+        summaryRows.add(makeSummary("ML", mlCounts));
+        summaryRows.add(makeSummary("Resigns", resignCounts));
+        summaryRows.add(makeSummary("Total Live Staff",
+            java.util.stream.IntStream.range(0, numDays).map(i -> totalEmployees).toArray()));
+
         List<EmployeeAttendanceDTO> employeeDTOs = new ArrayList<>();
+        int serialNo = page * size + 1;
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (Employee emp : employees) {
-            Map<Integer, String> empDays = recordMap.getOrDefault(emp.getId(), new HashMap<>());
-            Map<Integer, String> days = new LinkedHashMap<>();
-            int p = 0, a = 0, l = 0, h = 0, wo = 0;
-
-            for (int d = 1; d <= daysInMonth; d++) {
-                String status = empDays.getOrDefault(d, "");
-                days.put(d, status);
+            Map<Integer, String> empDayMap = recordMap.getOrDefault(emp.getId(), new HashMap<>());
+            List<String> days = new ArrayList<>();
+            int p = 0, l = 0, ml = 0, r = 0;
+            for (int i = 0; i < numDays; i++) {
+                String status = empDayMap.getOrDefault(i, "");
+                days.add(status);
                 switch (status) {
                     case "P" -> p++;
-                    case "A" -> a++;
                     case "L" -> l++;
-                    case "H" -> h++;
-                    case "WO" -> wo++;
+                    case "ML" -> ml++;
+                    case "R" -> r++;
                 }
             }
+            long vintage = emp.getDoj() != null ? ChronoUnit.MONTHS.between(emp.getDoj(), monthEnd) : 0;
 
             employeeDTOs.add(EmployeeAttendanceDTO.builder()
+                .serialNo(serialNo++)
                 .employeeId(emp.getId())
                 .employeeCode(emp.getEmployeeCode())
                 .employeeName(emp.getFullName())
+                .gender(emp.getGender())
+                .department(emp.getProcessAssigned() != null ? emp.getProcessAssigned() : "")
                 .designation(emp.getDesignation())
+                .doj(emp.getDoj() != null ? emp.getDoj().format(dateFormatter) : "")
+                .vintage(vintage)
                 .days(days)
                 .totalPresent(p)
-                .totalAbsent(a)
                 .totalLeave(l)
-                .totalHoliday(h)
-                .totalWeeklyOff(wo)
+                .totalML(ml)
+                .totalResign(r)
                 .build());
         }
 
         return MonthlyAttendanceDTO.builder()
             .year(year)
             .month(month)
-            .daysInMonth(daysInMonth)
+            .monthLabel(String.format("%s'%04d", monthAbbr(month), year))
+            .totalEmployees(totalEmployees)
+            .page(page)
+            .size(size)
+            .dayColumns(dayColumns)
+            .summaryRows(summaryRows)
             .employees(employeeDTOs)
             .build();
+    }
+
+    private SummaryRowDTO makeSummary(String label, int[] counts) {
+        int total = 0;
+        List<Integer> list = new ArrayList<>();
+        for (int c : counts) { list.add(c); total += c; }
+        return SummaryRowDTO.builder().label(label).dailyCounts(list).total(total).build();
     }
 
     @Transactional
@@ -103,11 +166,14 @@ public class AttendanceService {
     }
 
     public byte[] exportExcel(int year, int month) {
-        MonthlyAttendanceDTO data = getMonthlyAttendance(year, month);
-        int daysInMonth = data.getDaysInMonth();
+        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
+        LocalDate monthEnd = LocalDate.of(year, month, 25);
+        MonthlyAttendanceDTO data = buildGrid(year, month, monthStart, monthEnd, 0, Integer.MAX_VALUE);
+        int numDays = data.getDayColumns().size();
+        String monthLabel = data.getMonthLabel();
 
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet(String.format("Attendance_%d_%02d", year, month));
+            Sheet sheet = workbook.createSheet("Attendance_" + monthLabel);
 
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
@@ -129,45 +195,67 @@ public class AttendanceService {
             dataStyle.setBorderLeft(BorderStyle.THIN);
             dataStyle.setBorderRight(BorderStyle.THIN);
 
-            Row headerRow = sheet.createRow(0);
-            headerRow.createCell(0).setCellValue("Employee Code");
-            headerRow.getCell(0).setCellStyle(headerStyle);
-            headerRow.createCell(1).setCellValue("Employee Name");
-            headerRow.getCell(1).setCellStyle(headerStyle);
+            int totalCols = 7 + numDays + 4;
 
-            for (int d = 1; d <= daysInMonth; d++) {
-                Cell cell = headerRow.createCell(d + 1);
-                cell.setCellValue(d);
-                cell.setCellStyle(headerStyle);
+            Row header1 = sheet.createRow(0);
+            String[] empHeaders = {"S No", "Gender", "EmpCode", "Employee Name", "Department", "DOJ", "Vintage"};
+            for (int i = 0; i < empHeaders.length; i++) {
+                Cell c = header1.createCell(i);
+                c.setCellValue(empHeaders[i]);
+                c.setCellStyle(headerStyle);
             }
-            {
-                Cell cell = headerRow.createCell(daysInMonth + 2);
-                cell.setCellValue("Total P");
-                cell.setCellStyle(headerStyle);
+            for (int i = 0; i < numDays; i++) {
+                Cell c = header1.createCell(7 + i);
+                c.setCellValue(data.getDayColumns().get(i).getDayOfWeek());
+                c.setCellStyle(headerStyle);
+            }
+            String[] summaryHeaders = {"Total P", "Leaves", "Total ML", "Total Leaves"};
+            for (int i = 0; i < summaryHeaders.length; i++) {
+                Cell c = header1.createCell(7 + numDays + i);
+                c.setCellValue(summaryHeaders[i]);
+                c.setCellStyle(headerStyle);
             }
 
-            int rowNum = 1;
+            Row header2 = sheet.createRow(1);
+            for (int i = 0; i < empHeaders.length; i++) {
+                Cell c = header2.createCell(i);
+                c.setCellValue("");
+                c.setCellStyle(headerStyle);
+            }
+            for (int i = 0; i < numDays; i++) {
+                Cell c = header2.createCell(7 + i);
+                c.setCellValue(data.getDayColumns().get(i).getDayNumber());
+                c.setCellStyle(headerStyle);
+            }
+            for (int i = 0; i < summaryHeaders.length; i++) {
+                Cell c = header2.createCell(7 + numDays + i);
+                c.setCellValue("");
+                c.setCellStyle(headerStyle);
+            }
+
+            int rowNum = 2;
             for (EmployeeAttendanceDTO emp : data.getEmployees()) {
                 Row row = sheet.createRow(rowNum++);
-                row.createCell(0).setCellValue(emp.getEmployeeCode());
-                row.getCell(0).setCellStyle(dataStyle);
-                row.createCell(1).setCellValue(emp.getEmployeeName());
-                row.getCell(1).setCellStyle(dataStyle);
-
-                for (int d = 1; d <= daysInMonth; d++) {
-                    Cell cell = row.createCell(d + 1);
-                    cell.setCellValue(emp.getDays().getOrDefault(d, ""));
-                    cell.setCellStyle(dataStyle);
+                setCell(row, 0, String.valueOf(emp.getSerialNo()), dataStyle);
+                setCell(row, 1, emp.getGender(), dataStyle);
+                setCell(row, 2, emp.getEmployeeCode(), dataStyle);
+                setCell(row, 3, emp.getEmployeeName(), dataStyle);
+                setCell(row, 4, emp.getDepartment(), dataStyle);
+                setCell(row, 5, emp.getDoj(), dataStyle);
+                setCell(row, 6, String.valueOf(emp.getVintage()), dataStyle);
+                for (int i = 0; i < numDays; i++) {
+                    setCell(row, 7 + i, emp.getDays().get(i), dataStyle);
                 }
-                {
-                    Cell cell = row.createCell(daysInMonth + 2);
-                    cell.setCellValue(emp.getTotalPresent());
-                    cell.setCellStyle(dataStyle);
-                }
+                setCell(row, 7 + numDays, String.valueOf(emp.getTotalPresent()), dataStyle);
+                setCell(row, 8 + numDays, String.valueOf(emp.getTotalLeave()), dataStyle);
+                setCell(row, 9 + numDays, String.valueOf(emp.getTotalML()), dataStyle);
+                setCell(row, 10 + numDays, String.valueOf(emp.getTotalLeave() + emp.getTotalML()), dataStyle);
             }
 
+            sheet.createFreezePane(7, 2);
             sheet.autoSizeColumn(0);
-            sheet.autoSizeColumn(1);
+            sheet.autoSizeColumn(2);
+            sheet.autoSizeColumn(3);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             workbook.write(out);
@@ -179,36 +267,40 @@ public class AttendanceService {
 
     @Transactional
     public Map<String, Object> importExcel(MultipartFile file, int year, int month) {
+        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
+        LocalDate monthEnd = LocalDate.of(year, month, 25);
+        int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
+
         List<Map<String, String>> errors = new ArrayList<>();
         int imported = 0;
-        int daysInMonth = LocalDate.of(year, month, 1).lengthOfMonth();
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             Map<String, Employee> employeeMap = employeeRepository.findAll().stream()
                 .collect(Collectors.toMap(Employee::getEmployeeCode, e -> e, (a, b) -> a));
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            int startRow = 2;
+            for (int i = startRow; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String empCode = getCellStringValue(row.getCell(0));
+                String empCode = getCellStringValue(row.getCell(2));
                 if (empCode == null || empCode.isBlank()) continue;
 
-                Employee emp = employeeMap.get(empCode);
+                Employee emp = employeeMap.get(empCode.trim());
                 if (emp == null) {
                     errors.add(Map.of("row", String.valueOf(i + 1), "message", "Employee not found: " + empCode));
                     continue;
                 }
 
-                for (int d = 1; d <= daysInMonth; d++) {
-                    Cell cell = row.getCell(d + 1);
+                for (int d = 0; d < numDays; d++) {
+                    Cell cell = row.getCell(7 + d);
                     String status = getCellStringValue(cell);
                     if (status == null || status.isBlank()) continue;
                     status = status.toUpperCase().trim();
-                    if (!Set.of("P", "A", "L", "H", "WO").contains(status)) continue;
+                    if (!Set.of("P", "A", "L", "ML", "H", "WO", "R", "CO").contains(status)) continue;
 
-                    LocalDate date = LocalDate.of(year, month, d);
+                    LocalDate date = monthStart.plusDays(d);
                     AttendanceRecord record = attendanceRepository
                         .findByEmployeeIdAndAttendanceDate(emp.getId(), date)
                         .orElseGet(() -> AttendanceRecord.builder()
@@ -229,6 +321,12 @@ public class AttendanceService {
         return Map.of("imported", imported, "errors", errors);
     }
 
+    private void setCell(Row row, int col, String value, CellStyle style) {
+        Cell c = row.createCell(col);
+        c.setCellValue(value != null ? value : "");
+        c.setCellStyle(style);
+    }
+
     private String getCellStringValue(Cell cell) {
         if (cell == null) return null;
         return switch (cell.getCellType()) {
@@ -239,6 +337,10 @@ public class AttendanceService {
                     yield String.valueOf((long) val);
                 }
                 yield String.valueOf(val);
+            }
+            case FORMULA -> {
+                try { yield String.valueOf((long) cell.getNumericCellValue()); }
+                catch (Exception e) { yield ""; }
             }
             default -> null;
         };

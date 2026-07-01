@@ -25,8 +25,10 @@ public class AttendanceController {
     @GetMapping("/monthly")
     public ResponseEntity<APIResponse<MonthlyAttendanceDTO>> getMonthlyAttendance(
             @RequestParam int year,
-            @RequestParam int month) {
-        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(year, month)));
+            @RequestParam int month,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(year, month, page, size)));
     }
 
     @PutMapping("/bulk")
@@ -40,7 +42,11 @@ public class AttendanceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<byte[]> exportExcel(@RequestParam int year, @RequestParam int month) {
         byte[] data = attendanceService.exportExcel(year, month);
-        String filename = String.format("Attendance_%d_%02d.xlsx", year, month);
+        String filename = String.format("Attendance_%s_%d.xlsx",
+            String.format("%s'%04d",
+                new String[]{"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[month-1],
+                year),
+            month);
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)

@@ -14,6 +14,11 @@ import java.util.List;
 public class MonthlyAttendanceDTO {
     private int year;
     private int month;
-    private int daysInMonth;
+    private String monthLabel;
+    private int totalEmployees;
+    private int page;
+    private int size;
+    private List<DayColumnDTO> dayColumns;
+    private List<SummaryRowDTO> summaryRows;
     private List<EmployeeAttendanceDTO> employees;
 }

@@ -13,8 +13,12 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyAttendance(year: number, month: number): Observable<APIResponse<MonthlyAttendance>> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+  getMonthlyAttendance(year: number, month: number, page = 0, size = 50): Observable<APIResponse<MonthlyAttendance>> {
+    const params = new HttpParams()
+      .set('year', year.toString())
+      .set('month', month.toString())
+      .set('page', page.toString())
+      .set('size', size.toString());
     return this.http.get<APIResponse<MonthlyAttendance>>(`${this.apiUrl}/monthly`, { params });
   }
 
