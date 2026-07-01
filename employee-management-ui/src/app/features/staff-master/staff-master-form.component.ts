@@ -163,7 +163,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
   `,
   styles: [`
     .staff-form-container { height: calc(100vh - 56px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
-    .form-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);flex-shrink:0}
+    .form-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1f3d6e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);flex-shrink:0}
     .form-header-left{display:flex;align-items:center;gap:14px}
     .form-brand{display:flex;align-items:center;gap:8px}
     .form-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px}
