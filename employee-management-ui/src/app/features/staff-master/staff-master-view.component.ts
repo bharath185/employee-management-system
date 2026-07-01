@@ -14,7 +14,6 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzAvatarModule } from 'ng-zorro-antd/avatar';
-import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -38,7 +37,6 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     CommonModule,
     FormsModule,
     RouterLink,
-    NzCardModule,
     NzButtonModule,
     NzIconModule,
     NzTagModule,
@@ -48,7 +46,6 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     NzToolTipModule,
     NzDescriptionsModule,
     NzAvatarModule,
-    NzBreadCrumbModule,
     NzModalModule,
     NzSelectModule,
     NzTableModule,
@@ -57,51 +54,47 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     LoadingSpinnerComponent
   ],
   template: `
-    <div class="view-container fade-in">
-      <nz-breadcrumb>
-        <nz-breadcrumb-item>
-          <a routerLink="/admin/dashboard">Dashboard</a>
-        </nz-breadcrumb-item>
-        <nz-breadcrumb-item>
-          <a routerLink="/admin/employees">Staff Master</a>
-        </nz-breadcrumb-item>
-        <nz-breadcrumb-item *ngIf="employee">
-          {{ employee.employeeCode }}
-        </nz-breadcrumb-item>
-      </nz-breadcrumb>
+    <div class="view-container">
+      <div class="view-header">
+        <div class="view-header-left">
+          <div class="view-brand">
+            <div class="view-icon"><i nz-icon nzType="user"></i></div>
+            <span class="view-logo">EMPLOYEE DETAILS</span>
+          </div>
+          <span class="view-breadcrumb" *ngIf="employee">
+            <a routerLink="/admin/dashboard">Dashboard</a> / <a routerLink="/admin/employees">Staff Master</a> / <span class="view-current">{{ employee.employeeCode }}</span>
+          </span>
+        </div>
+        <div class="view-header-actions" *ngIf="employee">
+          <span class="view-status-badge" [class.stat-live]="employee.employeeStatus === 'LIVE'" [class.stat-other]="employee.employeeStatus !== 'LIVE'">
+            <span class="view-stat-dot"></span>
+            {{ employee.employeeStatus | titleCase }}
+          </span>
+          <button nz-button nzType="primary" class="view-edit-btn" [routerLink]="['/admin/employees', employee.id, 'edit']">
+            <i nz-icon nzType="edit"></i> Edit
+          </button>
+        </div>
+      </div>
 
-      <nz-card class="profile-card" *ngIf="employee" nzBorderless>
-        <div class="profile-card-inner">
-          <div class="profile-avatar-section">
-            <img [src]="photoUrl" alt="Photo" class="profile-avatar-img" *ngIf="employee.photoPath"
-                 (error)="onPhotoError($event)">
-            <div class="profile-avatar" *ngIf="!employee.photoPath">
-              <span class="avatar-initials">{{ getInitials(employee.firstName, employee.surname) }}</span>
-            </div>
-            <div class="status-dot-lg" [class.status-live]="employee.employeeStatus === 'LIVE'"
-                 [class.status-other]="employee.employeeStatus !== 'LIVE'"></div>
-          </div>
-          <div class="profile-info">
-            <h1>{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName }} {{ employee.surname }}</h1>
-            <div class="profile-code">{{ employee.employeeCode }}</div>
-            <div class="profile-meta">
-              <span class="meta-item"><i nz-icon nzType="tool"></i> {{ employee.designation | titleCase }}</span>
-              <span class="meta-item"><i nz-icon nzType="mail"></i> {{ employee.email }}</span>
-              <span class="meta-item"><i nz-icon nzType="phone"></i> {{ employee.mobile }}</span>
+      <div class="view-profile-card" *ngIf="employee">
+        <div class="view-profile-inner">
+          <div class="view-avatar-section">
+            <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)">
+            <div class="view-avatar" *ngIf="!employee.photoPath">
+              <span class="view-avatar-initials">{{ getInitials(employee.firstName, employee.surname) }}</span>
             </div>
           </div>
-          <div class="profile-actions">
-            <span class="status-badge-view" [class.live]="employee.employeeStatus === 'LIVE'"
-                  [class.other]="employee.employeeStatus !== 'LIVE'">
-              <span class="dot"></span>
-              {{ employee.employeeStatus | titleCase }}
-            </span>
-            <button nz-button nzType="primary" [routerLink]="['/admin/employees', employee.id, 'edit']">
-              <i nz-icon nzType="edit"></i> Edit
-            </button>
+          <div class="view-profile-info">
+            <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName }} {{ employee.surname }}</h1>
+            <div class="view-code">{{ employee.employeeCode }}</div>
+            <div class="view-meta">
+              <span class="view-meta-item"><i nz-icon nzType="tool"></i> {{ employee.designation | titleCase }}</span>
+              <span class="view-meta-item"><i nz-icon nzType="mail"></i> {{ employee.email }}</span>
+              <span class="view-meta-item"><i nz-icon nzType="phone"></i> {{ employee.mobile }}</span>
+            </div>
           </div>
         </div>
-      </nz-card>
+      </div>
 
       <app-loading-spinner [loading]="isLoading" message="Loading employee details..."></app-loading-spinner>
 
@@ -362,71 +355,37 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
   styles: [`
     :host { display: block; }
     .view-container { max-width: 1200px; margin: 0 auto; }
-    nz-breadcrumb { margin-bottom: 16px; }
-    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-link,
-    :host ::ng-deep nz-breadcrumb .ant-breadcrumb-separator {
-      color: #6c757d !important;
-    }
-    :host ::ng-deep nz-breadcrumb a {
-      color: #2563eb !important;
-    }
-    :host ::ng-deep nz-breadcrumb a:hover {
-      color: #1d4ed8 !important;
-    }
 
-    :host ::ng-deep .profile-card {
-      background: #ffffff !important;
-      border: 1px solid #e8eaed !important;
-      border-radius: 8px !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-      margin-bottom: 24px;
-      position: relative;
-      overflow: hidden;
-    }
-    :host ::ng-deep .profile-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: #2563eb;
-      pointer-events: none;
-    }
-    .status-dot-lg { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ffffff; }
-    .status-dot-lg.status-live { background: #10b981; }
-    .status-dot-lg.status-other { background: #adb5bd; }
-    .profile-card-inner { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 4px 0; }
-    .profile-avatar-section { position: relative; flex-shrink: 0; }
-    .profile-avatar {
-      width: 80px; height: 80px; border-radius: 50%;
-      background: #2563eb;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .avatar-initials { font-size: 28px; font-weight: 700; color: #fff; }
-    .profile-avatar-img {
-      width: 80px; height: 80px; border-radius: var(--radius-full);
-      object-fit: cover; border: 3px solid #dbeafe;
-    }
-    .profile-info { flex: 1; min-width: 200px; }
-    .profile-info h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 2px; letter-spacing: -0.3px; }
-    .profile-code { font-size: 13px; color: #6c757d; margin-bottom: 10px; font-family: var(--font-mono); }
-    .profile-meta { display: flex; flex-wrap: wrap; gap: 16px; }
-    .meta-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #6c757d; }
-    .meta-item i { font-size: 15px; color: #2563eb; }
-    .profile-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    .profile-actions button[nz-button][nzType="primary"] {
-      background: #2563eb !important;
-      border: none !important;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
-      border-radius: 6px;
-    }
-    .status-badge-view { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; }
-    .status-badge-view .dot { width: 8px; height: 8px; border-radius: var(--radius-full); }
-    .status-badge-view.live { background: #ecfdf5; color: #059669; }
-    .status-badge-view.live .dot { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
-    .status-badge-view.other { background: #f8fafc; color: #6c757d; }
-    .status-badge-view.other .dot { background: #adb5bd; }
+    .view-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+    .view-header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+    .view-brand{display:flex;align-items:center;gap:8px}
+    .view-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px}
+    .view-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:1.5px}
+    .view-breadcrumb{font-size:12px;color:rgba(255,255,255,.65);font-weight:500;padding:2px 10px;background:rgba(255,255,255,.1);border-radius:12px}
+    .view-breadcrumb a{color:rgba(255,255,255,.8);text-decoration:none}
+    .view-breadcrumb a:hover{color:#fff;text-decoration:underline}
+    .view-current{color:rgba(255,255,255,.5)}
+    .view-header-actions{display:flex;align-items:center;gap:8px}
+    .view-status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
+    .view-status-badge.stat-live{background:#ecfdf5;color:#059669}
+    .view-status-badge.stat-other{background:#f8fafc;color:#6c757d}
+    .view-stat-dot{width:8px;height:8px;border-radius:50%}
+    .stat-live .view-stat-dot{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.5)}
+    .stat-other .view-stat-dot{background:#adb5bd}
+    .view-edit-btn{height:30px;font-size:12px;border-radius:6px;padding:0 14px;font-weight:600}
+
+    .view-profile-card{background:#fff;border:1px solid #e8eaed;border-radius:10px;margin-bottom:16px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+    .view-profile-inner{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+    .view-avatar-section{flex-shrink:0}
+    .view-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4361ee,#3a0ca3);display:flex;align-items:center;justify-content:center}
+    .view-avatar-initials{font-size:26px;font-weight:700;color:#fff}
+    .view-avatar-img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #eef2ff}
+    .view-profile-info{flex:1;min-width:200px}
+    .view-name{font-size:22px;font-weight:700;color:#1a1a2e;margin:0 0 2px;letter-spacing:-.3px}
+    .view-code{font-size:13px;color:#6c757d;margin-bottom:8px;font-family:'Cascadia Code','Consolas',monospace}
+    .view-meta{display:flex;flex-wrap:wrap;gap:14px}
+    .view-meta-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6c757d}
+    .view-meta-item i{font-size:15px;color:#4361ee}
 
     :host ::ng-deep .detail-tabs-wrapper {
       background: #ffffff !important;
