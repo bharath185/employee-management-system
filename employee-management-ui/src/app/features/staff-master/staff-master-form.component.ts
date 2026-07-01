@@ -40,7 +40,6 @@ import { ExperienceRefTabComponent } from './tabs/experience-ref-tab/experience-
 import { ExitDocsTabComponent } from './tabs/exit-docs-tab/exit-docs-tab.component';
 import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.component';
 import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 @Component({
   selector: 'app-staff-master-form',
@@ -65,15 +64,19 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     FamilyTabComponent,
     ExperienceRefTabComponent,
     ExitDocsTabComponent,
-    DocumentsTabComponent,
-    PageHeaderComponent
+    DocumentsTabComponent
   ],
   template: `
     <div class="staff-form-container">
-      <app-page-header [icon]="isEditMode ? 'edit' : 'user-add'" [title]="isEditMode ? 'Edit Employee' : 'New Employee'"
-        [subtitle]="isEditMode ? 'Editing: ' + (employeeForm.get('employeeCode')?.value || '') + ' - ' + (employeeForm.get('firstName')?.value || '') + ' ' + (employeeForm.get('surname')?.value || '') : 'Fill in all required fields (*) to create a new employee record'"
-        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Staff Master', link: '/admin/employees'}, {label: isEditMode ? 'Edit Employee' : 'New Employee'}]">
-      </app-page-header>
+      <div class="form-header">
+        <div class="form-header-left">
+          <div class="form-brand">
+            <div class="form-icon"><i nz-icon [nzType]="isEditMode ? 'edit' : 'user-add'"></i></div>
+            <span class="form-logo">{{ isEditMode ? 'EDIT EMPLOYEE' : 'NEW EMPLOYEE' }}</span>
+          </div>
+          <span class="form-subtitle" *ngIf="isEditMode">Editing: {{ employeeForm.get('employeeCode')?.value || '' }}</span>
+        </div>
+      </div>
 
       <!-- Progress Bar -->
       <div class="tab-progress" *ngIf="!isEditMode">
@@ -160,7 +163,12 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   `,
   styles: [`
     .staff-form-container { height: calc(100vh - 56px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
-    .staff-form-container ::ng-deep app-page-header { flex-shrink: 0; }
+    .form-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12);flex-shrink:0}
+    .form-header-left{display:flex;align-items:center;gap:14px}
+    .form-brand{display:flex;align-items:center;gap:8px}
+    .form-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px}
+    .form-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:1.5px}
+    .form-subtitle{font-size:13px;color:rgba(255,255,255,.65);font-weight:500;padding:2px 10px;background:rgba(255,255,255,.1);border-radius:12px}
 
     /* ===== TAB PROGRESS ===== */
     :host ::ng-deep .tab-progress {
