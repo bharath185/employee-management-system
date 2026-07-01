@@ -123,7 +123,7 @@ import { AuthService } from '../../core/services/auth.service';
     .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; box-sizing: border-box; }
 
     /* ─── Gradient Header (matching Attendance UI) ─── */
-    .sr-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin: 0; }
+    .sr-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); margin: 0 0 14px; }
     .sr-title { display: flex; align-items: center; gap: 12px; }
     .sr-brand { display: flex; align-items: center; gap: 10px; }
     .sr-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); border-radius: 8px; color: #fff; font-size: 16px; }
