@@ -159,6 +159,7 @@ interface StatItem {
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
+      box-sizing: border-box;
     }
 
     .reports-content {

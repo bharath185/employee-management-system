@@ -87,7 +87,7 @@ import { RolePermission } from '../../core/models/permission.model';
     ::-webkit-scrollbar-thumb:hover { background: #a0a8b4; }
 
     /* ─── Container ─── */
-    .ac-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; }
+    .ac-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; box-sizing: border-box; }
 
     /* ─── Gradient Header (matching Attendance UI) ─── */
     .ac-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin: 0; }

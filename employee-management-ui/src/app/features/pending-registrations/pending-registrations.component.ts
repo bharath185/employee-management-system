@@ -230,6 +230,7 @@ import { environment } from '../../../environments/environment';
       display: flex;
       flex-direction: column;
       padding: 12px 16px;
+      box-sizing: border-box;
     }
     .pending-content {
       flex: 1;
