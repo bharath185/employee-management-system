@@ -8,6 +8,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
 import { MonthlyAttendance, EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
@@ -18,13 +19,16 @@ import { saveAs } from 'file-saver';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule
+    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule
   ],
   template: `
     <div class="att-container">
       <div class="att-header">
         <div class="att-title">
-          <span class="att-logo">ATTENDANCE</span>
+          <div class="att-brand">
+            <div class="att-icon"><i nz-icon nzType="calendar"></i></div>
+            <span class="att-logo">ATTENDANCE</span>
+          </div>
           <span class="att-period">{{ data?.monthLabel || '' }}</span>
         </div>
         <div class="att-toolbar">
@@ -32,10 +36,10 @@ import { saveAs } from 'file-saver';
             <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(-1)">
               <i nz-icon nzType="left"></i>
             </button>
-            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" style="width:76px">
+            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:68px">
               <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" style="width:100px">
+            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:92px">
               <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label.substring(0,3)"></nz-option>
             </nz-select>
             <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
@@ -43,20 +47,29 @@ import { saveAs } from 'file-saver';
             </button>
           </div>
           <div class="toolbar-actions">
-            <button nz-button nzSize="small" (click)="exportExcel()" [disabled]="loading">
+            <button nz-button nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
               <i nz-icon nzType="download"></i>
             </button>
-            <button nz-button nzSize="small" (click)="importFile.click()" [disabled]="loading">
+            <button nz-button nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
               <i nz-icon nzType="upload"></i>
             </button>
             <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
             <button nz-button nzSize="small" *ngIf="isCurrentMonth"
               [nzType]="isEditMode ? 'primary' : 'default'"
-              (click)="toggleEdit()">
-              <i nz-icon [nzType]="isEditMode ? 'save' : 'edit'"></i>
-              {{ isEditMode ? 'Save' : 'Edit' }}
+              class="edit-btn" [class.saving]="saving"
+              (click)="toggleEdit()" [disabled]="saving">
+              <i nz-icon nzType="save" *ngIf="isEditMode; else editIcon"></i>
+              <ng-template #editIcon><i nz-icon nzType="edit"></i></ng-template>
+              <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <div class="legend-bar" *ngIf="data">
+        <div class="legend-item" *ngFor="let l of legendItems">
+          <span class="legend-dot" [style.background]="l.color"></span>
+          <span class="legend-label">{{ l.label }}</span>
         </div>
       </div>
 
@@ -106,18 +119,20 @@ import { saveAs } from 'file-saver';
           [nzScroll]="{ x: scrollX }"
           [nzShowSizeChanger]="true"
           [nzPageSizeOptions]="[10,20,50,100]"
-          [nzHideOnSinglePage]="true">
+          [nzHideOnSinglePage]="true"
+          nzTableLayout="fixed">
           <thead>
             <tr>
               <th rowSpan="2" class="th-sno">#</th>
               <th rowSpan="2" class="th-emp">Emp Code</th>
               <th [attr.colSpan]="dayColCount()" class="th-days">
-                {{ data?.monthLabel || '' }} <span class="th-range">(26 {{ prevMonthAbbr }} - 25 {{ curMonthAbbr }})</span>
+                <span class="th-month">{{ data?.monthLabel || '' }}</span>
+                <span class="th-range">26 {{ prevMonthAbbr }} - 25 {{ curMonthAbbr }}</span>
               </th>
-              <th rowSpan="2" class="th-sum">P</th>
-              <th rowSpan="2" class="th-sum">Lv</th>
-              <th rowSpan="2" class="th-sum">ML</th>
-              <th rowSpan="2" class="th-sum">Lv+</th>
+              <th rowSpan="2" class="th-sum th-sum-p">P</th>
+              <th rowSpan="2" class="th-sum th-sum-l">Lv</th>
+              <th rowSpan="2" class="th-sum th-sum-ml">ML</th>
+              <th rowSpan="2" class="th-sum th-sum-t">Lv+</th>
             </tr>
             <tr>
               <th *ngFor="let col of data?.dayColumns; let i = index"
@@ -130,13 +145,18 @@ import { saveAs } from 'file-saver';
           <tbody>
             <tr *ngFor="let emp of attTable.data; let idx = index" class="emp-row">
               <td class="td-sno">{{ emp.serialNo }}</td>
-              <td class="td-emp" [nz-popover]="empPop" nzPopoverTrigger="hover" nzPopoverPlacement="right" [nzPopoverMouseEnterDelay]="0.2">
+              <td class="td-emp" [nz-popover]="empPop" nzPopoverTrigger="hover" nzPopoverPlacement="rightTop" [nzPopoverMouseEnterDelay]="0.3">
                 <span class="emp-code">{{ emp.employeeCode }}</span>
                 <ng-template #empPop>
                   <div class="emp-popover">
-                    <div class="pop-header">{{ emp.employeeName }}</div>
+                    <div class="pop-header">
+                      <div class="pop-avatar">{{ (emp.employeeName || '?').charAt(0) }}</div>
+                      <div>
+                        <div class="pop-name">{{ emp.employeeName }}</div>
+                        <div class="pop-code">{{ emp.employeeCode }}</div>
+                      </div>
+                    </div>
                     <div class="pop-body">
-                      <div class="pop-row"><span class="pop-lbl">Emp Code</span><span class="pop-val">{{ emp.employeeCode }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Gender</span><span class="pop-val">{{ emp.gender || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Department</span><span class="pop-val">{{ emp.department || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Designation</span><span class="pop-val">{{ emp.designation || '-' }}</span></div>
@@ -148,7 +168,7 @@ import { saveAs } from 'file-saver';
               </td>
               <td *ngFor="let s of emp.days; let di = index" class="td-day" [class.weekend]="isSunDay(di)">
                 <ng-container *ngIf="!isEditMode; else editCell">
-                  <span *ngIf="s" class="day-status" [style.background]="statusBg(s)" [style.color]="statusFg(s)">{{ s }}</span>
+                  <span *ngIf="s" class="day-status" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
                   <span *ngIf="!s" class="day-empty">·</span>
                 </ng-container>
                 <ng-template #editCell>
@@ -159,7 +179,9 @@ import { saveAs } from 'file-saver';
                     class="day-select"
                     [nzDropdownMatchSelectWidth]="false"
                     nzDropdownClassName="att-dropdown">
-                    <nz-option nzValue="" nzLabel="—"></nz-option>
+                    <nz-option nzValue="" nzLabel="—" nzCustomContent>
+                      <span class="opt-blank">—</span>
+                    </nz-option>
                     <nz-option nzValue="P" nzLabel="P" nzCustomContent>
                       <span class="opt-p">P</span>
                     </nz-option>
@@ -190,7 +212,7 @@ import { saveAs } from 'file-saver';
               <td class="td-sum"><span class="stat-p">{{ emp.totalPresent }}</span></td>
               <td class="td-sum"><span class="stat-l">{{ emp.totalLeave }}</span></td>
               <td class="td-sum"><span class="stat-ml">{{ emp.totalML }}</span></td>
-              <td class="td-sum"><b>{{ emp.totalLeave + emp.totalML }}</b></td>
+              <td class="td-sum td-sum-total"><b>{{ emp.totalLeave + emp.totalML }}</b></td>
             </tr>
           </tbody>
         </nz-table>
@@ -198,70 +220,104 @@ import { saveAs } from 'file-saver';
     </div>
   `,
   styles: [`
-    .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
-    .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
-    .att-title { display:flex; align-items:baseline; gap:10px; }
-    .att-logo { font-size:16px; font-weight:700; color:#1a1a2e; letter-spacing:1px; }
-    .att-period { font-size:13px; color:#666; font-weight:500; }
-    .att-toolbar { display:flex; align-items:center; gap:8px; }
-    .month-nav { display:flex; align-items:center; gap:1px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:1px 3px; }
-    .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:4px; color:#555; }
-    .nav-btn:hover { background:#f0f0f0; color:#1a1a2e; }
-    .toolbar-actions { display:flex; align-items:center; gap:4px; }
-    .toolbar-actions button { height:28px; font-size:12px; border-radius:4px; }
-    .summary-section { margin-bottom:8px; overflow-x:auto; background:#fff; border:1px solid #e8eaed; border-radius:6px; }
+    .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:0 0 16px; }
+    .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; padding:12px 16px; background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    .att-title { display:flex; align-items:center; gap:12px; }
+    .att-brand { display:flex; align-items:center; gap:8px; }
+    .att-icon { width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.15); border-radius:8px; color:#fff; font-size:16px; }
+    .att-logo { font-size:17px; font-weight:800; color:#fff; letter-spacing:1.5px; }
+    .att-period { font-size:13px; color:rgba(255,255,255,.65); font-weight:500; padding:2px 10px; background:rgba(255,255,255,.1); border-radius:12px; }
+    .att-toolbar { display:flex; align-items:center; gap:6px; }
+    .month-nav { display:flex; align-items:center; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px 4px; }
+    .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:rgba(255,255,255,.75); border:none; background:transparent; cursor:pointer; transition:all .2s; }
+    .nav-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
+    .month-nav ::ng-deep .ant-select { background:transparent; }
+    .month-nav ::ng-deep .ant-select-selection-item { color:rgba(255,255,255,.9) !important; font-weight:600; font-size:12px; }
+    .month-nav ::ng-deep .ant-select-arrow { color:rgba(255,255,255,.5); }
+    .toolbar-actions { display:flex; align-items:center; gap:5px; }
+    .toolbar-actions button { height:30px; font-size:12px; border-radius:6px; border:none; background:rgba(255,255,255,.12); color:rgba(255,255,255,.8); padding:0 10px; transition:all .2s; }
+    .toolbar-actions button:hover:not(:disabled) { background:rgba(255,255,255,.2); color:#fff; }
+    .edit-btn { font-weight:600 !important; letter-spacing:.3px; }
+    .edit-btn.saving { opacity:.7; cursor:not-allowed; }
+    .legend-bar { display:flex; flex-wrap:wrap; gap:4px 12px; margin-bottom:10px; padding:8px 14px; background:#fff; border:1px solid #e8eaed; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+    .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#555; }
+    .legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .legend-label { white-space:nowrap; }
+    .summary-section { margin-bottom:10px; overflow-x:auto; background:#fff; border:1px solid #e8eaed; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.05); }
     .summary-table { width:100%; border-collapse:collapse; font-size:11px; min-width:600px; }
-    .summary-table th, .summary-table td { padding:2px 3px; text-align:center; border-right:1px solid #f0f0f0; white-space:nowrap; }
-    .summary-table thead th { background:#f5f6fa; font-weight:600; color:#555; font-size:10px; padding:3px 2px; border-bottom:1px solid #e0e0e0; }
-    .sum-label { text-align:left !important; font-weight:600; color:#333; font-size:11px; padding-left:8px !important; width:110px; }
+    .summary-table th, .summary-table td { padding:3px 4px; text-align:center; border-right:1px solid #f0f2f5; white-space:nowrap; }
+    .summary-table thead th { background:#f7f8fc; font-weight:600; color:#555; font-size:10px; padding:4px 3px; border-bottom:1px solid #e8eaed; text-transform:uppercase; letter-spacing:.3px; }
+    .sum-label { text-align:left !important; font-weight:600; color:#333; font-size:11px; padding-left:10px !important; width:110px; }
     .sum-spacer { width:4px !important; min-width:4px; padding:0 !important; border:none !important; background:transparent !important; }
-    .sum-badge { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; vertical-align:middle; }
-    .sum-val { font-weight:500; }
+    .sum-badge { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+    .sum-val { font-weight:500; color:#666; }
     .sum-val.highlight { color:#1a1a2e; font-weight:600; }
-    .sum-total { font-weight:700; color:#1a1a2e; min-width:45px; border-left:1px solid #e0e0e0; }
-    .sum-row:hover td { background:#fafbfc; }
-    .table-wrap { background:#fff; border:1px solid #e8eaed; border-radius:6px; overflow:hidden; }
-    .th-days { text-align:center !important; font-size:12px; padding:4px 8px !important; }
-    .th-range { font-weight:400; color:#999; font-size:10px; }
-    .th-sno { width:36px; min-width:36px; text-align:center !important; padding:4px 2px !important; font-size:11px; }
-    .th-emp { width:85px; min-width:85px; text-align:center !important; padding:4px 4px !important; font-size:11px; }
-    .th-day { width:32px; min-width:32px; text-align:center !important; padding:2px 0 !important; font-size:10px; line-height:1.2; }
-    .th-sum { width:35px; min-width:35px; text-align:center !important; padding:4px 2px !important; font-size:10px; font-weight:700; }
-    .dw { display:block; font-size:9px; color:#888; }
-    .dn { display:block; font-size:11px; font-weight:700; color:#333; }
+    .sum-total { font-weight:700; color:#1a1a2e; min-width:50px; border-left:1px solid #e8eaed; }
+    .sum-row:hover td { background:#f7f8fc; }
+    .table-wrap { background:#fff; border:1px solid #e8eaed; border-radius:8px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+    .table-wrap ::ng-deep .ant-table-thead > tr > th { background:#f7f8fc; border-bottom:2px solid #e8eaed; }
+    .th-days { text-align:center !important; font-size:12px; padding:4px 8px !important; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%) !important; color:#fff !important; }
+    .th-month { font-weight:700; margin-right:6px; }
+    .th-range { font-weight:400; opacity:.8; font-size:10px; }
+    .th-sno { width:38px; min-width:38px; text-align:center !important; padding:5px 2px !important; font-size:11px; color:#555; }
+    .th-emp { width:90px; min-width:90px; text-align:center !important; padding:5px 6px !important; font-size:11px; color:#555; }
+    .th-day { width:32px; min-width:32px; text-align:center !important; padding:2px 0 !important; font-size:10px; line-height:1.3; }
+    .th-sum { width:36px; min-width:36px; text-align:center !important; padding:5px 2px !important; font-size:10px; font-weight:700; letter-spacing:.5px; }
+    .th-sum-p { color:#52c41a !important; }
+    .th-sum-l { color:#fa8c16 !important; }
+    .th-sum-ml { color:#722ed1 !important; }
+    .th-sum-t { color:#1a1a2e !important; }
+    .dw { display:block; font-size:9px; color:#999; text-transform:uppercase; }
+    .dn { display:block; font-size:11px; font-weight:700; color:#444; }
     .weekend { background:#fff5f5 !important; }
+    .weekend .dn { color:#e74c3c; }
     .emp-row { transition:background .15s; }
-    .emp-row:hover { background:#f5f8ff; }
-    .td-sno { text-align:center !important; font-size:11px; color:#888; padding:4px 2px !important; }
-    .td-emp { text-align:center !important; padding:4px 4px !important; cursor:pointer; }
-    .emp-code { font-weight:700; font-size:12px; color:#2563eb; letter-spacing:0.3px; }
-    .emp-code:hover { color:#1d4ed8; text-decoration:underline; }
+    .emp-row:hover { background:#f0f4ff !important; }
+    .td-sno { text-align:center !important; font-size:11px; color:#999; padding:4px 2px !important; }
+    .td-emp { text-align:center !important; padding:4px 6px !important; cursor:pointer; }
+    .emp-code { font-weight:700; font-size:12px; color:#4361ee; letter-spacing:.4px; cursor:pointer; transition:color .15s; }
+    .emp-code:hover { color:#3a0ca3; }
     .td-day { text-align:center !important; padding:3px 1px !important; font-size:11px; }
-    .day-status { display:inline-block; width:22px; height:18px; line-height:18px; border-radius:3px; font-size:10px; font-weight:700; text-align:center; }
-    .day-empty { color:#e0e0e0; font-size:14px; }
+    .day-status { display:inline-block; width:22px; height:19px; line-height:19px; border-radius:4px; font-size:10px; font-weight:700; text-align:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12); transition:transform .15s,box-shadow .15s; }
+    .day-status:hover { transform:scale(1.15); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+    .status-p { background:linear-gradient(135deg,#52c41a,#73d13d); }
+    .status-a { background:linear-gradient(135deg,#f5222d,#ff4d4f); }
+    .status-l { background:linear-gradient(135deg,#fa8c16,#ffa940); }
+    .status-ml { background:linear-gradient(135deg,#722ed1,#9254de); }
+    .status-h { background:linear-gradient(135deg,#1890ff,#40a9ff); }
+    .status-wo { background:linear-gradient(135deg,#8c8c8c,#a6a6a6); }
+    .status-r { background:linear-gradient(135deg,#cf1322,#f5222d); }
+    .status-co { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
+    .day-empty { color:#e8e8e8; font-size:14px; }
     .day-select { width:36px !important; }
-    .day-select .ant-select-selection-item { font-size:11px; font-weight:700; text-align:center; }
+    .day-select ::ng-deep .ant-select-selection-item { font-size:11px; font-weight:700; text-align:center; }
     .td-sum { text-align:center !important; font-size:12px; padding:4px 2px !important; }
+    .td-sum-total { border-left:1px solid #e8eaed; }
     .stat-p { color:#52c41a; font-weight:700; }
     .stat-l { color:#fa8c16; font-weight:600; }
     .stat-ml { color:#722ed1; font-weight:600; }
-    .emp-popover { min-width:200px; }
-    .pop-header { font-size:14px; font-weight:700; color:#1a1a2e; border-bottom:1px solid #eee; padding-bottom:6px; margin-bottom:6px; }
+    .emp-popover { min-width:220px; }
+    .pop-header { display:flex; align-items:center; gap:10px; border-bottom:1px solid #f0f0f0; padding-bottom:8px; margin-bottom:8px; }
+    .pop-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#4361ee,#3a0ca3); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0; }
+    .pop-name { font-size:14px; font-weight:700; color:#1a1a2e; }
+    .pop-code { font-size:11px; color:#888; font-weight:500; }
     .pop-body { font-size:12px; }
-    .pop-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px dashed #f5f5f5; }
+    .pop-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px dashed #f5f5f5; }
     .pop-row:last-child { border:none; }
-    .pop-lbl { color:#888; margin-right:12px; min-width:72px; }
+    .pop-lbl { color:#999; margin-right:12px; min-width:72px; }
     .pop-val { font-weight:500; color:#333; }
-    .opt-p { color:#fff; background:#52c41a; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-a { color:#fff; background:#f5222d; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-l { color:#fff; background:#fa8c16; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-ml { color:#fff; background:#722ed1; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-h { color:#fff; background:#1890ff; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-wo { color:#fff; background:#8c8c8c; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-r { color:#fff; background:#cf1322; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
-    .opt-co { color:#fff; background:#13c2c2; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-blank { color:#bbb; font-weight:400; }
+    .opt-p { color:#fff; background:linear-gradient(135deg,#52c41a,#73d13d); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-a { color:#fff; background:linear-gradient(135deg,#f5222d,#ff4d4f); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-l { color:#fff; background:linear-gradient(135deg,#fa8c16,#ffa940); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-ml { color:#fff; background:linear-gradient(135deg,#722ed1,#9254de); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-h { color:#fff; background:linear-gradient(135deg,#1890ff,#40a9ff); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-wo { color:#fff; background:linear-gradient(135deg,#8c8c8c,#a6a6a6); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-r { color:#fff; background:linear-gradient(135deg,#cf1322,#f5222d); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-co { color:#fff; background:linear-gradient(135deg,#13c2c2,#36cfc9); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     :host ::ng-deep .att-dropdown .ant-select-item-option-content { padding:0 !important; }
-    :host ::ng-deep .ant-select-item-option { padding:2px 8px !important; }
+    :host ::ng-deep .ant-select-item-option { padding:3px 10px !important; }
+    :host ::ng-deep .ant-select-item-option-active { background:#f0f4ff !important; }
   `]
 })
 export class AttendanceComponent implements OnInit {
@@ -279,6 +335,17 @@ export class AttendanceComponent implements OnInit {
   scrollX = '';
 
   yearList: number[] = [];
+
+  legendItems = [
+    { code: 'P', label: 'P = Present', color: '#52c41a' },
+    { code: 'A', label: 'A = Absent', color: '#f5222d' },
+    { code: 'L', label: 'L = Leave', color: '#fa8c16' },
+    { code: 'ML', label: 'ML = Maternity Leave', color: '#722ed1' },
+    { code: 'H', label: 'H = Holiday', color: '#1890ff' },
+    { code: 'WO', label: 'WO = Week Off', color: '#8c8c8c' },
+    { code: 'R', label: 'R = Resign', color: '#cf1322' },
+    { code: 'CO', label: 'CO = Comp Off', color: '#13c2c2' },
+  ];
   monthList = [
     { value: 1, label: 'January' }, { value: 2, label: 'February' }, { value: 3, label: 'March' },
     { value: 4, label: 'April' }, { value: 5, label: 'May' }, { value: 6, label: 'June' },
