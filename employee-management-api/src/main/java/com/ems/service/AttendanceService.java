@@ -85,8 +85,8 @@ public class AttendanceService {
         summaryRows.add(makeSummary("Leaves", leaveCounts));
         summaryRows.add(makeSummary("ML", mlCounts));
         summaryRows.add(makeSummary("Resigns", resignCounts));
-        summaryRows.add(makeSummary("Total Live Staff",
-            java.util.stream.IntStream.range(0, numDays).map(i -> totalEmployees).toArray()));
+        List<Integer> staffCounts = java.util.stream.IntStream.range(0, numDays).map(i -> totalEmployees).boxed().collect(java.util.stream.Collectors.toList());
+        summaryRows.add(SummaryRowDTO.builder().label("Total Live Staff").dailyCounts(staffCounts).total(totalEmployees).build());
 
         List<EmployeeAttendanceDTO> employeeDTOs = new ArrayList<>();
         int serialNo = page * size + 1;
