@@ -78,7 +78,7 @@ import { saveAs } from 'file-saver';
                        (ngModelChange)="markChanged(emp.employeeId, d, $event)"
                        nzSize="small"
                        style="width:42px"
-                       nzDropdownMatchSelectWidth="false">
+                       [nzDropdownMatchSelectWidth]="false">
               <nz-option nzValue="" nzLabel="-"></nz-option>
               <nz-option nzValue="P" nzLabel="P"></nz-option>
               <nz-option nzValue="A" nzLabel="A"></nz-option>
