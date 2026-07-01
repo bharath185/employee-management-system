@@ -120,7 +120,7 @@ import { AuthService } from '../../core/services/auth.service';
     ::-webkit-scrollbar-thumb:hover { background: #a0a8b4; }
 
     /* ─── Container ─── */
-    .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 0; }
+    .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; }
 
     /* ─── Gradient Header (matching Attendance UI) ─── */
     .sr-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin: 0; }
@@ -136,7 +136,7 @@ import { AuthService } from '../../core/services/auth.service';
     .denied-msg { color: #999; font-size: 14px; margin: 0; }
 
     /* ─── Cards Grid ─── */
-    .sr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; padding: 12px 16px; }
+    .sr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px; padding: 12px 0; }
 
     /* ─── Report Card ─── */
     .sr-card { background: #fff; border: 1px solid #e8eaed; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); transition: box-shadow .2s, transform .2s; display: flex; flex-direction: column; }

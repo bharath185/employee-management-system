@@ -229,11 +229,11 @@ import { environment } from '../../../environments/environment';
       height: 100%;
       display: flex;
       flex-direction: column;
-      padding: 0;
+      padding: 12px 16px;
     }
     .pending-content {
       flex: 1;
-      padding: 12px;
+      padding: 12px 0;
       overflow: visible;
       width: 100%;
     }

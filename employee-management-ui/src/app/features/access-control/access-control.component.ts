@@ -87,7 +87,7 @@ import { RolePermission } from '../../core/models/permission.model';
     ::-webkit-scrollbar-thumb:hover { background: #a0a8b4; }
 
     /* ─── Container ─── */
-    .ac-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 0; }
+    .ac-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; }
 
     /* ─── Gradient Header (matching Attendance UI) ─── */
     .ac-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 0; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin: 0; }
@@ -97,7 +97,7 @@ import { RolePermission } from '../../core/models/permission.model';
     .ac-logo { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
 
     /* ─── Tabs ─── */
-    .ac-tabs-wrap { margin-top: 12px; padding: 0 16px; }
+    .ac-tabs-wrap { margin-top: 12px; padding: 0; }
     .ac-tabs-wrap ::ng-deep .ant-tabs-card.ant-tabs-small > .ant-tabs-nav .ant-tabs-tab { padding: 4px 14px; font-size: 12px; font-weight: 600; color: #555; background: #f5f6fa; border: 1px solid #e8eaed; border-bottom: none; border-radius: 6px 6px 0 0; transition: all .2s; }
     .ac-tabs-wrap ::ng-deep .ant-tabs-card.ant-tabs-small > .ant-tabs-nav .ant-tabs-tab-active { background: #fff; color: #1f3d6e; border-bottom-color: #fff; }
     .ac-tabs-wrap ::ng-deep .ant-tabs-card.ant-tabs-small > .ant-tabs-nav .ant-tabs-tab:hover:not(.ant-tabs-tab-active) { color: #1f3d6e; background: #eef0f6; }

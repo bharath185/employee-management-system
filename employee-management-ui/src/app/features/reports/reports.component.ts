@@ -158,6 +158,7 @@ interface StatItem {
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      padding: 12px 16px;
     }
 
     .reports-content {
@@ -166,7 +167,7 @@ interface StatItem {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      padding: 12px;
+      padding: 12px 0;
       overflow-y: auto;
       width: 100%;
     }
