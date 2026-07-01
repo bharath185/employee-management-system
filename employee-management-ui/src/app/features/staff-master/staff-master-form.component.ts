@@ -68,144 +68,171 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
   ],
   template: `
     <div class="staff-form-container">
-
-      <!-- Progress Bar -->
-      <div class="tab-progress" *ngIf="!isEditMode">
-        <div class="tab-progress-bar">
-          <div class="tab-progress-fill" [style.width.%]="completedTabs / totalTabs * 100"></div>
+      <div class="form-scroll">
+        <div class="tab-progress" *ngIf="!isEditMode">
+          <div class="tab-progress-bar">
+            <div class="tab-progress-fill" [style.width.%]="completedTabs / totalTabs * 100"></div>
+          </div>
+          <span class="tab-progress-text">{{ completedTabs }} of {{ totalTabs }} tabs completed</span>
         </div>
-        <span class="tab-progress-text">{{ completedTabs }} of {{ totalTabs }} tabs completed</span>
+
+        <form [formGroup]="employeeForm">
+          <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex" (nzSelectedIndexChange)="onTabChange($event)">
+            <nz-tab nzTitle="Personal Info">
+              <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode"></app-personal-info-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Demographics">
+              <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Assets">
+              <app-assets-tab [form]="employeeForm"></app-assets-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Identity">
+              <app-identity-tab [form]="employeeForm"></app-identity-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Education">
+              <app-education-tab [form]="employeeForm"></app-education-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Bank">
+              <app-bank-tab [form]="employeeForm"></app-bank-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Employment">
+              <app-employment-tab [form]="employeeForm"></app-employment-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Family">
+              <app-family-tab [form]="employeeForm"></app-family-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Experience & Ref.">
+              <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Exit & Docs">
+              <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
+                                 (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
+            </nz-tab>
+            <nz-tab nzTitle="Documents" [nzDisabled]="!isEditMode">
+              <app-documents-tab [employeeId]="employeeId" [isEditMode]="isEditMode"></app-documents-tab>
+            </nz-tab>
+          </nz-tabset>
+        </form>
       </div>
 
-      <!-- Form -->
-      <form [formGroup]="employeeForm">
-        <!-- Tab Group -->
-        <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex" (nzSelectedIndexChange)="onTabChange($event)">
-          <nz-tab nzTitle="Personal Info">
-            <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode"></app-personal-info-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Demographics">
-            <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Assets">
-            <app-assets-tab [form]="employeeForm"></app-assets-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Identity">
-            <app-identity-tab [form]="employeeForm"></app-identity-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Education">
-            <app-education-tab [form]="employeeForm"></app-education-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Bank">
-            <app-bank-tab [form]="employeeForm"></app-bank-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Employment">
-            <app-employment-tab [form]="employeeForm"></app-employment-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Family">
-            <app-family-tab [form]="employeeForm"></app-family-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Experience & Ref.">
-            <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Exit & Docs">
-            <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
-                               (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
-          </nz-tab>
-
-          <nz-tab nzTitle="Documents" [nzDisabled]="!isEditMode">
-            <app-documents-tab [employeeId]="employeeId" [isEditMode]="isEditMode"></app-documents-tab>
-          </nz-tab>
-        </nz-tabset>
-
-        <!-- Bottom Action Bar -->
-        <div class="action-bar">
-          <div class="action-left">
-            <span class="validation-summary" *ngIf="formErrors.length > 0">
-              <i nz-icon nzType="warning"></i> {{ formErrors.length }} validation error(s)
-            </span>
-          </div>
-          <div class="action-right">
-            <button nz-button nzType="default" type="button" routerLink="/admin/employees" class="action-btn">
-              Cancel
-            </button>
-            <button nz-button nzType="default" type="button" (click)="saveDraft()" [disabled]="isSaving" class="action-btn">
-              <i nz-icon nzType="save"></i> Save Draft
-            </button>
-            <button nz-button nzType="primary" type="button" (click)="saveAndNew()" [disabled]="isSaving" class="action-btn" [nzLoading]="isSaving">
-              Save & New
-            </button>
-            <button nz-button nzType="primary" type="button" (click)="saveAndClose()" [disabled]="isSaving" class="action-btn primary-btn" [nzLoading]="isSaving">
-              {{ isEditMode ? 'Update' : 'Save & Close' }}
-            </button>
-          </div>
+      <div class="action-bar">
+        <div class="action-left">
+          <span class="validation-summary" *ngIf="formErrors.length > 0">
+            <i nz-icon nzType="warning"></i> {{ formErrors.length }} error(s)
+          </span>
         </div>
-      </form>
+        <div class="action-right">
+          <button nz-button nzType="default" type="button" routerLink="/admin/employees" class="act-btn">Cancel</button>
+          <button nz-button nzType="default" type="button" (click)="saveDraft()" [disabled]="isSaving" class="act-btn"><i nz-icon nzType="save"></i> Draft</button>
+          <button nz-button nzType="primary" type="button" (click)="saveAndNew()" [disabled]="isSaving" class="act-btn act-primary" [nzLoading]="isSaving">Save & New</button>
+          <button nz-button nzType="primary" type="button" (click)="saveAndClose()" [disabled]="isSaving" class="act-btn act-save" [nzLoading]="isSaving">{{ isEditMode ? 'Update' : 'Save & Close' }}</button>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
-    .staff-form-container { height: calc(100vh - 56px); display: flex; flex-direction: column; max-width: 1200px; margin: 0 auto; }
-
+    .staff-form-container {
+      height: calc(100vh - 56px);
+      display: flex;
+      flex-direction: column;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 16px;
+      overflow: hidden;
+    }
+    .form-scroll { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
     /* ===== TAB PROGRESS ===== */
     :host ::ng-deep .tab-progress {
-      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
       background: #ffffff !important;
       border: 1px solid #e8eaed !important;
       border-radius: 8px !important;
-      padding: 10px 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      padding: 8px 16px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
-    .tab-progress-bar { flex: 1; height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
-    .tab-progress-fill { height: 100%; background: #2563eb; border-radius: 3px; transition: width 0.4s ease; }
-    .tab-progress-text { font-size: 12px; color: #6c757d; white-space: nowrap; }
+    :host ::ng-deep .tab-progress-bar { flex: 1; height: 5px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+    :host ::ng-deep .tab-progress-fill { height: 100%; background: linear-gradient(90deg, #4361ee, #3a0ca3); border-radius: 3px; transition: width 0.4s ease; }
+    :host ::ng-deep .tab-progress-text { font-size: 11px; color: #6c757d; white-space: nowrap; font-weight: 500; }
 
-    /* ===== FORM (scrollable area) ===== */
+    /* ===== FORM ===== */
     form { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
     /* ===== TABS ===== */
     .employee-tabs {
       background: #ffffff !important;
       border: 1px solid #e8eaed !important;
-      border-radius: 8px !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      border-radius: 10px !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
     }
     :host ::ng-deep .employee-tabs .ant-tabs-content-holder { flex: 1; overflow: hidden; min-height: 0; padding: 0; }
     :host ::ng-deep .employee-tabs .ant-tabs-content { height: 100%; }
-    :host ::ng-deep .employee-tabs .ant-tabs-tabpane { height: 100%; overflow-y: auto; padding: 20px 24px; }
+    :host ::ng-deep .employee-tabs .ant-tabs-tabpane {
+      height: 100%; overflow-y: auto; padding: 10px 16px !important;
+    }
     :host ::ng-deep .employee-tabs .ant-tabs-tab {
-      font-size: 13px; padding: 8px 16px; margin: 0;
+      font-size: 12px; padding: 6px 12px; margin: 0 1px;
       color: #6c757d !important;
-      transition: color 0.2s ease;
+      transition: all 0.2s ease;
+      border-radius: 6px 6px 0 0 !important;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab:hover {
-      color: #1a1a2e !important;
-    }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab:hover { color: #1f3d6e !important; background: rgba(31,61,110,0.04); }
     :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-active {
-      color: #2563eb !important; font-weight: 600;
+      color: #1f3d6e !important; font-weight: 600;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-ink-bar {
-      background: #2563eb !important;
-      height: 3px !important;
-      border-radius: 2px;
-    }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-complete .ant-tabs-tab-btn::before { content: '\\2713'; color: #10b981; margin-right: 4px; font-weight: 700; }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn { color: #1f3d6e !important; }
+    :host ::ng-deep .employee-tabs .ant-tabs-ink-bar { background: #1f3d6e !important; height: 3px !important; border-radius: 3px 3px 0 0; }
+    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-complete .ant-tabs-tab-btn::before { content: '\\2713'; color: #10b981; margin-right: 3px; font-weight: 700; font-size: 11px; }
     :host ::ng-deep .employee-tabs .ant-tabs-nav {
-      padding: 0 24px; margin-bottom: 0; flex-shrink: 0;
+      padding: 0 16px; margin-bottom: 0; flex-shrink: 0;
       background: #f8fafc !important;
       border-bottom: 1px solid #e8eaed !important;
     }
+    :host ::ng-deep .employee-tabs .ant-tabs-nav-wrap { padding-top: 4px; }
+
+    /* ===== TAB INNER COMPONENT OVERRIDES ===== */
+    :host ::ng-deep .tab-container { padding: 6px 0 !important; }
+    :host ::ng-deep .form-section { margin-bottom: 10px !important; padding: 14px 20px !important; }
+    :host ::ng-deep .form-section-header { margin-bottom: 12px !important; padding-bottom: 10px !important; border-bottom-color: #e8edf5 !important; }
+    :host ::ng-deep .form-section-header { border-bottom: 2px solid #e8edf5 !important; }
+    :host ::ng-deep .form-section-title { font-size: 14px !important; }
+    :host ::ng-deep .form-section-icon { width: 28px !important; height: 28px !important; background: linear-gradient(135deg, #1f3d6e, #16213e) !important; }
+    :host ::ng-deep .form-section-icon i { font-size: 15px !important; }
+    :host ::ng-deep .section-title { font-size: 14px !important; margin: 0 0 12px !important; padding-bottom: 6px !important; }
+    :host ::ng-deep .subsection-title { font-size: 13px !important; margin: 0 0 12px !important; }
+    :host ::ng-deep .subsection-title i { font-size: 16px !important; }
+    :host ::ng-deep .photo-section { padding: 12px 16px !important; margin-top: 16px !important; }
+
+    /* ===== COMPACT FORM GRIDS ===== */
+    :host ::ng-deep .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 24px; }
+    :host ::ng-deep .form-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 24px; }
+    :host ::ng-deep .form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 16px; }
+    :host ::ng-deep .form-grid-full { grid-column: 1 / -1; }
+    :host ::ng-deep nz-form-item { margin-bottom: 0 !important; }
+    :host ::ng-deep .ant-form-item { margin-bottom: 0 !important; }
+    :host ::ng-deep .ant-form-item-label { padding: 0 0 2px !important; }
+    :host ::ng-deep .ant-form-item-label > label { height: 22px !important; font-size: 12px !important; color: #374151 !important; font-weight: 500 !important; }
+    :host ::ng-deep .ant-form-item-control-input { min-height: 30px !important; }
+    :host ::ng-deep .ant-input { height: 32px !important; font-size: 13px !important; padding: 4px 10px !important; border-radius: 6px !important; transition: all 0.2s !important; }
+    :host ::ng-deep .ant-select { font-size: 13px !important; height: 32px !important; }
+    :host ::ng-deep .ant-select-selector { border-radius: 6px !important; padding: 0 10px !important; height: 32px !important; display: flex; align-items: center; }
+    :host ::ng-deep .ant-select-selection-item { line-height: 30px !important; font-size: 13px !important; }
+    :host ::ng-deep .ant-picker { height: 32px !important; border-radius: 6px !important; padding: 0 10px !important; width: 100% !important; }
+    :host ::ng-deep .ant-picker input { font-size: 13px !important; }
+    :host ::ng-deep .ant-checkbox-wrapper { font-size: 13px !important; }
+    :host ::ng-deep textarea.ant-input { height: auto !important; min-height: 60px !important; resize: vertical; }
+
+    /* ===== FORM INPUT FOCUS STYLING ===== */
+    :host ::ng-deep .ant-input:hover { border-color: #4361ee !important; }
+    :host ::ng-deep .ant-input:focus, :host ::ng-deep .ant-input-focused { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,0.12) !important; }
+    :host ::ng-deep .ant-select-selector:hover { border-color: #4361ee !important; }
+    :host ::ng-deep .ant-select-focused .ant-select-selector { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,0.12) !important; }
+    :host ::ng-deep .ant-picker:hover { border-color: #4361ee !important; }
+    :host ::ng-deep .ant-picker-focused { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,0.12) !important; }
+    :host ::ng-deep .ant-checkbox-checked .ant-checkbox-inner { background: #4361ee !important; border-color: #4361ee !important; }
 
     /* ===== ACTION BAR ===== */
     .action-bar {
@@ -214,41 +241,52 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
       align-items: center;
       background: #ffffff !important;
       border: 1px solid #e8eaed !important;
-      border-radius: 8px !important;
-      padding: 12px 24px;
-      margin-top: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      border-radius: 10px !important;
+      padding: 10px 20px;
+      margin-top: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       flex-shrink: 0;
     }
     .action-left { display: flex; align-items: center; }
-    .validation-summary { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #ef4444; font-weight: 500; background: #fef2f2; padding: 6px 14px; border-radius: 8px; }
-    .validation-summary i { font-size: 18px; color: #ef4444; }
-    .action-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .action-btn { min-width: 110px; border-radius: 8px; }
-    .action-btn i { margin-right: 4px; }
-    .action-bar button[nz-button][nzType="default"] {
+    .validation-summary { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #ef4444; font-weight: 500; background: #fef2f2; padding: 4px 12px; border-radius: 6px; }
+    .action-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .act-btn {
+      height: 34px; line-height: 34px; border-radius: 8px; font-size: 13px;
+      transition: all 0.2s; font-weight: 500;
+      min-width: 90px; text-align: center;
+    }
+    .act-btn i { margin-right: 4px; font-size: 14px; }
+    .act-btn[nzType="default"] {
       background: #ffffff !important;
       border: 1px solid #d1d5db !important;
-      color: #1a1a2e !important;
-      border-radius: 8px;
+      color: #374151 !important;
     }
-    .action-bar button[nz-button][nzType="default"]:hover {
-      border-color: #2563eb !important;
-      color: #2563eb !important;
-    }
-    .action-bar button[nz-button][nzType="primary"] {
-      background: #2563eb !important;
+    .act-btn[nzType="default"]:hover { border-color: #4361ee !important; color: #4361ee !important; box-shadow: 0 1px 4px rgba(67,97,238,0.1); }
+    .act-primary {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
       border: none !important;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
-      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(67,97,238,0.2) !important;
     }
+    .act-save {
+      background: linear-gradient(135deg, #1f3d6e, #16213e) !important;
+      border: none !important;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.3) !important;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar { width: 5px; }
+    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-thumb { background: #c1c7cd; border-radius: 3px; }
+    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-thumb:hover { background: #a0a7ae; }
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .action-bar { flex-direction: column; gap: 12px; }
+      :host ::ng-deep .form-grid, :host ::ng-deep .form-grid-3 { grid-template-columns: repeat(2, 1fr); }
+      :host ::ng-deep .form-grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .action-bar { flex-direction: column; gap: 8px; }
       .action-left { width: 100%; }
       .action-right { width: 100%; justify-content: flex-end; }
-      .action-btn { flex: 1; min-width: 0; font-size: 12px; padding: 4px 8px; }
+      .act-btn { flex: 1; min-width: 0; font-size: 12px; height: 32px; line-height: 32px; }
     }
   `]
 })

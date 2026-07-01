@@ -45,13 +45,13 @@ interface StatItem {
     PageHeaderComponent
   ],
   template: `
-    <div class="reports-page">
+    <div class="reports-page page-enter">
       <app-page-header icon="bar-chart" title="Reports" subtitle="Generate and export reports"
         [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Reports'}]">
       </app-page-header>
 
       <div class="reports-content">
-        <div nz-row [nzGutter]="[20, 20]" class="reports-row reports-row-main">
+        <div nz-row [nzGutter]="[12, 12]" class="reports-row reports-row-main">
           <div nz-col nzXs="24" nzMd="12" class="report-col">
             <nz-card class="report-card">
               <div class="card-header">
@@ -127,7 +127,7 @@ interface StatItem {
           </div>
         </div>
 
-        <div nz-row [nzGutter]="[20, 20]" class="reports-row">
+        <div nz-row [nzGutter]="[12, 12]" class="reports-row">
           <div nz-col nzXs="24" class="report-col">
             <nz-card class="report-card">
               <div class="card-header">
@@ -154,8 +154,10 @@ interface StatItem {
     </div>
   `,
   styles: [`
+    /* ── Page Layout ── */
     .reports-page {
-      height: calc(100vh - 64px - 48px);
+      height: 100%;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
@@ -165,8 +167,10 @@ interface StatItem {
       min-height: 0;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 12px;
+      padding: 12px;
       overflow-y: auto;
+      width: 100%;
     }
 
     .reports-row {
@@ -182,20 +186,21 @@ interface StatItem {
       display: flex;
     }
 
+    /* ── Report Cards ── */
     .report-card {
       flex: 1;
       display: flex;
       flex-direction: column;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border-light);
-      box-shadow: var(--shadow-sm);
+      border-radius: 8px;
+      border: 1px solid #e8ecf3;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
       transition: all 0.3s ease;
-      background: var(--color-card);
+      background: #fff;
     }
 
     .report-card:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
     .report-card ::ng-deep .ant-card-body {
@@ -209,20 +214,20 @@ interface StatItem {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      padding: 20px 20px 0;
+      padding: 14px 14px 0;
     }
 
     .card-icon-circle {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-primary-50), #ffffff);
+      background: linear-gradient(135deg, #e8ecf3, #ffffff);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       font-size: 18px;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
     }
 
     .card-header-text {
@@ -233,33 +238,34 @@ interface StatItem {
     .card-title {
       font-size: 16px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       margin: 0;
       line-height: 1.3;
     }
 
     .card-subtitle {
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: #666;
       margin: 2px 0 0;
       line-height: 1.4;
     }
 
     .card-body {
-      padding: 16px 20px 4px;
+      padding: 14px 14px 4px;
       flex: 1;
     }
 
     .card-body-stats {
-      padding-bottom: 16px;
+      padding-bottom: 14px;
     }
 
     .card-footer {
-      padding: 4px 20px 20px;
+      padding: 4px 14px 14px;
       display: flex;
       gap: 8px;
     }
 
+    /* ── Filters ── */
     .filter-row {
       display: flex;
       gap: 12px;
@@ -273,22 +279,56 @@ interface StatItem {
       display: block;
       font-size: 12px;
       font-weight: 600;
-      color: var(--color-text-secondary);
+      color: #666;
       margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
 
+    .report-card nz-select {
+      width: 100%;
+    }
+
+    .report-card ::ng-deep .ant-select-selector {
+      height: 36px !important;
+      border-radius: 6px !important;
+      border-color: #d9d9d9 !important;
+    }
+
+    .report-card ::ng-deep .ant-select-focused .ant-select-selector {
+      border-color: #1f3d6e !important;
+      box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
+    }
+
+    .report-card ::ng-deep .ant-select-selection-placeholder,
+    .report-card ::ng-deep .ant-select-selection-item {
+      line-height: 34px !important;
+      font-size: 13px;
+    }
+
+    /* ── Buttons ── */
     .action-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-size: 13px;
       height: 36px;
-      border-radius: var(--radius-md);
+      border-radius: 6px;
       padding: 0 16px;
     }
 
+    button[nz-button][nzType="primary"] {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border: none !important;
+      color: #fff !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
+    }
+    button[nz-button][nzType="primary"]:hover {
+      background: linear-gradient(135deg, #3a56d4, #2f0891) !important;
+      box-shadow: 0 4px 12px rgba(67,97,238,0.4) !important;
+    }
+
+    /* ── Stats Summary ── */
     .stats-summary {
       padding: 4px 0;
     }
@@ -298,11 +338,11 @@ interface StatItem {
       justify-content: space-between;
       align-items: center;
       padding: 10px 0;
-      border-bottom: 1px solid var(--color-border-light);
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .stat-row-alt {
-      background: var(--color-bg-alt);
+      background: #fafafa;
     }
 
     .stat-row-last {
@@ -317,22 +357,22 @@ interface StatItem {
 
     .stat-icon {
       font-size: 14px;
-      color: var(--color-text-muted);
+      color: #999;
       width: 16px;
       text-align: center;
     }
 
     .stat-label {
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: #666;
       font-weight: 500;
     }
 
     .stat-value {
       font-size: 16px;
       font-weight: 700;
-      color: var(--color-primary-500);
-      font-family: var(--font-mono);
+      color: #1f3d6e;
+      font-family: 'Courier New', Courier, monospace;
     }
 
     .stats-empty {
@@ -347,46 +387,48 @@ interface StatItem {
 
     .report-desc {
       font-size: 13px;
-      color: var(--color-text-secondary);
+      color: #666;
       line-height: 1.6;
       margin: 0;
       padding: 4px 0;
     }
 
-    .report-card nz-select {
-      width: 100%;
+    /* ── Page Enter Animation ── */
+    .page-enter {
+      animation: fadeSlideUp .35s ease-out;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .report-card ::ng-deep .ant-select-selector {
-      height: 36px !important;
-      border-radius: var(--radius-md) !important;
-    }
+    /* ── Scrollbar ── */
+    .reports-content::-webkit-scrollbar { width: 6px; }
+    .reports-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .reports-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .reports-content::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
 
-    .report-card ::ng-deep .ant-select-selection-placeholder,
-    .report-card ::ng-deep .ant-select-selection-item {
-      line-height: 34px !important;
-      font-size: 13px;
-    }
-
+    /* ── Responsive ── */
     @media (max-width: 767px) {
       .reports-content {
-        gap: 16px;
+        gap: 12px;
       }
 
       .filter-row {
         flex-direction: column;
+        gap: 8px;
       }
 
       .card-header {
-        padding: 16px 16px 0;
+        padding: 12px 12px 0;
       }
 
       .card-body {
-        padding: 12px 16px 4px;
+        padding: 12px 12px 4px;
       }
 
       .card-footer {
-        padding: 4px 16px 16px;
+        padding: 4px 12px 12px;
       }
     }
   `]

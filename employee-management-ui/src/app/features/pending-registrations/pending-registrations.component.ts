@@ -32,7 +32,7 @@ import { environment } from '../../../environments/environment';
     PageHeaderComponent
   ],
   template: `
-    <div class="pending-page">
+    <div class="pending-page page-enter">
       <app-page-header icon="audit" title="Pending Registrations" subtitle="Review and approve new joinee registrations"
         [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Pending Registrations'}]">
       </app-page-header>
@@ -226,17 +226,107 @@ import { environment } from '../../../environments/environment';
     </nz-modal>
   `,
   styles: [`
-    .pending-page { height: calc(100vh - 64px); display: flex; flex-direction: column; }
-    .pending-content { flex: 1; padding: 0 24px 24px; overflow-y: auto; }
-    .stats-row { display: flex; gap: 16px; margin-bottom: 16px; }
+    /* ── Page Layout ── */
+    .pending-page {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+    .pending-content {
+      flex: 1;
+      padding: 12px;
+      overflow: visible;
+      width: 100%;
+    }
+
+    /* ── Stats Row ── */
+    .stats-row { display: flex; gap: 8px; margin-bottom: 16px; }
     .stat-card { flex: 1; border-radius: 8px; }
     .stat-inner { display: flex; align-items: center; gap: 12px; }
     .stat-num { font-size: 24px; font-weight: 700; color: #1f3d6e; }
     .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Filters ── */
     .filter-row { margin-bottom: 12px; }
+    .filter-row nz-select { width: 200px; }
+    .filter-row ::ng-deep .ant-select-selector {
+      border-radius: 6px !important;
+      border-color: #d9d9d9 !important;
+    }
+    .filter-row ::ng-deep .ant-select-focused .ant-select-selector {
+      border-color: #1f3d6e !important;
+      box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
+    }
+
+    /* ── Table ── */
+    .pending-content ::ng-deep .ant-table-thead > tr > th {
+      background: #f8f9fc !important;
+      color: #1f3d6e !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      border-bottom: 2px solid #1f3d6e !important;
+      padding: 10px 12px !important;
+    }
+    .pending-content ::ng-deep .ant-table-tbody > tr > td {
+      padding: 8px 12px !important;
+    }
+    .pending-content ::ng-deep .ant-table-tbody > tr:hover > td {
+      background: #f8f9fc !important;
+    }
+
+    /* ── Buttons ── */
+    button[nz-button][nzType="primary"] {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border: none !important;
+      color: #fff !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
+    }
+    button[nz-button][nzType="primary"]:hover {
+      background: linear-gradient(135deg, #3a56d4, #2f0891) !important;
+      box-shadow: 0 4px 12px rgba(67,97,238,0.4) !important;
+    }
+    button[nz-button][nzType="primary"][nzDanger] {
+      background: linear-gradient(135deg, #ff4d4f, #c41d1d) !important;
+      box-shadow: 0 2px 6px rgba(255,77,79,0.3) !important;
+    }
     .btn-action { margin-left: 6px; }
+
+    /* ── Modals ── */
+    .pending-page ::ng-deep .ant-modal-header {
+      background: #1f3d6e !important;
+      border-radius: 8px 8px 0 0 !important;
+      padding: 14px 20px !important;
+    }
+    .pending-page ::ng-deep .ant-modal-title {
+      color: #fff !important;
+      font-size: 15px !important;
+      font-weight: 600 !important;
+    }
+    .pending-page ::ng-deep .ant-modal-close-x {
+      color: rgba(255,255,255,0.7) !important;
+    }
+    .pending-page ::ng-deep .ant-modal-close:hover .ant-modal-close-x {
+      color: #fff !important;
+    }
+    .pending-page ::ng-deep .ant-modal-content {
+      border-radius: 8px !important;
+      overflow: hidden !important;
+    }
+    .pending-page ::ng-deep .ant-modal-body {
+      padding: 20px !important;
+    }
+
+    /* ── Empty State ── */
     .empty-state { text-align: center; padding: 40px 0; color: #999; }
+    .empty-state p { margin: 8px 0 0; font-size: 14px; }
+
+    /* ── Detail Actions ── */
     .detail-actions { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+
+    /* ── QR Section ── */
     .qr-section { text-align: center; }
     .qr-container {
       display: inline-block; padding: 16px; background: #fff; border: 2px dashed #e0e0e0;
@@ -248,6 +338,21 @@ import { environment } from '../../../environments/environment';
     .url-label { font-size: 13px; font-weight: 600; color: #333; display: block; margin-bottom: 6px; }
     .url-box { display: flex; gap: 8px; }
     .url-box input { flex: 1; }
+
+    /* ── Page Enter Animation ── */
+    .page-enter {
+      animation: fadeSlideUp .35s ease-out;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Scrollbar ── */
+    .pending-content::-webkit-scrollbar { width: 6px; }
+    .pending-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+    .pending-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    .pending-content::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
   `]
 })
 export class PendingRegistrationsComponent implements OnInit {

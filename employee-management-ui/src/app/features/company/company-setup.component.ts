@@ -50,7 +50,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
         </button>
       </app-page-header>
 
-      <div nz-row nzGutter="24">
+      <div nz-row nzGutter="12">
         <!-- Left Column: Logo + Company Info -->
         <div nz-col nzXs="24" nzLg="16">
           <!-- Company Info Card -->
@@ -246,16 +246,16 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   `,
   styles: [`
     :host { display: block; }
-    .company-setup-container { max-width: 1400px; margin: 0 auto; }
+    .company-setup-container { width: 100%; padding: 12px; box-sizing: border-box; }
 
-    .setup-card { margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .setup-card .ant-card-head { border-bottom: 1px solid var(--color-border-light); padding: 16px 20px; min-height: auto; }
-    .setup-card .ant-card-head-title { font-size: 15px; font-weight: 700; color: var(--color-primary-500); }
-    .setup-card .ant-card-body { padding: 20px; }
+    .setup-card { margin-bottom: 12px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .setup-card .ant-card-head { border-bottom: 1px solid var(--color-border-light); padding: 12px 16px; min-height: auto; }
+    .setup-card .ant-card-head-title { font-size: 15px; font-weight: 700; color: #1f3d6e; }
+    .setup-card .ant-card-body { padding: 16px; }
 
     .card-body { max-width: 100%; }
 
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 8px; }
     .form-label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
     .form-label .required { color: #ff4d4f; }
 
@@ -266,11 +266,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     .placeholder-icon { font-size: 48px; color: var(--color-text-muted); opacity: 0.5; }
     .logo-placeholder p { font-size: 12px; color: var(--color-text-muted); margin: 0; }
     .logo-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .upload-btn { border-radius: var(--radius-md); }
+    .upload-btn { border-radius: var(--radius-md); border-color: #4361ee; color: #4361ee; }
+    .upload-btn:hover { border-color: #1f3d6e; color: #1f3d6e; }
     .logo-hint { font-size: 11px; color: var(--color-text-muted); margin: 0; text-align: center; }
 
     .documents-section { display: flex; flex-direction: column; gap: 12px; }
-    .add-doc-btn { width: 100%; border-radius: var(--radius-md); height: 40px; border-style: dashed; }
+    .add-doc-btn { width: 100%; border-radius: var(--radius-md); height: 40px; border-style: dashed; border-color: #4361ee; color: #4361ee; }
+    .add-doc-btn:hover { border-color: #1f3d6e; color: #1f3d6e; }
     .doc-table { width: 100%; }
     .doc-filename { font-size: 12px; color: #444; word-break: break-all; }
     .doc-date { font-size: 11px; color: #888; }
@@ -278,13 +280,18 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     .no-docs i { font-size: 32px; color: var(--color-text-muted); opacity: 0.4; }
     .no-docs p { font-size: 13px; color: var(--color-text-muted); margin: 0; }
 
-    .upload-modal-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+    .upload-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
     .file-upload-area { display: flex; align-items: center; gap: 12px; padding: 16px; border: 2px dashed var(--color-border-light); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; }
-    .file-upload-area:hover { border-color: var(--color-primary-500); background: var(--color-primary-50); }
-    .upload-area-icon { font-size: 24px; color: var(--color-primary-500); }
+    .file-upload-area:hover { border-color: #4361ee; background: rgba(67,97,238,.06); }
+    .upload-area-icon { font-size: 24px; color: #4361ee; }
+
+    /* Modal theme */
+    ::ng-deep .ant-modal-header { padding: 16px 24px; border-bottom: 1px solid var(--color-border-light); }
+    ::ng-deep .ant-modal-title { font-size: 16px; font-weight: 700; color: #1f3d6e; }
+    ::ng-deep .ant-modal-footer { padding: 12px 24px; border-top: 1px solid var(--color-border-light); }
 
     @media (max-width: 768px) {
-      .company-setup-container { padding: 0; }
+      .company-setup-container { padding: 8px; }
     }
   `]
 })

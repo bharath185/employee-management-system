@@ -40,7 +40,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     DateFormatPipe
   ],
   template: `
-    <div class="reports-container">
+    <div class="reports-container page-enter">
       <app-page-header icon="bar-chart" title="Download Reports" subtitle="Track and analyze document downloads"
         [breadcrumbs]="[
           {label: 'Dashboard', link: '/admin/dashboard'},
@@ -50,7 +50,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
       </app-page-header>
 
       <!-- Stats Cards -->
-      <div nz-row nzGutter="16" class="stats-row" *ngIf="stats">
+      <div nz-row nzGutter="12" class="stats-row" *ngIf="stats">
         <div nz-col nzXs="24" nzSm="8">
           <nz-card class="stat-card" nzBorderless>
             <nz-statistic [nzValue]="stats.totalDownloadsThisFY" nzTitle="Total Downloads (This FY)"
@@ -88,7 +88,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 
       <!-- Filters -->
       <nz-card class="filter-section" nzBorderless>
-        <div nz-row nzGutter="12" nzAlign="middle">
+        <div nz-row nzGutter="8" nzAlign="middle">
           <div nz-col nzXs="24" nzSm="8" nzMd="6" class="filter-field">
             <nz-select [(ngModel)]="filterFinancialYear" (ngModelChange)="loadLogs()" nzPlaceHolder="Financial Year">
               <nz-option nzValue="" nzLabel="All Years"></nz-option>
@@ -173,53 +173,156 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     </div>
   `,
   styles: [`
-    :host { display: block; }
-    .reports-container { max-width: 1400px; margin: 0 auto; }
+    /* ── Page Enter Animation ── */
+    @keyframes page-enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reports-container.page-enter {
+      animation: page-enter 0.35s ease-out;
+    }
 
-    .stats-row { margin-bottom: 24px; }
-    .stat-card { border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center; }
+    /* ── Scrollbar Styling ── */
+    .reports-container ::-webkit-scrollbar { width: 6px; height: 6px; }
+    .reports-container ::-webkit-scrollbar-track { background: transparent; }
+    .reports-container ::-webkit-scrollbar-thumb { background: rgba(31,61,110,0.2); border-radius: 3px; }
+    .reports-container ::-webkit-scrollbar-thumb:hover { background: rgba(31,61,110,0.35); }
 
-    .chart-card { margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .chart-card .ant-card-head { border-bottom: 1px solid var(--color-border-light); padding: 16px 20px; min-height: auto; }
-    .chart-card .ant-card-head-title { font-size: 15px; font-weight: 700; color: var(--color-primary-500); }
-    .chart-container { padding: 20px 0; }
-    .bar-chart { display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 8px; padding: 0 16px; }
-    .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+    :host { display: block; height: 100%; }
+    .reports-container {
+      width: 100%;
+      padding: 12px;
+      height: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stats-row { margin-bottom: 12px; flex-shrink: 0; }
+    .stat-card {
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border-light);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+
+    .chart-card {
+      margin-bottom: 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border-light);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      flex-shrink: 0;
+    }
+    .chart-card .ant-card-head {
+      border-bottom: 1px solid var(--color-border-light);
+      padding: 12px 16px;
+      min-height: auto;
+    }
+    .chart-card .ant-card-head-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3d6e;
+    }
+    .chart-container { padding: 16px 0; }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      height: 180px;
+      gap: 6px;
+      padding: 0 12px;
+    }
+    .bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; }
     .bar-label { font-size: 11px; color: #666; font-weight: 600; text-align: center; }
-    .bar-track { flex: 1; width: 100%; max-width: 40px; background: #f0f2f5; border-radius: var(--radius-md) var(--radius-md) 0 0; display: flex; align-items: flex-end; position: relative; }
-    .bar-fill { width: 100%; background: linear-gradient(180deg, var(--color-primary-400), var(--color-primary-500)); border-radius: var(--radius-md) var(--radius-md) 0 0; transition: height 0.3s ease; min-height: 4px; }
-    .bar-value { font-size: 12px; font-weight: 700; color: var(--color-primary-500); }
+    .bar-track {
+      flex: 1;
+      width: 100%;
+      max-width: 36px;
+      background: #f0f2f5;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+    }
+    .bar-fill {
+      width: 100%;
+      background: linear-gradient(180deg, #4361ee, #1f3d6e);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      transition: height 0.3s ease;
+      min-height: 4px;
+    }
+    .bar-value { font-size: 12px; font-weight: 700; color: #1f3d6e; }
 
-    .filter-section { background: #fff; border-radius: var(--radius-lg); margin-bottom: 20px; border: 1px solid var(--color-border-light); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
-    .filter-section .ant-card-body { padding: 12px 16px; }
+    .filter-section {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      border: 1px solid var(--color-border-light);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+    }
+    .filter-section .ant-card-body { padding: 10px 14px; }
     .filter-field { min-width: 0; }
     .filter-field .ant-select { width: 100%; }
+    .filter-field .ant-select-selector { border-radius: var(--radius-md) !important; height: 34px !important; }
     .filter-actions-col { display: flex; align-items: center; }
-    .clear-filter-btn { font-size: 13px; height: 36px; padding: 0 16px; border-radius: var(--radius-md); }
+    .clear-filter-btn { font-size: 13px; height: 34px; padding: 0 14px; border-radius: var(--radius-md); }
 
-    .table-container { background: #fff; border-radius: var(--radius-lg); box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--color-border-light); }
-    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-border-light); }
-    .table-title { font-size: 16px; font-weight: 700; color: var(--color-primary-500); display: flex; align-items: center; gap: 8px; }
-    .table-title i { font-size: 20px; }
-    .table-count { font-size: 12px; font-weight: 500; color: #6c757d; background: #f0f2f5; padding: 2px 10px; border-radius: var(--radius-pill); }
+    .table-container {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid var(--color-border-light);
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--color-border-light);
+      flex-shrink: 0;
+    }
+    .table-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3d6e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-title i { font-size: 18px; }
+    .table-count {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6c757d;
+      background: #f0f2f5;
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+    }
 
     .logs-table { width: 100%; }
     .logs-table .ant-table-thead > tr > th {
       background: #f8f9fc;
-      border-bottom: 2px solid #e8ebf0;
+      border-bottom: 2px solid #1f3d6e;
       font-size: 11px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      padding: 10px 12px;
+      padding: 8px 12px;
     }
     .logs-table .ant-table-tbody > tr > td {
       padding: 10px 12px;
       font-size: 13px;
       border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle;
     }
-    .logs-table .ant-table-tbody > tr:hover > td { background: #f0f4ff !important; }
+    .logs-table .ant-table-tbody > tr:hover > td { background: rgba(31,61,110,0.06) !important; }
 
     .emp-name { font-weight: 600; color: #1a1a2e; }
     .emp-code { font-size: 11px; color: #888; margin-left: 4px; }
@@ -227,14 +330,36 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     .fy-text { font-family: 'Cascadia Code', Consolas, monospace; font-size: 12px; color: #555; }
     .date-text { font-size: 12px; color: #555; }
 
-    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px; text-align: center; }
-    .empty-state .empty-icon { font-size: 48px; color: #d9d9d9; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; text-align: center; }
+    .empty-state .empty-icon { font-size: 40px; color: #d9d9d9; }
     .empty-state p { font-size: 13px; color: #999; margin: 0; }
 
-    .logs-table .ant-table-pagination { margin: 16px 20px !important; display: flex; align-items: center; justify-content: flex-end; }
+    .logs-table .ant-table-pagination {
+      margin: 12px 16px !important;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
 
     @media (max-width: 768px) {
       .filter-field { min-width: 140px; }
+      .reports-container { padding: 8px; }
+    }
+
+    /* ── Primary Button Gradient ── */
+    button[nz-button][nzType="primary"] {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border: none !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
+      transition: all 0.2s ease !important;
+    }
+    button[nz-button][nzType="primary"]:hover {
+      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
+      transform: translateY(-1px);
+    }
+    button[nz-button][nzType="primary"]:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
     }
   `]
 })

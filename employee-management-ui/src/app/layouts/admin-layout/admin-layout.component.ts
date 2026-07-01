@@ -452,11 +452,12 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       flex: 1 1 auto;
     }
     .main-content {
-      padding: 24px;
-      min-height: calc(100vh - 56px);
+      padding: 0;
+      height: calc(100vh - 56px);
       position: relative;
       background: #f5f6fa;
       animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+      overflow: hidden;
     }
     .main-content::before {
       content: '';

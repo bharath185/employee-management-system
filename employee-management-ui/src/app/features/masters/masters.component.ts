@@ -78,7 +78,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     PageHeaderComponent
   ],
   template: `
-    <div class="masters-page">
+    <div class="masters-page page-enter">
       <app-page-header icon="control" title="Masters Setup" subtitle="Manage dropdown values used throughout the application"
         [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Masters Setup'}]">
       </app-page-header>
@@ -231,23 +231,23 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       </div>
 
       <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
-        (nzOnCancel)="closeAddModal()" nzWidth="520px" [nzMaskClosable]="false">
+        (nzOnCancel)="closeAddModal()" nzWidth="520px" [nzMaskClosable]="false" class="master-add-modal">
         <ng-template nzModalContent>
           <div class="add-modal-body">
             <div class="add-field">
               <label class="add-label">Code <span class="required">*</span></label>
               <input [(ngModel)]="addCode" placeholder="Enter code (uppercase)" name="addCode"
-                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;text-transform:uppercase;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+                class="add-modal-input" style="text-transform:uppercase;" />
             </div>
             <div class="add-field">
               <label class="add-label">Display Value <span class="required">*</span></label>
               <input [(ngModel)]="addValue" placeholder="Enter display value" name="addValue"
-                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+                class="add-modal-input" />
             </div>
             <div class="add-field">
               <label class="add-label">Sort Order</label>
               <input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto" name="addSortOrder"
-                style="width:100%;padding:8px 12px;border:1.5px solid #d9d9d9;border-radius:6px;font-size:14px;outline:none;box-sizing:border-box;background:#fff;color:#333;" />
+                class="add-modal-input" />
             </div>
           </div>
         </ng-template>
@@ -261,10 +261,25 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     </div>
   `,
   styles: [`
+    /* ── Page Enter Animation ── */
+    @keyframes page-enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .masters-page.page-enter {
+      animation: page-enter 0.35s ease-out;
+    }
+
+    /* ── Scrollbar Styling ── */
+    .masters-page ::-webkit-scrollbar { width: 6px; height: 6px; }
+    .masters-page ::-webkit-scrollbar-track { background: transparent; }
+    .masters-page ::-webkit-scrollbar-thumb { background: rgba(31,61,110,0.2); border-radius: 3px; }
+    .masters-page ::-webkit-scrollbar-thumb:hover { background: rgba(31,61,110,0.35); }
+
     .masters-page {
-      max-width: 1400px;
-      margin: 0 auto;
-      height: calc(100vh - 64px - 48px);
+      width: 100%;
+      padding: 12px;
+      height: 100%;
       display: flex;
       flex-direction: column;
     }
@@ -272,7 +287,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .masters-layout {
       display: grid;
       grid-template-columns: 300px 1fr;
-      gap: 24px;
+      gap: 12px;
       flex: 1;
       min-height: 0;
     }
@@ -298,13 +313,13 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 16px 8px;
+      padding: 12px 12px 6px;
     }
 
     .categories-title {
       font-size: 15px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       margin: 0;
     }
 
@@ -317,7 +332,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .category-search {
-      padding: 8px 16px;
+      padding: 6px 12px;
     }
 
     .category-search nz-input-group {
@@ -326,10 +341,10 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
 
     .category-grid {
       flex: 1;
-      padding: 8px 12px 20px;
+      padding: 6px 8px 16px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       overflow-y: auto;
       min-height: 0;
     }
@@ -337,26 +352,26 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .category-card {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 6px 12px;
+      gap: 8px;
+      padding: 5px 10px;
       border-radius: var(--radius-md);
       border: 1.5px solid var(--color-border-light);
       background: var(--color-card);
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
-      min-height: 38px;
+      min-height: 34px;
     }
 
     .category-card:hover {
-      border-color: var(--color-primary-200);
+      border-color: rgba(31,61,110,0.15);
       box-shadow: 0 2px 8px rgba(31, 61, 110, 0.08);
       transform: translateX(2px);
     }
 
     .category-card.active {
-      border-color: var(--color-primary-500);
-      background: var(--color-primary-50);
+      border-color: #1f3d6e;
+      background: rgba(31,61,110,0.06);
       box-shadow: 0 2px 8px rgba(31, 61, 110, 0.12);
     }
 
@@ -367,7 +382,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       top: 0;
       bottom: 0;
       width: 3px;
-      background: var(--color-primary-500);
+      background: #1f3d6e;
       border-radius: 0 2px 2px 0;
     }
 
@@ -376,20 +391,20 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .category-card-icon {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
       border-radius: var(--radius-md);
       background: var(--color-bg-alt);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--color-text-secondary);
-      font-size: 14px;
+      font-size: 13px;
       transition: all 0.2s ease;
     }
 
     .category-card-icon.active-icon {
-      background: var(--color-primary-500);
+      background: #1f3d6e;
       color: #ffffff;
     }
 
@@ -397,7 +412,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       min-width: 0;
     }
 
@@ -411,7 +426,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .category-card.active .category-card-name {
-      color: var(--color-primary-500);
+      color: #1f3d6e;
     }
 
     .category-card-count {
@@ -422,8 +437,8 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
 
     .category-card-check {
       flex-shrink: 0;
-      color: var(--color-primary-500);
-      font-size: 16px;
+      color: #1f3d6e;
+      font-size: 14px;
     }
 
     .category-empty {
@@ -431,7 +446,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      padding: 32px 16px;
+      padding: 24px 12px;
       text-align: center;
     }
 
@@ -452,7 +467,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 80px 24px;
+      padding: 60px 24px;
       text-align: center;
       background: var(--color-card);
       border-radius: var(--radius-lg);
@@ -461,19 +476,19 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .empty-selection-icon {
-      width: 72px;
-      height: 72px;
+      width: 64px;
+      height: 64px;
       border-radius: var(--radius-full);
-      background: linear-gradient(135deg, var(--color-primary-50), var(--color-bg-alt));
+      background: linear-gradient(135deg, rgba(31,61,110,0.06), var(--color-bg-alt));
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .empty-selection-icon i {
-      font-size: 32px;
-      color: var(--color-primary-300);
+      font-size: 28px;
+      color: rgba(31,61,110,0.3);
     }
 
     .empty-selection h3 {
@@ -506,24 +521,24 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 20px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--color-border-light);
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 8px;
     }
 
     .data-card-title {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-size: 16px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
     }
 
     .data-card-title-icon {
-      font-size: 20px;
-      color: var(--color-primary-500);
+      font-size: 18px;
+      color: #1f3d6e;
     }
 
     .data-card-count {
@@ -531,19 +546,19 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       font-weight: 500;
       color: var(--color-text-secondary);
       background: var(--color-bg);
-      padding: 2px 12px;
+      padding: 2px 10px;
       border-radius: var(--radius-pill);
     }
 
     .data-card-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .table-search {
-      width: 200px;
+      width: 180px;
     }
 
     .table-search nz-input-group {
@@ -571,25 +586,25 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     nz-table ::ng-deep .ant-table-thead > tr > th {
-      background: var(--color-bg-alt);
-      color: var(--color-primary-500);
+      background: #f8f9fc;
+      color: #1f3d6e;
       font-weight: 700;
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      padding: 10px 12px;
-      border-bottom: 2px solid var(--color-primary-500);
+      padding: 8px 12px;
+      border-bottom: 2px solid #1f3d6e;
     }
 
     nz-table ::ng-deep .ant-table-tbody > tr > td {
-      padding: 10px 12px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--color-border-light);
       font-size: 13px;
       vertical-align: middle;
     }
 
     nz-table ::ng-deep .ant-table-tbody > tr:hover > td {
-      background: var(--color-primary-50) !important;
+      background: rgba(31,61,110,0.06) !important;
     }
 
     .table-row {
@@ -599,23 +614,23 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .code-chip {
       display: inline-block;
       background: var(--color-bg-dark);
-      padding: 2px 10px;
+      padding: 2px 8px;
       border-radius: var(--radius-sm);
       font-family: var(--font-mono);
       font-size: 12px;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       font-weight: 600;
       letter-spacing: 0.3px;
     }
 
     .editable-cell {
-      min-height: 28px;
+      min-height: 26px;
       display: flex;
       align-items: center;
     }
 
     .editable-value {
-      padding: 4px 8px;
+      padding: 3px 8px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       transition: background 0.15s ease;
@@ -625,8 +640,8 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .editable-value:hover {
-      background: var(--color-primary-50);
-      border-color: var(--color-primary-200);
+      background: rgba(31,61,110,0.06);
+      border-color: rgba(31,61,110,0.15);
     }
 
     .edit-inline-wrapper {
@@ -640,20 +655,20 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .inline-edit-input {
       flex: 1;
       border-radius: var(--radius-sm) !important;
-      border-color: var(--color-primary-500) !important;
-      box-shadow: 0 0 0 3px var(--color-primary-50) !important;
+      border-color: #1f3d6e !important;
+      box-shadow: 0 0 0 3px rgba(31,61,110,0.06) !important;
     }
 
     .edit-action-btn {
       padding: 0 4px !important;
-      height: 24px !important;
-      line-height: 24px !important;
-      min-width: 24px !important;
+      height: 22px !important;
+      line-height: 22px !important;
+      min-width: 22px !important;
     }
 
     .sort-order-badge {
       display: inline-block;
-      padding: 2px 10px;
+      padding: 2px 8px;
       border-radius: var(--radius-pill);
       background: var(--color-bg-alt);
       color: var(--color-text-secondary);
@@ -678,7 +693,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      padding: 32px;
+      padding: 24px;
       text-align: center;
     }
 
@@ -693,22 +708,39 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     .add-form nz-form-item {
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .add-form nz-form-item:last-child {
       margin-bottom: 0;
     }
 
-    .add-modal-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
-    .add-field { display: flex; flex-direction: column; gap: 6px; }
+    .add-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
+    .add-field { display: flex; flex-direction: column; gap: 4px; }
     .add-label { font-size: 13px; font-weight: 600; color: #333; }
     .add-label .required { color: #ff4d4f; }
-    .add-input { border-radius: var(--radius-md); padding: 6px 12px; }
+
+    .add-modal-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid #d9d9d9;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      box-sizing: border-box;
+      background: #fff;
+      color: #333;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .add-modal-input:focus {
+      border-color: #1f3d6e;
+      box-shadow: 0 0 0 3px rgba(31,61,110,0.12);
+    }
 
     @media (max-width: 768px) {
       .masters-page {
-        padding: 0;
+        padding: 8px;
       }
     }
 
@@ -718,8 +750,35 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     }
 
     ::ng-deep .ant-input-number-focused {
-      box-shadow: 0 0 0 3px var(--color-primary-50) !important;
-      border-color: var(--color-primary-500) !important;
+      box-shadow: 0 0 0 3px rgba(31,61,110,0.06) !important;
+      border-color: #1f3d6e !important;
+    }
+
+    /* ── Modal Title ── */
+    ::ng-deep .master-add-modal .ant-modal-title {
+      color: #1f3d6e !important;
+      font-weight: 700;
+    }
+
+    /* ── Switch Active Color ── */
+    ::ng-deep .ant-switch-checked {
+      background-color: #1f3d6e !important;
+    }
+
+    /* ── Primary Button Gradient ── */
+    button[nz-button][nzType="primary"] {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border: none !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
+      transition: all 0.2s ease !important;
+    }
+    button[nz-button][nzType="primary"]:hover {
+      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
+      transform: translateY(-1px);
+    }
+    button[nz-button][nzType="primary"]:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
     }
   `]
 })

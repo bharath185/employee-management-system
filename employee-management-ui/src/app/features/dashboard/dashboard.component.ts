@@ -56,7 +56,7 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
         </div>
 
         <!-- Stats -->
-        <div nz-row [nzGutter]="[10, 10]" class="dash-stats">
+        <div nz-row [nzGutter]="[6, 6]" class="dash-stats">
           <div nz-col nzXs="12" nzMd="6">
             <div class="dash-stat-card dash-stat-total">
               <div class="dash-stat-icon"><i nz-icon nzType="team"></i></div>
@@ -145,28 +145,29 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host { display: block; height: 100%; }
     .page-enter { animation: fadeSlideUp .35s ease-out; }
     @keyframes fadeSlideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 
-    .dash { height:calc(100vh - 56px - 48px); display:flex; flex-direction:column; gap:8px; max-width:1400px; margin:0 auto; overflow:hidden }
+    .dash { height:100%; display:flex; flex-direction:column; gap:6px; padding:12px; overflow:hidden }
 
     /* Top */
-    .dash-top { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; background:#fff; border:1px solid #e8eaed; border-radius:10px; padding:10px 18px; box-shadow:0 2px 8px rgba(0,0,0,.05) }
+    .dash-top { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; background:#fff; border:1px solid #e8eaed; border-radius:10px; padding:8px 12px; box-shadow:0 2px 8px rgba(0,0,0,.05) }
     .dash-top-left { display:flex; align-items:center; gap:12px }
-    .dash-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; box-shadow:0 2px 6px rgba(37,99,235,.3) }
+    .dash-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#1f3d6e,#16213e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; flex-shrink:0; box-shadow:0 2px 6px rgba(67,97,238,.3) }
     .dash-greeting { font-size:16px; font-weight:700; color:#1a1a2e; line-height:1.3 }
     .dash-meta { display:flex; align-items:center; gap:8px; margin-top:1px }
     .dash-date { font-size:11px; color:#6c757d }
     .dash-sep { width:3px; height:3px; border-radius:50%; background:#adb5bd }
-    .dash-count { font-size:11px; color:#2563eb; font-weight:600 }
-    .dash-add-btn { display:inline-flex; align-items:center; gap:5px; height:32px; border-radius:8px; font-weight:600; font-size:13px; box-shadow:0 2px 6px rgba(37,99,235,.25) }
+    .dash-count { font-size:11px; color:#4361ee; font-weight:600 }
+    .dash-add-btn { background:linear-gradient(135deg,#4361ee,#3a0ca3); border:none; display:inline-flex; align-items:center; gap:5px; height:32px; border-radius:8px; font-weight:600; font-size:13px; box-shadow:0 2px 6px rgba(67,97,238,.25) }
+    .dash-add-btn:hover { background:linear-gradient(135deg,#3a0ca3,#1f3d6e) }
 
     /* Stats */
     .dash-stats { flex-shrink:0 }
-    .dash-stat-card { background:#fff; border:1px solid #e8eaed; border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 4px rgba(0,0,0,.04); position:relative; overflow:hidden }
+    .dash-stat-card { background:#fff; border:1px solid #e8eaed; border-radius:10px; padding:8px 10px; display:flex; align-items:center; gap:6px; box-shadow:0 1px 4px rgba(0,0,0,.04); position:relative; overflow:hidden }
     .dash-stat-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px }
-    .dash-stat-total .dash-stat-icon { background:#eff6ff; color:#2563eb }
+    .dash-stat-total .dash-stat-icon { background:#eff6ff; color:#4361ee }
     .dash-stat-active .dash-stat-icon { background:#ecfdf5; color:#10b981 }
     .dash-stat-new .dash-stat-icon { background:#fef3c7; color:#f59e0b }
     .dash-stat-exit .dash-stat-icon { background:#fef2f2; color:#ef4444 }
@@ -180,25 +181,25 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
     .dash-stat-bar-fill { display:block; height:100%; background:linear-gradient(90deg,#10b981,#34d399); border-radius:0 2px 2px 0; transition:width .6s ease }
 
     /* Main */
-    .dash-main { flex:1; min-height:0; display:flex; gap:8px }
-    .dash-charts-grid { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:8px; min-height:0 }
+    .dash-main { flex:1; min-height:0; display:flex; gap:6px }
+    .dash-charts-grid { flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:6px; min-height:0 }
     .dash-chart-card { background:#fff; border:1px solid #e8eaed; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.04); display:flex; flex-direction:column; overflow:hidden; min-height:0 }
-    .dash-cc-title { flex-shrink:0; display:flex; align-items:center; gap:5px; padding:6px 12px; font-size:11px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #e8eaed; background:#fafbfc }
-    .dash-cc-title i[nz-icon] { color:#2563eb; font-size:13px }
+    .dash-cc-title { flex-shrink:0; display:flex; align-items:center; gap:5px; padding:5px 10px; font-size:11px; font-weight:600; color:#1a1a2e; border-bottom:1px solid #e8eaed; background:#fafbfc }
+    .dash-cc-title i[nz-icon] { color:#4361ee; font-size:13px }
     .dash-cc-sub { font-size:9px; color:#adb5bd; font-weight:400; margin-left:2px }
     .dash-cc-body { flex:1; width:100%; min-height:0 }
 
     /* Team */
     .dash-team { width:280px; flex-shrink:0; background:#fff; border:1px solid #e8eaed; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.04); display:flex; flex-direction:column; overflow:hidden }
-    .dash-team-head { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:9px 14px; border-bottom:1px solid #e8eaed; background:#fafbfc }
+    .dash-team-head { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #e8eaed; background:#fafbfc }
     .dash-team-heading { display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:#1a1a2e }
-    .dash-team-heading i[nz-icon] { color:#2563eb; font-size:13px }
-    .dash-team-all { font-size:11px; color:#2563eb; font-weight:500; display:inline-flex; align-items:center; gap:3px }
+    .dash-team-heading i[nz-icon] { color:#4361ee; font-size:13px }
+    .dash-team-all { font-size:11px; color:#4361ee; font-weight:500; display:inline-flex; align-items:center; gap:3px }
     .dash-team-body { flex:1; overflow-y:auto; min-height:0 }
-    .dash-team-row { display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; border-bottom:1px solid #f5f5f5; transition:background .12s }
+    .dash-team-row { display:flex; align-items:center; gap:6px; padding:6px 10px; cursor:pointer; border-bottom:1px solid #f5f5f5; transition:background .12s }
     .dash-team-row:hover { background:#f1f5f9 }
     .dash-team-row:last-child { border-bottom:none }
-    .dash-t-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0 }
+    .dash-t-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#1f3d6e,#16213e); color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0 }
     .dash-t-info { flex:1; min-width:0 }
     .dash-t-name { font-size:12px; font-weight:600; color:#1a1a2e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
     .dash-t-role { font-size:10px; color:#6c757d; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
@@ -321,7 +322,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         avoidLabelOverlap: true, padAngle: 0, itemStyle: { borderRadius: 2, borderColor: '#fff', borderWidth: 2 },
         label: { show: true, color: '#6c757d', fontSize: 10, formatter: '{b}\n{d}%', lineHeight: 12 },
         emphasis: { label: { fontSize: 11, fontWeight: 'bold' }, itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,0,0,.15)' } },
-        data: data.map((d, i) => ({ ...d, itemStyle: { color: ['#2563eb', '#f59e0b', '#ec4899'][i % 3] } }))
+        data: data.map((d, i) => ({ ...d, itemStyle: { color: ['#4361ee', '#f59e0b', '#ec4899'][i % 3] } }))
       }]
     };
   }
@@ -371,7 +372,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       xAxis: { type: 'category', data: names, axisLabel: { color: '#6c757d', fontSize: 9 }, axisLine: { lineStyle: { color: '#e8eaed' } }, axisTick: { show: false } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f2f5' } }, axisLabel: { color: '#6c757d', fontSize: 8, formatter: '₹{value}' } },
       series: [
-        { name: 'Gross', type: 'bar', barWidth: '22%', barGap: '10%', data: grossData, itemStyle: { color: hasData ? '#2563eb' : '#e8eaed', borderRadius: [3, 3, 0, 0] } },
+        { name: 'Gross', type: 'bar', barWidth: '22%', barGap: '10%', data: grossData, itemStyle: { color: hasData ? '#4361ee' : '#e8eaed', borderRadius: [3, 3, 0, 0] } },
         { name: 'Net', type: 'bar', barWidth: '22%', data: netData, itemStyle: { color: hasData ? '#10b981' : '#e8eaed', borderRadius: [3, 3, 0, 0] } },
         { name: 'Deductions', type: 'bar', barWidth: '22%', data: dedData, itemStyle: { color: hasData ? '#f59e0b' : '#e8eaed', borderRadius: [3, 3, 0, 0] } }
       ]

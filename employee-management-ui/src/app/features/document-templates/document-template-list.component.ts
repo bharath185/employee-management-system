@@ -47,7 +47,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     DateFormatPipe
   ],
   template: `
-    <div class="template-list-container">
+    <div class="template-list-container page-enter">
       <app-page-header icon="file-text" title="Document Templates" subtitle="Manage document templates for employee letters and certificates"
         [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Document Templates'}]">
         <button nz-button nzType="primary" routerLink="/admin/document-templates/new">
@@ -57,7 +57,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 
       <!-- Filters -->
       <nz-card class="filter-section" nzBorderless>
-        <div nz-row nzGutter="12" nzAlign="middle">
+        <div nz-row nzGutter="8" nzAlign="middle">
           <div nz-col nzXs="24" nzSm="12" nzMd="8" nzLg="8" class="filter-field-wrapper">
             <nz-input-group [nzPrefix]="searchIcon">
               <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search templates...">
@@ -182,72 +182,176 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     </div>
   `,
   styles: [`
-    :host { display: block; }
-    .template-list-container { max-width: 1400px; margin: 0 auto; }
+    /* ── Page Enter Animation ── */
+    @keyframes page-enter {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .template-list-container.page-enter {
+      animation: page-enter 0.35s ease-out;
+    }
 
-    .filter-section { background: #fff; border-radius: var(--radius-lg); margin-bottom: 20px; border: 1px solid var(--color-border-light); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
-    .filter-section .ant-card-body { padding: 12px 16px; }
+    /* ── Scrollbar Styling ── */
+    .template-list-container ::-webkit-scrollbar { width: 6px; height: 6px; }
+    .template-list-container ::-webkit-scrollbar-track { background: transparent; }
+    .template-list-container ::-webkit-scrollbar-thumb { background: rgba(31,61,110,0.2); border-radius: 3px; }
+    .template-list-container ::-webkit-scrollbar-thumb:hover { background: rgba(31,61,110,0.35); }
+
+    :host { display: block; height: 100%; }
+    .template-list-container {
+      width: 100%;
+      padding: 12px;
+      height: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-section {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      margin-bottom: 12px;
+      border: 1px solid var(--color-border-light);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+    }
+    .filter-section .ant-card-body { padding: 10px 14px; }
     .filter-field-wrapper { min-width: 0; }
     .filter-field { min-width: 0; }
     .filter-field .ant-select { width: 100%; }
-    .filter-field .ant-select-selector { border-radius: var(--radius-md) !important; height: 36px !important; }
+    .filter-field .ant-select-selector { border-radius: var(--radius-md) !important; height: 34px !important; }
     .filter-actions-col { display: flex; align-items: center; }
-    .clear-filter-btn { font-size: 13px; height: 36px; padding: 0 16px; border-radius: var(--radius-md); }
+    .clear-filter-btn { font-size: 13px; height: 34px; padding: 0 14px; border-radius: var(--radius-md); }
 
-    .table-container { background: #fff; border-radius: var(--radius-lg); box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--color-border-light); }
-    .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--color-border-light); flex-wrap: wrap; gap: 12px; }
-    .table-title { font-size: 16px; font-weight: 700; color: var(--color-primary-500); display: flex; align-items: center; gap: 8px; }
-    .table-title i { font-size: 20px; }
-    .table-count { font-size: 12px; font-weight: 500; color: #6c757d; background: #f0f2f5; padding: 2px 10px; border-radius: var(--radius-pill); }
+    .table-container {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border: 1px solid var(--color-border-light);
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--color-border-light);
+      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .table-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3d6e;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-title i { font-size: 18px; }
+    .table-count {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6c757d;
+      background: #f0f2f5;
+      padding: 2px 10px;
+      border-radius: var(--radius-pill);
+    }
 
     .template-table { width: 100%; }
     .template-table .ant-table-thead > tr > th {
       background: #f8f9fc;
-      border-bottom: 2px solid #e8ebf0;
+      border-bottom: 2px solid #1f3d6e;
       font-size: 11px;
       font-weight: 700;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       text-transform: uppercase;
       letter-spacing: 0.8px;
-      padding: 10px 12px;
+      padding: 8px 12px;
       white-space: nowrap;
     }
     .template-table .ant-table-tbody > tr > td {
-      padding: 12px 12px;
+      padding: 10px 12px;
       font-size: 13px;
       border-bottom: 1px solid #f0f2f5;
       vertical-align: middle;
     }
     .template-table .ant-table-tbody > tr:hover > td {
-      background: #f0f4ff !important;
+      background: rgba(31,61,110,0.06) !important;
     }
 
     .template-name { font-weight: 600; color: #1a1a2e; }
 
-    .desc-text { font-size: 12px; color: #666; max-width: 200px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .desc-text {
+      font-size: 12px;
+      color: #666;
+      max-width: 200px;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     .date-text { font-size: 12px; color: #555; }
 
     .row-actions-cell { display: flex; justify-content: center; align-items: center; }
-    .actions-btn { min-width: 36px; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); background: transparent; transition: all 0.15s; border: none; }
-    .actions-btn i { font-size: 20px; color: #8a94a6; }
-    .template-table .ant-table-tbody > tr:hover .actions-btn { background: #f0f4ff; }
-    .template-table .ant-table-tbody > tr:hover .actions-btn i { color: var(--color-primary-500); }
+    .actions-btn {
+      min-width: 32px;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      background: transparent;
+      transition: all 0.15s;
+      border: none;
+    }
+    .actions-btn i { font-size: 18px; color: #8a94a6; }
+    .template-table .ant-table-tbody > tr:hover .actions-btn { background: rgba(31,61,110,0.06); }
+    .template-table .ant-table-tbody > tr:hover .actions-btn i { color: #1f3d6e; }
 
     .row-menu { border-radius: var(--radius-md); padding: 6px; min-width: 180px; }
-    .row-menu .ant-dropdown-menu-item { border-radius: var(--radius-md); font-size: 13px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
-    .row-menu .ant-dropdown-menu-item i { font-size: 16px; }
+    .row-menu .ant-dropdown-menu-item {
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .row-menu .ant-dropdown-menu-item i { font-size: 15px; }
     .delete-action { color: #dc3545; }
     .delete-action:hover { color: #c82333 !important; }
 
-    .empty-state-content { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px 16px; text-align: center; }
-    .empty-icon-wrapper { width: 72px; height: 72px; border-radius: var(--radius-full); background: #f0f4ff; display: flex; align-items: center; justify-content: center; }
-    .empty-icon-wrapper .empty-icon { font-size: 36px; color: var(--color-primary-500); opacity: 0.5; }
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 40px 16px;
+      text-align: center;
+    }
+    .empty-icon-wrapper {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-full);
+      background: rgba(31,61,110,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon-wrapper .empty-icon { font-size: 32px; color: #1f3d6e; opacity: 0.5; }
     .empty-state-content h3 { font-size: 17px; font-weight: 600; color: #333; margin: 0; }
     .empty-state-content p { font-size: 13px; color: #888; margin: 0; max-width: 320px; }
 
     .template-table .ant-table-pagination {
-      margin: 16px 20px !important;
+      margin: 12px 16px !important;
       display: flex;
       align-items: center;
       justify-content: flex-end;
@@ -256,6 +360,28 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     @media (max-width: 768px) {
       .filter-field { min-width: 140px; }
       .table-header { flex-direction: column; align-items: flex-start; }
+      .template-list-container { padding: 8px; }
+    }
+
+    /* ── Switch Active Color ── */
+    ::ng-deep .ant-switch-checked {
+      background-color: #1f3d6e !important;
+    }
+
+    /* ── Primary Button Gradient ── */
+    button[nz-button][nzType="primary"] {
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border: none !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
+      transition: all 0.2s ease !important;
+    }
+    button[nz-button][nzType="primary"]:hover {
+      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
+      transform: translateY(-1px);
+    }
+    button[nz-button][nzType="primary"]:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
     }
   `]
 })
