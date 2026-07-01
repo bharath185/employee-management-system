@@ -87,13 +87,16 @@ public class AttendanceService {
     public void bulkUpsert(List<AttendanceDTO> records) {
         for (AttendanceDTO dto : records) {
             if (dto.getStatus() == null || dto.getStatus().isBlank()) continue;
+            Employee employee = employeeRepository.findById(dto.getEmployeeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + dto.getEmployeeId()));
             AttendanceRecord record = attendanceRepository
                 .findByEmployeeIdAndAttendanceDate(dto.getEmployeeId(), dto.getDate())
                 .orElseGet(() -> AttendanceRecord.builder()
-                    .employee(employeeRepository.getReferenceById(dto.getEmployeeId()))
+                    .employee(employee)
                     .attendanceDate(dto.getDate())
                     .build());
             record.setStatus(dto.getStatus());
+            record.setEmployee(employee);
             attendanceRepository.save(record);
         }
         log.info("Attendance bulk upsert: {} records", records.size());
@@ -213,6 +216,7 @@ public class AttendanceService {
                             .attendanceDate(date)
                             .build());
                     record.setStatus(status);
+                    if (record.getEmployee() == null) record.setEmployee(emp);
                     attendanceRepository.save(record);
                     imported++;
                 }
