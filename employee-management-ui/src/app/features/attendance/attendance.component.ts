@@ -6,11 +6,11 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
-import { MonthlyAttendance, DayColumn, EmployeeAttendance, SummaryRow, AttendanceRecord } from '../../core/models/attendance.models';
+import { MonthlyAttendance, EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -18,151 +18,250 @@ import { saveAs } from 'file-saver';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzCardModule, NzSpinModule
+    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule
   ],
   template: `
-    <div class="page-header">
-      <h2>Attendance - {{ data?.monthLabel || '' }}</h2>
-      <div class="header-actions">
-        <div class="month-nav">
-          <button nz-button nzType="text" (click)="changeMonth(-1)">
-            <i nz-icon nzType="left"></i>
-          </button>
-          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" style="width:90px">
-            <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-          </nz-select>
-          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" style="width:130px">
-            <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-          </nz-select>
-          <button nz-button nzType="text" (click)="changeMonth(1)">
-            <i nz-icon nzType="right"></i>
-          </button>
+    <div class="att-container">
+      <div class="att-header">
+        <div class="att-title">
+          <span class="att-logo">ATTENDANCE</span>
+          <span class="att-period">{{ data?.monthLabel || '' }}</span>
         </div>
-        <div class="action-buttons">
-          <button nz-button (click)="exportExcel()" [disabled]="loading">
-            <i nz-icon nzType="download"></i> Export
-          </button>
-          <button nz-button (click)="importFile.click()" [disabled]="loading">
-            <i nz-icon nzType="upload"></i> Import
-          </button>
-          <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
-          <button nz-button *ngIf="isCurrentMonth" [nzType]="isEditMode ? 'primary' : 'default'" (click)="toggleEdit()">
-            <i nz-icon [nzType]="isEditMode ? 'save' : 'edit'"></i>
-            {{ isEditMode ? 'Save' : 'Edit' }}
-          </button>
+        <div class="att-toolbar">
+          <div class="month-nav">
+            <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(-1)">
+              <i nz-icon nzType="left"></i>
+            </button>
+            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" style="width:76px">
+              <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" style="width:100px">
+              <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label.substring(0,3)"></nz-option>
+            </nz-select>
+            <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
+              <i nz-icon nzType="right"></i>
+            </button>
+          </div>
+          <div class="toolbar-actions">
+            <button nz-button nzSize="small" (click)="exportExcel()" [disabled]="loading">
+              <i nz-icon nzType="download"></i>
+            </button>
+            <button nz-button nzSize="small" (click)="importFile.click()" [disabled]="loading">
+              <i nz-icon nzType="upload"></i>
+            </button>
+            <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
+            <button nz-button nzSize="small" *ngIf="isCurrentMonth"
+              [nzType]="isEditMode ? 'primary' : 'default'"
+              (click)="toggleEdit()">
+              <i nz-icon [nzType]="isEditMode ? 'save' : 'edit'"></i>
+              {{ isEditMode ? 'Save' : 'Edit' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="summary-cards" *ngIf="data">
-      <nz-card *ngFor="let row of data.summaryRows || []" class="summary-card" [ngStyle]="{'border-top': '3px solid ' + summaryColor(row.label)}">
-        <div class="summary-card-label">{{ row.label }}</div>
-        <div class="summary-card-value">{{ row.total }}</div>
-      </nz-card>
-    </div>
+      <div class="summary-section" *ngIf="data">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th class="sum-label"></th>
+              <th class="sum-spacer"></th>
+              <th *ngFor="let col of data.dayColumns; let i = index"
+                  class="sum-day" [class.weekend]="col.dayOfWeek === 'Sun'">
+                <span class="sum-day-name">{{ col.dayOfWeek }}</span>
+                <span class="sum-day-num">{{ col.dayNumber }}</span>
+              </th>
+              <th class="sum-total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of data.summaryRows" class="sum-row">
+              <td class="sum-label">
+                <span class="sum-badge" [style.background]="sumColor(row.label)"></span>
+                {{ row.label }}
+              </td>
+              <td class="sum-spacer"></td>
+              <td *ngFor="let c of row.dailyCounts; let i = index"
+                  class="sum-day" [class.weekend]="isSunDay(i)">
+                <span class="sum-val" [class.highlight]="c > 0">{{ c || '-' }}</span>
+              </td>
+              <td class="sum-total"><strong>{{ row.total }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <nz-table #attTable
-      [nzData]="data?.employees || []"
-      [nzLoading]="loading"
-      [nzFrontPagination]="false"
-      [nzShowPagination]="!!(data && data.totalEmployees > size)"
-      [nzPageIndex]="page + 1"
-      [nzPageSize]="size"
-      [nzTotal]="(data && data.totalEmployees) || 0"
-      (nzPageIndexChange)="onPageIndexChange($event)"
-      (nzPageSizeChange)="onPageSizeChange($event)"
-      nzBordered
-      nzSize="small"
-      [nzScroll]="{ x: scrollX }"
-      [nzShowSizeChanger]="true"
-      [nzPageSizeOptions]="[10, 20, 50, 100]">
-      <thead>
-        <tr>
-          <th rowSpan="2" style="min-width:50px;text-align:center">S.No</th>
-          <th rowSpan="2" style="min-width:50px">Gender</th>
-          <th rowSpan="2" style="min-width:90px">EmpCode</th>
-          <th rowSpan="2" style="min-width:160px">Employee Name</th>
-          <th rowSpan="2" style="min-width:100px">Department</th>
-          <th rowSpan="2" style="min-width:80px">DOJ</th>
-          <th rowSpan="2" style="min-width:55px">Vintage</th>
-          <th [attr.colSpan]="(data && data.dayColumns.length) || 31" style="text-align:center">
-            {{ data?.monthLabel || '' }} (26 prev - 25 current)
-          </th>
-          <th rowSpan="2" style="min-width:55px;text-align:center">Total P</th>
-          <th rowSpan="2" style="min-width:55px;text-align:center">Leaves</th>
-          <th rowSpan="2" style="min-width:55px;text-align:center">Total ML</th>
-          <th rowSpan="2" style="min-width:55px;text-align:center">Total Lv</th>
-        </tr>
-        <tr>
-          <th *ngFor="let col of data?.dayColumns; let i = index"
-              style="width:32px;text-align:center;padding:2px 0;font-size:11px"
-              [class.weekend]="col.dayOfWeek === 'Sun'"
-              [class.saturday]="col.dayOfWeek === 'Sat'">
-            <div class="day-col-header">
-              <span class="day-week">{{ col.dayOfWeek }}</span>
-              <span class="day-num">{{ col.dayNumber }}</span>
-            </div>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let emp of attTable.data">
-          <td style="text-align:center">{{ emp.serialNo }}</td>
-          <td>{{ emp.gender }}</td>
-          <td><strong>{{ emp.employeeCode }}</strong></td>
-          <td style="white-space:nowrap">{{ emp.employeeName }}</td>
-          <td>{{ emp.department }}</td>
-          <td style="font-size:11px">{{ emp.doj }}</td>
-          <td style="text-align:center">{{ emp.vintage }}</td>
-          <td *ngFor="let s of emp.days; let di = index" style="text-align:center;padding:2px">
-            <ng-container *ngIf="!isEditMode">
-              <nz-tag *ngIf="s" [nzColor]="statusColor(s)" class="cell-tag">{{ s }}</nz-tag>
-              <span *ngIf="!s" class="cell-empty">-</span>
-            </ng-container>
-            <nz-select *ngIf="isEditMode"
-              [(ngModel)]="emp.days[di]"
-              (ngModelChange)="markChanged(emp.employeeId, di, $event)"
-              nzSize="small" style="width:36px" [nzDropdownMatchSelectWidth]="false">
-              <nz-option nzValue="" nzLabel="-"></nz-option>
-              <nz-option nzValue="P" nzLabel="P"></nz-option>
-              <nz-option nzValue="A" nzLabel="A"></nz-option>
-              <nz-option nzValue="L" nzLabel="L"></nz-option>
-              <nz-option nzValue="ML" nzLabel="ML"></nz-option>
-              <nz-option nzValue="H" nzLabel="H"></nz-option>
-              <nz-option nzValue="WO" nzLabel="WO"></nz-option>
-              <nz-option nzValue="R" nzLabel="R"></nz-option>
-              <nz-option nzValue="CO" nzLabel="CO"></nz-option>
-            </nz-select>
-          </td>
-          <td style="text-align:center"><nz-tag nzColor="green" class="cell-tag">{{ emp.totalPresent }}</nz-tag></td>
-          <td style="text-align:center"><nz-tag nzColor="orange" class="cell-tag">{{ emp.totalLeave }}</nz-tag></td>
-          <td style="text-align:center"><nz-tag nzColor="purple" class="cell-tag">{{ emp.totalML }}</nz-tag></td>
-          <td style="text-align:center"><b>{{ emp.totalLeave + emp.totalML }}</b></td>
-        </tr>
-      </tbody>
-    </nz-table>
+      <div class="table-wrap">
+        <nz-table #attTable
+          [nzData]="data?.employees || []"
+          [nzLoading]="loading"
+          [nzFrontPagination]="false"
+          [nzShowPagination]="!!(data && data.totalEmployees > size)"
+          [nzPageIndex]="page + 1"
+          [nzPageSize]="size"
+          [nzTotal]="(data && data.totalEmployees) || 0"
+          (nzPageIndexChange)="onPageIndexChange($event)"
+          (nzPageSizeChange)="onPageSizeChange($event)"
+          nzBordered nzSize="small"
+          [nzScroll]="{ x: scrollX }"
+          [nzShowSizeChanger]="true"
+          [nzPageSizeOptions]="[10,20,50,100]"
+          [nzHideOnSinglePage]="true">
+          <thead>
+            <tr>
+              <th rowSpan="2" class="th-sno">#</th>
+              <th rowSpan="2" class="th-emp">Emp Code</th>
+              <th [attr.colSpan]="dayColCount()" class="th-days">
+                {{ data?.monthLabel || '' }} <span class="th-range">(26 {{ prevMonthAbbr }} - 25 {{ curMonthAbbr }})</span>
+              </th>
+              <th rowSpan="2" class="th-sum">P</th>
+              <th rowSpan="2" class="th-sum">Lv</th>
+              <th rowSpan="2" class="th-sum">ML</th>
+              <th rowSpan="2" class="th-sum">Lv+</th>
+            </tr>
+            <tr>
+              <th *ngFor="let col of data?.dayColumns; let i = index"
+                  class="th-day" [class.weekend]="col.dayOfWeek === 'Sun'">
+                <span class="dw">{{ col.dayOfWeek }}</span>
+                <span class="dn">{{ col.dayNumber }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let emp of attTable.data; let idx = index" class="emp-row">
+              <td class="td-sno">{{ emp.serialNo }}</td>
+              <td class="td-emp" [nz-popover]="empPop" nzPopoverTrigger="hover" nzPopoverPlacement="right" [nzPopoverMouseEnterDelay]="0.2">
+                <span class="emp-code">{{ emp.employeeCode }}</span>
+                <ng-template #empPop>
+                  <div class="emp-popover">
+                    <div class="pop-header">{{ emp.employeeName }}</div>
+                    <div class="pop-body">
+                      <div class="pop-row"><span class="pop-lbl">Emp Code</span><span class="pop-val">{{ emp.employeeCode }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">Gender</span><span class="pop-val">{{ emp.gender || '-' }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">Department</span><span class="pop-val">{{ emp.department || '-' }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">Designation</span><span class="pop-val">{{ emp.designation || '-' }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">DOJ</span><span class="pop-val">{{ emp.doj || '-' }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">Vintage</span><span class="pop-val">{{ emp.vintage }} months</span></div>
+                    </div>
+                  </div>
+                </ng-template>
+              </td>
+              <td *ngFor="let s of emp.days; let di = index" class="td-day" [class.weekend]="isSunDay(di)">
+                <ng-container *ngIf="!isEditMode; else editCell">
+                  <span *ngIf="s" class="day-status" [style.background]="statusBg(s)" [style.color]="statusFg(s)">{{ s }}</span>
+                  <span *ngIf="!s" class="day-empty">·</span>
+                </ng-container>
+                <ng-template #editCell>
+                  <nz-select
+                    [(ngModel)]="emp.days[di]"
+                    (ngModelChange)="markChanged(emp.employeeId, di, $event)"
+                    nzSize="small"
+                    class="day-select"
+                    [nzDropdownMatchSelectWidth]="false"
+                    nzDropdownClassName="att-dropdown">
+                    <nz-option nzValue="" nzLabel="—"></nz-option>
+                    <nz-option nzValue="P" nzLabel="P" nzCustomContent>
+                      <span class="opt-p">P</span>
+                    </nz-option>
+                    <nz-option nzValue="A" nzLabel="A" nzCustomContent>
+                      <span class="opt-a">A</span>
+                    </nz-option>
+                    <nz-option nzValue="L" nzLabel="L" nzCustomContent>
+                      <span class="opt-l">L</span>
+                    </nz-option>
+                    <nz-option nzValue="ML" nzLabel="ML" nzCustomContent>
+                      <span class="opt-ml">ML</span>
+                    </nz-option>
+                    <nz-option nzValue="H" nzLabel="H" nzCustomContent>
+                      <span class="opt-h">H</span>
+                    </nz-option>
+                    <nz-option nzValue="WO" nzLabel="WO" nzCustomContent>
+                      <span class="opt-wo">WO</span>
+                    </nz-option>
+                    <nz-option nzValue="R" nzLabel="R" nzCustomContent>
+                      <span class="opt-r">R</span>
+                    </nz-option>
+                    <nz-option nzValue="CO" nzLabel="CO" nzCustomContent>
+                      <span class="opt-co">CO</span>
+                    </nz-option>
+                  </nz-select>
+                </ng-template>
+              </td>
+              <td class="td-sum"><span class="stat-p">{{ emp.totalPresent }}</span></td>
+              <td class="td-sum"><span class="stat-l">{{ emp.totalLeave }}</span></td>
+              <td class="td-sum"><span class="stat-ml">{{ emp.totalML }}</span></td>
+              <td class="td-sum"><b>{{ emp.totalLeave + emp.totalML }}</b></td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </div>
   `,
   styles: [`
-    .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
-    .page-header h2 { margin:0; font-size:20px; font-weight:600; }
-    .header-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .month-nav { display:flex; align-items:center; gap:2px; background:#fff; border:1px solid #e8eaed; border-radius:8px; padding:2px 4px; }
-    .action-buttons { display:flex; align-items:center; gap:6px; }
-    .summary-cards { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
-    .summary-card { flex:1; min-width:120px; text-align:center; border-radius:6px; }
-    .summary-card-label { font-size:11px; color:#888; text-transform:uppercase; letter-spacing:0.5px; }
-    .summary-card-value { font-size:22px; font-weight:700; color:#1a1a2e; margin-top:4px; }
-    .day-col-header { display:flex; flex-direction:column; align-items:center; line-height:1.2; }
-    .day-week { font-size:9px; color:#888; }
-    .day-num { font-size:12px; font-weight:600; }
-    .weekend { background:#fff1f0 !important; }
-    .saturday { background:#f6f8fa !important; }
-    .cell-tag { margin:0; font-size:11px; line-height:16px; height:18px; min-width:22px; text-align:center; }
-    .cell-empty { color:#ddd; font-size:12px; }
-    :host ::ng-deep .ant-table-thead > tr > th { background:#fafafa !important; font-size:12px; font-weight:600; padding:4px 6px; }
-    :host ::ng-deep .ant-table-tbody > tr > td { padding:3px 5px; font-size:12px; }
-    :host ::ng-deep .ant-select-small { font-size:11px; }
-    :host ::ng-deep .ant-table-pagination { margin-top:12px; }
+    .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+    .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px; }
+    .att-title { display:flex; align-items:baseline; gap:10px; }
+    .att-logo { font-size:16px; font-weight:700; color:#1a1a2e; letter-spacing:1px; }
+    .att-period { font-size:13px; color:#666; font-weight:500; }
+    .att-toolbar { display:flex; align-items:center; gap:8px; }
+    .month-nav { display:flex; align-items:center; gap:1px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:1px 3px; }
+    .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:4px; color:#555; }
+    .nav-btn:hover { background:#f0f0f0; color:#1a1a2e; }
+    .toolbar-actions { display:flex; align-items:center; gap:4px; }
+    .toolbar-actions button { height:28px; font-size:12px; border-radius:4px; }
+    .summary-section { margin-bottom:8px; overflow-x:auto; background:#fff; border:1px solid #e8eaed; border-radius:6px; }
+    .summary-table { width:100%; border-collapse:collapse; font-size:11px; min-width:600px; }
+    .summary-table th, .summary-table td { padding:2px 3px; text-align:center; border-right:1px solid #f0f0f0; white-space:nowrap; }
+    .summary-table thead th { background:#f5f6fa; font-weight:600; color:#555; font-size:10px; padding:3px 2px; border-bottom:1px solid #e0e0e0; }
+    .sum-label { text-align:left !important; font-weight:600; color:#333; font-size:11px; padding-left:8px !important; width:110px; }
+    .sum-spacer { width:4px !important; min-width:4px; padding:0 !important; border:none !important; background:transparent !important; }
+    .sum-badge { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+    .sum-val { font-weight:500; }
+    .sum-val.highlight { color:#1a1a2e; font-weight:600; }
+    .sum-total { font-weight:700; color:#1a1a2e; min-width:45px; border-left:1px solid #e0e0e0; }
+    .sum-row:hover td { background:#fafbfc; }
+    .table-wrap { background:#fff; border:1px solid #e8eaed; border-radius:6px; overflow:hidden; }
+    .th-days { text-align:center !important; font-size:12px; padding:4px 8px !important; }
+    .th-range { font-weight:400; color:#999; font-size:10px; }
+    .th-sno { width:36px; min-width:36px; text-align:center !important; padding:4px 2px !important; font-size:11px; }
+    .th-emp { width:85px; min-width:85px; text-align:center !important; padding:4px 4px !important; font-size:11px; }
+    .th-day { width:32px; min-width:32px; text-align:center !important; padding:2px 0 !important; font-size:10px; line-height:1.2; }
+    .th-sum { width:35px; min-width:35px; text-align:center !important; padding:4px 2px !important; font-size:10px; font-weight:700; }
+    .dw { display:block; font-size:9px; color:#888; }
+    .dn { display:block; font-size:11px; font-weight:700; color:#333; }
+    .weekend { background:#fff5f5 !important; }
+    .emp-row { transition:background .15s; }
+    .emp-row:hover { background:#f5f8ff; }
+    .td-sno { text-align:center !important; font-size:11px; color:#888; padding:4px 2px !important; }
+    .td-emp { text-align:center !important; padding:4px 4px !important; cursor:pointer; }
+    .emp-code { font-weight:700; font-size:12px; color:#2563eb; letter-spacing:0.3px; }
+    .emp-code:hover { color:#1d4ed8; text-decoration:underline; }
+    .td-day { text-align:center !important; padding:3px 1px !important; font-size:11px; }
+    .day-status { display:inline-block; width:22px; height:18px; line-height:18px; border-radius:3px; font-size:10px; font-weight:700; text-align:center; }
+    .day-empty { color:#e0e0e0; font-size:14px; }
+    .day-select { width:36px !important; }
+    .day-select .ant-select-selection-item { font-size:11px; font-weight:700; text-align:center; }
+    .td-sum { text-align:center !important; font-size:12px; padding:4px 2px !important; }
+    .stat-p { color:#52c41a; font-weight:700; }
+    .stat-l { color:#fa8c16; font-weight:600; }
+    .stat-ml { color:#722ed1; font-weight:600; }
+    .emp-popover { min-width:200px; }
+    .pop-header { font-size:14px; font-weight:700; color:#1a1a2e; border-bottom:1px solid #eee; padding-bottom:6px; margin-bottom:6px; }
+    .pop-body { font-size:12px; }
+    .pop-row { display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px dashed #f5f5f5; }
+    .pop-row:last-child { border:none; }
+    .pop-lbl { color:#888; margin-right:12px; min-width:72px; }
+    .pop-val { font-weight:500; color:#333; }
+    .opt-p { color:#fff; background:#52c41a; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-a { color:#fff; background:#f5222d; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-l { color:#fff; background:#fa8c16; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-ml { color:#fff; background:#722ed1; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-h { color:#fff; background:#1890ff; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-wo { color:#fff; background:#8c8c8c; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-r { color:#fff; background:#cf1322; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    .opt-co { color:#fff; background:#13c2c2; padding:1px 6px; border-radius:3px; font-weight:700; font-size:11px; }
+    :host ::ng-deep .att-dropdown .ant-select-item-option-content { padding:0 !important; }
+    :host ::ng-deep .ant-select-item-option { padding:2px 8px !important; }
   `]
 })
 export class AttendanceComponent implements OnInit {
@@ -177,6 +276,7 @@ export class AttendanceComponent implements OnInit {
   data: MonthlyAttendance | null = null;
   isEditMode = false;
   changedRecords: Set<string> = new Set();
+  scrollX = '';
 
   yearList: number[] = [];
   monthList = [
@@ -185,7 +285,6 @@ export class AttendanceComponent implements OnInit {
     { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
     { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
   ];
-  scrollX = '';
 
   constructor(
     private attendanceService: AttendanceService,
@@ -207,6 +306,15 @@ export class AttendanceComponent implements OnInit {
 
   get isCurrentMonth(): boolean {
     return this.selectedYear === this.currentCycleYear && this.selectedMonth === this.currentCycleMonth;
+  }
+
+  get prevMonthAbbr(): string {
+    const m = this.selectedMonth === 1 ? 12 : this.selectedMonth - 1;
+    return this.monthList[m - 1].label.substring(0, 3);
+  }
+
+  get curMonthAbbr(): string {
+    return this.monthList[this.selectedMonth - 1].label.substring(0, 3);
   }
 
   ngOnInit(): void {
@@ -231,30 +339,19 @@ export class AttendanceComponent implements OnInit {
     this.onFilterChange();
   }
 
-  onPageIndexChange(index: number): void {
-    this.page = index - 1;
-    this.loadData();
-  }
-
-  onPageSizeChange(size: number): void {
-    this.size = size;
-    this.page = 0;
-    this.loadData();
-  }
+  onPageIndexChange(index: number): void { this.page = index - 1; this.loadData(); }
+  onPageSizeChange(size: number): void { this.size = size; this.page = 0; this.loadData(); }
 
   loadData(): void {
     this.loading = true;
     this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth, this.page, this.size).subscribe({
       next: (res) => {
         this.data = res.data;
-        const cols = 7 + (this.data?.dayColumns?.length || 31) + 4;
-        this.scrollX = (cols * 40 + 200).toString();
+        const cols = 2 + (this.data?.dayColumns?.length || 30) + 4;
+        this.scrollX = (cols * 34 + 80).toString();
         this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-        this.msg.error('Failed to load data');
-      }
+      error: () => { this.loading = false; this.msg.error('Failed to load data'); }
     });
   }
 
@@ -263,52 +360,33 @@ export class AttendanceComponent implements OnInit {
   }
 
   toggleEdit(): void {
-    if (this.isEditMode) {
-      this.saveChanges();
-    } else {
-      this.changedRecords.clear();
-      this.isEditMode = true;
-    }
+    if (this.isEditMode) this.saveChanges();
+    else { this.changedRecords.clear(); this.isEditMode = true; }
   }
 
   saveChanges(): void {
     if (!this.data) return;
     const records: AttendanceRecord[] = [];
-    const baseDate = this.data.dayColumns[0]?.date;
-    if (!baseDate) return;
-
     for (const emp of this.data.employees) {
       for (const key of this.changedRecords) {
         const [empId, dayIdx] = key.split('_').map(Number);
         if (empId === emp.employeeId && dayIdx < emp.days.length) {
           const status = emp.days[dayIdx] || '';
-          if (status) {
-            const col = this.data.dayColumns[dayIdx];
-            records.push({ employeeId: emp.employeeId, date: col.date, status });
+          if (status && this.data.dayColumns[dayIdx]) {
+            records.push({ employeeId: emp.employeeId, date: this.data.dayColumns[dayIdx].date, status });
           }
         }
       }
     }
-
-    if (records.length === 0) {
-      this.isEditMode = false;
-      this.msg.info('No changes');
-      return;
-    }
-
+    if (records.length === 0) { this.isEditMode = false; this.msg.info('No changes'); return; }
     this.saving = true;
     this.attendanceService.bulkUpdate(records).subscribe({
       next: () => {
         this.msg.success(`Saved ${records.length} record(s)`);
-        this.isEditMode = false;
-        this.changedRecords.clear();
-        this.saving = false;
+        this.isEditMode = false; this.changedRecords.clear(); this.saving = false;
         this.loadData();
       },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Save failed');
-        this.saving = false;
-      }
+      error: (err) => { this.msg.error(err.error?.message || 'Save failed'); this.saving = false; }
     });
   }
 
@@ -326,19 +404,20 @@ export class AttendanceComponent implements OnInit {
     this.attendanceService.importExcel(input.files[0], this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
         this.msg.success(`Imported ${res.data?.imported || 0} records`);
-        this.loading = false;
-        input.value = '';
+        this.loading = false; input.value = '';
         this.loadData();
       },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Import failed');
-        this.loading = false;
-        input.value = '';
-      }
+      error: (err) => { this.msg.error(err.error?.message || 'Import failed'); this.loading = false; input.value = ''; }
     });
   }
 
-  summaryColor(label: string): string {
+  dayColCount(): number { return this.data?.dayColumns?.length || 1; }
+
+  isSunDay(index: number): boolean {
+    return !!this.data?.dayColumns[index] && this.data.dayColumns[index].dayOfWeek === 'Sun';
+  }
+
+  sumColor(label: string): string {
     switch (label) {
       case 'Present': return '#52c41a';
       case 'Leaves': return '#fa8c16';
@@ -348,17 +427,21 @@ export class AttendanceComponent implements OnInit {
     }
   }
 
-  statusColor(s: string): string {
+  statusBg(s: string): string {
     switch (s) {
-      case 'P': return 'green';
-      case 'A': return 'red';
-      case 'L': return 'orange';
-      case 'ML': return 'purple';
-      case 'H': return 'blue';
-      case 'WO': return 'default';
-      case 'R': return 'red';
-      case 'CO': return 'cyan';
-      default: return 'default';
+      case 'P': return '#52c41a';
+      case 'A': return '#f5222d';
+      case 'L': return '#fa8c16';
+      case 'ML': return '#722ed1';
+      case 'H': return '#1890ff';
+      case 'WO': return '#8c8c8c';
+      case 'R': return '#cf1322';
+      case 'CO': return '#13c2c2';
+      default: return '#d9d9d9';
     }
+  }
+
+  statusFg(s: string): string {
+    return '#fff';
   }
 }
