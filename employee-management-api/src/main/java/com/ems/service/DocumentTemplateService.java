@@ -474,10 +474,10 @@ public class DocumentTemplateService {
                     }
                     .brand { display: flex; align-items: center; gap: 16px; }
                     .crest {
-                        width: 52px; height: 52px; border-radius: 50%;
+                        width: 52px; height: 52px; border-radius: 50%%;
                         flex-shrink: 0; overflow: hidden;
                     }
-                    .crest img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+                    .crest img { width: 100%%; height: 100%%; object-fit: cover; border-radius: 50%%; }
                     .brand-text .company {
                         font-size: 23px; font-weight: 700; color: var(--navy);
                         letter-spacing: .01em; line-height: 1.15;
@@ -544,7 +544,7 @@ public class DocumentTemplateService {
                     ol.clauses > li::before {
                         content: counter(clause);
                         position: absolute; left: 0; top: 1px;
-                        width: 26px; height: 26px; border-radius: 50%;
+                        width: 26px; height: 26px; border-radius: 50%%;
                         background: var(--navy); color: #fff;
                         font-size: 12px; font-weight: 600;
                         display: flex; align-items: center; justify-content: center;
@@ -558,7 +558,7 @@ public class DocumentTemplateService {
 
                     /* ===== CTC table ===== */
                     table.ctc {
-                        width: 100%; border-collapse: collapse; margin: 8px 0 22px;
+                        width: 100%%; border-collapse: collapse; margin: 8px 0 22px;
                     }
                     table.ctc caption {
                         text-align: left; font-size: 16px; color: var(--navy);
