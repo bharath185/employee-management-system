@@ -48,8 +48,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
   ],
   template: `
     <div class="template-list-container page-enter">
-      <app-page-header icon="file-text" title="Document Templates" subtitle="Manage document templates for employee letters and certificates"
-        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Document Templates'}]">
+      <app-page-header icon="file-text" title="Document Templates">
         <button nz-button nzType="primary" routerLink="/admin/document-templates/new">
           <i nz-icon nzType="plus"></i> Add Template
         </button>

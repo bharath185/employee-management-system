@@ -24,9 +24,6 @@ import { RolePermission } from '../../core/models/permission.model';
             <span class="ac-logo">ACCESS CONTROL</span>
           </div>
         </div>
-        <div class="ac-header-right">
-          <span class="ac-subtitle">Configure role-based permissions</span>
-        </div>
       </div>
 
       <!-- Tabs -->
@@ -98,8 +95,6 @@ import { RolePermission } from '../../core/models/permission.model';
     .ac-brand { display: flex; align-items: center; gap: 10px; }
     .ac-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); border-radius: 8px; color: #fff; font-size: 16px; }
     .ac-logo { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
-    .ac-header-right { display: flex; align-items: center; }
-    .ac-subtitle { font-size: 13px; color: rgba(255,255,255,.65); font-weight: 500; padding: 4px 12px; background: rgba(255,255,255,.1); border-radius: 12px; }
 
     /* ─── Tabs ─── */
     .ac-tabs-wrap { margin-top: 12px; padding: 0 16px; }

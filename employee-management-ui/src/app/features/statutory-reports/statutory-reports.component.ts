@@ -27,9 +27,6 @@ import { AuthService } from '../../core/services/auth.service';
             <span class="sr-logo">STATUTORY REPORTS</span>
           </div>
         </div>
-        <div class="sr-header-right">
-          <span class="sr-subtitle">Generate &amp; download compliance reports</span>
-        </div>
       </div>
 
       <!-- Access Denied -->
@@ -131,8 +128,6 @@ import { AuthService } from '../../core/services/auth.service';
     .sr-brand { display: flex; align-items: center; gap: 10px; }
     .sr-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); border-radius: 8px; color: #fff; font-size: 16px; }
     .sr-logo { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
-    .sr-header-right { display: flex; align-items: center; }
-    .sr-subtitle { font-size: 13px; color: rgba(255,255,255,.65); font-weight: 500; padding: 4px 12px; background: rgba(255,255,255,.1); border-radius: 12px; }
 
     /* ─── Access Denied ─── */
     .sr-denied { text-align: center; padding: 60px 16px; }

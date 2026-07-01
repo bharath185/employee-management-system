@@ -58,7 +58,6 @@ import * as XLSX from 'xlsx';
             <div class="emp-icon"><i nz-icon nzType="team"></i></div>
             <span class="emp-logo">STAFF MASTER</span>
           </div>
-          <span class="emp-subtitle">Manage all employee records</span>
         </div>
         <div class="emp-header-actions">
           <button nz-button nz-tooltip="Download Sample" class="hdr-btn" (click)="downloadSampleExcel()">
@@ -257,7 +256,7 @@ import * as XLSX from 'xlsx';
     .emp-brand{display:flex;align-items:center;gap:8px}
     .emp-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px}
     .emp-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:1.5px}
-    .emp-subtitle{font-size:13px;color:rgba(255,255,255,.65);font-weight:500;padding:2px 10px;background:rgba(255,255,255,.1);border-radius:12px}
+
     .emp-header-actions{display:flex;align-items:center;gap:5px}
     .hdr-btn{height:30px;font-size:12px;border-radius:6px;border:none;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);padding:0 10px;transition:all .2s;display:flex;align-items:center;gap:4px}
     .hdr-btn:hover:not(:disabled){background:rgba(255,255,255,.2);color:#fff}

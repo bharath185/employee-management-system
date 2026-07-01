@@ -51,13 +51,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   template: `
     <div class="template-form-container page-enter">
       <app-page-header [icon]="isEditMode ? 'edit' : 'file-text'"
-        [title]="isEditMode ? 'Edit Template' : 'New Template'"
-        [subtitle]="isEditMode ? 'Modify the document template' : 'Create a new document template'"
-        [breadcrumbs]="[
-          {label: 'Dashboard', link: '/admin/dashboard'},
-          {label: 'Document Templates', link: '/admin/document-templates'},
-          {label: isEditMode ? 'Edit' : 'New'}
-        ]">
+        [title]="isEditMode ? 'Edit Template' : 'New Template'">
         <button nz-button (click)="goBack()">
           <i nz-icon nzType="close"></i> Cancel
         </button>

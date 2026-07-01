@@ -41,13 +41,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
   ],
   template: `
     <div class="reports-container page-enter">
-      <app-page-header icon="bar-chart" title="Download Reports" subtitle="Track and analyze document downloads"
-        [breadcrumbs]="[
-          {label: 'Dashboard', link: '/admin/dashboard'},
-          {label: 'Document Templates', link: '/admin/document-templates'},
-          {label: 'Reports'}
-        ]">
-      </app-page-header>
+      <app-page-header icon="bar-chart" title="Download Reports"></app-page-header>
 
       <!-- Stats Cards -->
       <div nz-row nzGutter="12" class="stats-row" *ngIf="stats">

@@ -33,9 +33,7 @@ import { environment } from '../../../environments/environment';
   ],
   template: `
     <div class="pending-page page-enter">
-      <app-page-header icon="audit" title="Pending Registrations" subtitle="Review and approve new joinee registrations"
-        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Pending Registrations'}]">
-      </app-page-header>
+      <app-page-header icon="audit" title="Pending Registrations"></app-page-header>
 
       <div class="pending-content">
         <div class="stats-row">

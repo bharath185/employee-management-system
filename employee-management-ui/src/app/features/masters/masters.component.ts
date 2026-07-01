@@ -79,9 +79,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
   ],
   template: `
     <div class="masters-page page-enter">
-      <app-page-header icon="control" title="Masters Setup" subtitle="Manage dropdown values used throughout the application"
-        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Masters Setup'}]">
-      </app-page-header>
+      <app-page-header icon="control" title="Masters Setup"></app-page-header>
 
       <div class="masters-layout">
         <aside class="categories-panel">

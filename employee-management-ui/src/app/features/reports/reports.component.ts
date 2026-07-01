@@ -46,9 +46,7 @@ interface StatItem {
   ],
   template: `
     <div class="reports-page page-enter">
-      <app-page-header icon="bar-chart" title="Reports" subtitle="Generate and export reports"
-        [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Reports'}]">
-      </app-page-header>
+      <app-page-header icon="bar-chart" title="Reports"></app-page-header>
 
       <div class="reports-content">
         <div nz-row [nzGutter]="[12, 12]" class="reports-row reports-row-main">

@@ -35,7 +35,6 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
       <div class="page-header">
         <div>
           <h1>My Leave</h1>
-          <p class="subtitle">View your leave balance, apply for leave, and track applications</p>
         </div>
         <button nz-button nzType="default" routerLink="/employee/dashboard">
           <i nz-icon nzType="arrow-left"></i> Back to Dashboard
@@ -193,7 +192,6 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
       margin-bottom: 24px;
     }
     .page-header h1 { font-size: 28px; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; letter-spacing: -0.5px; }
-    .page-header .subtitle { font-size: 14px; color: #6c757d; margin: 0; }
     .page-header button[nz-button] {
       background: #ffffff !important;
       border: 1px solid #d1d5db !important;
