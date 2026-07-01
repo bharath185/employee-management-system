@@ -136,8 +136,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
       height: calc(100vh - 56px);
       display: flex;
       flex-direction: column;
-      max-width: 1200px;
-      margin: 0 auto;
+      width: 100%;
       padding: 0 16px;
       overflow: hidden;
     }

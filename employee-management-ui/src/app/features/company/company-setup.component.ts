@@ -42,7 +42,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
     PageHeaderComponent
   ],
   template: `
-    <div class="company-setup-container">
+    <div class="company-setup-container page-enter">
       <app-page-header icon="bank" title="Company Setup" subtitle="Manage your organization profile and legal documents"
         [breadcrumbs]="[{label: 'Dashboard', link: '/admin/dashboard'}, {label: 'Company Setup'}]">
         <button nz-button nzType="primary" (click)="saveCompany()" [nzLoading]="isSaving" [disabled]="!companyForm.companyName">

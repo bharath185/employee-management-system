@@ -220,7 +220,7 @@ import { saveAs } from 'file-saver';
     </div>
   `,
   styles: [`
-    .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:0 0 16px; }
+    .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:0 16px 16px; }
     .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; padding:12px 16px; background:linear-gradient(135deg,#1f3d6e 0%,#16213e 100%); border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
     .att-title { display:flex; align-items:center; gap:12px; }
     .att-brand { display:flex; align-items:center; gap:8px; }

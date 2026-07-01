@@ -49,7 +49,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
     TemplatePreviewModalComponent
   ],
   template: `
-    <div class="template-form-container">
+    <div class="template-form-container page-enter">
       <app-page-header [icon]="isEditMode ? 'edit' : 'file-text'"
         [title]="isEditMode ? 'Edit Template' : 'New Template'"
         [subtitle]="isEditMode ? 'Modify the document template' : 'Create a new document template'"
@@ -170,7 +170,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   `,
   styles: [`
     :host { display: block; }
-    .template-form-container { max-width: 1400px; margin: 0 auto; }
+    .template-form-container { width: 100%; padding: 0 16px; box-sizing: border-box; }
 
     .form-card { margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
     .form-card .ant-card-head { border-bottom: 1px solid var(--color-border-light); padding: 16px 20px; min-height: auto; }

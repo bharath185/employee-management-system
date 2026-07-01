@@ -354,7 +354,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
   `,
   styles: [`
     :host { display: block; }
-    .view-container { max-width: 1200px; margin: 0 auto; }
+    .view-container { width: 100%; padding: 0 16px; }
 
     .view-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1f3d6e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
     .view-header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
