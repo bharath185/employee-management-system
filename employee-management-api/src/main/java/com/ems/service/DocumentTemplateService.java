@@ -432,115 +432,184 @@ public class DocumentTemplateService {
                 <meta charset="UTF-8">
                 <title>%s</title>
                 <style>
+                    :root {
+                        --navy: #14335e;
+                        --navy-deep: #0a1f3d;
+                        --gold: #2f6fb0;
+                        --gold-light: #6fa4d8;
+                        --cream: #f4f7fb;
+                        --paper: #fffdfb;
+                        --ink: #232833;
+                        --ink-soft: #545e6e;
+                        --rule: #c9d6e6;
+                        --fill-bg: #dfeaf7;
+                        --fill-border: #5b8fc7;
+                    }
+
                     @page {
                         size: A4;
-                        margin: 15mm 20mm;
+                        margin: 14mm 16mm;
                     }
+
                     body {
                         font-family: 'Times New Roman', Times, serif;
-                        font-size: 11pt;
-                        line-height: 1.5;
-                        color: #222;
+                        font-size: 14.5px;
+                        line-height: 1.8;
+                        color: var(--ink);
+                        background: #fff;
                     }
+
+                    /* ===== generic template styles (salary slip etc.) ===== */
+                    .document-header { text-align: center; margin-bottom: 30px; }
+                    .document-header h1 { font-size: 18pt; text-decoration: underline; margin-bottom: 5px; }
+                    .document-content { text-align: justify; }
+                    .document-content p { margin-bottom: 8px; }
+                    .signature-section { margin-top: 40px; }
+
+                    /* ===== letterhead ===== */
                     .letterhead {
-                        text-align: center;
-                        margin-bottom: 10px;
+                        display: flex; align-items: center; justify-content: space-between;
+                        padding-bottom: 22px; margin-bottom: 26px;
+                        border-bottom: 2px solid var(--navy);
                     }
-                    .letterhead .logo-area img {
-                        max-height: 60px;
+                    .brand { display: flex; align-items: center; gap: 16px; }
+                    .crest {
+                        width: 52px; height: 52px; border-radius: 50%;
+                        flex-shrink: 0; overflow: hidden;
                     }
-                    .letterhead .company-details h2 {
-                        font-size: 14pt;
-                        margin: 5px 0 2px 0;
-                        color: #1a3a5c;
+                    .crest img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+                    .brand-text .company {
+                        font-size: 23px; font-weight: 700; color: var(--navy);
+                        letter-spacing: .01em; line-height: 1.15;
                     }
-                    .letterhead .company-details p {
-                        font-size: 9pt;
-                        margin: 2px 0;
-                        color: #555;
+                    .brand-text .tagline {
+                        font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+                        color: var(--gold); margin-top: 3px;
                     }
-                    .header-line {
-                        border: none;
-                        border-top: 2px solid #1a3a5c;
-                        margin: 8px 0 15px 0;
+                    .letterhead-meta {
+                        text-align: right; font-size: 11.5px; color: var(--ink-soft); line-height: 1.7;
                     }
+                    .label-tag {
+                        font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+                        color: var(--gold); margin-bottom: 4px; display: block;
+                    }
+                    .header-line { border: none; border-top: 2px solid var(--navy); margin: 8px 0 15px 0; }
+
                     .confidential {
-                        text-align: right;
-                        font-size: 10pt;
-                        color: #c00;
-                        margin-bottom: 20px;
+                        text-align: center; font-size: 11px; letter-spacing: .2em;
+                        text-transform: uppercase; color: var(--ink-soft); margin-bottom: 30px;
                     }
-                    .section-title {
-                        font-size: 13pt;
-                        color: #1a3a5c;
-                        border-bottom: 1px solid #ccc;
-                        padding-bottom: 5px;
-                        margin-top: 25px;
+                    .doc-date { margin-bottom: 22px; }
+                    .addressee { margin-bottom: 26px; line-height: 1.75; }
+                    .salutation { margin-bottom: 16px; }
+
+                    h1.title {
+                        font-size: 26px; font-weight: 600; color: var(--navy);
+                        text-align: center; margin: 8px 0 6px; letter-spacing: .01em;
                     }
-                    .document-content {
-                        text-align: justify;
+                    .title-rule { width: 70px; height: 2px; margin: 0 auto 30px; background: var(--gold); }
+
+                    .closing-note { font-style: italic; color: var(--ink-soft); margin: 22px 0 30px; }
+
+                    .sign-block { margin-top: 30px; }
+                    .sign-block .for-line { margin-bottom: 46px; }
+                    .sign-block .signatory { font-weight: 600; font-size: 14px; }
+                    .sign-block .role { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+                    .section-break {
+                        display: flex; align-items: center; gap: 14px; margin: 44px 0 24px;
                     }
-                    .document-content p {
-                        margin-bottom: 8px;
+                    .section-break::before, .section-break::after {
+                        content: ""; flex: 1; height: 1px; background: var(--rule);
                     }
-                    .terms-table {
-                        width: 100%;
-                        border-collapse: collapse;
+                    .section-break .st {
+                        font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold);
                     }
-                    .terms-table td {
-                        padding: 6px 4px;
-                        vertical-align: top;
-                        border-bottom: 1px solid #eee;
+
+                    h2.doc-heading {
+                        font-weight: 600; font-size: 19px; color: var(--navy);
+                        text-align: center; margin: 0 0 4px;
                     }
-                    .terms-table .term-num {
-                        width: 30px;
-                        font-weight: bold;
-                        vertical-align: top;
+                    .doc-sub {
+                        text-align: center; font-size: 11px; color: var(--ink-soft);
+                        letter-spacing: .06em; margin-bottom: 28px;
                     }
-                    ol.sub-list {
-                        margin: 4px 0 4px 20px;
-                        padding-left: 10px;
+
+                    /* ===== numbered clauses ===== */
+                    ol.clauses { list-style: none; counter-reset: clause; padding: 0; margin: 0; }
+                    ol.clauses > li {
+                        counter-increment: clause;
+                        position: relative; padding-left: 40px; margin-bottom: 18px; line-height: 1.8;
                     }
-                    ol.sub-list li {
-                        margin-bottom: 3px;
+                    ol.clauses > li::before {
+                        content: counter(clause);
+                        position: absolute; left: 0; top: 1px;
+                        width: 26px; height: 26px; border-radius: 50%;
+                        background: var(--navy); color: #fff;
+                        font-size: 12px; font-weight: 600;
+                        display: flex; align-items: center; justify-content: center;
                     }
-                    .salary-table {
-                        width: 80%%;
-                        margin: 10px auto;
-                        border-collapse: collapse;
-                        border: 1px solid #333;
+                    ol.clauses > li strong.clause-title { color: var(--navy); }
+
+                    ol.sub-list { list-style: lower-alpha; margin: 10px 0 0; padding-left: 22px; }
+                    ol.sub-list li { margin-bottom: 8px; line-height: 1.75; }
+                    ol.roman-list { list-style: lower-roman; margin: 8px 0 0; padding-left: 22px; }
+                    ol.roman-list li { margin-bottom: 7px; line-height: 1.72; color: var(--ink-soft); }
+
+                    /* ===== CTC table ===== */
+                    table.ctc {
+                        width: 100%; border-collapse: collapse; margin: 8px 0 22px;
                     }
-                    .salary-table td, .salary-table th {
-                        padding: 6px 12px;
-                        border: 1px solid #999;
+                    table.ctc caption {
+                        text-align: left; font-size: 16px; color: var(--navy);
+                        font-weight: 600; margin-bottom: 12px;
                     }
-                    .salary-table .table-header th {
-                        background: #1a3a5c;
-                        color: #fff;
-                        text-align: center;
+                    table.ctc th {
+                        background: var(--navy); color: #fff; text-align: left;
+                        padding: 10px 14px; font-weight: 500; letter-spacing: .03em;
                     }
-                    .salary-table .total-row td {
-                        background: #e8f0f8;
-                        font-weight: bold;
+                    table.ctc th:last-child, table.ctc td:last-child { text-align: right; }
+                    table.ctc td { padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+                    table.ctc tr:nth-child(even) td { background: #f0f4f9; }
+                    table.ctc tr.total td {
+                        font-weight: 700; color: var(--navy); border-top: 2px solid var(--navy);
+                        background: #dce8f5;
                     }
-                    .declaration-table {
-                        width: 80%%;
-                        margin: 10px auto;
+
+                    .notes-list { margin: 4px 0 0; padding-left: 20px; }
+                    .notes-list li { font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; line-height: 1.7; }
+
+                    /* ===== declaration box ===== */
+                    .declaration {
+                        border: 1.5px solid var(--gold);
+                        background: #eef4fa; padding: 30px 34px; border-radius: 4px;
+                        position: relative;
                     }
-                    .declaration-table td {
-                        padding: 8px 4px;
+                    .declaration::before {
+                        content: "Declaration";
+                        position: absolute; top: -13px; left: 28px;
+                        background: var(--gold); color: #fff;
+                        font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+                        padding: 4px 14px; border-radius: 3px;
                     }
-                    .signature-section {
-                        margin-top: 40px;
+                    .declaration p { font-size: 13.8px; }
+
+                    .sig-grid {
+                        display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 36px;
                     }
-                    .page-break {
-                        page-break-before: always;
+                    .sig-line { border-bottom: 1.4px solid var(--ink-soft); height: 34px; }
+                    .sig-caption {
+                        font-size: 11.5px; color: var(--ink-soft); letter-spacing: .04em; margin-top: 6px;
                     }
+
+                    .page-footer {
+                        text-align: center; font-size: 10px; letter-spacing: .1em;
+                        color: var(--ink-soft); text-transform: uppercase; padding: 26px 0 8px; opacity: .7;
+                    }
+                    .page-break { page-break-before: always; }
+
                     @media print {
-                        body {
-                            -webkit-print-color-adjust: exact;
-                            print-color-adjust: exact;
-                        }
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     }
                 </style>
             </head>
