@@ -511,7 +511,7 @@ public class DocumentTemplateService {
 
                     .closing-note { font-style: italic; color: var(--ink-soft); margin: 22px 0 30px; }
 
-                    .sign-block { margin-top: 30px; }
+                    .sign-block { margin-top: 30px; page-break-inside: avoid; }
                     .sign-block .for-line { margin-bottom: 46px; }
                     .sign-block .signatory { font-weight: 600; font-size: 14px; }
                     .sign-block .role { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
@@ -607,6 +607,11 @@ public class DocumentTemplateService {
                         color: var(--ink-soft); text-transform: uppercase; padding: 26px 0 8px; opacity: .7;
                     }
                     .page-break { page-break-before: always; }
+                    .company-footer {
+                        text-align: center; font-size: 9px; color: var(--ink-soft);
+                        border-top: 1px solid var(--rule); margin-top: 40px;
+                        padding-top: 12px; line-height: 1.6;
+                    }
 
                     @media print {
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

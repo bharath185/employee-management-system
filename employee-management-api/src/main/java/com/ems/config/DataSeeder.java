@@ -792,6 +792,12 @@ public class DataSeeder implements CommandLineRunner {
             </div>
 
             <div class="page-footer">Page 2 of 2 &nbsp;&middot;&nbsp; Annexure A &amp; Declaration &nbsp;&middot;&nbsp; {{company_name}}</div>
+
+            <div class="company-footer">
+              {{company_name}} &nbsp;|&nbsp; CIN: {{company_cin}}<br>
+              Regd Off: {{company_address}}<br>
+              Website: {{company_website}}
+            </div>
             """;
     }
 
