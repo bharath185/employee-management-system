@@ -10,9 +10,11 @@ import com.ems.model.Company;
 import com.ems.model.DocumentDownloadLog;
 import com.ems.model.DocumentTemplate;
 import com.ems.model.Employee;
+import com.ems.model.Salary;
 import com.ems.repository.DocumentDownloadLogRepository;
 import com.ems.repository.DocumentTemplateRepository;
 import com.ems.repository.EmployeeRepository;
+import com.ems.repository.SalaryRepository;
 import com.ems.utils.TemplateEngine;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,6 +47,7 @@ public class DocumentTemplateService {
     private final DocumentTemplateRepository templateRepository;
     private final DocumentDownloadLogRepository downloadLogRepository;
     private final EmployeeRepository employeeRepository;
+    private final SalaryRepository salaryRepository;
     private final CompanyService companyService;
 
     @Value("${app.base-url:}")
@@ -153,6 +158,7 @@ public class DocumentTemplateService {
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
         filledContent = resolveLogoUrl(filledContent, company);
+        filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
 
         log.debug("Document preview generated for template: {}, employee: {}", templateId, employeeId);
@@ -178,6 +184,7 @@ public class DocumentTemplateService {
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
         filledContent = resolveLogoUrl(filledContent, company);
+        filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
 
         // Log the download
@@ -325,8 +332,65 @@ public class DocumentTemplateService {
     }
 
     /**
+     * Resolves salary-related placeholders ({{basic_pay}}, {{hra_amount}}, etc.)
+     * using the employee's most recent salary record.
+     */
+    private String resolveSalaryPlaceholders(String content, Employee employee) {
+        if (employee == null || employee.getId() == null) return content;
+
+        Map<String, String> salaryValues = new HashMap<>();
+
+        try {
+            List<Salary> salaries = salaryRepository.findByEmployeeId(employee.getId());
+            salaries.sort((a, b) -> {
+                int y = b.getWageYear().compareTo(a.getWageYear());
+                return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
+            });
+            if (!salaries.isEmpty()) {
+                Salary s = salaries.get(0);
+                BigDecimal basic = safe(s.getBasic());
+                BigDecimal hra = safe(s.getHra());
+                BigDecimal fpa = safe(s.getFixedPersonalAllowance());
+                BigDecimal oa = safe(s.getOtherAllowance());
+                BigDecimal pf = safe(s.getPfDeduction());
+                BigDecimal esi = safe(s.getEsiDeduction());
+                BigDecimal totalMonthly = basic.add(hra).add(fpa).add(oa);
+                BigDecimal totalAnnual = totalMonthly.multiply(BigDecimal.valueOf(12));
+                BigDecimal ctcMonthly = totalMonthly.add(pf).add(esi);
+                BigDecimal ctcAnnual = ctcMonthly.multiply(BigDecimal.valueOf(12));
+
+                salaryValues.put("basic_pay", fmt(basic));
+                salaryValues.put("basic_pay_annual", fmt(basic.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("hra_amount", fmt(hra));
+                salaryValues.put("hra_annual", fmt(hra.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("other_allowance", fmt(fpa.add(oa)));
+                salaryValues.put("other_allowance_annual", fmt(fpa.add(oa).multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("total_monthly", fmt(totalMonthly));
+                salaryValues.put("total_annual", fmt(totalAnnual));
+                salaryValues.put("pf_amount", fmt(pf));
+                salaryValues.put("pf_annual", fmt(pf.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("esic_amount", fmt(esi));
+                salaryValues.put("esic_annual", fmt(esi.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("ctc_monthly", fmt(ctcMonthly));
+                salaryValues.put("ctc_annual", fmt(ctcAnnual));
+            }
+        } catch (Exception e) {
+            log.debug("Could not resolve salary placeholders for employee {}: {}", employee.getId(), e.getMessage());
+        }
+
+        return salaryValues.isEmpty() ? content : TemplateEngine.processWithMap(content, salaryValues);
+    }
+
+    private BigDecimal safe(BigDecimal val) {
+        return val != null ? val : BigDecimal.ZERO;
+    }
+
+    private String fmt(BigDecimal val) {
+        return "\u20B9 " + val.setScale(2, RoundingMode.HALF_UP).toString();
+    }
+
+    /**
      * Resolves the {{company_logo}} placeholder with an absolute URL
-     * derived from the current HTTP request (handles reverse proxy headers).
      */
     private String resolveLogoUrl(String content, Company company) {
         if (content == null || content.isEmpty()) return content;
@@ -370,34 +434,107 @@ public class DocumentTemplateService {
                 <style>
                     @page {
                         size: A4;
-                        margin: 20mm;
+                        margin: 15mm 20mm;
                     }
                     body {
                         font-family: 'Times New Roman', Times, serif;
-                        font-size: 12pt;
-                        line-height: 1.6;
-                        color: #333;
+                        font-size: 11pt;
+                        line-height: 1.5;
+                        color: #222;
                     }
-                    .document-header {
+                    .letterhead {
                         text-align: center;
-                        margin-bottom: 30px;
+                        margin-bottom: 10px;
                     }
-                    .document-header h1 {
-                        font-size: 18pt;
-                        text-decoration: underline;
-                        margin-bottom: 5px;
+                    .letterhead .logo-area img {
+                        max-height: 60px;
+                    }
+                    .letterhead .company-details h2 {
+                        font-size: 14pt;
+                        margin: 5px 0 2px 0;
+                        color: #1a3a5c;
+                    }
+                    .letterhead .company-details p {
+                        font-size: 9pt;
+                        margin: 2px 0;
+                        color: #555;
+                    }
+                    .header-line {
+                        border: none;
+                        border-top: 2px solid #1a3a5c;
+                        margin: 8px 0 15px 0;
+                    }
+                    .confidential {
+                        text-align: right;
+                        font-size: 10pt;
+                        color: #c00;
+                        margin-bottom: 20px;
+                    }
+                    .section-title {
+                        font-size: 13pt;
+                        color: #1a3a5c;
+                        border-bottom: 1px solid #ccc;
+                        padding-bottom: 5px;
+                        margin-top: 25px;
                     }
                     .document-content {
                         text-align: justify;
                     }
                     .document-content p {
-                        margin-bottom: 10px;
+                        margin-bottom: 8px;
+                    }
+                    .terms-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    .terms-table td {
+                        padding: 6px 4px;
+                        vertical-align: top;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .terms-table .term-num {
+                        width: 30px;
+                        font-weight: bold;
+                        vertical-align: top;
+                    }
+                    ol.sub-list {
+                        margin: 4px 0 4px 20px;
+                        padding-left: 10px;
+                    }
+                    ol.sub-list li {
+                        margin-bottom: 3px;
+                    }
+                    .salary-table {
+                        width: 80%%;
+                        margin: 10px auto;
+                        border-collapse: collapse;
+                        border: 1px solid #333;
+                    }
+                    .salary-table td, .salary-table th {
+                        padding: 6px 12px;
+                        border: 1px solid #999;
+                    }
+                    .salary-table .table-header th {
+                        background: #1a3a5c;
+                        color: #fff;
+                        text-align: center;
+                    }
+                    .salary-table .total-row td {
+                        background: #e8f0f8;
+                        font-weight: bold;
+                    }
+                    .declaration-table {
+                        width: 80%%;
+                        margin: 10px auto;
+                    }
+                    .declaration-table td {
+                        padding: 8px 4px;
                     }
                     .signature-section {
-                        margin-top: 50px;
+                        margin-top: 40px;
                     }
-                    .signature-section .signature-line {
-                        margin-top: 60px;
+                    .page-break {
+                        page-break-before: always;
                     }
                     @media print {
                         body {

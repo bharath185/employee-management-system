@@ -610,57 +610,194 @@ public class DataSeeder implements CommandLineRunner {
 
     private String templateAppointmentLetter() {
         return """
-            <div class="document-header"><h1>APPOINTMENT LETTER</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>Ref: EMP/{{employee_code}}/{{current_year}}</p>
-            <p>To,<br><b>{{prefix}} {{employee_name}}</b><br>{{address}}</p>
-            <p>Dear <b>{{prefix}} {{employee_name}}</b>,</p>
-            <p>We are pleased to appoint you as <b>{{designation}}</b> at <b>{{company_name}}</b>, based on your application and subsequent interview. We believe your skills and experience will be valuable to our organisation.</p>
+            <div class="letterhead">
+            <div class="logo-area">{{company_logo}}</div>
+            <div class="company-details">
+            <h2>{{company_name}}</h2>
+            <p>{{company_address}}<br>Phone: {{company_phone}} | Email: {{company_email}}</p>
+            </div>
+            <hr class="header-line">
+            </div>
 
-            <p><b>Personal Details:</b></p>
-            <table style="width:100%; border-collapse: collapse;">
-            <tr><td style="width:40%;"><b>Employee Code:</b></td><td>{{employee_code}}</td></tr>
-            <tr><td><b>Date of Birth:</b></td><td>{{dob}}</td></tr>
-            <tr><td><b>Father / Husband Name:</b></td><td>{{father_husband_name}}</td></tr>
-            <tr><td><b>Gender:</b></td><td>{{gender}}</td></tr>
-            <tr><td><b>Marital Status:</b></td><td>{{marital_status}}</td></tr>
-            <tr><td><b>Blood Group:</b></td><td>{{blood_group}}</td></tr>
-            <tr><td><b>Mobile:</b></td><td>{{mobile}}</td></tr>
-            <tr><td><b>Email:</b></td><td>{{email}}</td></tr>
-            <tr><td><b>PAN:</b></td><td>{{pan_number_employee}}</td></tr>
-            <tr><td><b>Aadhaar:</b></td><td>{{aadhar_number}}</td></tr>
-            <tr><td><b>Highest Qualification:</b></td><td>{{highest_qualification}}</td></tr>
-            <tr><td><b>Permanent Address:</b></td><td>{{permanent_address}}</td></tr>
-            </table>
+            <p class="confidential"><b>Private and Confidential</b></p>
 
-            <p><b>Terms of Appointment:</b></p>
-            <ol>
-            <li><b>Date of Joining:</b> {{doj}}.</li>
-            <li><b>Designation:</b> You are appointed as <b>{{designation}}</b>.</li>
-            <li><b>Probation Period:</b> You will be on probation for 6 months from the date of joining, extendable at the discretion of the management.</li>
-            <li><b>Working Hours:</b> 9:00 AM to 6:00 PM, Monday to Friday (5 days a week).</li>
-            <li><b>Compensation:</b> Your compensation will be as per the offer letter and company policy.</li>
-            <li><b>Leave:</b> You will be entitled to leave as per company policy.</li>
-            <li><b>Code of Conduct:</b> You are expected to adhere to the company's code of conduct and all applicable policies.</li>
-            <li><b>Confidentiality:</b> You shall maintain strict confidentiality of all company information and trade secrets.</li>
-            </ol>
+            <p>Date: {{current_date}}</p>
 
-            <p><b>Documents to Submit on Joining:</b></p>
-            <ol>
-            <li>Educational certificates (original for verification + self-attested copies).</li>
-            <li>Previous employer experience and relieving letters.</li>
-            <li>PAN card and Aadhaar card copies.</li>
-            <li>Bank account details for salary processing.</li>
-            <li>Passport-size photographs (2 nos.).</li>
-            </ol>
+            <p><b>{{prefix}} {{first_name}} {{surname}}</b><br>{{address}}</p>
 
-            <p>Please sign a copy of this letter as acceptance of the terms and conditions mentioned above.</p>
+            <p>Dear <b>{{prefix}} {{first_name}}</b>,</p>
+
+            <p>On behalf of <b>{{company_name}}</b> (hereinafter referred to as "the Company"), it gives me great pleasure to welcome you onboard as <b>{{designation}}</b>. The Company is poised for strong growth and we look forward to working with you to take the firm to the next level.</p>
+
+            <p>The following pages list down the terms and conditions of your employment with the Company as well as the breakup of your compensation package.</p>
+
+            <p>The future holds many opportunities and challenges for us, as an organisation. Each one of us has an important role in shaping the Company of tomorrow. With our passion and dedication, we will together achieve our milestones and set up new ones!</p>
+
+            <p>Wishing you a long, successful and enriching journey with the Company.</p>
 
             <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}<br>{{company_address}}<br>{{company_phone}} | {{company_email}}</p>
-            </div></div>""";
+            <p>Yours sincerely,<br>For <b>{{company_name}}</b>,</p>
+            <p><br><br><b>{{authorized_signatory}}</b><br>Director</p>
+            </div>
+
+            <div class="page-break"></div>
+
+            <div class="letterhead">
+            <div class="logo-area">{{company_logo}}</div>
+            <div class="company-details">
+            <h2>{{company_name}}</h2>
+            </div>
+            <hr class="header-line">
+            </div>
+
+            <p class="confidential"><b>Private and Confidential</b></p>
+
+            <p>Dear <b>{{prefix}} {{first_name}}</b>,</p>
+
+            <p class="section-title"><b>Contractual Terms for Employment with {{company_name}}</b></p>
+
+            <p>We are pleased to welcome you on board. Please find the terms and conditions of your employment with the Company:</p>
+
+            <table class="terms-table">
+            <tr><td class="term-num">1)</td><td><b>Date of Commencement:</b> Your employment will commence from the date you join our organisation by submitting your testimonials.</td></tr>
+
+            <tr><td class="term-num">2)</td><td><b>Remuneration:</b> The details of the compensation are laid out in Annexure A and will be subject to statutory and other deductions as per company policies and statutory guidelines.</td></tr>
+
+            <tr><td class="term-num">3)</td><td><b>Place of Work:</b> Your place of work will be at {{address}}. You may need to travel to other locations basis the needs of Business or the specific work handled. Expenses incurred due to such travel will be reimbursed as per Company Policy. The Company reserves the right to transfer / post / depute you to any of its offices, client locations, branches, group entities or project sites within India depending upon business requirements.</td></tr>
+
+            <tr><td class="term-num">4)</td><td><b>Work Details:</b> Your work timings may be in different shift timings, depending upon the exigencies / client requirements, to provide services to the clients of the Company. You will be explained your work in detail on assumption of duties. Your working hours, weekly offs, holidays and shift schedules shall be governed by applicable law and company policy as amended from time to time.</td></tr>
+
+            <tr><td class="term-num">5)</td><td><b>Probation:</b> You will be on probation for a period of 6 months. Upon completion of your probation period, you will be confirmed in the services of the Company subject to your work performance being found to be satisfactory during the probation period. The probation period may be extended at the discretion of the Company based on performance, conduct, attendance or business requirements.</td></tr>
+
+            <tr><td class="term-num">6)</td><td><b>Proprietary Information Agreement:</b> Your employment creates a relationship of confidence and trust between you and the Company with respect to certain information of a confidential, proprietary or trade secret in nature. For the purposes of this Agreement, all such confidential, proprietary or trade secret information will be referred to as "Proprietary Information". You therefore agree to abide by the following terms and conditions:<br>
+            <ol class="sub-list">
+            <li>Proprietary Information includes without limitation: all software / ideas developed or licensed by or for the Company or licensed to the Company by a third party; marketing and sales plans, product development plans, business and financial plans; any process / process related documents; customer information / data.</li>
+            <li>At all times, both during and after your contract with the Company, you will hold proprietary information in confidence.</li>
+            <li>You will not use, transfer, publish, disclose, or report Proprietary Information directly or indirectly, except such disclosure to other employees of the Company or authorised third parties as may be necessary in the ordinary course of performing your duties.</li>
+            <li>You shall, upon conclusion of your contract with the Company, return all property belonging to the Company, including without limitation all Proprietary Information, Identity Card, documents, software, laptops and any other form of media.</li>
+            <li>Proprietary Information shall not include information known publicly or generally employed in the trade.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">7)</td><td><b>Confidentiality:</b><br>
+            <ol class="sub-list">
+            <li>Employee shall comply with all information security, cyber security, IT usage, client confidentiality and data privacy policies of the Company.</li>
+            <li>Any intellectual property, work product, process, software, documentation, database, design, invention, development or material created during employment in connection with Company business shall remain the sole property of the Company.</li>
+            <li>The terms and conditions and any other discussions with regard to this agreement are absolutely confidential.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">8)</td><td><b>Conduct:</b> You are expected to exhibit at all times:<br>
+            <ol class="sub-list">
+            <li>Ethics in attitude and behaviour. Maintain professional, respectful, ethical and non-discriminatory conduct towards all employees, clients, vendors and stakeholders.</li>
+            <li>Integrity and excellence in your work.</li>
+            <li>Conduct your work and yourself in strict compliance with rules, regulations and policies.</li>
+            <li>Be respectful in words and action with your fellow employees.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">9)</td><td><b>POSH Compliance:</b> The Company maintains a zero-tolerance policy against sexual harassment and discrimination at workplace and complies with applicable laws relating to prevention of sexual harassment at workplace.</td></tr>
+
+            <tr><td class="term-num">10)</td><td><b>HR Policies:</b> The employees are expected to comply with all HR policies, code of conduct, leave rules, disciplinary procedures, information security policies and operational guidelines issued by the Company from time to time.</td></tr>
+
+            <tr><td class="term-num">11)</td><td>Please note that you will need to make your own arrangements for commuting between your residence and office and the company does not undertake to provide any transport or any conveyance allowance in lieu thereof.</td></tr>
+
+            <tr><td class="term-num">12)</td><td><b>Termination and Notice:</b> This contract of employment can be terminated, by either side, by giving the applicable Notice as given below. The Company reserves the right to initiate disciplinary action including termination in cases involving misconduct, fraud, breach of confidentiality, harassment, violence, insubordination, unauthorised absence or violation of Company policies, subject to applicable law. At the sole discretion of the Management, servicing of Notice Period may be substituted by remittance of "Notice Pay", being the equivalent of the Net Salary as applicable.<br>
+            <ol class="sub-list">
+            <li>Up to one year of Service, notice period of Fifteen (15) days.</li>
+            <li>Upon or after one year of Service, notice period of One (1) month.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">13)</td><td><b>Full &amp; Final Settlement:</b> Upon cessation of employment, full and final settlement shall be processed subject to clearance of Company assets, confidential information and dues in accordance with Company policy and applicable law.</td></tr>
+
+            <tr><td class="term-num">14)</td><td>In case of continuous unauthorised absence for two weeks without information, the Company may initiate appropriate disciplinary action in accordance with Company policy and applicable law after providing reasonable opportunity to explain the absence.</td></tr>
+
+            <tr><td class="term-num">15)</td><td><b>Grievance Redressal:</b> Any grievance relating to employment may be escalated through the Company's grievance redressal mechanism.</td></tr>
+
+            <tr><td class="term-num">16)</td><td><b>Background Verification:</b> This employment is subject to satisfactory background verification, reference checks and verification of documents submitted by you. If any information / documents are found false, misleading or suppressed, the Company reserves the right to withdraw the offer or terminate employment. Documentation proof includes:<br>
+            <ol class="sub-list">
+            <li>Personal documentation proof (Identity, Address, Date of Birth etc.).</li>
+            <li>Educational Qualification proof.</li>
+            <li>Prior Work Experience proof.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">17)</td><td><b>Data Collection:</b><br>
+            <ol class="sub-list">
+            <li>You hereby provide explicit consent to the Company to collect, receive, store, process, use, transfer, share and retain personal information / data including sensitive personal details, documents and employment-related information for lawful business and employment purposes.</li>
+            <li>You understand and agree that such personal information / data may be shared with authorised third parties, group companies, clients, consultants, statutory authorities, auditors, background verification agencies, payroll processors, IT service providers or other service partners on a need-to-know basis and in compliance with applicable laws.</li>
+            </ol></td></tr>
+
+            <tr><td class="term-num">18)</td><td><b>Validity:</b> Please confirm your acceptance of the above terms and conditions by signing the attached declaration and affixing your initials on each page of the copy of the contract and returning the copy to us.</td></tr>
+            </table>
+
+            <div class="signature-section">
+            <p>Yours sincerely,<br>For <b>{{company_name}}</b>,</p>
+            <p><br><br><b>{{authorized_signatory}}</b><br>Director</p>
+            </div>
+
+            <div class="page-break"></div>
+
+            <div class="letterhead">
+            <div class="logo-area">{{company_logo}}</div>
+            <div class="company-details">
+            <h2>{{company_name}}</h2>
+            </div>
+            <hr class="header-line">
+            </div>
+
+            <p class="section-title"><b>Annexure A</b></p>
+            <p><b>Breakup of Cost to Company of <u>{{prefix}} {{first_name}} {{surname}}</u>, <u>{{designation}}</u></b></p>
+
+            <table class="salary-table">
+            <tr class="table-header"><th>Salary</th><th>Monthly</th><th>Annual</th></tr>
+            <tr><td>Basic Pay</td><td align="right">{{basic_pay}}</td><td align="right">{{basic_pay_annual}}</td></tr>
+            <tr><td>HRA (30% of Basic)</td><td align="right">{{hra_amount}}</td><td align="right">{{hra_annual}}</td></tr>
+            <tr><td>Other Allowance</td><td align="right">{{other_allowance}}</td><td align="right">{{other_allowance_annual}}</td></tr>
+            <tr class="total-row"><td><b>Total</b></td><td align="right"><b>{{total_monthly}}</b></td><td align="right"><b>{{total_annual}}</b></td></tr>
+            <tr><td colspan="3"></td></tr>
+            <tr class="table-header"><th>Company Contribution</th><th></th><th></th></tr>
+            <tr><td>PF</td><td align="right">{{pf_amount}}</td><td align="right">{{pf_annual}}</td></tr>
+            <tr><td>ESIC (3.25% of Gross)</td><td align="right">{{esic_amount}}</td><td align="right">{{esic_annual}}</td></tr>
+            <tr class="total-row"><td><b>Total CTC</b></td><td align="right"><b>{{ctc_monthly}}</b></td><td align="right"><b>{{ctc_annual}}</b></td></tr>
+            </table>
+
+            <br>
+            <ol class="sub-list">
+            <li>All entitlements (as applicable and as per the law) would apply upon your joining the Company. The entitlements are subject to company policies / procedures / guidelines that may be issued / modified from time to time. All perquisites and benefits including reimbursements are subject to applicable Income Tax provisions, including taxation on perquisite value.</li>
+            <li>These entitlements shall cease upon termination of your contract with the Company.</li>
+            <li>The salary structure has been designed in accordance with applicable labour laws and wage-related statutory provisions. Any allowance / component interpreted by competent authorities / courts as forming part of wages shall be treated accordingly for statutory compliance purposes.</li>
+            </ol>
+
+            <div class="signature-section">
+            <p>For <b>{{company_name}}</b>,</p>
+            <p><br><br><b>{{authorized_signatory}}</b><br>Director</p>
+            </div>
+
+            <div class="page-break"></div>
+
+            <div class="letterhead">
+            <div class="logo-area">{{company_logo}}</div>
+            <div class="company-details">
+            <h2>{{company_name}}</h2>
+            </div>
+            <hr class="header-line">
+            </div>
+
+            <p class="section-title"><b>DECLARATION</b></p>
+
+            <p>I, <b><u>{{prefix}} {{first_name}} {{surname}}</u></b>, have read, understood and agree with all the terms and conditions of employment with the Company as communicated vide their Appointment Letter and agree to abide by the same.</p>
+
+            <p>I also confirm that I have read, understood and agree to comply with the provisions and requirements of the Proprietary / Confidential Information Clause.</p>
+
+            <p>I hereby provide explicit consent to the Company to collect, receive, store, process, use, transfer, share and retain personal information / data including sensitive personal details, documents and employment-related information for lawful business and employment purposes including but not limited to recruitment, onboarding, payroll processing, statutory compliance, background verification, insurance, client requirements, internal administration, performance management and any other legitimate employment-related purposes.</p>
+
+            <p>I understand and agree that such personal information / data may be shared with authorised third parties, group companies, clients, consultants, statutory authorities, auditors, background verification agencies, payroll processors, IT service providers or other service partners on a need-to-know basis and in compliance with applicable laws.</p>
+
+            <p>I shall commence employment with effect from: <b>{{doj}}</b></p>
+
+            <br>
+            <table class="declaration-table">
+            <tr><td style="width:30%;"><b>Signature:</b></td><td style="border-bottom:1px solid #333;"></td></tr>
+            <tr><td><b>Date:</b></td><td style="border-bottom:1px solid #333;">{{current_date}}</td></tr>
+            </table>
+            </div>""";
     }
 
     private String templateSalarySlip() {
