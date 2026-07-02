@@ -29,6 +29,7 @@ public class PayrollService {
     private final EmployeeRepository employeeRepository;
     private final AttendanceRepository attendanceRepository;
     private final SalaryMasterRepository salaryMasterRepository;
+    private final SalaryMasterHistoryRepository salaryMasterHistoryRepository;
 
     /**
      * Process payroll for a given month/year.
@@ -193,6 +194,32 @@ public class PayrollService {
                         .wageYear(item.getWageYear())
                         .build());
 
+                boolean isNew = salary.getId() == null;
+                String changedBy = getCurrentUser();
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+                // Track changes for existing records
+                if (!isNew) {
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "basic", salary.getBasic(), item.getBasic(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "hra", salary.getHra(), item.getHra(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "bonus", salary.getBonus(), item.getBonus(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "appraisalAmount", salary.getAppraisalAmount(), item.getAppraisalAmount(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "lateSittingAmount", salary.getLateSittingAmount(), item.getLateSittingAmount(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "pfDeduction", salary.getPfDeduction(), item.getPfDeduction(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "esiDeduction", salary.getEsiDeduction(), item.getEsiDeduction(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "ptDeduction", salary.getPtDeduction(), item.getPtDeduction(), changedBy, now);
+                    trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
+                        "overtimeWages", salary.getOvertimeWages(), item.getOvertimeWages(), changedBy, now);
+                }
+
                 if (item.getBasic() != null) salary.setBasic(item.getBasic());
                 if (item.getHra() != null) salary.setHra(item.getHra());
                 if (item.getFixedPersonalAllowance() != null) salary.setFixedPersonalAllowance(item.getFixedPersonalAllowance());
@@ -243,18 +270,38 @@ public class PayrollService {
         return val != null ? val : BigDecimal.ZERO;
     }
 
+    private void trackInputChange(Long salaryId, Long empId, String empCode, String field,
+                                   BigDecimal oldVal, BigDecimal newVal, String user,
+                                   java.time.LocalDateTime now) {
+        if (oldVal == null && newVal == null) return;
+        if (oldVal != null && newVal != null && oldVal.compareTo(newVal) == 0) return;
+        if (newVal == null) return;
+        salaryMasterHistoryRepository.save(com.ems.model.SalaryMasterHistory.builder()
+            .employeeId(empId)
+            .employeeCode(empCode)
+            .fieldName("monthly_" + field)
+            .oldValue(oldVal != null ? oldVal.toPlainString() : null)
+            .newValue(newVal.toPlainString())
+            .changedBy(user)
+            .changedAt(now)
+            .build());
+    }
+
+    private String getCurrentUser() {
+        org.springframework.security.core.Authentication auth =
+            org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
+    }
+
     private void applyMaster(Salary salary, com.ems.model.SalaryMaster master) {
         salary.setBasic(master.getBasic());
         salary.setHra(master.getHra());
         salary.setFixedPersonalAllowance(master.getFixedPersonalAllowance());
         salary.setOtherAllowance(master.getOtherAllowance());
-        salary.setBonus(master.getBonus());
-        salary.setAppraisalAmount(master.getAppraisalAmount());
-        salary.setLateSittingAmount(master.getLateSittingAmount());
+        // Only copy structural fields — skip per-month adjustments (bonus, appraisal, lateSitting, overtime)
         salary.setPfDeduction(master.getPfDeduction());
         salary.setEsiDeduction(master.getEsiDeduction());
         salary.setPtDeduction(master.getPtDeduction());
-        salary.setOvertimeWages(master.getOvertimeWages());
         salary.setWorkingHoursPerDay(master.getWorkingHoursPerDay());
         salary.setWeeklyOff(master.getWeeklyOff());
         salary.setWorkerType(master.getWorkerType());

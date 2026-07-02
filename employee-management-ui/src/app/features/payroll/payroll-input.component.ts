@@ -8,17 +8,19 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { PayrollService } from '../../core/services/payroll.service';
+import { SalaryService } from '../../core/services/salary.service';
 import { EmployeeService } from '../../core/services/employee.service';
-import { PayrollInput } from '../../core/models/payroll.models';
+import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models';
 
 @Component({
   selector: 'app-payroll-input',
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzInputNumberModule, NzCardModule, NzSpinModule
+    NzIconModule, NzInputNumberModule, NzCardModule, NzSpinModule, NzTagModule
   ],
   template: `
     <div class="pi-container">
@@ -30,12 +32,23 @@ import { PayrollInput } from '../../core/models/payroll.models';
           </div>
           <div>
             <div class="pi-header-title">Employee Pay Input</div>
-            <div class="pi-header-sub">Enter salary components for all employees</div>
+            <div class="pi-header-sub">Per-month adjustments (bonus, appraisal, late sitting) — structural fields pre-filled from Salary Master</div>
           </div>
         </div>
-        <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving">
-          <i nz-icon nzType="save"></i> Save All
-        </button>
+        <div class="pi-header-actions">
+          <span class="pi-source-badge">
+            <i nz-icon nzType="database"></i> Master
+          </span>
+          <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving">
+            <i nz-icon nzType="save"></i> Save All
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== INFO BANNER ===== -->
+      <div class="pi-info-bar">
+        <i nz-icon nzType="info-circle" nzTheme="fill" style="color:#1f3d6e"></i>
+        <span><strong>Basic, HRA, PF, ESI, PT</strong> come from Salary Master. <strong>Bonus, Appraisal, Late Sitting, Overtime</strong> are per-month — enter them fresh each month.</span>
       </div>
 
       <!-- ===== CONTROLS CARD ===== -->
@@ -48,6 +61,7 @@ import { PayrollInput } from '../../core/models/payroll.models';
             <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
           </nz-select>
           <span class="pi-count" *ngIf="employees.length > 0">{{ employees.length }} employee(s)</span>
+          <span class="pi-source-info" *ngIf="loadedFromMaster > 0">{{ loadedFromMaster }} from master</span>
         </div>
       </nz-card>
 
@@ -57,7 +71,6 @@ import { PayrollInput } from '../../core/models/payroll.models';
           [nzData]="employees"
           [nzLoading]="loading"
           [nzPageSize]="50"
-          [nzScroll]="{ x: '1400px' }"
           nzBordered nzSize="small"
           class="theme-table">
           <thead>
@@ -65,7 +78,6 @@ import { PayrollInput } from '../../core/models/payroll.models';
               <th class="th-sno">#</th>
               <th class="th-code">Emp Code</th>
               <th class="th-name">Name</th>
-              <th class="th-desig">Designation</th>
               <th class="th-num">Basic</th>
               <th class="th-num">HRA</th>
               <th class="th-num">FPA</th>
@@ -73,10 +85,10 @@ import { PayrollInput } from '../../core/models/payroll.models';
               <th class="th-num">PF</th>
               <th class="th-num">ESI</th>
               <th class="th-num">PT</th>
-              <th class="th-num">OT</th>
-              <th class="th-num">Bonus</th>
-              <th class="th-num">Appraisal</th>
-              <th class="th-num">Late Sit.</th>
+              <th class="th-num th-monthly">Bonus</th>
+              <th class="th-num th-monthly">Appraisal</th>
+              <th class="th-num th-monthly">Late Sit.</th>
+              <th class="th-num th-monthly">OT</th>
               <th class="th-worker">Worker</th>
             </tr>
           </thead>
@@ -85,39 +97,38 @@ import { PayrollInput } from '../../core/models/payroll.models';
               <td class="td-center">{{ i + 1 }}</td>
               <td><span class="emp-code-text">{{ emp.employeeCode }}</span></td>
               <td class="td-name">{{ emp.employeeName }}</td>
-              <td class="td-desig">{{ emp.designation || '-' }}</td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.basic" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.hra" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.fixedPersonalAllowance" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.otherAllowance" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.pfDeduction" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.esiDeduction" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
+              <td class="td-num td-master">
                 <nz-input-number [(ngModel)]="emp.ptDeduction" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
-                <nz-input-number [(ngModel)]="emp.overtimeWages" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
+              <td class="td-num td-monthly">
+                <nz-input-number [(ngModel)]="emp.bonus" [nzMin]="0" [nzPrecision]="2" class="num-input num-monthly" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
-                <nz-input-number [(ngModel)]="emp.bonus" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
+              <td class="td-num td-monthly">
+                <nz-input-number [(ngModel)]="emp.appraisalAmount" [nzMin]="0" [nzPrecision]="2" class="num-input num-monthly" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
-                <nz-input-number [(ngModel)]="emp.appraisalAmount" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
+              <td class="td-num td-monthly">
+                <nz-input-number [(ngModel)]="emp.lateSittingAmount" [nzMin]="0" [nzPrecision]="2" class="num-input num-monthly" nzSize="small"></nz-input-number>
               </td>
-              <td class="td-num">
-                <nz-input-number [(ngModel)]="emp.lateSittingAmount" [nzMin]="0" [nzPrecision]="2" class="num-input" nzSize="small"></nz-input-number>
+              <td class="td-num td-monthly">
+                <nz-input-number [(ngModel)]="emp.overtimeWages" [nzMin]="0" [nzPrecision]="2" class="num-input num-monthly" nzSize="small"></nz-input-number>
               </td>
               <td class="td-center">
                 <nz-select [(ngModel)]="emp.workerType" nzSize="small" style="width:100px">
@@ -183,6 +194,44 @@ import { PayrollInput } from '../../core/models/payroll.models';
       color: rgba(255,255,255,0.6);
       font-weight: 400;
       margin-top: 1px;
+    }
+    .pi-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pi-source-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #1f3d6e;
+      background: rgba(31,61,110,0.1);
+      padding: 4px 10px;
+      border-radius: 12px;
+      letter-spacing: 0.3px;
+    }
+    .pi-info-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      margin-bottom: 12px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      border: 1px solid #d0d9f0;
+      font-size: 12px;
+      color: #374151;
+      line-height: 1.5;
+    }
+    .pi-source-info {
+      font-size: 11px;
+      color: #1f3d6e;
+      font-weight: 600;
+      padding: 2px 10px;
+      background: rgba(31,61,110,0.08);
+      border-radius: 10px;
     }
     .pi-controls-card, .pi-table-card {
       border-radius: 10px !important;
@@ -364,6 +413,28 @@ import { PayrollInput } from '../../core/models/payroll.models';
     :host ::ng-deep .num-input .ant-input-number-handler-wrap {
       border-radius: 0 6px 6px 0 !important;
     }
+    .th-monthly {
+      background: #fffbeb !important;
+    }
+    .td-master {
+      background: #f0f4ff;
+    }
+    .td-monthly {
+      background: #fffbeb;
+    }
+    .num-monthly {
+      border-color: #f59e0b !important;
+    }
+    :host ::ng-deep .num-monthly .ant-input-number {
+      border-color: #f59e0b !important;
+    }
+    :host ::ng-deep .num-monthly .ant-input-number:hover {
+      border-color: #d97706 !important;
+    }
+    :host ::ng-deep .num-monthly .ant-input-number-focused {
+      border-color: #f59e0b !important;
+      box-shadow: 0 0 0 2px rgba(245,158,11,0.15) !important;
+    }
     .empty-cell {
       text-align: center !important;
       padding: 28px !important;
@@ -413,6 +484,7 @@ export class PayrollInputComponent implements OnInit {
   selectedYear: number;
   selectedMonth: number;
   employees: any[] = [];
+  loadedFromMaster = 0;
 
   yearList: number[] = [];
   monthList = [
@@ -426,6 +498,7 @@ export class PayrollInputComponent implements OnInit {
 
   constructor(
     private payrollService: PayrollService,
+    private salaryService: SalaryService,
     private employeeService: EmployeeService,
     private msg: NzMessageService
   ) {
@@ -444,30 +517,115 @@ export class PayrollInputComponent implements OnInit {
 
   loadInputs(): void {
     this.loading = true;
-    // Load LIVE employees first
+    this.loadedFromMaster = 0;
+    // Load LIVE employees + Salary Master + existing monthly data in parallel
     this.employeeService.getEmployees({ size: 200, employeeStatus: 'LIVE' }).subscribe({
       next: (res) => {
         const empList = res.data?.content || [];
-        this.employees = empList.map((e: any) => ({
-          employeeId: e.id,
-          employeeCode: e.employeeCode,
-          employeeName: `${e.firstName} ${e.surname}`,
-          designation: e.designation || '',
-          basic: 0,
-          hra: 0,
-          fixedPersonalAllowance: 0,
-          otherAllowance: 0,
-          pfDeduction: 0,
-          esiDeduction: 0,
-          ptDeduction: 0,
-          overtimeWages: 0,
-          bonus: 0,
-          appraisalAmount: 0,
-          lateSittingAmount: 0,
-          workerType: e.workerType || 'Permanent',
-          workingHoursPerDay: 8
-        }));
-        this.loading = false;
+        if (empList.length === 0) {
+          this.employees = [];
+          this.loading = false;
+          return;
+        }
+        // Build employee map
+        const empMap = new Map<number, any>();
+        empList.forEach((e: any) => {
+          empMap.set(e.id, {
+            employeeId: e.id,
+            employeeCode: e.employeeCode,
+            employeeName: `${e.firstName} ${e.surname}`,
+            basic: 0, hra: 0, fixedPersonalAllowance: 0, otherAllowance: 0,
+            pfDeduction: 0, esiDeduction: 0, ptDeduction: 0,
+            overtimeWages: 0, bonus: 0, appraisalAmount: 0, lateSittingAmount: 0,
+            workerType: e.workerType || 'Permanent', workingHoursPerDay: 8
+          });
+        });
+
+        // Load Salary Master
+        this.payrollService.getSalaryMaster().subscribe({
+          next: (masterRes) => {
+            if (masterRes.success && masterRes.data) {
+              masterRes.data.forEach((m: SalaryMasterDTO) => {
+                const emp = empMap.get(m.employeeId);
+                if (emp && m.employeeId) {
+                  emp.basic = m.basic || 0;
+                  emp.hra = m.hra || 0;
+                  emp.fixedPersonalAllowance = m.fixedPersonalAllowance || 0;
+                  emp.otherAllowance = m.otherAllowance || 0;
+                  emp.pfDeduction = m.pfDeduction || 0;
+                  emp.esiDeduction = m.esiDeduction || 0;
+                  emp.ptDeduction = m.ptDeduction || 0;
+                  emp.workerType = m.workerType || emp.workerType;
+                  emp.workingHoursPerDay = m.workingHoursPerDay || 8;
+                  this.loadedFromMaster++;
+                }
+              });
+            }
+            // Load existing monthly Salary records
+            this.salaryService.getSalariesByPeriod(this.selectedYear, this.selectedMonth).subscribe({
+              next: (salRes) => {
+                if (salRes.success && salRes.data) {
+                  salRes.data.forEach((s: any) => {
+                    const emp = empMap.get(s.employeeId);
+                    if (emp) {
+                      // Monthly values override master
+                      if (s.basic != null) emp.basic = s.basic;
+                      if (s.hra != null) emp.hra = s.hra;
+                      if (s.fixedPersonalAllowance != null) emp.fixedPersonalAllowance = s.fixedPersonalAllowance;
+                      if (s.otherAllowance != null) emp.otherAllowance = s.otherAllowance;
+                      if (s.pfDeduction != null) emp.pfDeduction = s.pfDeduction;
+                      if (s.esiDeduction != null) emp.esiDeduction = s.esiDeduction;
+                      if (s.ptDeduction != null) emp.ptDeduction = s.ptDeduction;
+                      if (s.bonus != null) emp.bonus = s.bonus;
+                      if (s.appraisalAmount != null) emp.appraisalAmount = s.appraisalAmount;
+                      if (s.lateSittingAmount != null) emp.lateSittingAmount = s.lateSittingAmount;
+                      if (s.overtimeWages != null) emp.overtimeWages = s.overtimeWages;
+                      if (s.workerType) emp.workerType = s.workerType;
+                      if (s.workingHoursPerDay) emp.workingHoursPerDay = s.workingHoursPerDay;
+                    }
+                  });
+                }
+                this.employees = Array.from(empMap.values());
+                this.loading = false;
+              },
+              error: () => {
+                this.employees = Array.from(empMap.values());
+                this.loading = false;
+              }
+            });
+          },
+          error: () => {
+            // If master load fails, proceed with just monthly data
+            this.salaryService.getSalariesByPeriod(this.selectedYear, this.selectedMonth).subscribe({
+              next: (salRes) => {
+                if (salRes.success && salRes.data) {
+                  salRes.data.forEach((s: any) => {
+                    const emp = empMap.get(s.employeeId);
+                    if (emp) {
+                      if (s.basic != null) emp.basic = s.basic;
+                      if (s.hra != null) emp.hra = s.hra;
+                      if (s.fixedPersonalAllowance != null) emp.fixedPersonalAllowance = s.fixedPersonalAllowance;
+                      if (s.otherAllowance != null) emp.otherAllowance = s.otherAllowance;
+                      if (s.bonus != null) emp.bonus = s.bonus;
+                      if (s.appraisalAmount != null) emp.appraisalAmount = s.appraisalAmount;
+                      if (s.lateSittingAmount != null) emp.lateSittingAmount = s.lateSittingAmount;
+                      if (s.pfDeduction != null) emp.pfDeduction = s.pfDeduction;
+                      if (s.esiDeduction != null) emp.esiDeduction = s.esiDeduction;
+                      if (s.overtimeWages != null) emp.overtimeWages = s.overtimeWages;
+                      if (s.workerType) emp.workerType = s.workerType;
+                    }
+                  });
+                }
+                this.employees = Array.from(empMap.values());
+                this.loading = false;
+              },
+              error: () => {
+                this.employees = Array.from(empMap.values());
+                this.loading = false;
+              }
+            });
+          }
+        });
       },
       error: () => {
         this.loading = false;
@@ -479,8 +637,6 @@ export class PayrollInputComponent implements OnInit {
   saveAll(): void {
     const inputs: PayrollInput[] = this.employees.map(e => ({
       employeeId: e.employeeId,
-      employeeCode: e.employeeCode,
-      employeeName: e.employeeName,
       basic: e.basic || 0,
       hra: e.hra || 0,
       fixedPersonalAllowance: e.fixedPersonalAllowance || 0,
