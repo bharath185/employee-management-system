@@ -173,12 +173,13 @@ import { saveAs } from 'file-saver';
                 </ng-container>
                 <ng-template #editCell>
                   <nz-select
-                    [(ngModel)]="emp.days[di]"
-                    (ngModelChange)="markChanged(emp.employeeId, di, $event)"
+                    [ngModel]="emp.days[di]"
+                    (ngModelChange)="onDayChange(emp, di, $event)"
                     nzSize="small"
                     class="day-select"
                     [nzDropdownMatchSelectWidth]="false"
-                    nzDropdownClassName="att-dropdown">
+                    nzDropdownClassName="att-dropdown"
+                    [ngModelOptions]="{standalone: true}">
                     <nz-option nzValue="" nzLabel="—" nzCustomContent>
                       <span class="opt-blank">—</span>
                     </nz-option>
@@ -424,6 +425,11 @@ export class AttendanceComponent implements OnInit {
 
   markChanged(employeeId: number, dayIndex: number, status: string): void {
     this.changedRecords.add(`${employeeId}_${dayIndex}`);
+  }
+
+  onDayChange(emp: EmployeeAttendance, dayIndex: number, status: string): void {
+    emp.days[dayIndex] = status;
+    this.markChanged(emp.employeeId, dayIndex, status);
   }
 
   toggleEdit(): void {
