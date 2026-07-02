@@ -194,12 +194,10 @@ public class PayrollService {
                         .wageYear(item.getWageYear())
                         .build());
 
-                boolean isNew = salary.getId() == null;
-                String changedBy = getCurrentUser();
-                java.time.LocalDateTime now = java.time.LocalDateTime.now();
-
-                // Track changes for existing records
-                if (!isNew) {
+                // Track changes only for existing records (has an ID)
+                if (salary.getId() != null) {
+                    String changedBy = getCurrentUser();
+                    java.time.LocalDateTime now = java.time.LocalDateTime.now();
                     trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
                         "basic", salary.getBasic(), item.getBasic(), changedBy, now);
                     trackInputChange(salary.getId(), employee.getId(), employee.getEmployeeCode(),
@@ -270,14 +268,14 @@ public class PayrollService {
         return val != null ? val : BigDecimal.ZERO;
     }
 
-    private void trackInputChange(Long salaryId, Long empId, String empCode, String field,
+    private void trackInputChange(Long salaryMasterId, Long empId, String empCode, String field,
                                    BigDecimal oldVal, BigDecimal newVal, String user,
                                    java.time.LocalDateTime now) {
         if (oldVal == null && newVal == null) return;
         if (oldVal != null && newVal != null && oldVal.compareTo(newVal) == 0) return;
         if (newVal == null) return;
         salaryMasterHistoryRepository.save(com.ems.model.SalaryMasterHistory.builder()
-            .salaryMasterId(0L) // monthly input changes use 0 as placeholder
+            .salaryMasterId(salaryMasterId)
             .employeeId(empId)
             .employeeCode(empCode)
             .fieldName("monthly_" + field)
