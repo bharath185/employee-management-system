@@ -112,6 +112,37 @@ export const routes: Routes = [
       },
       {
         path: 'payroll',
+        redirectTo: 'payroll/process',
+        pathMatch: 'full'
+      },
+      {
+        path: 'payroll/process',
+        loadComponent: () => import('./features/payroll/payroll-process.component')
+          .then(m => m.PayrollProcessComponent),
+        title: 'Payroll Processing'
+      },
+      {
+        path: 'payroll/input',
+        loadComponent: () => import('./features/payroll/payroll-input.component')
+          .then(m => m.PayrollInputComponent),
+        title: 'Payroll Input'
+      },
+      {
+        path: 'payroll/payslips',
+        loadComponent: () => import('./features/payroll/payslip-list.component')
+          .then(m => m.PayslipListComponent),
+        title: 'Payslips'
+      },
+      {
+        path: 'payroll/config',
+        loadComponent: () => import('./features/payroll/email-config.component')
+          .then(m => m.EmailConfigComponent),
+        title: 'Mail Configuration',
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' }
+      },
+      {
+        path: 'payroll/salary-list',
         loadComponent: () => import('./features/payroll/salary-list.component')
           .then(m => m.SalaryListComponent),
         title: 'Salary Management'
@@ -183,6 +214,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/my-leave/my-leave.component')
           .then(m => m.MyLeaveComponent),
         title: 'My Leave'
+      },
+      {
+        path: 'payroll',
+        loadComponent: () => import('./features/my-payroll/my-payroll.component')
+          .then(m => m.MyPayrollComponent),
+        title: 'My Payroll'
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

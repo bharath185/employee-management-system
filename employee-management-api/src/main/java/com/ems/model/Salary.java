@@ -56,6 +56,18 @@ public class Salary {
     @Builder.Default
     private BigDecimal otherAllowance = BigDecimal.ZERO;
 
+    @Column(name = "bonus", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal bonus = BigDecimal.ZERO;
+
+    @Column(name = "appraisal_amount", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal appraisalAmount = BigDecimal.ZERO;
+
+    @Column(name = "late_sitting_amount", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal lateSittingAmount = BigDecimal.ZERO;
+
     @Column(name = "gross_salary", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal grossSalary = BigDecimal.ZERO;
@@ -118,7 +130,10 @@ public class Salary {
             .add(safe(basic))
             .add(safe(hra))
             .add(safe(fixedPersonalAllowance))
-            .add(safe(otherAllowance));
+            .add(safe(otherAllowance))
+            .add(safe(bonus))
+            .add(safe(appraisalAmount))
+            .add(safe(lateSittingAmount));
 
         this.netPay = grossSalary
             .subtract(safe(pfDeduction))

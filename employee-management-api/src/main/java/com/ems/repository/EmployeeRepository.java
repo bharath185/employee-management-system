@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +28,7 @@ public interface EmployeeRepository
 
     @Query("SELECT COUNT(e) FROM Employee e WHERE e.gender = :gender AND e.isDeleted = false")
     long countByGender(String gender);
+
+    @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false")
+    List<Employee> findAllLiveEmployees();
 }

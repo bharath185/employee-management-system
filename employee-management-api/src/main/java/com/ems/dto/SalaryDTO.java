@@ -28,6 +28,9 @@ public class SalaryDTO {
     private BigDecimal hra;
     private BigDecimal fixedPersonalAllowance;
     private BigDecimal otherAllowance;
+    private BigDecimal bonus;
+    private BigDecimal appraisalAmount;
+    private BigDecimal lateSittingAmount;
     private BigDecimal grossSalary;
     private BigDecimal pfDeduction;
     private BigDecimal esiDeduction;
@@ -54,6 +57,9 @@ public class SalaryDTO {
             .hra(salary.getHra())
             .fixedPersonalAllowance(salary.getFixedPersonalAllowance())
             .otherAllowance(salary.getOtherAllowance())
+            .bonus(salary.getBonus())
+            .appraisalAmount(salary.getAppraisalAmount())
+            .lateSittingAmount(salary.getLateSittingAmount())
             .grossSalary(salary.getGrossSalary())
             .pfDeduction(salary.getPfDeduction())
             .esiDeduction(salary.getEsiDeduction())

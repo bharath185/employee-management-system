@@ -1,23 +1,21 @@
 package com.ems.service;
 
-import com.ems.dto.SalaryDTO;
+import com.ems.dto.PayslipDTO;
 import com.ems.exception.ResourceNotFoundException;
 import com.ems.model.Company;
 import com.ems.model.Employee;
-import com.ems.model.Salary;
+import com.ems.model.Payslip;
 import com.ems.repository.EmployeeRepository;
-import com.ems.repository.SalaryRepository;
+import com.ems.repository.PayslipRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,135 +25,35 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SalaryService {
+public class PayslipService {
 
-    private final SalaryRepository salaryRepository;
+    private final PayslipRepository payslipRepository;
     private final EmployeeRepository employeeRepository;
     private final CompanyService companyService;
 
-    public Page<SalaryDTO> getSalaries(Integer year, Integer month, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("wageYear").descending().and(Sort.by("wageMonth").descending()));
-        if (year != null && month != null) {
-            return salaryRepository.findByWageYearAndWageMonth(year, month, pageable).map(SalaryDTO::fromEntity);
-        }
-        return salaryRepository.findAll(pageable).map(SalaryDTO::fromEntity);
-    }
-
-    public List<SalaryDTO> getSalariesByPeriod(Integer year, Integer month) {
-        return salaryRepository.findByWageYearAndWageMonth(year, month).stream()
-            .map(SalaryDTO::fromEntity)
+    public List<PayslipDTO> getPayslips(Integer year, Integer month) {
+        return payslipRepository.findByWageYearAndWageMonth(year, month).stream()
+            .map(PayslipDTO::fromEntity)
             .collect(Collectors.toList());
     }
 
-    public List<SalaryDTO> getSalariesByEmployee(Long employeeId) {
-        return salaryRepository.findByEmployeeId(employeeId).stream()
-            .map(SalaryDTO::fromEntity)
+    public List<PayslipDTO> getEmployeePayslips(Long employeeId) {
+        return payslipRepository.findByEmployeeId(employeeId).stream()
+            .map(PayslipDTO::fromEntity)
             .collect(Collectors.toList());
     }
 
-    public SalaryDTO getSalaryById(Long id) {
-        Salary salary = salaryRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Salary record not found"));
-        return SalaryDTO.fromEntity(salary);
+    public PayslipDTO getPayslipById(Long id) {
+        Payslip payslip = payslipRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Payslip not found"));
+        return PayslipDTO.fromEntity(payslip);
     }
 
-    public SalaryDTO getSalaryByEmployeeAndPeriod(Long employeeId, Integer year, Integer month) {
-        Salary salary = salaryRepository.findByEmployeeIdAndWageYearAndWageMonth(employeeId, year, month)
-            .orElseThrow(() -> new ResourceNotFoundException("Salary record not found for this period"));
-        return SalaryDTO.fromEntity(salary);
-    }
-
-    @Transactional
-    public SalaryDTO createSalary(SalaryDTO dto) {
-        Employee employee = employeeRepository.findById(dto.getEmployeeId())
-            .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
-
-        if (salaryRepository.existsByEmployeeIdAndWageYearAndWageMonth(
-                dto.getEmployeeId(), dto.getWageYear(), dto.getWageMonth())) {
-            throw new com.ems.exception.DuplicateResourceException(
-                "Salary record already exists for this employee in this period");
-        }
-
-        Salary salary = Salary.builder()
-            .employee(employee)
-            .wageMonth(dto.getWageMonth())
-            .wageYear(dto.getWageYear())
-            .basic(dto.getBasic())
-            .hra(dto.getHra())
-            .fixedPersonalAllowance(dto.getFixedPersonalAllowance())
-            .otherAllowance(dto.getOtherAllowance())
-            .bonus(dto.getBonus())
-            .appraisalAmount(dto.getAppraisalAmount())
-            .lateSittingAmount(dto.getLateSittingAmount())
-            .pfDeduction(dto.getPfDeduction())
-            .esiDeduction(dto.getEsiDeduction())
-            .ptDeduction(dto.getPtDeduction())
-            .overtimeWages(dto.getOvertimeWages())
-            .workingHoursPerDay(dto.getWorkingHoursPerDay() != null ? dto.getWorkingHoursPerDay() : 8)
-            .weeklyOff(dto.getWeeklyOff() != null ? dto.getWeeklyOff() : "Allowed")
-            .workerType(dto.getWorkerType() != null ? dto.getWorkerType() : "Permanent")
-            .dateOfPayment(dto.getDateOfPayment())
-            .build();
-
-        salary.computeDerivedFields();
-        salary = salaryRepository.save(salary);
-        log.info("Created salary record for employee {} period {}/{}", employee.getEmployeeCode(), dto.getWageMonth(), dto.getWageYear());
-        return SalaryDTO.fromEntity(salary);
-    }
-
-    @Transactional
-    public SalaryDTO updateSalary(Long id, SalaryDTO dto) {
-        Salary salary = salaryRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Salary record not found"));
-
-        salary.setBasic(dto.getBasic());
-        salary.setHra(dto.getHra());
-        salary.setFixedPersonalAllowance(dto.getFixedPersonalAllowance());
-        salary.setOtherAllowance(dto.getOtherAllowance());
-        salary.setBonus(dto.getBonus());
-        salary.setAppraisalAmount(dto.getAppraisalAmount());
-        salary.setLateSittingAmount(dto.getLateSittingAmount());
-        salary.setPfDeduction(dto.getPfDeduction());
-        salary.setEsiDeduction(dto.getEsiDeduction());
-        salary.setPtDeduction(dto.getPtDeduction());
-        salary.setOvertimeWages(dto.getOvertimeWages());
-        salary.setWorkingHoursPerDay(dto.getWorkingHoursPerDay());
-        salary.setWeeklyOff(dto.getWeeklyOff());
-        salary.setWorkerType(dto.getWorkerType());
-        salary.setDateOfPayment(dto.getDateOfPayment());
-
-        salary.computeDerivedFields();
-        salary = salaryRepository.save(salary);
-        log.info("Updated salary record {} for employee {}", id, salary.getEmployee().getEmployeeCode());
-        return SalaryDTO.fromEntity(salary);
-    }
-
-    @Transactional
-    public void deleteSalary(Long id) {
-        Salary salary = salaryRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Salary record not found"));
-        salaryRepository.delete(salary);
-        log.info("Deleted salary record {} for employee {}", id, salary.getEmployee().getEmployeeCode());
-    }
-
-    public List<Integer> getDistinctYears() {
-        return salaryRepository.findDistinctWageYears();
-    }
-
-    public List<Integer> getDistinctMonths(Integer year) {
-        return salaryRepository.findDistinctWageMonthsByYear(year);
-    }
-
-    public Map<String, Object> getSalaryStats(Integer year, Integer month) {
-        long count = salaryRepository.countByWagePeriod(year, month);
-        List<Salary> salaries = salaryRepository.findByWageYearAndWageMonth(year, month);
-        java.math.BigDecimal totalGross = salaries.stream()
-            .map(Salary::getGrossSalary)
-            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-        java.math.BigDecimal totalNet = salaries.stream()
-            .map(Salary::getNetPay)
-            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
-        java.math.BigDecimal totalDeductions = totalGross.subtract(totalNet);
+    public Map<String, Object> getPayslipStats(Integer year, Integer month) {
+        long count = payslipRepository.countByWageYearAndWageMonth(year, month);
+        BigDecimal totalGross = payslipRepository.sumGrossByWageYearAndWageMonth(year, month);
+        BigDecimal totalNet = payslipRepository.sumNetByWageYearAndWageMonth(year, month);
+        BigDecimal totalDeductions = payslipRepository.sumDeductionsByWageYearAndWageMonth(year, month);
 
         return Map.of(
             "totalEmployees", count,
@@ -165,37 +63,33 @@ public class SalaryService {
         );
     }
 
-    public String generateSalarySlipHtml(Long salaryId) {
-        Salary salary = salaryRepository.findById(salaryId)
-            .orElseThrow(() -> new ResourceNotFoundException("Salary record not found"));
-        Employee emp = salary.getEmployee();
+    public String getPayslipHtml(Long payslipId) {
+        Payslip payslip = payslipRepository.findById(payslipId)
+            .orElseThrow(() -> new ResourceNotFoundException("Payslip not found"));
+        Employee emp = payslip.getEmployee();
         Company company = companyService.getCompany();
 
         NumberFormat fmt = NumberFormat.getNumberInstance(Locale.US);
         fmt.setMinimumFractionDigits(2);
         fmt.setMaximumFractionDigits(2);
 
-        String monthName = java.time.Month.of(salary.getWageMonth()).name();
+        String monthName = Month.of(payslip.getWageMonth()).name();
         monthName = monthName.charAt(0) + monthName.substring(1).toLowerCase();
 
-        String fmtBasic = fmt.format(salary.getBasic());
-        String fmtHra = fmt.format(salary.getHra());
-        String fmtFpa = fmt.format(salary.getFixedPersonalAllowance());
-        String fmtOa = fmt.format(salary.getOtherAllowance());
-        String fmtBonus = fmt.format(salary.getBonus());
-        String fmtAppraisal = fmt.format(salary.getAppraisalAmount());
-        String fmtLateSitting = fmt.format(salary.getLateSittingAmount());
-        String fmtGross = fmt.format(salary.getGrossSalary());
-        String fmtPf = fmt.format(salary.getPfDeduction());
-        String fmtEsi = fmt.format(salary.getEsiDeduction());
-        String fmtPt = fmt.format(salary.getPtDeduction());
-        String fmtNet = fmt.format(salary.getNetPay());
-        String fmtOt = fmt.format(salary.getOvertimeWages());
-
-        BigDecimal totalDeductions = salary.getPfDeduction()
-            .add(salary.getEsiDeduction())
-            .add(salary.getPtDeduction());
-        String fmtTotalDed = fmt.format(totalDeductions);
+        String fmtBasic = fmt.format(payslip.getBasic());
+        String fmtHra = fmt.format(payslip.getHra());
+        String fmtFpa = fmt.format(payslip.getFixedPersonalAllowance());
+        String fmtOa = fmt.format(payslip.getOtherAllowance());
+        String fmtBonus = fmt.format(payslip.getBonus());
+        String fmtAppraisal = fmt.format(payslip.getAppraisalAmount());
+        String fmtLateSitting = fmt.format(payslip.getLateSittingAmount());
+        String fmtGross = fmt.format(payslip.getGrossSalary());
+        String fmtPf = fmt.format(payslip.getPfDeduction());
+        String fmtEsi = fmt.format(payslip.getEsiDeduction());
+        String fmtPt = fmt.format(payslip.getPtDeduction());
+        String fmtNet = fmt.format(payslip.getNetPay());
+        String fmtOt = fmt.format(payslip.getOvertimeWages());
+        String fmtTotalDed = fmt.format(payslip.getTotalDeductions());
 
         String cName = safe(company.getCompanyName());
         String cAddr = safe(company.getAddress());
@@ -213,8 +107,8 @@ public class SalaryService {
         String ePf = safe(emp.getPfNo());
         String eEsic = safe(emp.getEsicNo());
         String doj = emp.getDoj() != null ? emp.getDoj().toString() : "-";
-        String year = String.valueOf(salary.getWageYear());
-        String today = java.time.LocalDate.now().toString();
+        String year = String.valueOf(payslip.getWageYear());
+        String today = LocalDate.now().toString();
 
         return String.format("""
             <!DOCTYPE html>
@@ -243,6 +137,7 @@ public class SalaryService {
               .total-row td { font-weight: 700; background: #e8eaf6; }
               .net-row td { font-weight: 700; background: #c5cae9; font-size: 14px; }
               .net-amt { color: #1a237e; font-size: 16px; }
+              .attendance-info { font-size: 12px; margin-top: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; }
               .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; color: #555; }
               .footer .signatory { text-align: right; }
               .footer .signatory .name { font-weight: 600; color: #222; margin-top: 50px; }
@@ -287,6 +182,9 @@ public class SalaryService {
                 <tr class="net-row"><td colspan="2"></td><td><strong>Net Pay</strong></td><td class="amt net-amt"><strong>%s</strong></td></tr>
               </table>
             </div>
+            <div class="attendance-info">
+              <strong>Attendance:</strong> Present: %d | Absent: %d | Leave: %d | Total Working Days: %d
+            </div>
             <div class="footer">
               <div>This is a computer-generated document.</div>
               <div class="signatory">
@@ -300,8 +198,23 @@ public class SalaryService {
             """,
             cName, cAddr, cGst, cPan, monthName, year,
             eName, eCode, eDesig, eDept, doj, eUan, ePf, eEsic, eBank, eAcc,
-            fmtBasic, fmtPf, fmtHra, fmtEsi, fmtFpa, fmtPt, fmtOa, fmtBonus, fmtAppraisal, fmtLateSitting, fmtOt, fmtGross, fmtTotalDed, fmtNet,
+            fmtBasic, fmtPf, fmtHra, fmtEsi, fmtFpa, fmtPt, fmtOa, fmtBonus, fmtAppraisal, fmtLateSitting, fmtOt,
+            fmtGross, fmtTotalDed, fmtNet,
+            payslip.getPresentDays() != null ? payslip.getPresentDays() : 0,
+            payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0,
+            payslip.getLeaveDays() != null ? payslip.getLeaveDays() : 0,
+            payslip.getTotalWorkingDays() != null ? payslip.getTotalWorkingDays() : 0,
             signatory, today);
+    }
+
+    @Transactional
+    public void markAsSent(Long payslipId) {
+        Payslip payslip = payslipRepository.findById(payslipId)
+            .orElseThrow(() -> new ResourceNotFoundException("Payslip not found"));
+        payslip.setStatus("SENT");
+        payslip.setSentAt(java.time.LocalDateTime.now());
+        payslipRepository.save(payslip);
+        log.info("Payslip {} marked as SENT", payslipId);
     }
 
     private String safe(String s) {

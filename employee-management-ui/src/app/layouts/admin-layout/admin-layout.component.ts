@@ -77,11 +77,31 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
               <i nz-icon nzType="bank"></i>
               <span *ngIf="!isCollapsed()">Company Setup</span>
             </li>
-            <li nz-menu-item routerLink="/admin/payroll"
-                *ngIf="can('payroll')"
-                (click)="closeDrawerOnMobile()">
-              <i nz-icon nzType="wallet"></i>
-              <span *ngIf="!isCollapsed()">Payroll</span>
+            <li nz-submenu nzTitle="Payroll" nzIcon="wallet" class="side-submenu"
+                *ngIf="can('payroll')">
+              <ul>
+                <li nz-menu-item routerLink="/admin/payroll/process"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="play-circle"></i>
+                  <span *ngIf="!isCollapsed()">Process</span>
+                </li>
+                <li nz-menu-item routerLink="/admin/payroll/input"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="edit"></i>
+                  <span *ngIf="!isCollapsed()">Employee Input</span>
+                </li>
+                <li nz-menu-item routerLink="/admin/payroll/payslips"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="file-text"></i>
+                  <span *ngIf="!isCollapsed()">Payslips</span>
+                </li>
+                <li nz-menu-item routerLink="/admin/payroll/config"
+                    *ngIf="authService.isAdmin()"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="mail"></i>
+                  <span *ngIf="!isCollapsed()">Configuration</span>
+                </li>
+              </ul>
             </li>
             <li nz-menu-item routerLink="/admin/leave"
                 *ngIf="can('leave')"
