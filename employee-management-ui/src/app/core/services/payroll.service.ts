@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APIResponse } from '../models/api-response.model';
-import { PayrollProcess, Payslip, EmailConfig, PayrollInput } from '../models/payroll.models';
+import { PayrollProcess, Payslip, EmailConfig, PayrollInput, SalaryMasterDTO } from '../models/payroll.models';
 import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -77,5 +77,26 @@ export class PayrollService {
   // ===================== Stats =====================
   getPayslipStats(year: number, month: number): Observable<APIResponse<any>> {
     return this.http.get<APIResponse<any>>(`${this.apiUrl}/stats/${year}/${month}`);
+  }
+
+  // ===================== Salary Master =====================
+  getSalaryMaster(): Observable<APIResponse<SalaryMasterDTO[]>> {
+    return this.http.get<APIResponse<SalaryMasterDTO[]>>(`${this.apiUrl}/salary-master`);
+  }
+
+  getSalaryMasterByEmployee(employeeId: number): Observable<APIResponse<SalaryMasterDTO>> {
+    return this.http.get<APIResponse<SalaryMasterDTO>>(`${this.apiUrl}/salary-master/employee/${employeeId}`);
+  }
+
+  saveSalaryMaster(dto: SalaryMasterDTO): Observable<APIResponse<SalaryMasterDTO>> {
+    return this.http.post<APIResponse<SalaryMasterDTO>>(`${this.apiUrl}/salary-master`, dto);
+  }
+
+  initSalaryMaster(employeeId: number): Observable<APIResponse<SalaryMasterDTO>> {
+    return this.http.post<APIResponse<SalaryMasterDTO>>(`${this.apiUrl}/salary-master/init/${employeeId}`, {});
+  }
+
+  getSalaryMasterHistory(employeeId: number): Observable<APIResponse<any[]>> {
+    return this.http.get<APIResponse<any[]>>(`${this.apiUrl}/salary-master/history/${employeeId}`);
   }
 }

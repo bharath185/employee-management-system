@@ -28,6 +28,7 @@ public class PayrollService {
     private final SalaryRepository salaryRepository;
     private final EmployeeRepository employeeRepository;
     private final AttendanceRepository attendanceRepository;
+    private final SalaryMasterRepository salaryMasterRepository;
 
     /**
      * Process payroll for a given month/year.
@@ -67,7 +68,7 @@ public class PayrollService {
 
         for (Employee emp : employees) {
             try {
-                // Find or create Salary record for this period
+                // Find or create Salary record for this period (fallback to SalaryMaster)
                 Salary salary = salaryRepository
                     .findByEmployeeIdAndWageYearAndWageMonth(emp.getId(), year, month)
                     .orElseGet(() -> {
@@ -76,6 +77,23 @@ public class PayrollService {
                             .wageMonth(month)
                             .wageYear(year)
                             .build();
+                        // Copy from SalaryMaster if available
+                        salaryMasterRepository.findByEmployeeId(emp.getId()).ifPresent(master -> {
+                            newSal.setBasic(master.getBasic());
+                            newSal.setHra(master.getHra());
+                            newSal.setFixedPersonalAllowance(master.getFixedPersonalAllowance());
+                            newSal.setOtherAllowance(master.getOtherAllowance());
+                            newSal.setBonus(master.getBonus());
+                            newSal.setAppraisalAmount(master.getAppraisalAmount());
+                            newSal.setLateSittingAmount(master.getLateSittingAmount());
+                            newSal.setPfDeduction(master.getPfDeduction());
+                            newSal.setEsiDeduction(master.getEsiDeduction());
+                            newSal.setPtDeduction(master.getPtDeduction());
+                            newSal.setOvertimeWages(master.getOvertimeWages());
+                            newSal.setWorkingHoursPerDay(master.getWorkingHoursPerDay());
+                            newSal.setWeeklyOff(master.getWeeklyOff());
+                            newSal.setWorkerType(master.getWorkerType());
+                        });
                         newSal.computeDerivedFields();
                         return salaryRepository.save(newSal);
                     });

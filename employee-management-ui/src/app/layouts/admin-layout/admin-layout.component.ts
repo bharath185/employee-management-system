@@ -85,6 +85,11 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   <i nz-icon nzType="play-circle"></i>
                   <span *ngIf="!isCollapsed()">Process</span>
                 </li>
+                <li nz-menu-item routerLink="/admin/payroll/salary-master"
+                    (click)="closeDrawerOnMobile()">
+                  <i nz-icon nzType="bank"></i>
+                  <span *ngIf="!isCollapsed()">Salary Master</span>
+                </li>
                 <li nz-menu-item routerLink="/admin/payroll/input"
                     (click)="closeDrawerOnMobile()">
                   <i nz-icon nzType="edit"></i>

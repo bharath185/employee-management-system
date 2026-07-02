@@ -142,6 +142,12 @@ export const routes: Routes = [
         data: { role: 'ADMIN' }
       },
       {
+        path: 'payroll/salary-master',
+        loadComponent: () => import('./features/payroll/salary-master.component')
+          .then(m => m.SalaryMasterComponent),
+        title: 'Salary Master'
+      },
+      {
         path: 'payroll/salary-list',
         loadComponent: () => import('./features/payroll/salary-list.component')
           .then(m => m.SalaryListComponent),

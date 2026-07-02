@@ -99,6 +99,30 @@ export interface PayrollInput {
   workerType?: string;
 }
 
+export interface SalaryMasterDTO {
+  id?: number;
+  employeeId: number;
+  employeeCode?: string;
+  employeeName?: string;
+  basic: number;
+  hra: number;
+  fixedPersonalAllowance: number;
+  otherAllowance: number;
+  bonus: number;
+  appraisalAmount: number;
+  lateSittingAmount: number;
+  pfDeduction: number;
+  esiDeduction: number;
+  ptDeduction: number;
+  overtimeWages: number;
+  workingHoursPerDay: number;
+  weeklyOff: string;
+  workerType: string;
+  effectiveFrom?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface LeaveType {
   id: number;
   name: string;
