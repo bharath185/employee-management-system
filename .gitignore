@@ -43,6 +43,10 @@ logs/
 # Screenshots
 screenshots/
 
+# Temp / generated files
+opencode/*.txt
+*.xlsx
+
 # PID files
 *.pid
 *.pid

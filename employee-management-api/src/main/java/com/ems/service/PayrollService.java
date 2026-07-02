@@ -68,35 +68,19 @@ public class PayrollService {
 
         for (Employee emp : employees) {
             try {
-                // Find or create Salary record for this period (fallback to SalaryMaster)
+                // Find or create Salary record for this period, then apply SalaryMaster values
                 Salary salary = salaryRepository
                     .findByEmployeeIdAndWageYearAndWageMonth(emp.getId(), year, month)
-                    .orElseGet(() -> {
-                        Salary newSal = Salary.builder()
-                            .employee(emp)
-                            .wageMonth(month)
-                            .wageYear(year)
-                            .build();
-                        // Copy from SalaryMaster if available
-                        salaryMasterRepository.findByEmployeeId(emp.getId()).ifPresent(master -> {
-                            newSal.setBasic(master.getBasic());
-                            newSal.setHra(master.getHra());
-                            newSal.setFixedPersonalAllowance(master.getFixedPersonalAllowance());
-                            newSal.setOtherAllowance(master.getOtherAllowance());
-                            newSal.setBonus(master.getBonus());
-                            newSal.setAppraisalAmount(master.getAppraisalAmount());
-                            newSal.setLateSittingAmount(master.getLateSittingAmount());
-                            newSal.setPfDeduction(master.getPfDeduction());
-                            newSal.setEsiDeduction(master.getEsiDeduction());
-                            newSal.setPtDeduction(master.getPtDeduction());
-                            newSal.setOvertimeWages(master.getOvertimeWages());
-                            newSal.setWorkingHoursPerDay(master.getWorkingHoursPerDay());
-                            newSal.setWeeklyOff(master.getWeeklyOff());
-                            newSal.setWorkerType(master.getWorkerType());
-                        });
-                        newSal.computeDerivedFields();
-                        return salaryRepository.save(newSal);
-                    });
+                    .orElseGet(() -> Salary.builder()
+                        .employee(emp)
+                        .wageMonth(month)
+                        .wageYear(year)
+                        .build());
+
+                // Always apply SalaryMaster values if available (overrides existing monthly salary)
+                salaryMasterRepository.findByEmployeeId(emp.getId()).ifPresent(master -> applyMaster(salary, master));
+                salary.computeDerivedFields();
+                Salary saved = salaryRepository.save(salary);
 
                 // Get attendance for the cycle
                 List<AttendanceRecord> attendance = attendanceRepository
@@ -257,5 +241,22 @@ public class PayrollService {
 
     private BigDecimal safe(BigDecimal val) {
         return val != null ? val : BigDecimal.ZERO;
+    }
+
+    private void applyMaster(Salary salary, com.ems.model.SalaryMaster master) {
+        salary.setBasic(master.getBasic());
+        salary.setHra(master.getHra());
+        salary.setFixedPersonalAllowance(master.getFixedPersonalAllowance());
+        salary.setOtherAllowance(master.getOtherAllowance());
+        salary.setBonus(master.getBonus());
+        salary.setAppraisalAmount(master.getAppraisalAmount());
+        salary.setLateSittingAmount(master.getLateSittingAmount());
+        salary.setPfDeduction(master.getPfDeduction());
+        salary.setEsiDeduction(master.getEsiDeduction());
+        salary.setPtDeduction(master.getPtDeduction());
+        salary.setOvertimeWages(master.getOvertimeWages());
+        salary.setWorkingHoursPerDay(master.getWorkingHoursPerDay());
+        salary.setWeeklyOff(master.getWeeklyOff());
+        salary.setWorkerType(master.getWorkerType());
     }
 }
