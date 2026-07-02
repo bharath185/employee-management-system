@@ -25,5 +25,5 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, Lo
 
     @Modifying
     @Query("DELETE FROM AttendanceRecord a WHERE a.attendanceDate > :date")
-    void deleteByAttendanceDateAfter(@Param("date") LocalDate date);
+    int deleteByAttendanceDateAfter(@Param("date") LocalDate date);
 }
