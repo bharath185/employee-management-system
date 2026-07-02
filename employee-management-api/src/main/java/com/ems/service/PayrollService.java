@@ -277,6 +277,7 @@ public class PayrollService {
         if (oldVal != null && newVal != null && oldVal.compareTo(newVal) == 0) return;
         if (newVal == null) return;
         salaryMasterHistoryRepository.save(com.ems.model.SalaryMasterHistory.builder()
+            .salaryMasterId(0L) // monthly input changes use 0 as placeholder
             .employeeId(empId)
             .employeeCode(empCode)
             .fieldName("monthly_" + field)

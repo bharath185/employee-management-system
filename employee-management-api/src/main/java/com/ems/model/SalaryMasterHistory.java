@@ -21,7 +21,7 @@ public class SalaryMasterHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "salary_master_id", nullable = false)
+    @Column(name = "salary_master_id")
     private Long salaryMasterId;
 
     @Column(name = "employee_id", nullable = false)
