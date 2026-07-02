@@ -167,7 +167,7 @@ public class PayrollService {
     /**
      * Batch upsert payroll inputs (salary adjustments) for HR.
      */
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public Map<String, Object> batchUpsertPayrollInputs(List<com.ems.dto.PayrollInputDTO.PayrollInputItem> inputs) {
         int success = 0;
         int failure = 0;
@@ -175,8 +175,12 @@ public class PayrollService {
 
         for (var item : inputs) {
             try {
-                Employee employee = employeeRepository.findById(item.getEmployeeId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + item.getEmployeeId()));
+                Employee employee = employeeRepository.findById(item.getEmployeeId()).orElse(null);
+                if (employee == null) {
+                    failure++;
+                    errors.add("Employee " + item.getEmployeeId() + ": not found");
+                    continue;
+                }
 
                 Salary salary = salaryRepository
                     .findByEmployeeIdAndWageYearAndWageMonth(
