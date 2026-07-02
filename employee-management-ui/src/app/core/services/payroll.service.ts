@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { APIResponse } from '../models/api-response.model';
 import { PayrollProcess, Payslip, EmailConfig, PayrollInput } from '../models/payroll.models';
@@ -13,25 +13,22 @@ export class PayrollService {
 
   // ===================== Process =====================
   processPayroll(year: number, month: number): Observable<APIResponse<PayrollProcess>> {
-    return this.http.post<APIResponse<PayrollProcess>>(`${this.apiUrl}/process`, { year, month });
+    return this.http.post<APIResponse<PayrollProcess>>(`${this.apiUrl}/process/${year}/${month}`, {});
   }
 
   getProcessStatus(year: number, month: number): Observable<APIResponse<PayrollProcess>> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
-    return this.http.get<APIResponse<PayrollProcess>>(`${this.apiUrl}/process/status`, { params });
+    return this.http.get<APIResponse<PayrollProcess>>(`${this.apiUrl}/process/status/${year}/${month}`);
   }
 
   getProcessHistory(year?: number, month?: number): Observable<APIResponse<PayrollProcess[]>> {
-    let params = new HttpParams();
-    if (year) params = params.set('year', year.toString());
-    if (month) params = params.set('month', month.toString());
-    return this.http.get<APIResponse<PayrollProcess[]>>(`${this.apiUrl}/process/history`, { params });
+    let params = '';
+    if (year) params = `?year=${year}&month=${month || ''}`;
+    return this.http.get<APIResponse<PayrollProcess[]>>(`${this.apiUrl}/process/history${params}`);
   }
 
   // ===================== Payslips =====================
   getPayslips(year: number, month: number): Observable<APIResponse<Payslip[]>> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
-    return this.http.get<APIResponse<Payslip[]>>(`${this.apiUrl}/payslips`, { params });
+    return this.http.get<APIResponse<Payslip[]>>(`${this.apiUrl}/payslips/${year}/${month}`);
   }
 
   getPayslipById(id: number): Observable<APIResponse<Payslip>> {
@@ -47,7 +44,7 @@ export class PayrollService {
   }
 
   sendPayslipsByEmail(year: number, month: number): Observable<APIResponse<any>> {
-    return this.http.post<APIResponse<any>>(`${this.apiUrl}/payslips/send-all`, { year, month });
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/send-payslips/${year}/${month}`, {});
   }
 
   // ===================== Email Config =====================
@@ -56,7 +53,7 @@ export class PayrollService {
   }
 
   saveEmailConfig(config: EmailConfig): Observable<APIResponse<EmailConfig>> {
-    return this.http.post<APIResponse<EmailConfig>>(`${this.apiUrl}/email-config`, config);
+    return this.http.put<APIResponse<EmailConfig>>(`${this.apiUrl}/email-config`, config);
   }
 
   testEmailConfig(): Observable<APIResponse<any>> {
@@ -65,29 +62,20 @@ export class PayrollService {
 
   // ===================== Payroll Inputs =====================
   batchUpsertInputs(inputs: PayrollInput[]): Observable<APIResponse<any>> {
-    return this.http.post<APIResponse<any>>(`${this.apiUrl}/inputs/batch`, inputs);
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/inputs/batch`, { inputs });
   }
 
   // ===================== Exports =====================
   downloadBankFile(year: number, month: number): Observable<Blob> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
-    return this.http.get(`${this.apiUrl}/export/bank-file`, {
-      params,
-      responseType: 'blob'
-    });
+    return this.http.get(`${this.apiUrl}/export/bank-file/${year}/${month}`, { responseType: 'blob' });
   }
 
   downloadPayrollReport(year: number, month: number): Observable<Blob> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
-    return this.http.get(`${this.apiUrl}/export/report`, {
-      params,
-      responseType: 'blob'
-    });
+    return this.http.get(`${this.apiUrl}/export/report/${year}/${month}`, { responseType: 'blob' });
   }
 
   // ===================== Stats =====================
   getPayslipStats(year: number, month: number): Observable<APIResponse<any>> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
-    return this.http.get<APIResponse<any>>(`${this.apiUrl}/payslips/stats`, { params });
+    return this.http.get<APIResponse<any>>(`${this.apiUrl}/stats/${year}/${month}`);
   }
 }
