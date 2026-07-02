@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -61,5 +62,12 @@ public class AttendanceController {
             @RequestParam int month) {
         Map<String, Object> result = attendanceService.importExcel(file, year, month);
         return ResponseEntity.ok(APIResponse.success("Import completed", result));
+    }
+
+    @DeleteMapping("/future")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Integer>> deleteFutureAttendance(@RequestParam LocalDate cutOffDate) {
+        int deleted = attendanceService.deleteFutureAttendance(cutOffDate);
+        return ResponseEntity.ok(APIResponse.success("Deleted " + deleted + " future records", deleted));
     }
 }

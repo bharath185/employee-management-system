@@ -321,6 +321,13 @@ public class AttendanceService {
         return Map.of("imported", imported, "errors", errors);
     }
 
+    @Transactional
+    public int deleteFutureAttendance(LocalDate cutOffDate) {
+        int count = attendanceRepository.deleteByAttendanceDateAfter(cutOffDate);
+        log.info("Deleted {} attendance records after {}", count, cutOffDate);
+        return count;
+    }
+
     private void setCell(Row row, int col, String value, CellStyle style) {
         Cell c = row.createCell(col);
         c.setCellValue(value != null ? value : "");

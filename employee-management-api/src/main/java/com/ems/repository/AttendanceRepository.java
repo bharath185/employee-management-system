@@ -2,6 +2,7 @@ package com.ems.repository;
 
 import com.ems.model.AttendanceRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,4 +22,8 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, Lo
 
     @Query("SELECT a FROM AttendanceRecord a WHERE YEAR(a.attendanceDate) = :year AND MONTH(a.attendanceDate) = :month ORDER BY a.employee.employeeCode, a.attendanceDate")
     List<AttendanceRecord> findByYearAndMonth(@Param("year") int year, @Param("month") int month);
+
+    @Modifying
+    @Query("DELETE FROM AttendanceRecord a WHERE a.attendanceDate > :date")
+    void deleteByAttendanceDateAfter(@Param("date") LocalDate date);
 }
