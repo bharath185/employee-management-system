@@ -29,12 +29,14 @@ public class SalaryMasterService {
     private final SalaryMasterHistoryRepository historyRepository;
     private final EmployeeRepository employeeRepository;
 
+    @Transactional(readOnly = true)
     public List<SalaryMasterDTO> getAll() {
         return salaryMasterRepository.findAllByOrderByEmployeeAsc().stream()
             .map(this::toDTO)
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public SalaryMasterDTO getByEmployeeId(Long employeeId) {
         SalaryMaster master = salaryMasterRepository.findByEmployeeId(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Salary master not found for employee " + employeeId));
