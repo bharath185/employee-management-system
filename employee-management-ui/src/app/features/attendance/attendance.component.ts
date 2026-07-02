@@ -62,6 +62,9 @@ import { saveAs } from 'file-saver';
               <ng-template #editIcon><i nz-icon nzType="edit"></i></ng-template>
               <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
             </button>
+            <button nz-button nzSize="small" nzDanger nz-tooltip="Delete future records" (click)="cleanFutureRecords()">
+              <i nz-icon nzType="delete"></i>
+            </button>
           </div>
         </div>
       </div>
@@ -475,6 +478,17 @@ export class AttendanceComponent implements OnInit {
         this.loadData();
       },
       error: (err) => { this.msg.error(err.error?.message || 'Import failed'); this.loading = false; input.value = ''; }
+    });
+  }
+
+  cleanFutureRecords(): void {
+    if (!confirm('Delete all attendance records after yesterday?')) return;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const cutOff = yesterday.toISOString().split('T')[0];
+    this.attendanceService.deleteFutureAttendance(cutOff).subscribe({
+      next: (res) => { this.msg.success(`Deleted ${res.data} records`); this.loadData(); },
+      error: () => this.msg.error('Delete failed')
     });
   }
 
