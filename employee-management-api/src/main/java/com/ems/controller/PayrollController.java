@@ -205,9 +205,8 @@ public class PayrollController {
     public ResponseEntity<APIResponse<Integer>> deletePayslipsByPeriod(
             @PathVariable Integer year, @PathVariable Integer month) {
         int deleted = payslipService.deletePayslipsByPeriod(year, month);
-        int salaryDeleted = payrollService.deleteSalaryRecords(year, month);
         payrollService.deleteProcessRecord(year, month);
         return ResponseEntity.ok(APIResponse.success(
-            deleted + " payslip(s) and " + salaryDeleted + " salary record(s) deleted. Ready to re-process.", deleted));
+            deleted + " payslip(s) deleted. Ready to re-process.", deleted));
     }
 }

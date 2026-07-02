@@ -69,7 +69,7 @@ public class PayrollService {
 
         for (Employee emp : employees) {
             try {
-                // Find or create Salary record for this period, then apply SalaryMaster values
+                // Find or create Salary record for this period
                 Salary salary = salaryRepository
                     .findByEmployeeIdAndWageYearAndWageMonth(emp.getId(), year, month)
                     .orElseGet(() -> Salary.builder()
@@ -78,10 +78,10 @@ public class PayrollService {
                         .wageYear(year)
                         .build());
 
-                // Always apply SalaryMaster values if available (overrides existing monthly salary)
+                // Apply structural fields from SalaryMaster (preserves monthly adjustments)
                 salaryMasterRepository.findByEmployeeId(emp.getId()).ifPresent(master -> applyMaster(salary, master));
                 salary.computeDerivedFields();
-                Salary saved = salaryRepository.save(salary);
+                salaryRepository.save(salary);
 
                 // Get attendance for the cycle
                 List<AttendanceRecord> attendance = attendanceRepository
