@@ -247,6 +247,14 @@ public class PayrollService {
             .ifPresent(p -> { payrollProcessRepository.delete(p); log.info("Deleted process record for {}/{}", month, year); });
     }
 
+    @Transactional
+    public int deleteSalaryRecords(Integer year, Integer month) {
+        List<Salary> records = salaryRepository.findByWageYearAndWageMonth(year, month);
+        salaryRepository.deleteAll(records);
+        log.info("Deleted {} salary records for {}/{}", records.size(), month, year);
+        return records.size();
+    }
+
     private BigDecimal safe(BigDecimal val) {
         return val != null ? val : BigDecimal.ZERO;
     }
