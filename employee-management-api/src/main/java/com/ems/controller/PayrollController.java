@@ -197,4 +197,15 @@ public class PayrollController {
             @PathVariable Integer year, @PathVariable Integer month) {
         return ResponseEntity.ok(APIResponse.success(payslipService.getPayslipStats(year, month)));
     }
+
+    // ==================== DELETE PAYSLIPS (allow re-process) ====================
+
+    @DeleteMapping("/payslips/{year}/{month}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Integer>> deletePayslipsByPeriod(
+            @PathVariable Integer year, @PathVariable Integer month) {
+        int deleted = payslipService.deletePayslipsByPeriod(year, month);
+        payrollService.deleteProcessRecord(year, month);
+        return ResponseEntity.ok(APIResponse.success(deleted + " payslip(s) deleted. Ready to re-process.", deleted));
+    }
 }

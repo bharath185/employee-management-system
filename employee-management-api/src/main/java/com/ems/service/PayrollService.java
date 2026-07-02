@@ -224,6 +224,11 @@ public class PayrollService {
         );
     }
 
+    public void deleteProcessRecord(Integer year, Integer month) {
+        payrollProcessRepository.findByProcessYearAndProcessMonth(year, month)
+            .ifPresent(p -> { payrollProcessRepository.delete(p); log.info("Deleted process record for {}/{}", month, year); });
+    }
+
     private BigDecimal safe(BigDecimal val) {
         return val != null ? val : BigDecimal.ZERO;
     }

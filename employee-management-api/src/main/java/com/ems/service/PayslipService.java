@@ -217,6 +217,14 @@ public class PayslipService {
         log.info("Payslip {} marked as SENT", payslipId);
     }
 
+    @Transactional
+    public int deletePayslipsByPeriod(Integer year, Integer month) {
+        List<Payslip> payslips = payslipRepository.findByWageYearAndWageMonth(year, month);
+        payslipRepository.deleteAll(payslips);
+        log.info("Deleted {} payslips for {}/{}", payslips.size(), month, year);
+        return payslips.size();
+    }
+
     private String safe(String s) {
         return s != null && !s.isBlank() ? s : "-";
     }
