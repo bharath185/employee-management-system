@@ -169,22 +169,12 @@ import { saveAs } from 'file-saver';
               <td *ngFor="let s of emp.days; let di = index" class="td-day" [class.weekend]="isSunDay(di)">
                 <span *ngIf="!isEditMode && s" class="day-status" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
                 <span *ngIf="!isEditMode && !s" class="day-empty">·</span>
-                <select *ngIf="isEditMode"
-                  [value]="emp.days[di]"
-                  [attr.data-emp-id]="emp.employeeId"
-                  [attr.data-day-idx]="di"
-                  (change)="onNativeChange($event)"
-                  class="day-select-native">
-                  <option value="">—</option>
-                  <option value="P" class="opt-p">P</option>
-                  <option value="A" class="opt-a">A</option>
-                  <option value="L" class="opt-l">L</option>
-                  <option value="ML" class="opt-ml">ML</option>
-                  <option value="H" class="opt-h">H</option>
-                  <option value="WO" class="opt-wo">WO</option>
-                  <option value="R" class="opt-r">R</option>
-                  <option value="CO" class="opt-co">CO</option>
-                </select>
+                <span *ngIf="isEditMode"
+                  (click)="cycleStatus(emp, di)"
+                  class="day-status clickable"
+                  [class]="'status-' + ((emp.days[di] || '').toLowerCase() || 'blank')">
+                  {{ emp.days[di] || '—' }}
+                </span>
               </td>
               <td class="td-sum"><span class="stat-p">{{ emp.totalPresent }}</span></td>
               <td class="td-sum"><span class="stat-l">{{ emp.totalLeave }}</span></td>
@@ -257,6 +247,8 @@ import { saveAs } from 'file-saver';
     .td-day { text-align:center !important; padding:3px 1px !important; font-size:11px; }
     .day-status { display:inline-block; width:22px; height:19px; line-height:19px; border-radius:4px; font-size:10px; font-weight:700; text-align:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12); transition:transform .15s,box-shadow .15s; }
     .day-status:hover { transform:scale(1.15); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+    .clickable { cursor:pointer; }
+    .status-blank { background:linear-gradient(135deg,#e8e8e8,#f0f0f0); color:#bbb; }
     .status-p { background:linear-gradient(135deg,#52c41a,#73d13d); }
     .status-a { background:linear-gradient(135deg,#f5222d,#ff4d4f); }
     .status-l { background:linear-gradient(135deg,#fa8c16,#ffa940); }
@@ -266,17 +258,6 @@ import { saveAs } from 'file-saver';
     .status-r { background:linear-gradient(135deg,#cf1322,#f5222d); }
     .status-co { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
     .day-empty { color:#e8e8e8; font-size:14px; }
-    .day-select-native { width:36px; height:26px; font-size:11px; font-weight:700; text-align:center; text-align-last:center; border:1px solid #d0d5dd; border-radius:4px; background:#fff; cursor:pointer; outline:none; padding:0; -webkit-appearance:none; appearance:none; }
-    .day-select-native:focus { border-color:#4361ee; box-shadow:0 0 0 2px rgba(67,97,238,.15); }
-    .day-select-native option.opt-p { color:#52c41a; font-weight:700; }
-    .day-select-native option.opt-a { color:#f5222d; font-weight:700; }
-    .day-select-native option.opt-l { color:#fa8c16; font-weight:700; }
-    .day-select-native option.opt-ml { color:#722ed1; font-weight:700; }
-    .day-select-native option.opt-h { color:#1890ff; font-weight:700; }
-    .day-select-native option.opt-wo { color:#8c8c8c; }
-    .day-select-native option.opt-r { color:#cf1322; font-weight:700; }
-    .day-select-native option.opt-co { color:#13c2c2; font-weight:700; }
-    .day-select ::ng-deep .ant-select-selection-item { font-size:11px; font-weight:700; text-align:center; }
     .td-sum { text-align:center !important; font-size:12px; padding:4px 2px !important; }
     .td-sum-total { border-left:1px solid #e8eaed; }
     .stat-p { color:#52c41a; font-weight:700; }
@@ -412,15 +393,12 @@ export class AttendanceComponent implements OnInit {
     this.changedRecords.add(`${employeeId}_${dayIndex}`);
   }
 
-  onNativeChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const empId = parseInt(select.dataset['empId'] || '0', 10);
-    const dayIdx = parseInt(select.dataset['dayIdx'] || '0', 10);
-    const emp = this.data?.employees.find(e => e.employeeId === empId);
-    if (!emp) { console.warn('Employee not found:', empId); return; }
-    const status = select.value;
-    emp.days[dayIdx] = status;
-    this.markChanged(empId, dayIdx, status);
+  cycleStatus(emp: EmployeeAttendance, dayIdx: number): void {
+    const order = ['', 'P', 'A', 'L', 'ML', 'H', 'WO', 'R', 'CO'];
+    const cur = emp.days[dayIdx] || '';
+    const nextIdx = (order.indexOf(cur) + 1) % order.length;
+    emp.days[dayIdx] = order[nextIdx];
+    this.markChanged(emp.employeeId, dayIdx, order[nextIdx]);
   }
 
   toggleEdit(): void {
