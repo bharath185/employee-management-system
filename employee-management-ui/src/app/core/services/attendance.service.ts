@@ -38,9 +38,4 @@ export class AttendanceService {
     formData.append('month', month.toString());
     return this.http.post<APIResponse<any>>(`${this.apiUrl}/import`, formData);
   }
-
-  deleteFutureAttendance(cutOffDate: string): Observable<APIResponse<number>> {
-    const params = new HttpParams().set('cutOffDate', cutOffDate);
-    return this.http.delete<APIResponse<number>>(`${this.apiUrl}/future`, { params });
-  }
 }
