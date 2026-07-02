@@ -167,19 +167,16 @@ import { saveAs } from 'file-saver';
                 </ng-template>
               </td>
               <td *ngFor="let s of emp.days; let di = index" class="td-day" [class.weekend]="isSunDay(di)">
-                <ng-container *ngIf="!isEditMode; else editCell">
-                  <span *ngIf="s" class="day-status" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
-                  <span *ngIf="!s" class="day-empty">·</span>
-                </ng-container>
-                <ng-template #editCell>
-                  <nz-select
-                    [ngModel]="emp.days[di]"
-                    (ngModelChange)="onDayChange(emp, di, $event)"
-                    nzSize="small"
-                    class="day-select"
-                    [nzDropdownMatchSelectWidth]="false"
-                    nzDropdownClassName="att-dropdown"
-                    [ngModelOptions]="{standalone: true}">
+                <span *ngIf="!isEditMode && s" class="day-status" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
+                <span *ngIf="!isEditMode && !s" class="day-empty">·</span>
+                <nz-select *ngIf="isEditMode"
+                  [ngModel]="emp.days[di]"
+                  (ngModelChange)="onDayChange(emp, di, $event)"
+                  nzSize="small"
+                  class="day-select"
+                  [nzDropdownMatchSelectWidth]="false"
+                  nzDropdownClassName="att-dropdown"
+                  [ngModelOptions]="{standalone: true}">
                     <nz-option nzValue="" nzLabel="—" nzCustomContent>
                       <span class="opt-blank">—</span>
                     </nz-option>
@@ -208,7 +205,6 @@ import { saveAs } from 'file-saver';
                       <span class="opt-co">CO</span>
                     </nz-option>
                   </nz-select>
-                </ng-template>
               </td>
               <td class="td-sum"><span class="stat-p">{{ emp.totalPresent }}</span></td>
               <td class="td-sum"><span class="stat-l">{{ emp.totalLeave }}</span></td>
@@ -291,6 +287,8 @@ import { saveAs } from 'file-saver';
     .status-co { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
     .day-empty { color:#e8e8e8; font-size:14px; }
     .day-select { width:36px !important; }
+    .day-select ::ng-deep .ant-select-arrow { display: none !important; }
+    .day-select ::ng-deep .ant-select-selection-item { text-align:center; padding-right:0 !important; }
     .day-select ::ng-deep .ant-select-selection-item { font-size:11px; font-weight:700; text-align:center; }
     .td-sum { text-align:center !important; font-size:12px; padding:4px 2px !important; }
     .td-sum-total { border-left:1px solid #e8eaed; }
