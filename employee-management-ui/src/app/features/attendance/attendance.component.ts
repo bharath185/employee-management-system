@@ -171,7 +171,7 @@ import { saveAs } from 'file-saver';
                 <span *ngIf="!isEditMode && !s" class="day-empty">·</span>
                 <select *ngIf="isEditMode"
                   [value]="emp.days[di]"
-                  [attr.data-emp-idx]="idx"
+                  [attr.data-emp-id]="emp.employeeId"
                   [attr.data-day-idx]="di"
                   (change)="onNativeChange($event)"
                   class="day-select-native">
@@ -414,13 +414,13 @@ export class AttendanceComponent implements OnInit {
 
   onNativeChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
-    const empIdx = parseInt(select.dataset['empIdx'] || '0', 10);
+    const empId = parseInt(select.dataset['empId'] || '0', 10);
     const dayIdx = parseInt(select.dataset['dayIdx'] || '0', 10);
-    const emp = this.data?.employees[empIdx];
-    if (!emp) return;
+    const emp = this.data?.employees.find(e => e.employeeId === empId);
+    if (!emp) { console.warn('Employee not found:', empId); return; }
     const status = select.value;
     emp.days[dayIdx] = status;
-    this.markChanged(emp.employeeId, dayIdx, status);
+    this.markChanged(empId, dayIdx, status);
   }
 
   toggleEdit(): void {
