@@ -16,6 +16,9 @@ public interface PayslipRepository extends JpaRepository<Payslip, Long> {
 
     List<Payslip> findByWageYearAndWageMonth(Integer year, Integer month);
 
+    @Query("SELECT p FROM Payslip p JOIN FETCH p.employee WHERE p.wageYear = :year AND p.wageMonth = :month")
+    List<Payslip> findByWageYearAndWageMonthWithEmployee(@Param("year") Integer year, @Param("month") Integer month);
+
     Optional<Payslip> findByEmployeeIdAndWageYearAndWageMonth(Long employeeId, Integer year, Integer month);
 
     boolean existsByEmployeeIdAndWageYearAndWageMonth(Long employeeId, Integer year, Integer month);

@@ -27,7 +27,7 @@ public class PayrollExportService {
      * Generate bank file Excel for a given payroll period.
      */
     public ResponseEntity<byte[]> exportBankFile(Integer year, Integer month) {
-        List<Payslip> payslips = payslipRepository.findByWageYearAndWageMonth(year, month);
+        List<Payslip> payslips = payslipRepository.findByWageYearAndWageMonthWithEmployee(year, month);
 
         String periodLabel = Month.of(month).name().charAt(0)
             + Month.of(month).name().substring(1).toLowerCase() + "_" + year;
@@ -46,7 +46,7 @@ public class PayrollExportService {
      * Generate payroll report Excel for a given payroll period.
      */
     public ResponseEntity<byte[]> exportPayrollReport(Integer year, Integer month) {
-        List<Payslip> payslips = payslipRepository.findByWageYearAndWageMonth(year, month);
+        List<Payslip> payslips = payslipRepository.findByWageYearAndWageMonthWithEmployee(year, month);
 
         String periodLabel = Month.of(month).name().charAt(0)
             + Month.of(month).name().substring(1).toLowerCase() + "_" + year;
