@@ -151,7 +151,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
                     <strong>{{ getMonthName(s.snapshotMonth) }} {{ s.snapshotYear }}</strong>
                     <span class="snapshot-by">by {{ s.changedBy }}</span>
                   </div>
-                  <nz-descriptions nzSize="small" nzColumn="2" class="snapshot-desc">
+                  <nz-descriptions nzSize="small" [nzColumn]="2" class="snapshot-desc">
                     <nz-descriptions-item nzTitle="Basic" [nzSpan]="1">₹{{ s.basic | number:'1.2-2' }}</nz-descriptions-item>
                     <nz-descriptions-item nzTitle="HRA" [nzSpan]="1">₹{{ s.hra | number:'1.2-2' }}</nz-descriptions-item>
                     <nz-descriptions-item nzTitle="FPA" [nzSpan]="1">₹{{ s.fixedPersonalAllowance | number:'1.2-2' }}</nz-descriptions-item>
