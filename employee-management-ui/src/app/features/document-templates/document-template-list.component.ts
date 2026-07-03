@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -30,7 +30,7 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
+    RouterLink, RouterLinkActive,
     NzTableModule,
     NzButtonModule,
     NzIconModule,
@@ -53,6 +53,15 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
           <i nz-icon nzType="plus"></i> Add Template
         </button>
       </app-page-header>
+
+      <div class="pp-sub-nav">
+        <a class="pp-nav-item" routerLink="/admin/document-templates" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
+          <i nz-icon nzType="file-text"></i><span>Templates</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/document-templates/reports" routerLinkActive="active">
+          <i nz-icon nzType="bar-chart"></i><span>Doc Reports</span>
+        </a>
+      </div>
 
       <!-- Filters -->
       <nz-card class="filter-section" nzBorderless>
@@ -189,6 +198,32 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     .template-list-container.page-enter {
       animation: page-enter 0.35s ease-out;
     }
+    .pp-sub-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 4px;
+      border: 1px solid rgba(232,234,237,0.6);
+    }
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item.active { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.25); }
+    .pp-nav-item.active i { color: #fff; }
 
     /* ── Scrollbar Styling ── */
     .template-list-container ::-webkit-scrollbar { width: 6px; height: 6px; }

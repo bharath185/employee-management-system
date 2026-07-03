@@ -234,7 +234,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       border-right: none !important;
       transition: all 0.2s ease;
       overflow: hidden;
-      box-shadow: 2px 0 20px rgba(0,0,0,0.12);
+      box-shadow: 2px 0 30px rgba(0,0,0,0.15);
     }
     :host ::ng-deep .sidenav .ant-layout-sider-children { overflow: hidden; }
     :host ::ng-deep .sidenav.ant-layout-sider-dark { background: transparent !important; }
@@ -244,17 +244,21 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: linear-gradient(160deg, rgba(31, 61, 110, 0.92), rgba(20, 40, 75, 0.96));
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: linear-gradient(160deg, rgba(31, 61, 110, 0.88), rgba(15, 30, 60, 0.95));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       position: relative;
+      margin: 8px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.2);
     }
     .sidenav-inner::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 20% 20%, rgba(37, 99, 235, 0.08), transparent 60%),
-                  radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06), transparent 50%);
+      background: radial-gradient(ellipse at 15% 15%, rgba(37, 99, 235, 0.12), transparent 55%),
+                  radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.08), transparent 50%);
       pointer-events: none;
     }
 
@@ -304,8 +308,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     :host ::ng-deep .ant-menu-item {
       height: 40px !important;
       line-height: 40px !important;
-      margin: 2px 8px !important;
-      border-radius: 10px !important;
+      margin: 2px 10px !important;
+      border-radius: 12px !important;
       color: rgba(255,255,255,0.65) !important;
       display: flex !important;
       align-items: center !important;
@@ -333,17 +337,19 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       white-space: nowrap;
     }
     :host ::ng-deep .ant-menu-item:hover {
-      background: rgba(255,255,255,0.08) !important;
+      background: rgba(255,255,255,0.1) !important;
       color: #ffffff !important;
+      backdrop-filter: blur(4px);
     }
     :host ::ng-deep .ant-menu-item:hover > i {
       color: #ffffff !important;
     }
     :host ::ng-deep .ant-menu-item-selected {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.1)) !important;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.12)) !important;
       color: #ffffff !important;
       font-weight: 600;
-      box-shadow: inset 3px 0 0 #4f8cff, 0 2px 8px rgba(37, 99, 235, 0.15);
+      box-shadow: inset 3px 0 0 #4f8cff, 0 2px 12px rgba(37, 99, 235, 0.2);
+      backdrop-filter: blur(4px);
     }
     :host ::ng-deep .ant-menu-item-selected > i {
       color: #4f8cff !important;
@@ -395,11 +401,11 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       align-items: center;
       gap: 10px;
       padding: 10px 12px;
-      margin: 6px 8px 8px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255,255,255,0.05);
+      margin: 6px 10px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.06);
     }
     .sidenav-user-avatar {
       width: 32px;
