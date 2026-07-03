@@ -17,6 +17,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { LeaveService } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/payroll.models';
 
 @Component({
@@ -25,25 +26,16 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzInputModule, NzInputNumberModule, NzDatePickerModule,
-    NzTabsModule, NzCardModule, NzTagModule, NzPopconfirmModule, NzSpinModule
+    NzTabsModule, NzCardModule, NzTagModule,     NzPopconfirmModule, NzSpinModule,
+    PageHeaderComponent
   ],
   template: `
     <div class="leave-container page-enter">
-      <!-- ===== GRADIENT HEADER ===== -->
-      <div class="lm-header">
-        <div class="lm-header-left">
-          <div class="lm-header-icon">
-            <i nz-icon nzType="carry-out"></i>
-          </div>
-          <div>
-            <div class="lm-header-title">Leave Management</div>
-            <div class="lm-header-sub">Manage employee leave applications and balances</div>
-          </div>
-        </div>
-        <button nz-button class="lm-header-btn" (click)="showApplyModal()">
+      <app-page-header icon="carry-out" title="Leave Management" subtitle="Manage employee leave applications and balances">
+        <button nz-button (click)="showApplyModal()">
           <i nz-icon nzType="plus"></i> Apply Leave
         </button>
-      </div>
+      </app-page-header>
 
       <!-- ===== TABS ===== -->
       <nz-tabset class="employee-tabs">
@@ -240,71 +232,6 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-    }
-
-    /* ===== GRADIENT HEADER ===== */
-    .lm-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .lm-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .lm-header-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .lm-header-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .lm-header-sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      font-weight: 400;
-      margin-top: 1px;
-    }
-    .lm-header-btn {
-      height: 34px !important;
-      padding: 0 18px !important;
-      font-size: 13px !important;
-      font-weight: 600 !important;
-      border: none !important;
-      border-radius: 8px !important;
-      background: rgba(255,255,255,0.18) !important;
-      color: #fff !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      transition: all 0.2s ease !important;
-      letter-spacing: 0.3px !important;
-    }
-    .lm-header-btn:hover {
-      background: rgba(255,255,255,0.28) !important;
-      transform: translateY(-1px);
-    }
-    .lm-header-btn i {
-      font-size: 15px;
     }
 
     /* ===== EMPLOYEE TABS ===== */

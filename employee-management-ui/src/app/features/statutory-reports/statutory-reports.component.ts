@@ -8,6 +8,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { StatutoryReportService } from '../../core/services/statutory-report.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -15,19 +16,12 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzCardModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzSpinModule
+    NzIconModule, NzSpinModule,
+    PageHeaderComponent
   ],
   template: `
     <div class="sr-container page-enter">
-      <!-- Gradient Header -->
-      <div class="sr-header">
-        <div class="sr-title">
-          <div class="sr-brand">
-            <div class="sr-icon"><i nz-icon nzType="file-text"></i></div>
-            <span class="sr-logo">STATUTORY REPORTS</span>
-          </div>
-        </div>
-      </div>
+      <app-page-header icon="file-text" title="Statutory Reports"></app-page-header>
 
       <!-- Access Denied -->
       <div *ngIf="!authService.canAccessReports()" class="sr-denied">
@@ -121,13 +115,6 @@ import { AuthService } from '../../core/services/auth.service';
 
     /* ─── Container ─── */
     .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; box-sizing: border-box; }
-
-    /* ─── Gradient Header (matching Attendance UI) ─── */
-    .sr-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); margin: 0 0 14px; }
-    .sr-title { display: flex; align-items: center; gap: 12px; }
-    .sr-brand { display: flex; align-items: center; gap: 10px; }
-    .sr-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); border-radius: 8px; color: #fff; font-size: 16px; }
-    .sr-logo { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
 
     /* ─── Access Denied ─── */
     .sr-denied { text-align: center; padding: 60px 16px; }

@@ -18,6 +18,7 @@ import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { PayrollService } from '../../core/services/payroll.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { SalaryMasterDTO } from '../../core/models/payroll.models';
 
 @Component({
@@ -27,7 +28,8 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzIconModule,
     NzInputNumberModule, NzSelectModule, NzCardModule, NzSpinModule, NzTagModule,
     NzDrawerModule, NzTimelineModule, NzTabsModule, NzDescriptionsModule,
-    RouterLink, RouterLinkActive
+    RouterLink, RouterLinkActive,
+    PageHeaderComponent
   ],
   template: `
     <div class="sm-container page-enter">
@@ -48,20 +50,11 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <div class="sm-header">
-        <div class="sm-header-left">
-          <div class="sm-header-icon">
-            <i nz-icon nzType="bank"></i>
-          </div>
-          <div>
-            <div class="sm-header-title">Salary Master</div>
-            <div class="sm-header-sub">Set default salary structure per employee — auto-applies each month</div>
-          </div>
-        </div>
-        <button nz-button class="sm-header-btn" (click)="initForAll()" [nzLoading]="initLoading">
+      <app-page-header icon="bank" title="Salary Master" subtitle="Set default salary structure per employee — auto-applies each month">
+        <button nz-button (click)="initForAll()" [nzLoading]="initLoading">
           <i nz-icon nzType="sync"></i> Init Missing
         </button>
-      </div>
+      </app-page-header>
 
       <nz-card class="sm-card" nzSize="small">
         <div class="sm-toolbar">
@@ -237,13 +230,6 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
     }
     .pp-nav-item.active i { color: #fff; }
     .sm-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 12px 16px; width: 100%; min-width: 0; box-sizing: border-box; }
-    .sm-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 16px; margin-bottom:14px; background:linear-gradient(135deg,#1f3d6e 0%,#16213e 100%); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); }
-    .sm-header-left { display:flex; align-items:center; gap:12px; }
-    .sm-header-icon { width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:18px; flex-shrink:0; }
-    .sm-header-title { font-size:17px; font-weight:700; color:#fff; letter-spacing:0.3px; }
-    .sm-header-sub { font-size:12px; color:rgba(255,255,255,0.6); font-weight:400; margin-top:1px; }
-    .sm-header-btn { height:34px !important; padding:0 18px !important; font-size:13px !important; font-weight:600 !important; border:none !important; border-radius:8px !important; background:rgba(255,255,255,0.18) !important; color:#fff !important; display:inline-flex !important; align-items:center !important; gap:6px !important; transition:all 0.2s ease !important; letter-spacing:0.3px !important; }
-    .sm-header-btn:hover { background:rgba(255,255,255,0.28) !important; transform:translateY(-1px); }
     .sm-card { border-radius:10px !important; border:1px solid #e8eaed !important; box-shadow:0 2px 12px rgba(0,0,0,0.06) !important; width:100% !important; }
     :host ::ng-deep .sm-card .ant-card-body { padding:14px 16px !important; }
     .sm-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }

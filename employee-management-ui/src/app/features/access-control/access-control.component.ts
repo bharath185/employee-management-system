@@ -7,24 +7,17 @@ import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PermissionService } from '../../core/services/permission.service';
 import { RolePermission } from '../../core/models/permission.model';
 
 @Component({
   selector: 'app-access-control',
   standalone: true,
-  imports: [CommonModule, FormsModule, NzTabsModule, NzTableModule, NzCheckboxModule, NzButtonModule, NzIconModule],
+  imports: [CommonModule, FormsModule, NzTabsModule, NzTableModule, NzCheckboxModule, NzButtonModule, NzIconModule, PageHeaderComponent],
   template: `
     <div class="ac-container page-enter">
-      <!-- Gradient Header -->
-      <div class="ac-header">
-        <div class="ac-title">
-          <div class="ac-brand">
-            <div class="ac-icon"><i nz-icon nzType="safety"></i></div>
-            <span class="ac-logo">ACCESS CONTROL</span>
-          </div>
-        </div>
-      </div>
+      <app-page-header icon="safety" title="Access Control"></app-page-header>
 
       <!-- Tabs -->
       <div class="ac-tabs-wrap">
@@ -88,13 +81,6 @@ import { RolePermission } from '../../core/models/permission.model';
 
     /* ─── Container ─── */
     .ac-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; box-sizing: border-box; }
-
-    /* ─── Gradient Header (matching Attendance UI) ─── */
-    .ac-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%); border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.15); margin: 0 0 14px; }
-    .ac-title { display: flex; align-items: center; gap: 12px; }
-    .ac-brand { display: flex; align-items: center; gap: 10px; }
-    .ac-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); border-radius: 8px; color: #fff; font-size: 16px; }
-    .ac-logo { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: 1.5px; }
 
     /* ─── Tabs ─── */
     .ac-tabs-wrap { margin-top: 12px; padding: 0; }

@@ -12,6 +12,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PayrollService } from '../../core/services/payroll.service';
 import { PayrollProcess } from '../../core/models/payroll.models';
 
@@ -21,7 +22,8 @@ import { PayrollProcess } from '../../core/models/payroll.models';
   imports: [
     CommonModule, FormsModule, RouterLink, RouterLinkActive, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzStatisticModule,
-    NzPopconfirmModule
+    NzPopconfirmModule,
+    PageHeaderComponent
   ],
   template: `
     <div class="pp-container">
@@ -44,18 +46,7 @@ import { PayrollProcess } from '../../core/models/payroll.models';
         </a>
       </div>
 
-      <!-- ===== GRADIENT HEADER ===== -->
-      <div class="pp-header">
-        <div class="pp-header-left">
-          <div class="pp-header-icon">
-            <i nz-icon nzType="calculator"></i>
-          </div>
-          <div>
-            <div class="pp-header-title">Payroll Processing</div>
-            <div class="pp-header-sub">Process monthly payroll for all employees</div>
-          </div>
-        </div>
-      </div>
+      <app-page-header icon="calculator" title="Payroll Processing" subtitle="Process monthly payroll for all employees"></app-page-header>
 
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pp-controls-card" nzSize="small">
@@ -198,47 +189,6 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       box-shadow: 0 2px 8px rgba(37,99,235,0.25);
     }
     .pp-nav-item.active i { color: #fff; }
-    .pp-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .pp-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .pp-header-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .pp-header-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .pp-header-sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      font-weight: 400;
-      margin-top: 1px;
-    }
     .pp-controls-card, .pp-status-card, .pp-history-card {
       border-radius: 10px !important;
       border: 1px solid #e8eaed !important;

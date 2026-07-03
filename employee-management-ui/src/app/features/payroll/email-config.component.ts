@@ -12,6 +12,7 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { PayrollService } from '../../core/services/payroll.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { EmailConfig } from '../../core/models/payroll.models';
 
 @Component({
@@ -20,7 +21,8 @@ import { EmailConfig } from '../../core/models/payroll.models';
   imports: [
     CommonModule, FormsModule, NzButtonModule, NzIconModule, NzInputModule,
     NzInputNumberModule, NzCardModule, NzSpinModule, NzSwitchModule, NzDividerModule,
-    RouterLink, RouterLinkActive
+    RouterLink, RouterLinkActive,
+    PageHeaderComponent
   ],
   template: `
     <div class="ec-container">
@@ -41,18 +43,7 @@ import { EmailConfig } from '../../core/models/payroll.models';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <!-- ===== GRADIENT HEADER ===== -->
-      <div class="ec-header">
-        <div class="ec-header-left">
-          <div class="ec-header-icon">
-            <i nz-icon nzType="mail"></i>
-          </div>
-          <div>
-            <div class="ec-header-title">Mail Configuration</div>
-            <div class="ec-header-sub">Configure SMTP settings for payroll email delivery</div>
-          </div>
-        </div>
-      </div>
+      <app-page-header icon="mail" title="Mail Configuration" subtitle="Configure SMTP settings for payroll email delivery"></app-page-header>
 
       <!-- ===== CONFIG FORM CARD ===== -->
       <nz-card class="ec-form-card" nzSize="small">
@@ -154,47 +145,6 @@ import { EmailConfig } from '../../core/models/payroll.models';
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-    }
-    .ec-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .ec-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .ec-header-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .ec-header-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .ec-header-sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      font-weight: 400;
-      margin-top: 1px;
     }
     .ec-form-card {
       border-radius: 10px !important;

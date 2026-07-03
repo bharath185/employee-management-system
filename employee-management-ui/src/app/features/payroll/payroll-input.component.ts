@@ -14,6 +14,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { PayrollService } from '../../core/services/payroll.service';
 import { SalaryService } from '../../core/services/salary.service';
 import { EmployeeService } from '../../core/services/employee.service';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models';
 
 @Component({
@@ -22,7 +23,8 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzInputNumberModule, NzCardModule, NzSpinModule, NzTagModule,
-    RouterLink, RouterLinkActive
+    RouterLink, RouterLinkActive,
+    PageHeaderComponent
   ],
   template: `
     <div class="pi-container">
@@ -43,26 +45,14 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <!-- ===== GRADIENT HEADER ===== -->
-      <div class="pi-header">
-        <div class="pi-header-left">
-          <div class="pi-header-icon">
-            <i nz-icon nzType="edit"></i>
-          </div>
-          <div>
-            <div class="pi-header-title">Employee Pay Input</div>
-            <div class="pi-header-sub">Per-month adjustments (bonus, appraisal, late sitting) — structural fields pre-filled from Salary Master</div>
-          </div>
-        </div>
-        <div class="pi-header-actions">
-          <span class="pi-source-badge">
-            <i nz-icon nzType="database"></i> Master
-          </span>
-          <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving">
-            <i nz-icon nzType="save"></i> Save All
-          </button>
-        </div>
-      </div>
+      <app-page-header icon="edit" title="Employee Pay Input" subtitle="Per-month adjustments (bonus, appraisal, late sitting) — structural fields pre-filled from Salary Master">
+        <span class="pi-source-badge">
+          <i nz-icon nzType="database"></i> Master
+        </span>
+        <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving">
+          <i nz-icon nzType="save"></i> Save All
+        </button>
+      </app-page-header>
 
       <!-- ===== INFO BANNER ===== -->
       <div class="pi-info-bar">
@@ -202,52 +192,6 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-    }
-    .pi-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .pi-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .pi-header-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .pi-header-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .pi-header-sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      font-weight: 400;
-      margin-top: 1px;
-    }
-    .pi-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
     .pi-source-badge {
       display: inline-flex;

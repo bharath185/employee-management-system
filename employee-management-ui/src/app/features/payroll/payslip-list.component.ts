@@ -13,6 +13,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { PayrollService } from '../../core/services/payroll.service';
 import { Payslip } from '../../core/models/payroll.models';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -21,7 +22,8 @@ import { saveAs } from 'file-saver';
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzPopconfirmModule,
-    RouterLink, RouterLinkActive
+    RouterLink, RouterLinkActive,
+    PageHeaderComponent
   ],
   template: `
     <div class="pl-container">
@@ -42,29 +44,17 @@ import { saveAs } from 'file-saver';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <!-- ===== GRADIENT HEADER ===== -->
-      <div class="pl-header">
-        <div class="pl-header-left">
-          <div class="pl-header-icon">
-            <i nz-icon nzType="file-text"></i>
-          </div>
-          <div>
-            <div class="pl-header-title">Payslips</div>
-            <div class="pl-header-sub">View and manage employee payslips</div>
-          </div>
-        </div>
-        <div class="pl-header-actions">
-          <button nz-button class="pl-header-btn" (click)="downloadBankFile()" nz-tooltip="Download Bank File">
-            <i nz-icon nzType="bank"></i> Bank File
-          </button>
-          <button nz-button class="pl-header-btn" (click)="downloadReport()" nz-tooltip="Download Payroll Report">
-            <i nz-icon nzType="bar-chart"></i> Report
-          </button>
-          <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
-            <i nz-icon nzType="mail"></i> Send All
-          </button>
-        </div>
-      </div>
+      <app-page-header icon="file-text" title="Payslips" subtitle="View and manage employee payslips">
+        <button nz-button (click)="downloadBankFile()" nz-tooltip="Download Bank File">
+          <i nz-icon nzType="bank"></i> Bank File
+        </button>
+        <button nz-button (click)="downloadReport()" nz-tooltip="Download Payroll Report">
+          <i nz-icon nzType="bar-chart"></i> Report
+        </button>
+        <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
+          <i nz-icon nzType="mail"></i> Send All
+        </button>
+      </app-page-header>
 
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pl-controls-card" nzSize="small">
@@ -203,71 +193,6 @@ import { saveAs } from 'file-saver';
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-    }
-    .pl-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      background: linear-gradient(135deg, #1f3d6e 0%, #16213e 100%);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-    .pl-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .pl-header-icon {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-    .pl-header-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.3px;
-    }
-    .pl-header-sub {
-      font-size: 12px;
-      color: rgba(255,255,255,0.6);
-      font-weight: 400;
-      margin-top: 1px;
-    }
-    .pl-header-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .pl-header-btn {
-      height: 34px !important;
-      padding: 0 16px !important;
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      border: none !important;
-      border-radius: 8px !important;
-      background: rgba(255,255,255,0.18) !important;
-      color: #fff !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      transition: all 0.2s ease !important;
-      letter-spacing: 0.3px !important;
-    }
-    .pl-header-btn:hover {
-      background: rgba(255,255,255,0.28) !important;
-      transform: translateY(-1px);
     }
     .pl-controls-card, .pl-stats-card, .pl-table-card {
       border-radius: 10px !important;

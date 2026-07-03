@@ -12,6 +12,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
 import { MonthlyAttendance, EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
+import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -19,52 +20,44 @@ import { saveAs } from 'file-saver';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule
+    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule,
+    PageHeaderComponent
   ],
   template: `
     <div class="att-container">
-      <div class="att-header">
-        <div class="att-title">
-          <div class="att-brand">
-            <div class="att-icon"><i nz-icon nzType="calendar"></i></div>
-            <span class="att-logo">ATTENDANCE</span>
-          </div>
-          <span class="att-period">{{ data?.monthLabel || '' }}</span>
+      <app-page-header icon="calendar" title="Attendance" subtitle="{{ data?.monthLabel || '' }}">
+        <div class="month-nav">
+          <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(-1)">
+            <i nz-icon nzType="left"></i>
+          </button>
+          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:68px">
+            <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+          </nz-select>
+          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:92px">
+            <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label.substring(0,3)"></nz-option>
+          </nz-select>
+          <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
+            <i nz-icon nzType="right"></i>
+          </button>
         </div>
-        <div class="att-toolbar">
-          <div class="month-nav">
-            <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(-1)">
-              <i nz-icon nzType="left"></i>
-            </button>
-            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:68px">
-              <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-            </nz-select>
-            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:92px">
-              <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label.substring(0,3)"></nz-option>
-            </nz-select>
-            <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
-              <i nz-icon nzType="right"></i>
-            </button>
-          </div>
-          <div class="toolbar-actions">
-            <button nz-button nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
-              <i nz-icon nzType="download"></i>
-            </button>
-            <button nz-button nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
-              <i nz-icon nzType="upload"></i>
-            </button>
-            <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
-            <button nz-button nzSize="small" *ngIf="isCurrentMonth"
-              [nzType]="isEditMode ? 'primary' : 'default'"
-              class="edit-btn" [class.saving]="saving"
-              (click)="toggleEdit()" [disabled]="saving">
-              <i nz-icon nzType="save" *ngIf="isEditMode; else editIcon"></i>
-              <ng-template #editIcon><i nz-icon nzType="edit"></i></ng-template>
-              <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
-            </button>
-          </div>
+        <div class="toolbar-actions">
+          <button nz-button nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
+            <i nz-icon nzType="download"></i>
+          </button>
+          <button nz-button nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
+            <i nz-icon nzType="upload"></i>
+          </button>
+          <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
+          <button nz-button nzSize="small" *ngIf="isCurrentMonth"
+            [nzType]="isEditMode ? 'primary' : 'default'"
+            class="edit-btn" [class.saving]="saving"
+            (click)="toggleEdit()" [disabled]="saving">
+            <i nz-icon nzType="save" *ngIf="isEditMode; else editIcon"></i>
+            <ng-template #editIcon><i nz-icon nzType="edit"></i></ng-template>
+            <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
+          </button>
         </div>
-      </div>
+      </app-page-header>
 
       <div class="legend-bar" *ngIf="data">
         <div class="legend-item" *ngFor="let l of legendItems">
@@ -188,13 +181,6 @@ import { saveAs } from 'file-saver';
   `,
   styles: [`
     .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:0 16px 16px; }
-    .att-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px; padding:12px 16px; background:linear-gradient(135deg,#1f3d6e 0%,#16213e 100%); border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
-    .att-title { display:flex; align-items:center; gap:12px; }
-    .att-brand { display:flex; align-items:center; gap:8px; }
-    .att-icon { width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.15); border-radius:8px; color:#fff; font-size:16px; }
-    .att-logo { font-size:17px; font-weight:800; color:#fff; letter-spacing:1.5px; }
-    .att-period { font-size:13px; color:rgba(255,255,255,.65); font-weight:500; padding:2px 10px; background:rgba(255,255,255,.1); border-radius:12px; }
-    .att-toolbar { display:flex; align-items:center; gap:6px; }
     .month-nav { display:flex; align-items:center; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px 4px; }
     .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:rgba(255,255,255,.75); border:none; background:transparent; cursor:pointer; transition:all .2s; }
     .nav-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
