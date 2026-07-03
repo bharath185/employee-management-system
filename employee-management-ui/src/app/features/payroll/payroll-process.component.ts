@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -18,12 +19,31 @@ import { PayrollProcess } from '../../core/models/payroll.models';
   selector: 'app-payroll-process',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
+    CommonModule, FormsModule, RouterLink, RouterLinkActive, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzStatisticModule,
     NzPopconfirmModule
   ],
   template: `
     <div class="pp-container">
+      <!-- ===== SUB NAV ===== -->
+      <div class="pp-sub-nav">
+        <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
+          <i nz-icon nzType="play-circle"></i><span>Process</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
+          <i nz-icon nzType="bank"></i><span>Salary Master</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
+          <i nz-icon nzType="edit"></i><span>Employee Input</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
+          <i nz-icon nzType="file-text"></i><span>Payslips</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/config" routerLinkActive="active">
+          <i nz-icon nzType="mail"></i><span>Config</span>
+        </a>
+      </div>
+
       <!-- ===== GRADIENT HEADER ===== -->
       <div class="pp-header">
         <div class="pp-header-left">
@@ -148,6 +168,36 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       min-width: 0;
       box-sizing: border-box;
     }
+    .pp-sub-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 4px;
+      border: 1px solid rgba(232,234,237,0.6);
+    }
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .pp-nav-item i { font-size: 16px; }
+    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item.active {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+    }
+    .pp-nav-item.active i { color: #fff; }
     .pp-header {
       display: flex;
       justify-content: space-between;

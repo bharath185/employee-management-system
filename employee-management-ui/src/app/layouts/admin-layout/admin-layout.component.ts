@@ -78,44 +78,17 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   *ngIf="can('company')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="bank"></i>
-                <span *ngIf="!isCollapsed()">Company</span>
+                <span *ngIf="!isCollapsed()">Company Setup</span>
               </li>
 
               <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
-              <li nz-menu-item routerLink="/admin/payroll/process"
+              <li nz-menu-item routerLink="/admin/payroll"
                   *ngIf="can('payroll')"
                   (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="play-circle"></i>
-                <span *ngIf="!isCollapsed()">Payroll Process</span>
+                <i nz-icon nzType="money-collect"></i>
+                <span *ngIf="!isCollapsed()">Payroll</span>
               </li>
-              <li nz-menu-item routerLink="/admin/payroll/salary-master"
-                  *ngIf="can('payroll')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="dollar"></i>
-                <span *ngIf="!isCollapsed()">Salary Master</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/payroll/input"
-                  *ngIf="can('payroll')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="edit"></i>
-                <span *ngIf="!isCollapsed()">Employee Input</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/payroll/payslips"
-                  *ngIf="can('payroll')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="file-text"></i>
-                <span *ngIf="!isCollapsed()">Payslips</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/payroll/config"
-                  *ngIf="authService.isAdmin()"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="mail"></i>
-                <span *ngIf="!isCollapsed()">Config</span>
-              </li>
-
-              <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
-
               <li nz-menu-item routerLink="/admin/leave"
                   *ngIf="can('leave')"
                   (click)="closeDrawerOnMobile()">
@@ -135,13 +108,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   *ngIf="can('doc_templates')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="file-text"></i>
-                <span *ngIf="!isCollapsed()">Doc Templates</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/document-templates/reports"
-                  *ngIf="can('doc_templates')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="bar-chart"></i>
-                <span *ngIf="!isCollapsed()">Doc Reports</span>
+                <span *ngIf="!isCollapsed()">Document Templates</span>
               </li>
               <li nz-menu-item routerLink="/admin/reports"
                   *ngIf="can('reports')"
@@ -153,7 +120,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   *ngIf="can('reports')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="file-done"></i>
-                <span *ngIf="!isCollapsed()">Statutory</span>
+                <span *ngIf="!isCollapsed()">Statutory Reports</span>
               </li>
               <li nz-menu-item routerLink="/admin/pending-registrations"
                   *ngIf="can('registrations')"
@@ -165,7 +132,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   *ngIf="authService.isAdmin()"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="safety"></i>
-                <span *ngIf="!isCollapsed()">Access</span>
+                <span *ngIf="!isCollapsed()">Access Control</span>
               </li>
             </ul>
           </nav>
