@@ -450,3 +450,14 @@ button[nz-button][nzType="default"] {
 // ===== IMPORT COMPONENT STYLES =====
 @import './app/shared/styles/component-styles.scss';
 @import './app/shared/styles/responsive.scss';
+
+// ===== GLOBAL: Hide number input spinners (plain text field look) =====
+.ant-input-number-handler-wrap {
+  display: none !important;
+}
+.ant-input-number {
+  width: 100% !important;
+}
+.ant-input-number-input {
+  text-align: right !important;
+}
