@@ -99,4 +99,8 @@ export class PayrollService {
   getSalaryMasterHistory(employeeId: number): Observable<APIResponse<any[]>> {
     return this.http.get<APIResponse<any[]>>(`${this.apiUrl}/salary-master/history/${employeeId}`);
   }
+
+  getSalaryMasterSnapshots(employeeId: number): Observable<APIResponse<any[]>> {
+    return this.http.get<APIResponse<any[]>>(`${this.apiUrl}/salary-master/snapshots/${employeeId}`);
+  }
 }

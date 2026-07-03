@@ -5,9 +5,11 @@ import com.ems.exception.ResourceNotFoundException;
 import com.ems.model.Employee;
 import com.ems.model.SalaryMaster;
 import com.ems.model.SalaryMasterHistory;
+import com.ems.model.SalaryMasterSnapshot;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.SalaryMasterHistoryRepository;
 import com.ems.repository.SalaryMasterRepository;
+import com.ems.repository.SalaryMasterSnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -28,6 +30,7 @@ public class SalaryMasterService {
     private final SalaryMasterRepository salaryMasterRepository;
     private final SalaryMasterHistoryRepository historyRepository;
     private final EmployeeRepository employeeRepository;
+    private final SalaryMasterSnapshotRepository snapshotRepository;
 
     @Transactional(readOnly = true)
     public List<SalaryMasterDTO> getAll() {
@@ -75,8 +78,40 @@ public class SalaryMasterService {
         if (dto.getEffectiveFrom() != null) master.setEffectiveFrom(dto.getEffectiveFrom());
 
         master = salaryMasterRepository.save(master);
+
+        // Save monthly snapshot for historical review
+        takeSnapshot(master, currentUser);
+
         log.info("Salary master saved for employee {}", employee.getEmployeeCode());
         return toDTO(master);
+    }
+
+    private void takeSnapshot(SalaryMaster master, String user) {
+        java.time.LocalDate now = java.time.LocalDate.now();
+        SalaryMasterSnapshot snapshot = SalaryMasterSnapshot.builder()
+            .employeeId(master.getEmployee().getId())
+            .employeeCode(master.getEmployee().getEmployeeCode())
+            .snapshotYear(now.getYear())
+            .snapshotMonth(now.getMonthValue())
+            .basic(master.getBasic())
+            .hra(master.getHra())
+            .fixedPersonalAllowance(master.getFixedPersonalAllowance())
+            .otherAllowance(master.getOtherAllowance())
+            .bonus(master.getBonus())
+            .appraisalAmount(master.getAppraisalAmount())
+            .lateSittingAmount(master.getLateSittingAmount())
+            .pfDeduction(master.getPfDeduction())
+            .esiDeduction(master.getEsiDeduction())
+            .ptDeduction(master.getPtDeduction())
+            .overtimeWages(master.getOvertimeWages())
+            .workingHoursPerDay(master.getWorkingHoursPerDay())
+            .workerType(master.getWorkerType())
+            .changedBy(user)
+            .createdAt(java.time.LocalDateTime.now())
+            .build();
+        snapshotRepository.save(snapshot);
+        log.info("Salary master snapshot saved for employee {} for {}/{}",
+            master.getEmployee().getEmployeeCode(), now.getMonthValue(), now.getYear());
     }
 
     @Transactional
@@ -106,6 +141,11 @@ public class SalaryMasterService {
 
     public List<SalaryMasterHistory> getHistory(Long employeeId) {
         return historyRepository.findByEmployeeIdOrderByChangedAtDesc(employeeId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SalaryMasterSnapshot> getSnapshots(Long employeeId) {
+        return snapshotRepository.findByEmployeeIdOrderBySnapshotYearDescSnapshotMonthDesc(employeeId);
     }
 
     private void trackChanges(SalaryMaster master, SalaryMasterDTO dto, String user) {

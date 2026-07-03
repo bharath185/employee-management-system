@@ -8,6 +8,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzBreadCrumbModule } from 'ng-zorro-antd/breadcrumb';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { PermissionService } from '../../core/services/permission.service';
 import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.component';
@@ -25,6 +26,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     NzBreadCrumbModule,
     NzButtonModule,
     NzDropDownModule,
+    NzToolTipModule,
     ChatWidgetComponent
   ],
   animations: [
@@ -77,7 +79,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
               <i nz-icon nzType="bank"></i>
               <span *ngIf="!isCollapsed()">Company Setup</span>
             </li>
-            <li nz-submenu nzTitle="Payroll" nzIcon="wallet" class="side-submenu"
+            <li nz-submenu nzTitle="Payroll" nzIcon="money-collect" class="side-submenu"
                 *ngIf="can('payroll')">
               <ul>
                 <li nz-menu-item routerLink="/admin/payroll/process"
@@ -177,7 +179,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
           <div class="sidenav-footer" (click)="logout()">
             <div class="sidenav-logout-item">
               <i nz-icon nzType="logout"></i>
-              <span *ngIf="!isCollapsed()">Logout</span>
+              <span *ngIf="!isCollapsed()" class="sidenav-logout-text">Sign Out</span>
             </div>
           </div>
         </div>
@@ -190,6 +192,9 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
           <span class="toolbar-title">Employee Management</span>
           <span class="toolbar-spacer"></span>
 
+          <button nz-button nzType="text" nz-tooltip="Logout" class="header-icon-btn" (click)="logout()">
+            <i nz-icon nzType="logout" class="header-logout-icon"></i>
+          </button>
           <button nz-button nzType="text" nz-dropdown [nzDropdownMenu]="profileMenu" class="profile-btn">
             <span class="admin-avatar-circle">{{ currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A' }}</span>
           </button>
@@ -197,12 +202,15 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
             <ul nz-menu class="admin-dropdown-menu">
               <li nz-menu-item disabled class="profile-user-item">
                 <span class="admin-dropdown-avatar">{{ currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A' }}</span>
-                <span>{{ currentUserName }}</span>
+                <div class="profile-user-details">
+                  <span class="profile-user-name">{{ currentUserName }}</span>
+                  <span class="profile-user-role">Administrator</span>
+                </div>
               </li>
-              <li nz-menu-divider></li>
-              <li nz-menu-item (click)="logout()">
+              <li nz-menu-divider class="profile-divider"></li>
+              <li nz-menu-item (click)="logout()" class="profile-logout-item">
                 <i nz-icon nzType="logout"></i>
-                <span>Logout</span>
+                <span>Sign Out</span>
               </li>
             </ul>
           </nz-dropdown-menu>
@@ -243,19 +251,37 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       overflow: hidden;
     }
     :host ::ng-deep .sidenav .ant-layout-sider-children { overflow: hidden; }
-    .sidenav-inner { height: 100%; display: flex; flex-direction: column; background: #1f3d6e; }
+    .sidenav-inner {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(160deg, rgba(31, 61, 110, 0.92), rgba(20, 40, 75, 0.96));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+    }
+    .sidenav-inner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 20% 20%, rgba(37, 99, 235, 0.08), transparent 60%),
+                  radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.06), transparent 50%);
+      pointer-events: none;
+    }
     .sidenav-spacer { flex: 1; }
     .sidenav-user-section { flex-shrink: 0; }
     .sidenav-footer { flex-shrink: 0; cursor: pointer; }
-    .sidenav-footer-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 0 8px; }
+    .sidenav-footer-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent); margin: 0 8px; }
     .sidenav-user-card {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 12px 16px;
       margin: 0 8px 4px;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.06);
     }
     .sidenav-user-card-collapsed {
       display: flex;
@@ -299,11 +325,13 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       align-items: center;
       gap: 10px;
       padding: 10px 16px;
-      color: rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.5);
       transition: all 0.2s;
       font-size: 14px;
+      position: relative;
+      z-index: 1;
     }
-    .sidenav-logout-item:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .sidenav-logout-item:hover { color: #fff; background: rgba(255,255,255,0.08); }
     .sidenav-logout-item i[nz-icon] { font-size: 20px; }
     :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logout-item { justify-content: center; padding: 12px 0; }
     :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logout-item i[nz-icon] { font-size: 22px; }
@@ -316,7 +344,9 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       justify-content: center;
       padding: 20px 16px;
       height: 80px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
     }
     .sidenav-logo-wrapper {
       display: flex;
@@ -344,23 +374,28 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       height: 44px !important;
       line-height: 44px !important;
       margin: 2px 8px !important;
-      border-radius: var(--radius-md) !important;
-      color: rgba(255,255,255,0.75) !important;
+      border-radius: 10px !important;
+      color: rgba(255,255,255,0.7) !important;
       display: flex !important;
       align-items: center !important;
       gap: 10px;
+      position: relative;
+      z-index: 1;
+      transition: all 0.2s ease;
     }
     :host ::ng-deep .ant-menu-item > i {
       font-size: 20px;
-      color: rgba(255,255,255,0.7);
+      color: rgba(255,255,255,0.6);
       margin-right: 0 !important;
+      transition: all 0.2s ease;
     }
     :host ::ng-deep .ant-menu-item > span {
       font-size: 14px;
       line-height: 1;
+      font-weight: 500;
     }
     :host ::ng-deep .ant-menu-item:hover {
-      background: rgba(255,255,255,0.06) !important;
+      background: rgba(255,255,255,0.08) !important;
       color: #ffffff !important;
     }
     :host ::ng-deep .ant-menu-item:hover i {
@@ -368,25 +403,29 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     }
 
     :host ::ng-deep .ant-menu-submenu {
-      color: rgba(255,255,255,0.75) !important;
+      color: rgba(255,255,255,0.7) !important;
     }
     :host ::ng-deep .ant-menu-submenu-title {
       height: 44px !important;
       line-height: 44px !important;
       margin: 2px 8px !important;
-      border-radius: var(--radius-md) !important;
-      color: rgba(255,255,255,0.75) !important;
+      border-radius: 10px !important;
+      color: rgba(255,255,255,0.7) !important;
       display: flex !important;
       align-items: center !important;
       gap: 10px;
       font-size: 14px;
+      font-weight: 500;
+      position: relative;
+      z-index: 1;
+      transition: all 0.2s ease;
     }
     :host ::ng-deep .ant-menu-submenu-title:hover {
-      background: rgba(255,255,255,0.06) !important;
+      background: rgba(255,255,255,0.08) !important;
       color: #ffffff !important;
     }
     :host ::ng-deep .ant-menu-submenu-title .ant-menu-submenu-arrow {
-      color: rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.5);
     }
     :host ::ng-deep .ant-menu-submenu-selected > .ant-menu-submenu-title {
       color: #ffffff !important;
@@ -396,6 +435,21 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     }
     :host ::ng-deep .ant-menu-submenu .ant-menu-item {
       padding-left: 44px !important;
+    }
+    :host ::ng-deep .ant-menu-submenu .ant-menu-item:first-child {
+      margin-top: 4px !important;
+    }
+    :host ::ng-deep .ant-menu-submenu .ant-menu-item:last-child {
+      margin-bottom: 4px !important;
+    }
+    :host ::ng-deep .side-submenu.ant-menu-submenu > .ant-menu {
+      background: rgba(0,0,0,0.2) !important;
+      border-radius: 10px !important;
+      margin: 0 8px 4px !important;
+      padding: 2px 0 !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.04);
     }
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-submenu-title {
       justify-content: center;
@@ -414,8 +468,10 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       font-size: 22px;
     }
     .header-toolbar {
-      background: #ffffff !important;
-      border-bottom: 1px solid #e8eaed;
+      background: rgba(255,255,255,0.85) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(232, 234, 237, 0.6);
       color: #1a1a2e !important;
       position: sticky;
       top: 0;
@@ -424,7 +480,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       display: flex;
       align-items: center;
       padding: 0 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
     .menu-button {
       margin-right: 8px;
@@ -480,7 +536,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       padding: 0;
       height: calc(100vh - 56px);
       position: relative;
-      background: #f5f6fa;
+      background: linear-gradient(135deg, #f5f7fa 0%, #eef1f5 100%);
       animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
       overflow: hidden;
     }
@@ -489,6 +545,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       position: absolute;
       inset: 0;
       pointer-events: none;
+      background: radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.02), transparent 50%);
     }
     .profile-user-item {
       cursor: default !important;
@@ -504,19 +561,40 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     :host ::ng-deep .profile-user-item.ant-menu-item:hover {
       background: transparent !important;
     }
+    .header-icon-btn {
+      width: 36px;
+      height: 36px;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50% !important;
+      padding: 0 !important;
+      color: #6c757d !important;
+      transition: all 0.2s ease;
+      margin-right: 4px;
+    }
+    .header-icon-btn:hover {
+      color: #dc3545 !important;
+      background: rgba(220, 53, 69, 0.08) !important;
+    }
+    .header-logout-icon {
+      font-size: 18px;
+    }
     :host ::ng-deep .admin-dropdown-menu {
       background: #ffffff !important;
-      border: 1px solid #e8eaed !important;
-      border-radius: 8px !important;
-      padding: 4px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+      border: 1px solid rgba(232, 234, 237, 0.8) !important;
+      border-radius: 12px !important;
+      padding: 6px;
+      min-width: 200px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
     }
     :host ::ng-deep .admin-dropdown-menu .ant-menu-item {
       color: #1a1a2e !important;
-      border-radius: 6px !important;
+      border-radius: 8px !important;
       margin: 2px 0 !important;
       height: 40px !important;
       line-height: 40px !important;
+      font-size: 13px;
     }
     :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover {
       background: #eff6ff !important;
@@ -533,25 +611,54 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       background: #e8eaed !important;
       margin: 4px 12px !important;
     }
+    .profile-user-details {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .profile-user-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .profile-user-role {
+      font-size: 11px;
+      color: rgba(0,0,0,0.4);
+    }
+    .profile-logout-item:hover i {
+      color: #dc3545 !important;
+    }
+    .profile-logout-item:hover {
+      background: rgba(220, 53, 69, 0.06) !important;
+      color: #dc3545 !important;
+    }
     :host ::ng-deep .sidenav {
-      background: #1f3d6e !important;
+      background: transparent !important;
       border-right: none !important;
       transition: all 0.2s ease;
       overflow: hidden;
+      box-shadow: 2px 0 20px rgba(0,0,0,0.12);
     }
     :host ::ng-deep .sidenav .ant-layout-sider-children {
       background: transparent !important;
     }
+    :host ::ng-deep .sidenav.ant-layout-sider-dark {
+      background: transparent !important;
+    }
+    :host ::ng-deep .ant-layout-sider-trigger {
+      background: rgba(31, 61, 110, 0.95) !important;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
 
-    // Sidebar active menu item
+    /* Sidebar active menu item */
     :host ::ng-deep .ant-menu-item-selected {
-      background: rgba(255,255,255,0.1) !important;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.1)) !important;
       color: #ffffff !important;
       font-weight: 600;
-      box-shadow: inset 3px 0 0 #2563eb;
+      box-shadow: inset 3px 0 0 #4f8cff, 0 2px 8px rgba(37, 99, 235, 0.15);
     }
     :host ::ng-deep .ant-menu-item-selected i {
-      color: #ffffff !important;
+      color: #4f8cff !important;
     }
 
     :host ::ng-deep .ant-menu-submenu-selected > .ant-menu-submenu-title {

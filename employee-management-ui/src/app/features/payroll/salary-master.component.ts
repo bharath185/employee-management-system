@@ -12,6 +12,8 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzTimelineModule } from 'ng-zorro-antd/timeline';
+import { NzTabsModule } from 'ng-zorro-antd/tabs';
+import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { PayrollService } from '../../core/services/payroll.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,7 +25,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzIconModule,
     NzInputNumberModule, NzSelectModule, NzCardModule, NzSpinModule, NzTagModule,
-    NzDrawerModule, NzTimelineModule
+    NzDrawerModule, NzTimelineModule, NzTabsModule, NzDescriptionsModule
   ],
   template: `
     <div class="sm-container page-enter">
@@ -132,24 +134,54 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
         </nz-table>
       </nz-card>
 
-      <!-- ===== HISTORY DRAWER ===== -->
+      <!-- ===== HISTORY DRAWER (with tabs) ===== -->
       <nz-drawer
         [nzVisible]="historyDrawer"
-        nzTitle="Salary Change History"
+        [nzTitle]="drawerTitle"
         (nzOnClose)="historyDrawer = false"
-        nzWidth="480">
+        nzWidth="560">
         <div *nzDrawerContent>
-          <div *ngIf="historyLoading" style="text-align:center;padding:40px"><i nz-icon nzType="loading" style="font-size:24px"></i></div>
-          <nz-timeline *ngIf="!historyLoading && historyItems.length > 0">
-            <nz-timeline-item *ngFor="let h of historyItems">
-              <span style="font-size:12px;color:#6c757d">{{ h.changedAt | date:'dd MMM yyyy HH:mm' }}</span>
-              <br/>
-              <span style="font-size:13px"><strong>{{ h.fieldName }}</strong>: {{ h.oldValue || '—' }} → {{ h.newValue }}</span>
-              <br/>
-              <span style="font-size:11px;color:#9ca3af">by {{ h.changedBy }}</span>
-            </nz-timeline-item>
-          </nz-timeline>
-          <div *ngIf="!historyLoading && historyItems.length === 0" style="text-align:center;padding:40px;color:#9ca3af">No changes recorded yet</div>
+          <nz-tabset>
+            <nz-tab nzTitle="Monthly Snapshots">
+              <div *ngIf="snapshotsLoading" style="text-align:center;padding:40px"><i nz-icon nzType="loading" style="font-size:24px"></i></div>
+              <div *ngIf="!snapshotsLoading && snapshots.length === 0" style="text-align:center;padding:40px;color:#9ca3af">No snapshots yet. Snapshots are taken automatically when Salary Master is saved.</div>
+              <nz-timeline *ngIf="!snapshotsLoading && snapshots.length > 0">
+                <nz-timeline-item *ngFor="let s of snapshots" nzColor="blue">
+                  <div class="snapshot-header">
+                    <strong>{{ getMonthName(s.snapshotMonth) }} {{ s.snapshotYear }}</strong>
+                    <span class="snapshot-by">by {{ s.changedBy }}</span>
+                  </div>
+                  <nz-descriptions nzSize="small" nzColumn="2" class="snapshot-desc">
+                    <nz-descriptions-item nzTitle="Basic" [nzSpan]="1">₹{{ s.basic | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="HRA" [nzSpan]="1">₹{{ s.hra | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="FPA" [nzSpan]="1">₹{{ s.fixedPersonalAllowance | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="Other" [nzSpan]="1">₹{{ s.otherAllowance | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="Bonus" [nzSpan]="1" nzLabelStyle="color:#d97706;font-weight:700">₹{{ s.bonus | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="Appraisal" [nzSpan]="1" nzLabelStyle="color:#059669;font-weight:700">₹{{ s.appraisalAmount | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="Late Sitting" [nzSpan]="1">₹{{ s.lateSittingAmount | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="PF" [nzSpan]="1">₹{{ s.pfDeduction | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="ESI" [nzSpan]="1">₹{{ s.esiDeduction | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="PT" [nzSpan]="1">₹{{ s.ptDeduction | number:'1.2-2' }}</nz-descriptions-item>
+                    <nz-descriptions-item nzTitle="Worker" [nzSpan]="2">{{ s.workerType }}</nz-descriptions-item>
+                  </nz-descriptions>
+                  <div class="snapshot-divider"></div>
+                </nz-timeline-item>
+              </nz-timeline>
+            </nz-tab>
+            <nz-tab nzTitle="Field Changes">
+              <div *ngIf="historyLoading" style="text-align:center;padding:40px"><i nz-icon nzType="loading" style="font-size:24px"></i></div>
+              <nz-timeline *ngIf="!historyLoading && historyItems.length > 0">
+                <nz-timeline-item *ngFor="let h of historyItems">
+                  <span style="font-size:12px;color:#6c757d">{{ h.changedAt | date:'dd MMM yyyy HH:mm' }}</span>
+                  <br/>
+                  <span style="font-size:13px"><strong>{{ h.fieldName }}</strong>: {{ h.oldValue || '—' }} → {{ h.newValue }}</span>
+                  <br/>
+                  <span style="font-size:11px;color:#9ca3af">by {{ h.changedBy }}</span>
+                </nz-timeline-item>
+              </nz-timeline>
+              <div *ngIf="!historyLoading && historyItems.length === 0" style="text-align:center;padding:40px;color:#9ca3af">No changes recorded yet</div>
+            </nz-tab>
+          </nz-tabset>
         </div>
       </nz-drawer>
     </div>
@@ -167,6 +199,14 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
     :host ::ng-deep .sm-card .ant-card-body { padding:14px 16px !important; }
     .sm-toolbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
     .sm-info { font-size:12px; color:#6c757d; background:#f0f4ff; padding:6px 12px; border-radius:6px; border:1px solid #d0d9f0; }
+    /* ===== SNAPSHOT DRAWER STYLES ===== */
+    .snapshot-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .snapshot-by { font-size:11px; color:#9ca3af; }
+    .snapshot-desc { margin-bottom:4px; }
+    :host ::ng-deep .snapshot-desc .ant-descriptions-item-label { font-size:11px !important; font-weight:600 !important; color:#6c757d !important; }
+    :host ::ng-deep .snapshot-desc .ant-descriptions-item-content { font-size:12px !important; font-weight:600 !important; color:#374151 !important; }
+    .snapshot-divider { height:1px; background:#e8eaed; margin:8px 0 12px; }
+    /* ===== TABLE STYLES ===== */
     .cell-input, :host ::ng-deep .cell-input { width:100% !important; }
     :host ::ng-deep .cell-input .ant-input-number { border-radius:6px !important; border:1px solid #e2e5ea !important; width:100% !important; transition:all 0.2s ease !important; }
     :host ::ng-deep .cell-input .ant-input-number:hover { border-color:#1f3d6e !important; }
@@ -198,8 +238,11 @@ export class SalaryMasterComponent implements OnInit {
   changedIds = new Set<number>();
 
   historyDrawer = false;
+  drawerTitle = '';
   historyItems: any[] = [];
   historyLoading = false;
+  snapshots: any[] = [];
+  snapshotsLoading = false;
 
   constructor(
     private payrollService: PayrollService,
@@ -291,16 +334,25 @@ export class SalaryMasterComponent implements OnInit {
   }
 
   showHistory(m: SalaryMasterDTO): void {
-    if (!m.employeeId) return;
+    if (!m.employeeId || !m.employeeName) return;
+    this.drawerTitle = m.employeeCode + ' — ' + m.employeeName;
     this.historyDrawer = true;
     this.historyLoading = true;
+    this.snapshotsLoading = true;
     this.historyItems = [];
+    this.snapshots = [];
     this.payrollService.getSalaryMasterHistory(m.employeeId).subscribe({
-      next: (res) => {
-        this.historyItems = res.data || [];
-        this.historyLoading = false;
-      },
+      next: (res) => { this.historyItems = res.data || []; this.historyLoading = false; },
       error: () => { this.historyLoading = false; }
     });
+    this.payrollService.getSalaryMasterSnapshots(m.employeeId).subscribe({
+      next: (res) => { this.snapshots = res.data || []; this.snapshotsLoading = false; },
+      error: () => { this.snapshotsLoading = false; }
+    });
+  }
+
+  getMonthName(m: number): string {
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return names[m - 1] || '';
   }
 }

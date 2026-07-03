@@ -3,6 +3,7 @@ package com.ems.controller;
 import com.ems.dto.APIResponse;
 import com.ems.dto.SalaryMasterDTO;
 import com.ems.model.SalaryMasterHistory;
+import com.ems.model.SalaryMasterSnapshot;
 import com.ems.service.SalaryMasterService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,5 +50,11 @@ public class SalaryMasterController {
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<List<SalaryMasterHistory>>> getHistory(@PathVariable Long employeeId) {
         return ResponseEntity.ok(APIResponse.success(salaryMasterService.getHistory(employeeId)));
+    }
+
+    @GetMapping("/snapshots/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<List<SalaryMasterSnapshot>>> getSnapshots(@PathVariable Long employeeId) {
+        return ResponseEntity.ok(APIResponse.success(salaryMasterService.getSnapshots(employeeId)));
     }
 }
