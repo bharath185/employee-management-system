@@ -182,7 +182,7 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 14px;
+      padding: 7px 14px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 500;
@@ -190,7 +190,7 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       text-decoration: none;
       transition: all 0.2s ease;
     }
-    .pp-nav-item i { font-size: 16px; }
+    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
     .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
     .pp-nav-item.active {
       background: #2563eb;

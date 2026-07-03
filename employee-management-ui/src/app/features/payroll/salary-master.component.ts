@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -25,10 +26,28 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzIconModule,
     NzInputNumberModule, NzSelectModule, NzCardModule, NzSpinModule, NzTagModule,
-    NzDrawerModule, NzTimelineModule, NzTabsModule, NzDescriptionsModule
+    NzDrawerModule, NzTimelineModule, NzTabsModule, NzDescriptionsModule,
+    RouterLink, RouterLinkActive
   ],
   template: `
     <div class="sm-container page-enter">
+      <div class="pp-sub-nav">
+        <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
+          <i nz-icon nzType="play-circle"></i><span>Process</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
+          <i nz-icon nzType="bank"></i><span>Salary Master</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
+          <i nz-icon nzType="edit"></i><span>Employee Input</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
+          <i nz-icon nzType="file-text"></i><span>Payslips</span>
+        </a>
+        <a class="pp-nav-item" routerLink="/admin/payroll/config" routerLinkActive="active">
+          <i nz-icon nzType="mail"></i><span>Config</span>
+        </a>
+      </div>
       <div class="sm-header">
         <div class="sm-header-left">
           <div class="sm-header-icon">
@@ -187,6 +206,36 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
     </div>
   `,
   styles: [`
+    .pp-sub-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 4px;
+      border: 1px solid rgba(232,234,237,0.6);
+    }
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item.active {
+      background: #2563eb;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+    }
+    .pp-nav-item.active i { color: #fff; }
     .sm-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 12px 16px; width: 100%; min-width: 0; box-sizing: border-box; }
     .sm-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 16px; margin-bottom:14px; background:linear-gradient(135deg,#1f3d6e 0%,#16213e 100%); border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.15); }
     .sm-header-left { display:flex; align-items:center; gap:12px; }

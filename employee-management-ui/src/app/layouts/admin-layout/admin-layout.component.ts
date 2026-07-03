@@ -302,8 +302,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
 
     /* Menu items - expanded state */
     :host ::ng-deep .ant-menu-item {
-      height: 42px !important;
-      line-height: 42px !important;
+      height: 40px !important;
+      line-height: 40px !important;
       margin: 2px 8px !important;
       border-radius: 10px !important;
       color: rgba(255,255,255,0.65) !important;
@@ -316,11 +316,15 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       transition: all 0.2s ease;
     }
     :host ::ng-deep .ant-menu-item > i {
-      font-size: 20px;
+      font-size: 18px;
+      width: 18px;
       color: rgba(255,255,255,0.55);
       margin-right: 0 !important;
       transition: all 0.2s ease;
       flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     :host ::ng-deep .ant-menu-item > span {
       font-size: 13px;
@@ -347,13 +351,16 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
 
     /* Menu items - collapsed state (icons only) */
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item {
+      height: 40px !important;
+      line-height: 40px !important;
       justify-content: center !important;
       padding: 0 !important;
       margin: 2px auto !important;
-      width: 44px !important;
+      width: 40px !important;
     }
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item i {
-      font-size: 20px;
+      font-size: 18px;
+      width: 18px;
     }
 
     .side-nav-separator {
