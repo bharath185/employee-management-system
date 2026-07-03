@@ -44,7 +44,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     <nz-layout class="sidenav-container">
       <nz-sider class="sidenav"
                 nzTheme="dark"
-                [nzCollapsed]="true"
+                [(nzCollapsed)]="isCollapsed"
+                [nzBreakpoint]="'md'"
                 [nzCollapsedWidth]="64"
                 [nzTrigger]="null">
         <div class="sidenav-inner">
@@ -57,124 +58,129 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
             <ul nz-menu nzTheme="dark" nzMode="inline" class="side-nav-menu">
               <li nz-menu-item routerLink="/admin/dashboard"
                   *ngIf="can('dashboard')"
-                  nz-tooltip="Dashboard" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="dashboard"></i>
+                <span *ngIf="!isCollapsed()">Dashboard</span>
               </li>
               <li nz-menu-item routerLink="/admin/employees"
                   *ngIf="can('staff_master')"
-                  nz-tooltip="Employees" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="team"></i>
+                <span *ngIf="!isCollapsed()">Employees</span>
               </li>
               <li nz-menu-item routerLink="/admin/masters"
                   *ngIf="can('masters')"
-                  nz-tooltip="Master Data" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="setting"></i>
+                <span *ngIf="!isCollapsed()">Master Data</span>
               </li>
               <li nz-menu-item routerLink="/admin/company"
                   *ngIf="can('company')"
-                  nz-tooltip="Company Setup" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="bank"></i>
+                <span *ngIf="!isCollapsed()">Company</span>
               </li>
 
-              <li class="side-nav-separator"><span></span></li>
+              <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
               <li nz-menu-item routerLink="/admin/payroll/process"
                   *ngIf="can('payroll')"
-                  nz-tooltip="Payroll Process" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="play-circle"></i>
+                <span *ngIf="!isCollapsed()">Payroll Process</span>
               </li>
               <li nz-menu-item routerLink="/admin/payroll/salary-master"
                   *ngIf="can('payroll')"
-                  nz-tooltip="Salary Master" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="dollar"></i>
+                <span *ngIf="!isCollapsed()">Salary Master</span>
               </li>
               <li nz-menu-item routerLink="/admin/payroll/input"
                   *ngIf="can('payroll')"
-                  nz-tooltip="Employee Input" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="edit"></i>
+                <span *ngIf="!isCollapsed()">Employee Input</span>
               </li>
               <li nz-menu-item routerLink="/admin/payroll/payslips"
                   *ngIf="can('payroll')"
-                  nz-tooltip="Payslips" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="file-text"></i>
+                <span *ngIf="!isCollapsed()">Payslips</span>
               </li>
               <li nz-menu-item routerLink="/admin/payroll/config"
                   *ngIf="authService.isAdmin()"
-                  nz-tooltip="Payroll Config" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="mail"></i>
+                <span *ngIf="!isCollapsed()">Config</span>
               </li>
 
-              <li class="side-nav-separator"><span></span></li>
+              <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
               <li nz-menu-item routerLink="/admin/leave"
                   *ngIf="can('leave')"
-                  nz-tooltip="Leave" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="calendar"></i>
+                <span *ngIf="!isCollapsed()">Leave</span>
               </li>
               <li nz-menu-item routerLink="/admin/attendance"
                   *ngIf="can('attendance')"
-                  nz-tooltip="Attendance" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="schedule"></i>
+                <span *ngIf="!isCollapsed()">Attendance</span>
               </li>
 
-              <li class="side-nav-separator"><span></span></li>
+              <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
               <li nz-menu-item routerLink="/admin/document-templates"
                   *ngIf="can('doc_templates')"
-                  nz-tooltip="Doc Templates" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="file-text"></i>
+                <span *ngIf="!isCollapsed()">Doc Templates</span>
               </li>
               <li nz-menu-item routerLink="/admin/document-templates/reports"
                   *ngIf="can('doc_templates')"
-                  nz-tooltip="Doc Reports" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="bar-chart"></i>
+                <span *ngIf="!isCollapsed()">Doc Reports</span>
               </li>
               <li nz-menu-item routerLink="/admin/reports"
                   *ngIf="can('reports')"
-                  nz-tooltip="Reports" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="audit"></i>
+                <span *ngIf="!isCollapsed()">Reports</span>
               </li>
               <li nz-menu-item routerLink="/admin/statutory-reports"
                   *ngIf="can('reports')"
-                  nz-tooltip="Statutory Reports" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="file-done"></i>
+                <span *ngIf="!isCollapsed()">Statutory</span>
               </li>
               <li nz-menu-item routerLink="/admin/pending-registrations"
                   *ngIf="can('registrations')"
-                  nz-tooltip="Registrations" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="audit"></i>
+                <span *ngIf="!isCollapsed()">Registrations</span>
               </li>
               <li nz-menu-item routerLink="/admin/access-control"
                   *ngIf="authService.isAdmin()"
-                  nz-tooltip="Access Control" nzTooltipPlacement="right"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="safety"></i>
+                <span *ngIf="!isCollapsed()">Access</span>
               </li>
             </ul>
           </nav>
           <div class="sidenav-user-section">
             <div class="sidenav-footer-divider"></div>
-            <div class="sidenav-user-avatar-wrap">
-              <div class="sidenav-user-avatar" nz-tooltip="Profile" nzTooltipPlacement="right"
-                   nz-dropdown [nzDropdownMenu]="sideProfileMenu">
-                {{ currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A' }}
+            <div class="sidenav-user-card" *ngIf="!isCollapsed()">
+              <div class="sidenav-user-avatar">{{ currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A' }}</div>
+              <div class="sidenav-user-info">
+                <span class="sidenav-user-name">{{ currentUserName }}</span>
+                <span class="sidenav-user-role">Administrator</span>
               </div>
+            </div>
+            <div class="sidenav-user-avatar-wrap" *ngIf="isCollapsed()"
+                 nz-dropdown [nzDropdownMenu]="sideProfileMenu">
+              <div class="sidenav-user-avatar">{{ currentUserName ? currentUserName.charAt(0).toUpperCase() : 'A' }}</div>
             </div>
           </div>
         </div>
@@ -199,8 +205,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
 
       <nz-layout>
         <nz-header class="header-toolbar">
-          <button nz-button nzType="text" class="menu-button" (click)="mobileDrawerOpen.set(true)" *ngIf="isMobile()">
-            <i nz-icon nzType="menu-fold"></i>
+          <button nz-button nzType="text" class="menu-button" (click)="toggleSidenav()">
+            <i nz-icon [nzType]="isCollapsed() ? 'menu-fold' : 'menu-unfold'"></i>
           </button>
           <span class="toolbar-title">Employee Management</span>
           <span class="toolbar-spacer"></span>
@@ -235,73 +241,6 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
         </nz-content>
       </nz-layout>
     </nz-layout>
-
-    <!-- Mobile drawer overlay -->
-    <div class="mobile-overlay" *ngIf="mobileDrawerOpen()" (click)="mobileDrawerOpen.set(false)"></div>
-    <div class="mobile-drawer" *ngIf="mobileDrawerOpen()">
-      <div class="mobile-drawer-header">
-        <img src="assets/logo-white.png" alt="EMS" class="mobile-drawer-logo">
-        <button nz-button nzType="text" class="mobile-close-btn" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="close"></i>
-        </button>
-      </div>
-      <ul nz-menu nzTheme="dark" nzMode="inline" class="mobile-drawer-menu">
-        <li nz-menu-item routerLink="/admin/dashboard" *ngIf="can('dashboard')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="dashboard"></i><span>Dashboard</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/employees" *ngIf="can('staff_master')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="team"></i><span>Employees</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/masters" *ngIf="can('masters')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="setting"></i><span>Master Data</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/company" *ngIf="can('company')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="bank"></i><span>Company Setup</span>
-        </li>
-        <li nz-menu-divider style="background:rgba(255,255,255,0.08);margin:4px 12px"></li>
-        <li nz-menu-item routerLink="/admin/payroll/process" *ngIf="can('payroll')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="play-circle"></i><span>Payroll Process</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/payroll/salary-master" *ngIf="can('payroll')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="dollar"></i><span>Salary Master</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/payroll/input" *ngIf="can('payroll')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/payroll/payslips" *ngIf="can('payroll')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="file-text"></i><span>Payslips</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/payroll/config" *ngIf="authService.isAdmin()" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="mail"></i><span>Payroll Config</span>
-        </li>
-        <li nz-menu-divider style="background:rgba(255,255,255,0.08);margin:4px 12px"></li>
-        <li nz-menu-item routerLink="/admin/leave" *ngIf="can('leave')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="calendar"></i><span>Leave</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/attendance" *ngIf="can('attendance')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="schedule"></i><span>Attendance</span>
-        </li>
-        <li nz-menu-divider style="background:rgba(255,255,255,0.08);margin:4px 12px"></li>
-        <li nz-menu-item routerLink="/admin/document-templates" *ngIf="can('doc_templates')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="file-text"></i><span>Doc Templates</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/document-templates/reports" *ngIf="can('doc_templates')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="bar-chart"></i><span>Doc Reports</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/reports" *ngIf="can('reports')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="audit"></i><span>Reports</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/statutory-reports" *ngIf="can('reports')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="file-done"></i><span>Statutory Reports</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/pending-registrations" *ngIf="can('registrations')" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="audit"></i><span>Registrations</span>
-        </li>
-        <li nz-menu-item routerLink="/admin/access-control" *ngIf="authService.isAdmin()" (click)="mobileDrawerOpen.set(false)">
-          <i nz-icon nzType="safety"></i><span>Access Control</span>
-        </li>
-      </ul>
-    </div>
     <app-chat-widget></app-chat-widget>
   `,
   styles: [`
@@ -323,14 +262,12 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     .skip-link:focus { top: 0; }
     .sidenav-container { height: 100vh; }
 
-    :host ::ng-deep .sidenav.ant-layout-sider {
+    :host ::ng-deep .sidenav {
       background: transparent !important;
       border-right: none !important;
+      transition: all 0.2s ease;
+      overflow: hidden;
       box-shadow: 2px 0 20px rgba(0,0,0,0.12);
-      flex: 0 0 64px !important;
-      max-width: 64px !important;
-      min-width: 64px !important;
-      width: 64px !important;
     }
     :host ::ng-deep .sidenav .ant-layout-sider-children { overflow: hidden; }
     :host ::ng-deep .sidenav.ant-layout-sider-dark { background: transparent !important; }
@@ -358,14 +295,26 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px 0;
+      padding: 18px 16px;
       height: 64px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
       position: relative;
       z-index: 1;
       flex-shrink: 0;
     }
-    .sidenav-logo { width: 32px; height: auto; object-fit: contain; }
+    .sidenav-logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidenav-logo {
+      width: 140px;
+      height: auto;
+      object-fit: contain;
+      transition: all 0.2s ease;
+    }
+    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logo { width: 32px; }
+    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-header { padding: 18px 0; }
 
     .side-nav-scroll {
       flex: 1;
@@ -375,30 +324,26 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       position: relative;
       z-index: 1;
     }
-    .side-nav-scroll::-webkit-scrollbar { width: 2px; }
-    .side-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-    .side-nav-scroll { scrollbar-width: thin; }
+    .side-nav-scroll::-webkit-scrollbar { width: 3px; }
+    .side-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
 
     .side-nav-menu {
       border-right: none;
       background: transparent;
     }
+    :host ::ng-deep .side-nav-menu.ant-menu { background: transparent !important; }
 
-    :host ::ng-deep .side-nav-menu.ant-menu {
-      background: transparent !important;
-    }
-
+    /* Menu items - expanded state */
     :host ::ng-deep .ant-menu-item {
       height: 42px !important;
       line-height: 42px !important;
-      margin: 2px 10px !important;
+      margin: 2px 8px !important;
       border-radius: 10px !important;
-      color: rgba(255,255,255,0.6) !important;
+      color: rgba(255,255,255,0.65) !important;
       display: flex !important;
       align-items: center !important;
-      justify-content: center !important;
-      padding: 0 !important;
-      width: 44px !important;
+      gap: 10px;
+      padding: 0 12px !important;
       position: relative;
       z-index: 1;
       transition: all 0.2s ease;
@@ -408,50 +353,79 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       color: rgba(255,255,255,0.55);
       margin-right: 0 !important;
       transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    :host ::ng-deep .ant-menu-item > span {
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 500;
+      white-space: nowrap;
     }
     :host ::ng-deep .ant-menu-item:hover {
-      background: rgba(255,255,255,0.1) !important;
+      background: rgba(255,255,255,0.08) !important;
       color: #ffffff !important;
     }
     :host ::ng-deep .ant-menu-item:hover > i {
       color: #ffffff !important;
     }
-
     :host ::ng-deep .ant-menu-item-selected {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.12)) !important;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.1)) !important;
       color: #ffffff !important;
+      font-weight: 600;
       box-shadow: inset 3px 0 0 #4f8cff, 0 2px 8px rgba(37, 99, 235, 0.15);
     }
     :host ::ng-deep .ant-menu-item-selected > i {
       color: #4f8cff !important;
     }
 
+    /* Menu items - collapsed state (icons only) */
+    :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item {
+      justify-content: center !important;
+      padding: 0 !important;
+      margin: 2px auto !important;
+      width: 44px !important;
+    }
+    :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item i {
+      font-size: 20px;
+    }
+
     .side-nav-separator {
       display: flex;
       justify-content: center;
-      padding: 6px 0;
+      padding: 4px 12px;
       list-style: none;
       position: relative;
       z-index: 1;
     }
     .side-nav-separator span {
       display: block;
-      width: 20px;
+      width: 100%;
       height: 1px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
       border-radius: 2px;
     }
 
+    /* User section */
     .sidenav-user-section {
       flex-shrink: 0;
       position: relative;
       z-index: 1;
     }
-    .sidenav-footer-divider { height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent); margin: 0 12px; }
-    .sidenav-user-avatar-wrap {
+    .sidenav-footer-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent);
+      margin: 0 12px;
+    }
+    .sidenav-user-card {
       display: flex;
-      justify-content: center;
-      padding: 10px 0;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 6px 8px 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.05);
     }
     .sidenav-user-avatar {
       width: 32px;
@@ -464,12 +438,34 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       justify-content: center;
       font-size: 13px;
       font-weight: 700;
+      flex-shrink: 0;
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    .sidenav-user-avatar:hover {
-      box-shadow: 0 0 16px rgba(37, 99, 235, 0.4);
-      transform: scale(1.05);
+    .sidenav-user-avatar:hover { box-shadow: 0 0 16px rgba(37,99,235,0.4); }
+    .sidenav-user-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .sidenav-user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .sidenav-user-role {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.3;
+    }
+    .sidenav-user-avatar-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
     }
 
     /* Header */
@@ -499,10 +495,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       border-radius: 8px;
       transition: all 0.2s ease;
     }
-    .menu-button:hover {
-      color: #2563eb !important;
-      background: #eff6ff;
-    }
+    .menu-button:hover { color: #2563eb !important; background: #eff6ff; }
     .profile-btn {
       width: 36px;
       height: 36px;
@@ -514,9 +507,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       background: #2563eb !important;
       transition: all 0.2s ease;
     }
-    .profile-btn:hover {
-      box-shadow: 0 0 20px rgba(37, 99, 235, 0.3);
-    }
+    .profile-btn:hover { box-shadow: 0 0 20px rgba(37,99,235,0.3); }
     .admin-avatar-circle {
       display: flex; align-items: center; justify-content: center;
       width: 30px; height: 30px; border-radius: 50%;
@@ -535,10 +526,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       transition: all 0.2s ease;
       margin-right: 4px;
     }
-    .header-icon-btn:hover {
-      color: #dc3545 !important;
-      background: rgba(220, 53, 69, 0.08) !important;
-    }
+    .header-icon-btn:hover { color: #dc3545 !important; background: rgba(220,53,69,0.08) !important; }
     .header-logout-icon { font-size: 18px; }
     .toolbar-title {
       font-size: 17px;
@@ -562,127 +550,49 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       position: absolute;
       inset: 0;
       pointer-events: none;
-      background: radial-gradient(ellipse at 0% 0%, rgba(37, 99, 235, 0.02), transparent 50%);
+      background: radial-gradient(ellipse at 0% 0%, rgba(37,99,235,0.02), transparent 50%);
     }
 
     /* Profile dropdown */
     .profile-user-item { cursor: default !important; }
     :host ::ng-deep .profile-user-item.ant-menu-item {
-      cursor: default !important;
-      color: #1a1a2e !important;
-      font-weight: 500;
-      display: flex !important;
-      align-items: center;
-      gap: 10px;
+      cursor: default !important; color: #1a1a2e !important; font-weight: 500;
+      display: flex !important; align-items: center; gap: 10px;
     }
     :host ::ng-deep .profile-user-item.ant-menu-item:hover { background: transparent !important; }
     :host ::ng-deep .admin-dropdown-menu {
-      background: #ffffff !important;
-      border: 1px solid rgba(232, 234, 237, 0.8) !important;
+      background: #fff !important;
+      border: 1px solid rgba(232,234,237,0.8) !important;
       border-radius: 12px !important;
       padding: 6px;
       min-width: 200px;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
     }
     :host ::ng-deep .admin-dropdown-menu .ant-menu-item {
-      color: #1a1a2e !important;
-      border-radius: 8px !important;
-      margin: 2px 0 !important;
-      height: 40px !important;
-      line-height: 40px !important;
-      font-size: 13px;
+      color: #1a1a2e !important; border-radius: 8px !important; margin: 2px 0 !important;
+      height: 40px !important; line-height: 40px !important; font-size: 13px;
     }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover {
-      background: #eff6ff !important;
-      color: #2563eb !important;
-    }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-item i {
-      color: #6c757d !important;
-      font-size: 16px;
-    }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover { background: #eff6ff !important; color: #2563eb !important; }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-item i { color: #6c757d !important; font-size: 16px; }
     :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover i { color: #2563eb !important; }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-divider {
-      background: #e8eaed !important;
-      margin: 4px 12px !important;
-    }
-    .profile-user-details {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.3;
-    }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-divider { background: #e8eaed !important; margin: 4px 12px !important; }
+    .profile-user-details { display: flex; flex-direction: column; line-height: 1.3; }
     .profile-user-name { font-weight: 600; font-size: 13px; }
     .profile-user-role { font-size: 11px; color: rgba(0,0,0,0.4); }
     .profile-logout-item:hover i { color: #dc3545 !important; }
-    .profile-logout-item:hover { background: rgba(220, 53, 69, 0.06) !important; color: #dc3545 !important; }
+    .profile-logout-item:hover { background: rgba(220,53,69,0.06) !important; color: #dc3545 !important; }
     .admin-dropdown-avatar {
       display: flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border-radius: 50%;
       background: #2563eb; color: #fff;
       font-size: 14px; font-weight: 700; flex-shrink: 0;
     }
-
-    /* Mobile drawer */
-    .mobile-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 2000;
-      backdrop-filter: blur(4px);
-      animation: fadeIn 0.2s ease;
+    :host ::ng-deep .ant-layout-sider-trigger {
+      background: rgba(31,61,110,0.95) !important;
+      backdrop-filter: blur(8px);
     }
-    .mobile-drawer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: 280px;
-      background: linear-gradient(160deg, rgba(31, 61, 110, 0.98), rgba(20, 40, 75, 0.98));
-      backdrop-filter: blur(16px);
-      z-index: 2001;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 4px 0 24px rgba(0,0,0,0.2);
-      animation: slideInLeft 0.25s ease;
-    }
-    .mobile-drawer-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .mobile-drawer-logo { width: 120px; height: auto; }
-    .mobile-close-btn { color: rgba(255,255,255,0.6) !important; }
-    .mobile-close-btn:hover { color: #fff !important; }
-    :host ::ng-deep .mobile-drawer-menu.ant-menu {
-      background: transparent !important;
-      border: none !important;
-      flex: 1;
-      overflow-y: auto;
-    }
-    :host ::ng-deep .mobile-drawer-menu .ant-menu-item {
-      height: 44px !important;
-      line-height: 44px !important;
-      margin: 2px 8px !important;
-      border-radius: 10px !important;
-      color: rgba(255,255,255,0.7) !important;
-      display: flex !important;
-      align-items: center !important;
-      gap: 12px;
-      padding-left: 16px !important;
-    }
-    :host ::ng-deep .mobile-drawer-menu .ant-menu-item i { font-size: 20px; margin-right: 0; }
-    :host ::ng-deep .mobile-drawer-menu .ant-menu-item:hover {
-      background: rgba(255,255,255,0.08) !important;
-      color: #fff !important;
-    }
-    :host ::ng-deep .mobile-drawer-menu .ant-menu-item-selected {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.1)) !important;
-      color: #fff !important;
-    }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    :host ::ng-deep .sidenav::-webkit-scrollbar { display: none; }
+    :host ::ng-deep .sidenav { scrollbar-width: none; -ms-overflow-style: none; }
 
     @media (max-width: 768px) {
       .main-content { padding: 16px; }
@@ -691,23 +601,14 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
   `]
 })
 export class AdminLayoutComponent implements OnInit {
-  isCollapsed = signal(true);
-  isMobile = signal(false);
-  mobileDrawerOpen = signal(false);
+  isCollapsed = signal(false);
   currentUserName: string = '';
 
   constructor(
     public authService: AuthService,
     public permService: PermissionService,
     private router: Router
-  ) {
-    this.checkMobile();
-  }
-
-  @HostListener('window:resize')
-  checkMobile(): void {
-    this.isMobile.set(window.innerWidth < 768);
-  }
+  ) {}
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
@@ -723,9 +624,14 @@ export class AdminLayoutComponent implements OnInit {
     return this.permService.hasPermission(role, resource, 'canView');
   }
 
+  toggleSidenav(): void {
+    this.isCollapsed.set(!this.isCollapsed());
+  }
+
   closeDrawerOnMobile(): void {
-    if (window.innerWidth < 768) {
-      // mobile drawer handles itself
+    const width = window.innerWidth;
+    if (width < 768) {
+      this.isCollapsed.set(true);
     }
   }
 
