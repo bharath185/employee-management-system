@@ -28,12 +28,15 @@ public class MasterDataService {
     }
 
     public MasterDataDTO create(MasterDataDTO dto) {
-        if (masterDataRepository.existsByCategoryIgnoreCaseAndCodeIgnoreCase(
-                dto.getCategory(), dto.getCode())) {
-            throw new RuntimeException(
-                "Master data already exists: " + dto.getCategory() + "/" + dto.getCode());
-        }
-        MasterData entity = dto.toEntity();
+        MasterData entity = masterDataRepository
+            .findByCategoryIgnoreCaseAndCodeIgnoreCase(dto.getCategory(), dto.getCode())
+            .orElseGet(() -> MasterData.builder()
+                .category(dto.getCategory())
+                .code(dto.getCode())
+                .build());
+        entity.setValue(dto.getValue());
+        entity.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : entity.getSortOrder());
+        entity.setActive(dto.getActive() != null ? dto.getActive() : true);
         entity = masterDataRepository.save(entity);
         return MasterDataDTO.fromEntity(entity);
     }
