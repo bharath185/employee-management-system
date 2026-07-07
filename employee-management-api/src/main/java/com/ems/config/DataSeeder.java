@@ -161,62 +161,60 @@ public class DataSeeder implements CommandLineRunner {
                 {"BOB", "Bank of Baroda"}, {"CANARA", "Canara Bank"},
                 {"UNION", "Union Bank of India"}, {"IOB", "Indian Overseas Bank"}
             });
-            seedCategory("OCCUPATION_SUB", new String[][]{
-                {"ACCOUNTANT", "Accountant"}, {"ADMIN", "Admin"},
-                {"ASST_MANAGER", "Asst Manager"}, {"AUTO_DRIVER", "Auto Driver"},
-                {"BABY_CARE", "Baby Care"}, {"BARBER", "Barber"},
-                {"BOOKING_AGENT", "Booking Agent"}, {"BUILDER", "Building Contractor"},
-                {"BUSINESS", "Business"}, {"CABLE_OP", "Cable Operator"},
-                {"CAR_DRIVER", "Car Driver"}, {"CARPENTER", "Carpenter"},
-                {"CASHIER", "Cashier"}, {"COLLECTION_AGENT", "Collection Agent"},
-                {"COMPOUNDER", "Compounder"}, {"CONSTRUCTION", "Construction"},
-                {"CONTRACTOR", "Contractor"}, {"COOK", "Cook"},
-                {"COOLIE", "Coolie"}, {"DAILY_WAGE", "Daily Wage Earner"},
-                {"DELIVERY", "Delivery Man"}, {"DENTAL_TECH", "Dental Technician"},
-                {"DESK_OP", "Desk Operator"}, {"DIGITAL_MKT", "Digital Marketing"},
-                {"DOCTOR", "Doctor"}, {"DRIVER", "Driver"},
-                {"ELECTRICIAN", "Electrician"}, {"FARMER", "Farmer"},
-                {"FINANCIER", "Financier"}, {"GARDENER", "Gardener"},
-                {"HELPER_HOTEL", "Helper in Hotel"}, {"HOUSEKEEPER", "Housekeeper"},
-                {"HOUSE_WIFE", "House Wife"}, {"LABOURER", "Labourer"},
-                {"MANAGER", "Manager"}, {"MECHANIC", "Mechanic"},
-                {"OPERATOR", "Operator"}, {"PAINTER", "Painter"},
-                {"PHARMACIST", "Pharmacist"}, {"PHOTOGRAPHER", "Photographer"},
-                {"PRIEST", "Priest"}, {"SALARIED", "Salaried"},
-                {"SALES_EXEC", "Sales Executive"}, {"SECURITY", "Security Guard"},
-                {"SELF_EMPLOYED", "Self Employed"}, {"SHOP_KEEPER", "Shop Keeper"},
-                {"TAILOR", "Tailor"}, {"TEACHER", "Teacher"},
-                {"TECHNICIAN", "Technician"}, {"WORKER", "Worker"}
-            });
-            seedCategory("PROCESS", new String[][]{
-                {"PROCESS_A", "Process A"}, {"PROCESS_B", "Process B"},
-                {"PROCESS_C", "Process C"}, {"PROCESS_D", "Process D"}
-            });
-            seedCategory("DOCUMENT_TYPE", new String[][]{
-                {"AADHAR", "Aadhar Card"}, {"PAN", "PAN Card"},
-                {"VOTER_ID", "Voter ID"}, {"DRIVING_LICENSE", "Driving License"},
-                {"PASSPORT", "Passport"}, {"SSLC", "SSLC Certificate"},
-                {"12TH", "12th Mark Sheet"}, {"DEGREE", "Degree Certificate"},
-                {"PG", "PG Certificate"}, {"PHOTO", "Photo"},
-                {"RESUME", "Resume/CV"}, {"OFFER_LETTER", "Offer Letter"},
-                {"EXPERIENCE", "Experience Letter"}, {"SALARY_SLIP", "Salary Slip"},
-                {"BANK_STMT", "Bank Statement"}, {"KYC", "KYC Document"},
-                {"OTHER", "Other"}
-            });
             log.info("Master data seeded successfully");
         } else {
             log.debug("Master data already exists, skipping seed");
         }
 
-        // Seed LANGUAGE independently — existing databases may have been seeded before LANGUAGE was added
+        // Seed categories independently — existing databases may have been seeded before these were added
+        seedCategory("PROCESS", new String[][]{
+            {"PROCESS_A", "Process A"}, {"PROCESS_B", "Process B"},
+            {"PROCESS_C", "Process C"}, {"PROCESS_D", "Process D"}
+        });
+        seedCategory("DOCUMENT_TYPE", new String[][]{
+            {"AADHAR", "Aadhar Card"}, {"PAN", "PAN Card"},
+            {"VOTER_ID", "Voter ID"}, {"DRIVING_LICENSE", "Driving License"},
+            {"PASSPORT", "Passport"}, {"SSLC", "SSLC Certificate"},
+            {"12TH", "12th Mark Sheet"}, {"DEGREE", "Degree Certificate"},
+            {"PG", "PG Certificate"}, {"PHOTO", "Photo"},
+            {"RESUME", "Resume/CV"}, {"OFFER_LETTER", "Offer Letter"},
+            {"EXPERIENCE", "Experience Letter"}, {"SALARY_SLIP", "Salary Slip"},
+            {"BANK_STMT", "Bank Statement"}, {"KYC", "KYC Document"},
+            {"OTHER", "Other"}
+        });
+        seedCategory("OCCUPATION_SUB", new String[][]{
+            {"ACCOUNTANT", "Accountant"}, {"ADMIN", "Admin"},
+            {"ASST_MANAGER", "Asst Manager"}, {"AUTO_DRIVER", "Auto Driver"},
+            {"BABY_CARE", "Baby Care"}, {"BARBER", "Barber"},
+            {"BOOKING_AGENT", "Booking Agent"}, {"BUILDER", "Building Contractor"},
+            {"BUSINESS", "Business"}, {"CABLE_OP", "Cable Operator"},
+            {"CAR_DRIVER", "Car Driver"}, {"CARPENTER", "Carpenter"},
+            {"CASHIER", "Cashier"}, {"COLLECTION_AGENT", "Collection Agent"},
+            {"COMPOUNDER", "Compounder"}, {"CONSTRUCTION", "Construction"},
+            {"CONTRACTOR", "Contractor"}, {"COOK", "Cook"},
+            {"COOLIE", "Coolie"}, {"DAILY_WAGE", "Daily Wage Earner"},
+            {"DELIVERY", "Delivery Man"}, {"DENTAL_TECH", "Dental Technician"},
+            {"DESK_OP", "Desk Operator"}, {"DIGITAL_MKT", "Digital Marketing"},
+            {"DOCTOR", "Doctor"}, {"DRIVER", "Driver"},
+            {"ELECTRICIAN", "Electrician"}, {"FARMER", "Farmer"},
+            {"FINANCIER", "Financier"}, {"GARDENER", "Gardener"},
+            {"HELPER_HOTEL", "Helper in Hotel"}, {"HOUSEKEEPER", "Housekeeper"},
+            {"HOUSE_WIFE", "House Wife"}, {"LABOURER", "Labourer"},
+            {"MANAGER", "Manager"}, {"MECHANIC", "Mechanic"},
+            {"OPERATOR", "Operator"}, {"PAINTER", "Painter"},
+            {"PHARMACIST", "Pharmacist"}, {"PHOTOGRAPHER", "Photographer"},
+            {"PRIEST", "Priest"}, {"SALARIED", "Salaried"},
+            {"SALES_EXEC", "Sales Executive"}, {"SECURITY", "Security Guard"},
+            {"SELF_EMPLOYED", "Self Employed"}, {"SHOP_KEEPER", "Shop Keeper"},
+            {"TAILOR", "Tailor"}, {"TEACHER", "Teacher"},
+            {"TECHNICIAN", "Technician"}, {"WORKER", "Worker"}
+        });
         seedCategory("LANGUAGE", new String[][]{
             {"TELUGU", "Telugu"}, {"HINDI", "Hindi"}, {"ENGLISH", "English"},
             {"TAMIL", "Tamil"}, {"KANNADA", "Kannada"}, {"MALAYALAM", "Malayalam"},
             {"URDU", "Urdu"}, {"MARATHI", "Marathi"}, {"GUJARATI", "Gujarati"},
             {"BENGALI", "Bengali"}, {"ORIYA", "Odia"}
         });
-
-        // Seed DEPARTMENT independently
         seedCategory("DEPARTMENT", new String[][]{
             {"IT", "IT"}, {"HR", "HR"}, {"FINANCE", "Finance"},
             {"OPERATIONS", "Operations"}, {"SALES", "Sales"},
