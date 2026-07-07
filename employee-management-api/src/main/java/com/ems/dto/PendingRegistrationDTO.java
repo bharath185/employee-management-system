@@ -24,11 +24,21 @@ public class PendingRegistrationDTO {
     private String email;
     private LocalDate dob;
     private String gender;
+    private String prefix;
+    private String maritalStatus;
     private String presentAddress;
+    private String permanentAddress;
     private String aadharNumber;
     private String panNumber;
     private String highestQualification;
     private String designation;
+    private String doj;
+    private String bankName;
+    private String accountNumber;
+    private String ifscCode;
+    private String branch;
+    private String fatherName;
+    private String fatherPhone;
     private String photoUrl;
     private String aadharDocUrl;
     private String panDocUrl;
@@ -37,6 +47,7 @@ public class PendingRegistrationDTO {
     private LocalDateTime createdAt;
     private LocalDateTime approvedAt;
     private String approvedBy;
+    private String languages;
 
     public static PendingRegistrationDTO fromEntity(PendingRegistration entity) {
         PendingRegistrationDTOBuilder builder = PendingRegistrationDTO.builder()
@@ -49,11 +60,21 @@ public class PendingRegistrationDTO {
             .email(entity.getEmail())
             .dob(entity.getDob())
             .gender(entity.getGender())
+            .prefix(entity.getPrefix())
+            .maritalStatus(entity.getMaritalStatus())
             .presentAddress(entity.getPresentAddress())
+            .permanentAddress(entity.getPermanentAddress())
             .aadharNumber(entity.getAadharNumber())
             .panNumber(entity.getPanNumber())
             .highestQualification(entity.getHighestQualification())
             .designation(entity.getDesignation())
+            .doj(entity.getDoj() != null ? entity.getDoj().toString() : null)
+            .bankName(entity.getBankName())
+            .accountNumber(entity.getAccountNumber())
+            .ifscCode(entity.getIfscCode())
+            .branch(entity.getBranch())
+            .fatherName(entity.getFatherName())
+            .fatherPhone(entity.getFatherPhone())
             .photoUrl(entity.getPhotoPath())
             .aadharDocUrl(entity.getAadharDocPath())
             .panDocUrl(entity.getPanDocPath())
@@ -61,7 +82,8 @@ public class PendingRegistrationDTO {
             .rejectionReason(entity.getRejectionReason())
             .createdAt(entity.getCreatedAt())
             .approvedAt(entity.getApprovedAt())
-            .approvedBy(entity.getApprovedBy());
+            .approvedBy(entity.getApprovedBy())
+            .languages(entity.getLanguages());
         return builder.build();
     }
 }

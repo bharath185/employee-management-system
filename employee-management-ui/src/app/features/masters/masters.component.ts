@@ -51,7 +51,11 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
   { code: 'PROCESS', name: 'Process', count: null, icon: 'setting' },
   { code: 'RELATIONSHIP', name: 'Relationship', count: null, icon: 'team' },
   { code: 'AGE_BRACKET', name: 'Age Bracket', count: null, icon: 'field-number' },
-  { code: 'YES_NO', name: 'Yes/No', count: null, icon: 'check-square' }
+  { code: 'YES_NO', name: 'Yes/No', count: null, icon: 'check-square' },
+  { code: 'LANGUAGE', name: 'Language', count: null, icon: 'translation' },
+  { code: 'DOCUMENT_TYPE', name: 'Document Type', count: null, icon: 'file-text' },
+  { code: 'OCCUPATION_SUB', name: 'Occupation Sub', count: null, icon: 'apartment' },
+  { code: 'DEPARTMENT', name: 'Department', count: null, icon: 'bank' }
 ];
 
 @Component({

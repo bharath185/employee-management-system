@@ -1,3 +1,10 @@
+export interface EmployeeLanguage {
+  language: string;
+  canRead: boolean;
+  canWrite: boolean;
+  canSpeak: boolean;
+}
+
 export interface Employee {
   id?: number;
   employeeCode: string;
@@ -51,12 +58,14 @@ export interface Employee {
   branch?: string;
   employeeStatus?: string;
   processAssigned?: string;
+  department?: string;
   esicNo?: string;
   aadharSeeding?: string;
   uanNo?: string;
   pfNo?: string;
   uanActivation?: string;
   languagesCanSpeak?: string;
+  languages?: EmployeeLanguage[];
   fatherName?: string;
   fatherPhone?: string;
   motherName?: string;

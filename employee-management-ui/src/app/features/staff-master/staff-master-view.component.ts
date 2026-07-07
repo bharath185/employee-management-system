@@ -137,6 +137,18 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
                 <nz-descriptions-item nzTitle="Relative Mobile">{{ employee.closeRelativeMobile || '-' }}</nz-descriptions-item>
               </nz-descriptions>
 
+              <nz-descriptions nzTitle="Languages" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="employee.languages && employee.languages.length > 0">
+                <nz-descriptions-item nzTitle="Languages Known">
+                  <div *ngFor="let lang of employee.languages" style="margin-bottom:4px">
+                    <strong>{{ lang.language }}</strong>:
+                    <span *ngIf="lang.canRead" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Read</span>
+                    <span *ngIf="lang.canWrite" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Write</span>
+                    <span *ngIf="lang.canSpeak" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Speak</span>
+                    <span *ngIf="!lang.canRead && !lang.canWrite && !lang.canSpeak" style="color:#9ca3af">Not specified</span>
+                  </div>
+                </nz-descriptions-item>
+              </nz-descriptions>
+
               <nz-descriptions nzTitle="Addresses" nzBordered [nzColumn]="{ xxl: 1, xl: 1, lg: 1, md: 1, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Present Address">{{ employee.presentAddress || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Permanent Address">{{ employee.permanentAddress || '-' }}</nz-descriptions-item>
@@ -208,6 +220,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
               <nz-descriptions nzTitle="Employment Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Employee Status">{{ employee.employeeStatus | titleCase }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Process Assigned">{{ employee.processAssigned || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Department">{{ employee.department || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="ESIC No.">{{ employee.esicNo || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Aadhar Seeding">{{ employee.aadharSeeding || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="UAN No.">{{ employee.uanNo || '-' }}</nz-descriptions-item>
@@ -353,8 +366,8 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     </nz-modal>
   `,
   styles: [`
-    :host { display: block; }
-    .view-container { width: 100%; padding: 0 16px; }
+    :host { display: block; height: 100%; }
+    .view-container { width: 100%; padding: 0 16px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
 
     .view-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1f3d6e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
     .view-header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -392,7 +405,29 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
       border: 1px solid #e8eaed !important;
       border-radius: 8px !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
+      min-height: 0;
+    }
+    :host ::ng-deep .detail-tabs.ant-tabs {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    :host ::ng-deep .detail-tabs.ant-tabs > .ant-tabs-nav {
+      flex-shrink: 0;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-content-holder {
+      overflow: hidden;
+      flex: 1;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-content {
+      height: 100%;
+    }
+    :host ::ng-deep .detail-tabs .ant-tabs-tabpane {
+      height: 100%;
     }
     :host ::ng-deep .detail-tabs .ant-tabs-nav {
       background: #f8fafc !important;
@@ -418,7 +453,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
       height: 3px !important;
       border-radius: 2px;
     }
-    .tab-content { padding: 24px; }
+    .tab-content { padding: 24px; height: 100%; overflow-y: auto; box-sizing: border-box; }
     :host ::ng-deep .tab-descriptions {
       margin-bottom: 20px;
     }

@@ -154,6 +154,12 @@ export const routes: Routes = [
         title: 'Salary Management'
       },
       {
+        path: 'bills',
+        loadComponent: () => import('./features/bills-processing/bills-processing.component')
+          .then(m => m.BillsProcessingComponent),
+        title: 'Bills Processing'
+      },
+      {
         path: 'leave',
         loadComponent: () => import('./features/leave/leave-management.component')
           .then(m => m.LeaveManagementComponent),

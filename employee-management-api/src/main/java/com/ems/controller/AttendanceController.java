@@ -28,8 +28,14 @@ public class AttendanceController {
             @RequestParam int year,
             @RequestParam int month,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(year, month, page, size)));
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String department) {
+        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(year, month, page, size, department)));
+    }
+
+    @GetMapping("/departments")
+    public ResponseEntity<APIResponse<List<String>>> getDepartments() {
+        return ResponseEntity.ok(APIResponse.success(attendanceService.getDepartments()));
     }
 
     @PutMapping("/bulk")

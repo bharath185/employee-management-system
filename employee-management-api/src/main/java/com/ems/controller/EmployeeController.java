@@ -169,7 +169,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/sample-excel")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<byte[]> downloadSampleExcel() {
         byte[] excelData = employeeService.generateSampleExcel();
         return ResponseEntity.ok()
@@ -179,7 +179,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<byte[]> exportToExcel(
             @RequestParam(required = false) String employeeStatus,
             @RequestParam(required = false) String designation) {
@@ -192,7 +192,7 @@ public class EmployeeController {
     }
 
     @PostMapping("/import")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     public ResponseEntity<APIResponse<Map<String, Object>>> importFromExcel(
             @RequestParam("file") MultipartFile file) {
         Map<String, Object> result = employeeService.importFromExcel(file);

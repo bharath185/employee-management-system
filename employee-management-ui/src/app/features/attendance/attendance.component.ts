@@ -39,6 +39,12 @@ import { saveAs } from 'file-saver';
           <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
             <i nz-icon nzType="right"></i>
           </button>
+          <span class="nav-sep"></span>
+          <nz-select [(ngModel)]="selectedDepartment" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless
+            class="dept-select" nzPlaceHolder="All Departments">
+            <nz-option nzValue="" nzLabel="All Departments"></nz-option>
+            <nz-option *ngFor="let d of departmentList" [nzValue]="d" [nzLabel]="d"></nz-option>
+          </nz-select>
         </div>
         <div class="toolbar-actions">
           <button nz-button nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
@@ -184,9 +190,12 @@ import { saveAs } from 'file-saver';
     .month-nav { display:flex; align-items:center; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px 4px; }
     .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:rgba(255,255,255,.75); border:none; background:transparent; cursor:pointer; transition:all .2s; }
     .nav-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
+    .nav-sep { width:1px; height:20px; background:rgba(255,255,255,.15); margin:0 6px; flex-shrink:0; }
     .month-nav ::ng-deep .ant-select { background:transparent; }
     .month-nav ::ng-deep .ant-select-selection-item { color:rgba(255,255,255,.9) !important; font-weight:600; font-size:12px; }
     .month-nav ::ng-deep .ant-select-arrow { color:rgba(255,255,255,.5); }
+    .dept-select { min-width:130px; }
+    .dept-select ::ng-deep .ant-select-selection-item { font-size:11px !important; }
     .toolbar-actions { display:flex; align-items:center; gap:5px; }
     .toolbar-actions button { height:30px; font-size:12px; border-radius:6px; border:none; background:rgba(255,255,255,.12); color:rgba(255,255,255,.8); padding:0 10px; transition:all .2s; }
     .toolbar-actions button:hover:not(:disabled) { background:rgba(255,255,255,.2); color:#fff; }
@@ -286,6 +295,8 @@ export class AttendanceComponent implements OnInit {
   isEditMode = false;
   changedRecords: Set<string> = new Set();
   scrollX = '';
+  selectedDepartment = '';
+  departmentList: string[] = [];
 
   yearList: number[] = [];
 
@@ -342,6 +353,9 @@ export class AttendanceComponent implements OnInit {
     for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
       this.yearList.push(y);
     }
+    this.attendanceService.getDepartments().subscribe(res => {
+      this.departmentList = res.data || [];
+    });
     this.loadData();
   }
 
@@ -364,7 +378,7 @@ export class AttendanceComponent implements OnInit {
 
   loadData(): void {
     this.loading = true;
-    this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth, this.page, this.size).subscribe({
+    this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth, this.page, this.size, this.selectedDepartment).subscribe({
       next: (res) => {
         this.data = res.data;
         const cols = 2 + (this.data?.dayColumns?.length || 30) + 4;

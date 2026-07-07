@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -12,6 +12,9 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzDividerModule } from 'ng-zorro-antd/divider';
+import { NzTableModule } from 'ng-zorro-antd/table';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { environment } from '../../../environments/environment';
@@ -22,7 +25,7 @@ import { environment } from '../../../environments/environment';
   imports: [
     CommonModule, FormsModule, RouterModule,
     NzButtonModule, NzFormModule, NzInputModule, NzSelectModule,
-    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule
+    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule
   ],
   template: `
     <div class="reg-page">
@@ -32,7 +35,7 @@ import { environment } from '../../../environments/environment';
             <i nz-icon nzType="user-add" style="font-size:32px;color:#fff;background:#1f3d6e;padding:12px;border-radius:50%;"></i>
           </div>
           <h1>New Joinee Registration</h1>
-          <p>Fill in your basic details to register. HR will review and complete your profile.</p>
+          <p>Fill in your details to register. HR will review and complete your profile.</p>
         </div>
 
         <div class="reg-card">
@@ -45,7 +48,15 @@ import { environment } from '../../../environments/environment';
           </div>
 
           <form *ngIf="!submitted && !loading" #regForm="ngForm" (ngSubmit)="onSubmit()" class="reg-form">
+            <!-- Personal Information -->
+            <h3 class="section-title">Personal Information</h3>
             <div class="form-row">
+              <div class="form-group">
+                <label>Prefix</label>
+                <nz-select [(ngModel)]="formData.prefix" name="prefix" nzPlaceHolder="Select prefix" style="width:100%">
+                  <nz-option *ngFor="let opt of prefixes" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
               <div class="form-group">
                 <label>First Name <span class="required">*</span></label>
                 <input nz-input [(ngModel)]="formData.firstName" name="firstName" required placeholder="Enter first name" />
@@ -62,25 +73,79 @@ import { environment } from '../../../environments/environment';
 
             <div class="form-row">
               <div class="form-group">
-                <label>Mobile <span class="required">*</span></label>
-                <input nz-input [(ngModel)]="formData.mobile" name="mobile" required placeholder="Enter 10-digit mobile" maxlength="10" />
+                <label>Gender <span class="required">*</span></label>
+                <nz-select [(ngModel)]="formData.gender" name="gender" required nzPlaceHolder="Select gender" style="width:100%">
+                  <nz-option *ngFor="let g of genders" [nzValue]="g.code" [nzLabel]="g.value"></nz-option>
+                </nz-select>
               </div>
               <div class="form-group">
-                <label>Email</label>
-                <input nz-input [(ngModel)]="formData.email" name="email" placeholder="Enter email" />
+                <label>Date of Birth <span class="required">*</span></label>
+                <input nz-input type="date" [(ngModel)]="formData.dob" name="dob" required />
               </div>
               <div class="form-group">
-                <label>Date of Birth</label>
-                <input nz-input type="date" [(ngModel)]="formData.dob" name="dob" />
+                <label>Marital Status</label>
+                <nz-select [(ngModel)]="formData.maritalStatus" name="maritalStatus" nzPlaceHolder="Select marital status" style="width:100%">
+                  <nz-option *ngFor="let opt of maritalStatuses" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
-                <label>Gender</label>
-                <nz-select [(ngModel)]="formData.gender" name="gender" nzPlaceHolder="Select gender" style="width:100%">
-                  <nz-option *ngFor="let g of genders" [nzValue]="g.code" [nzLabel]="g.value"></nz-option>
-                </nz-select>
+                <label>Mobile <span class="required">*</span></label>
+                <input nz-input [(ngModel)]="formData.mobile" name="mobile" required placeholder="Enter 10-digit mobile" maxlength="10" pattern="^[0-9]{10}$" />
+              </div>
+              <div class="form-group">
+                <label>Email <span class="required">*</span></label>
+                <input nz-input [(ngModel)]="formData.email" name="email" required email placeholder="Enter email" />
+              </div>
+              <div class="form-group">
+                <label>Father's Name</label>
+                <input nz-input [(ngModel)]="formData.fatherName" name="fatherName" placeholder="Enter father's name" />
+              </div>
+              <div class="form-group">
+                <label>Father's Phone</label>
+                <input nz-input [(ngModel)]="formData.fatherPhone" name="fatherPhone" placeholder="Enter father's phone" maxlength="10" pattern="^[0-9]{10}$" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Present Address</label>
+                <textarea nz-input [(ngModel)]="formData.presentAddress" name="presentAddress" rows="2" placeholder="Enter your present address"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Permanent Address</label>
+                <textarea nz-input [(ngModel)]="formData.permanentAddress" name="permanentAddress" rows="2" placeholder="Enter your permanent address"></textarea>
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Identity -->
+            <h3 class="section-title">Identity</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Aadhar Number</label>
+                <input nz-input [(ngModel)]="formData.aadharNumber" name="aadharNumber" placeholder="12-digit Aadhar number" maxlength="14" />
+              </div>
+              <div class="form-group">
+                <label>PAN Number</label>
+                <input nz-input [(ngModel)]="formData.panNumber" name="panNumber" placeholder="PAN number" maxlength="10" style="text-transform:uppercase" />
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Employment & Education -->
+            <h3 class="section-title">Employment & Education</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Date of Joining</label>
+                <input nz-input type="date" [(ngModel)]="formData.doj" name="doj" />
               </div>
               <div class="form-group">
                 <label>Highest Qualification</label>
@@ -96,22 +161,70 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
 
-            <div class="form-group full-width">
-              <label>Present Address</label>
-              <textarea nz-input [(ngModel)]="formData.presentAddress" name="presentAddress" rows="2" placeholder="Enter your address"></textarea>
-            </div>
+            <nz-divider></nz-divider>
 
+            <!-- Bank Details -->
+            <h3 class="section-title">Bank Details</h3>
             <div class="form-row">
               <div class="form-group">
-                <label>Aadhar Number</label>
-                <input nz-input [(ngModel)]="formData.aadharNumber" name="aadharNumber" placeholder="12-digit Aadhar number" maxlength="14" />
+                <label>Bank Name</label>
+                <nz-select [(ngModel)]="formData.bankName" name="bankName" nzPlaceHolder="Select bank" style="width:100%">
+                  <nz-option *ngFor="let b of banks" [nzValue]="b.code" [nzLabel]="b.value"></nz-option>
+                </nz-select>
               </div>
               <div class="form-group">
-                <label>PAN Number</label>
-                <input nz-input [(ngModel)]="formData.panNumber" name="panNumber" placeholder="PAN number" maxlength="10" style="text-transform:uppercase" />
+                <label>Account Number</label>
+                <input nz-input [(ngModel)]="formData.accountNumber" name="accountNumber" placeholder="Account number" />
+              </div>
+              <div class="form-group">
+                <label>IFSC Code</label>
+                <input nz-input [(ngModel)]="formData.ifscCode" name="ifscCode" placeholder="IFSC code" maxlength="11" style="text-transform:uppercase" />
+              </div>
+              <div class="form-group">
+                <label>Branch</label>
+                <input nz-input [(ngModel)]="formData.branch" name="branch" placeholder="Branch name" />
               </div>
             </div>
 
+            <nz-divider></nz-divider>
+
+            <!-- Languages -->
+            <h3 class="section-title">Languages</h3>
+            <div class="lang-section">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <nz-select [ngModel]="selectedLanguage" (ngModelChange)="selectedLanguage = $event" [ngModelOptions]="{standalone: true}" nzPlaceHolder="Select language" style="width:240px">
+                  <nz-option *ngFor="let opt of availableLanguageOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+                <button nz-button nzType="primary" nzSize="small" (click)="addLanguage()" [disabled]="!selectedLanguage">
+                  <i nz-icon nzType="plus"></i> Add
+                </button>
+              </div>
+              <nz-table *ngIf="languages.length > 0" [nzData]="languages" nzSize="small" nzFrontPagination="false" nzHideOnSinglePage="true">
+                <thead>
+                  <tr>
+                    <th>Language</th>
+                    <th style="text-align:center;width:60px">Read</th>
+                    <th style="text-align:center;width:60px">Write</th>
+                    <th style="text-align:center;width:60px">Speak</th>
+                    <th style="text-align:center;width:40px"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let lang of languages; let i = index">
+                    <td>{{ lang.language }}</td>
+                    <td style="text-align:center"><label nz-checkbox [ngModel]="lang.canRead" (ngModelChange)="lang.canRead = $event" [ngModelOptions]="{standalone: true}"></label></td>
+                    <td style="text-align:center"><label nz-checkbox [ngModel]="lang.canWrite" (ngModelChange)="lang.canWrite = $event" [ngModelOptions]="{standalone: true}"></label></td>
+                    <td style="text-align:center"><label nz-checkbox [ngModel]="lang.canSpeak" (ngModelChange)="lang.canSpeak = $event" [ngModelOptions]="{standalone: true}"></label></td>
+                    <td style="text-align:center"><button nz-button nzType="text" nzDanger (click)="removeLanguage(i)"><i nz-icon nzType="delete"></i></button></td>
+                  </tr>
+                </tbody>
+              </nz-table>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Documents -->
+            <h3 class="section-title">Documents</h3>
             <div class="form-row">
               <div class="form-group">
                 <label>Photo</label>
@@ -160,7 +273,7 @@ import { environment } from '../../../environments/environment';
     }
     .reg-container {
       width: 100%;
-      max-width: 800px;
+      max-width: 1000px;
     }
     .reg-header {
       text-align: center;
@@ -185,12 +298,23 @@ import { environment } from '../../../environments/environment';
     .reg-form {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f3d6e;
+      margin: 8px 0 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e6f0ff;
     }
     .form-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
+    }
+    @media (max-width: 992px) {
+      .form-row { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 768px) {
       .form-row { grid-template-columns: 1fr; }
@@ -236,9 +360,11 @@ import { environment } from '../../../environments/environment';
       color: #666;
     }
     .reg-footer a { color: #1f3d6e; font-weight: 600; }
+    .lang-section { padding: 8px 0; }
+    nz-table { margin-top: 8px; }
   `]
 })
-export class PublicRegistrationComponent {
+export class PublicRegistrationComponent implements OnInit {
   formData: any = {};
   selectedPhoto: File | null = null;
   selectedAadharDoc: File | null = null;
@@ -248,9 +374,33 @@ export class PublicRegistrationComponent {
   registrationCode = '';
   loading = true;
 
+  prefixes: any[] = [];
   genders: any[] = [];
+  maritalStatuses: any[] = [];
   qualifications: any[] = [];
   designations: any[] = [];
+  banks: any[] = [];
+  languageOptions: any[] = [];
+  selectedLanguage: string | null = null;
+  languages: { language: string; canRead: boolean; canWrite: boolean; canSpeak: boolean }[] = [];
+
+  get availableLanguageOptions(): any[] {
+    const added = new Set(this.languages.map(l => l.language));
+    return this.languageOptions.filter(opt => !added.has(opt.value));
+  }
+
+  addLanguage(): void {
+    if (!this.selectedLanguage) return;
+    const opt = this.languageOptions.find(o => o.code === this.selectedLanguage);
+    if (opt) {
+      this.languages.push({ language: opt.value, canRead: false, canWrite: false, canSpeak: false });
+    }
+    this.selectedLanguage = null;
+  }
+
+  removeLanguage(index: number): void {
+    this.languages.splice(index, 1);
+  }
 
   constructor(
     private http: HttpClient,
@@ -260,12 +410,35 @@ export class PublicRegistrationComponent {
 
   ngOnInit() {
     const api = environment.apiUrl + '/public/register/masters';
-    this.http.get<any>(api + '/GENDER').subscribe(res => {
-      this.genders = res.data || [];
-      this.loading = false;
+    this.loading = true;
+
+    const categories = [
+      { name: 'PREFIX', target: 'prefixes' },
+      { name: 'GENDER', target: 'genders' },
+      { name: 'MARITAL_STATUS', target: 'maritalStatuses' },
+      { name: 'QUALIFICATION', target: 'qualifications' },
+      { name: 'DESIGNATION', target: 'designations' },
+      { name: 'BANK_NAME', target: 'banks' },
+      { name: 'LANGUAGE', target: 'languageOptions' }
+    ];
+
+    let loadedCount = 0;
+    categories.forEach(cat => {
+      this.http.get<any>(api + '/' + cat.name).subscribe({
+        next: (res) => {
+          (this as any)[cat.target] = res.data || [];
+        },
+        error: () => {
+          (this as any)[cat.target] = [];
+        },
+        complete: () => {
+          loadedCount++;
+          if (loadedCount === categories.length) {
+            this.loading = false;
+          }
+        }
+      });
     });
-    this.http.get<any>(api + '/QUALIFICATION').subscribe(res => this.qualifications = res.data || []);
-    this.http.get<any>(api + '/DESIGNATION').subscribe(res => this.designations = res.data || []);
   }
 
   onFileChange(event: any, type: string) {
@@ -278,7 +451,7 @@ export class PublicRegistrationComponent {
   }
 
   onSubmit() {
-    if (!this.formData.firstName || !this.formData.surname || !this.formData.mobile) {
+    if (!this.formData.firstName || !this.formData.surname || !this.formData.mobile || !this.formData.gender || !this.formData.dob || !this.formData.email) {
       this.notification.error('Error', 'Please fill in all required fields');
       return;
     }
@@ -292,11 +465,24 @@ export class PublicRegistrationComponent {
     fd.append('email', this.formData.email || '');
     fd.append('dob', this.formData.dob || '');
     fd.append('gender', this.formData.gender || '');
+    fd.append('prefix', this.formData.prefix || '');
+    fd.append('maritalStatus', this.formData.maritalStatus || '');
     fd.append('presentAddress', this.formData.presentAddress || '');
+    fd.append('permanentAddress', this.formData.permanentAddress || '');
     fd.append('aadharNumber', this.formData.aadharNumber || '');
     fd.append('panNumber', this.formData.panNumber || '');
     fd.append('highestQualification', this.formData.highestQualification || '');
     fd.append('designation', this.formData.designation || '');
+    fd.append('doj', this.formData.doj || '');
+    fd.append('bankName', this.formData.bankName || '');
+    fd.append('accountNumber', this.formData.accountNumber || '');
+    fd.append('ifscCode', this.formData.ifscCode || '');
+    fd.append('branch', this.formData.branch || '');
+    fd.append('fatherName', this.formData.fatherName || '');
+    fd.append('fatherPhone', this.formData.fatherPhone || '');
+    if (this.languages.length > 0) {
+      fd.append('languages', JSON.stringify(this.languages));
+    }
     if (this.selectedPhoto) fd.append('photo', this.selectedPhoto);
     if (this.selectedAadharDoc) fd.append('aadharDoc', this.selectedAadharDoc);
     if (this.selectedPanDoc) fd.append('panDoc', this.selectedPanDoc);

@@ -13,13 +13,20 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyAttendance(year: number, month: number, page = 0, size = 50): Observable<APIResponse<MonthlyAttendance>> {
-    const params = new HttpParams()
+  getMonthlyAttendance(year: number, month: number, page = 0, size = 50, department = ''): Observable<APIResponse<MonthlyAttendance>> {
+    let params = new HttpParams()
       .set('year', year.toString())
       .set('month', month.toString())
       .set('page', page.toString())
       .set('size', size.toString());
+    if (department) {
+      params = params.set('department', department);
+    }
     return this.http.get<APIResponse<MonthlyAttendance>>(`${this.apiUrl}/monthly`, { params });
+  }
+
+  getDepartments(): Observable<APIResponse<string[]>> {
+    return this.http.get<APIResponse<string[]>>(`${this.apiUrl}/departments`);
   }
 
   bulkUpdate(records: AttendanceRecord[]): Observable<APIResponse<void>> {

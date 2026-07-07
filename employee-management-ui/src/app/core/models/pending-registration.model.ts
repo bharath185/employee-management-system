@@ -8,11 +8,21 @@ export interface PendingRegistration {
   email?: string;
   dob?: string;
   gender?: string;
+  prefix?: string;
+  maritalStatus?: string;
   presentAddress?: string;
+  permanentAddress?: string;
   aadharNumber?: string;
   panNumber?: string;
   highestQualification?: string;
   designation?: string;
+  doj?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branch?: string;
+  fatherName?: string;
+  fatherPhone?: string;
   photoUrl?: string;
   aadharDocUrl?: string;
   panDocUrl?: string;
@@ -21,4 +31,5 @@ export interface PendingRegistration {
   createdAt?: string;
   approvedAt?: string;
   approvedBy?: string;
+  languages?: string;
 }

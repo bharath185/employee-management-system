@@ -124,16 +124,38 @@ import { environment } from '../../../environments/environment';
       (nzOnCancel)="isViewModalVisible = false" nzWidth="600px" [nzFooter]="null">
       <ng-template nzModalContent>
         <nz-descriptions [nzColumn]="2" nzSize="small" *ngIf="selectedReg">
-          <nz-descriptions-item nzTitle="First Name" [nzSpan]="1">{{ selectedReg.firstName }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Surname" [nzSpan]="1">{{ selectedReg.surname }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Prefix" [nzSpan]="1">{{ selectedReg.prefix || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Name" [nzSpan]="1">{{ selectedReg.firstName }} {{ selectedReg.middleName ? selectedReg.middleName + ' ' : '' }}{{ selectedReg.surname }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Mobile" [nzSpan]="1">{{ selectedReg.mobile }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Email" [nzSpan]="1">{{ selectedReg.email || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Gender" [nzSpan]="1">{{ selectedReg.gender || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="DOB" [nzSpan]="1">{{ selectedReg.dob || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Marital Status" [nzSpan]="1">{{ selectedReg.maritalStatus || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="DOJ" [nzSpan]="1">{{ selectedReg.doj || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Aadhar" [nzSpan]="1">{{ selectedReg.aadharNumber || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="PAN" [nzSpan]="1">{{ selectedReg.panNumber || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Qualification" [nzSpan]="1">{{ selectedReg.highestQualification || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Designation" [nzSpan]="1">{{ selectedReg.designation || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Bank" [nzSpan]="1">{{ selectedReg.bankName || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Account" [nzSpan]="1">{{ selectedReg.accountNumber || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="IFSC" [nzSpan]="1">{{ selectedReg.ifscCode || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Branch" [nzSpan]="1">{{ selectedReg.branch || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Father's Name" [nzSpan]="1">{{ selectedReg.fatherName || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Father's Phone" [nzSpan]="1">{{ selectedReg.fatherPhone || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Languages" [nzSpan]="2">
+            <ng-container *ngIf="getParsedLanguages(selectedReg) as langList">
+              <div *ngIf="langList.length === 0">-</div>
+              <div *ngFor="let lang of langList" style="margin-bottom:2px">
+                <strong>{{ lang.language }}</strong>:
+                <span *ngIf="lang.canRead" style="color:#10b981">Read </span>
+                <span *ngIf="lang.canWrite" style="color:#10b981">Write </span>
+                <span *ngIf="lang.canSpeak" style="color:#10b981">Speak</span>
+                <span *ngIf="!lang.canRead && !lang.canWrite && !lang.canSpeak" style="color:#9ca3af">Not specified</span>
+              </div>
+            </ng-container>
+          </nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Present Address" [nzSpan]="2">{{ selectedReg.presentAddress || '-' }}</nz-descriptions-item>
+          <nz-descriptions-item nzTitle="Permanent Address" [nzSpan]="2">{{ selectedReg.permanentAddress || '-' }}</nz-descriptions-item>
           <nz-descriptions-item nzTitle="Status" [nzSpan]="2">
             <nz-tag [nzColor]="selectedReg.status === 'PENDING' ? 'processing' : selectedReg.status === 'APPROVED' ? 'success' : 'error'">
               {{ selectedReg.status }}
@@ -143,7 +165,6 @@ import { environment } from '../../../environments/environment';
           <nz-descriptions-item nzTitle="Rejection Reason" *ngIf="selectedReg.rejectionReason" [nzSpan]="2">
             {{ selectedReg.rejectionReason }}
           </nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Address" [nzSpan]="2">{{ selectedReg.presentAddress || '-' }}</nz-descriptions-item>
         </nz-descriptions>
         <div *ngIf="selectedReg?.status === 'PENDING'" class="detail-actions">
           <button nz-button nzType="primary" (click)="showApproveModal(selectedReg!)">
@@ -179,19 +200,13 @@ import { environment } from '../../../environments/environment';
         <div class="approve-modal-body">
           <div style="margin-bottom:16px">
             <p>Approve <strong>{{ selectedReg?.firstName }} {{ selectedReg?.surname }}</strong> ({{ selectedReg?.registrationCode }})</p>
-            <p style="font-size:13px;color:#666;">Enter the employee code to assign to this joinee.</p>
-          </div>
-          <div class="approve-field">
-            <label class="approve-label">Employee Code <span class="required">*</span></label>
-            <input nz-input [(ngModel)]="approveEmpCode" name="approveEmpCode"
-              placeholder="Enter employee code (e.g. EMP0001)"
-              style="text-transform:uppercase;width:100%;" />
+            <p style="font-size:13px;color:#666;">Employee code will be auto-generated.</p>
           </div>
         </div>
       </ng-template>
       <ng-template #approveFooter>
         <button nz-button nzType="default" (click)="isApproveModalVisible = false">Cancel</button>
-        <button nz-button nzType="primary" (click)="confirmApprove()" [nzLoading]="isApproving" [disabled]="!approveEmpCode?.trim()">
+        <button nz-button nzType="primary" (click)="confirmApprove()" [nzLoading]="isApproving">
           <i nz-icon nzType="check"></i> Approve
         </button>
       </ng-template>
@@ -366,7 +381,6 @@ export class PendingRegistrationsComponent implements OnInit {
   rejectReason = '';
   isRejecting = false;
   isApproveModalVisible = false;
-  approveEmpCode = '';
   isApproving = false;
 
   isQrModalVisible = false;
@@ -409,17 +423,12 @@ export class PendingRegistrationsComponent implements OnInit {
 
   showApproveModal(reg: PendingRegistration) {
     this.selectedReg = reg;
-    this.approveEmpCode = '';
     this.isApproveModalVisible = true;
   }
 
   confirmApprove() {
-    if (!this.approveEmpCode || !this.approveEmpCode.trim()) {
-      this.notification.error('Error', 'Please enter an employee code');
-      return;
-    }
     this.isApproving = true;
-    this.pendingService.approve(this.selectedReg!.id, this.approveEmpCode.trim()).subscribe({
+    this.pendingService.approve(this.selectedReg!.id, undefined).subscribe({
       next: (res) => {
         this.isApproving = false;
         this.isApproveModalVisible = false;
@@ -438,6 +447,15 @@ export class PendingRegistrationsComponent implements OnInit {
         }
       }
     });
+  }
+
+  getParsedLanguages(reg: PendingRegistration): any[] {
+    if (!reg.languages) return [];
+    try {
+      return JSON.parse(reg.languages);
+    } catch {
+      return [];
+    }
   }
 
   showRejectModal(reg: PendingRegistration) {

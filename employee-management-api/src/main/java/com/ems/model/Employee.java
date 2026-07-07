@@ -1,10 +1,12 @@
 package com.ems.model;
 
+import com.ems.dto.EmployeeLanguageDTO;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -102,7 +104,7 @@ public class Employee {
 
     @Column(name = "email", length = 56)
     private String email;
-    @Column(name = "mobile", length = 15, nullable = false)
+    @Column(name = "mobile", length = 20, nullable = false)
 
     private String mobile;
 
@@ -180,7 +182,7 @@ public class Employee {
     @Column(name = "bank_name", length = 56)
     private String bankName;
 
-    @Column(name = "account_number", length = 15)
+    @Column(name = "account_number", length = 30)
     private String accountNumber;
 
     @Column(name = "ifsc_code", length = 11)
@@ -195,6 +197,9 @@ public class Employee {
 
     @Column(name = "process_assigned", length = 56)
     private String processAssigned;
+
+    @Column(name = "department", length = 56)
+    private String department;
 
     @Column(name = "esic_no", length = 10)
     private String esicNo;
@@ -213,6 +218,9 @@ public class Employee {
 
     @Column(name = "languages_can_speak", length = 100)
     private String languagesCanSpeak;
+
+    @Transient
+    private List<EmployeeLanguageDTO> importLanguages;
 
     // ========== FAMILY GROUP (6 fields) ==========
     @Column(name = "father_name", length = 20)

@@ -33,7 +33,7 @@ public class PendingRegistration {
     @Column(name = "surname", length = 40)
     private String surname;
 
-    @Column(name = "mobile", length = 15, nullable = false)
+    @Column(name = "mobile", length = 20, nullable = false)
     private String mobile;
 
     @Column(name = "email", length = 56)
@@ -45,8 +45,20 @@ public class PendingRegistration {
     @Column(name = "gender", length = 10)
     private String gender;
 
+    @Column(name = "languages", length = 500)
+    private String languages;
+
+    @Column(name = "prefix", length = 5)
+    private String prefix;
+
+    @Column(name = "marital_status", length = 20)
+    private String maritalStatus;
+
     @Column(name = "present_address", length = 256)
     private String presentAddress;
+
+    @Column(name = "permanent_address", length = 256)
+    private String permanentAddress;
 
     @Column(name = "aadhar_number", length = 14)
     private String aadharNumber;
@@ -59,6 +71,27 @@ public class PendingRegistration {
 
     @Column(name = "designation", length = 40)
     private String designation;
+
+    @Column(name = "doj")
+    private LocalDate doj;
+
+    @Column(name = "bank_name", length = 40)
+    private String bankName;
+
+    @Column(name = "account_number", length = 30)
+    private String accountNumber;
+
+    @Column(name = "ifsc_code", length = 11)
+    private String ifscCode;
+
+    @Column(name = "branch", length = 40)
+    private String branch;
+
+    @Column(name = "father_name", length = 20)
+    private String fatherName;
+
+    @Column(name = "father_phone", length = 15)
+    private String fatherPhone;
 
     @Column(name = "photo_path", length = 255)
     private String photoPath;

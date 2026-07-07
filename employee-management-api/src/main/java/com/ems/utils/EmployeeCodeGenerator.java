@@ -10,18 +10,32 @@ public class EmployeeCodeGenerator {
 
     private final EmployeeRepository employeeRepository;
 
+    private static final String PREFIX = "PARI";
+    private static final int NUMBER_LENGTH = 3;
+
     public String generateNextCode() {
         String maxCode = employeeRepository.findMaxEmployeeCode();
-        if (maxCode == null || maxCode.isEmpty()) {
-            return "EMP0001";
+        int startNumber = 0;
+        if (maxCode != null && !maxCode.isEmpty() && maxCode.startsWith(PREFIX)) {
+            try {
+                String numPart = maxCode.substring(PREFIX.length());
+                startNumber = Integer.parseInt(numPart);
+            } catch (NumberFormatException e) {
+                startNumber = 0;
+            }
         }
-        int number;
-        try {
-            String numPart = maxCode.substring(3);
-            number = Integer.parseInt(numPart);
-        } catch (NumberFormatException e) {
-            number = 0;
+
+        // Retry loop to handle race conditions or existing mixed codes
+        int attempts = 0;
+        int number = startNumber;
+        while (attempts < 1000) {
+            number++;
+            String code = PREFIX + String.format("%0" + NUMBER_LENGTH + "d", number);
+            if (!employeeRepository.existsByEmployeeCodeIncludingDeleted(code)) {
+                return code;
+            }
+            attempts++;
         }
-        return String.format("EMP%04d", number + 1);
+        throw new IllegalStateException("Unable to generate a unique employee code after " + attempts + " attempts");
     }
 }

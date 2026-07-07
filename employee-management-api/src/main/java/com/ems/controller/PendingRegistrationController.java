@@ -37,7 +37,7 @@ public class PendingRegistrationController {
     @PostMapping("/{id}/approve")
     public ResponseEntity<APIResponse<EmployeeDTO>> approve(
             @PathVariable Long id,
-            @RequestParam("employeeCode") String employeeCode,
+            @RequestParam(value = "employeeCode", required = false) String employeeCode,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         APIResponse<EmployeeDTO> response = pendingRegistrationService.approve(id, employeeCode, userDetails.getUsername());
         return ResponseEntity.ok(response);

@@ -96,11 +96,22 @@ public class PendingRegistrationService {
         entity.setEmail(dto.getEmail() != null ? dto.getEmail().trim() : null);
         entity.setDob(dto.getDob());
         entity.setGender(dto.getGender());
+        entity.setPrefix(dto.getPrefix());
+        entity.setMaritalStatus(dto.getMaritalStatus());
         entity.setPresentAddress(dto.getPresentAddress());
+        entity.setPermanentAddress(dto.getPermanentAddress());
         entity.setAadharNumber(dto.getAadharNumber());
         entity.setPanNumber(dto.getPanNumber());
         entity.setHighestQualification(dto.getHighestQualification());
         entity.setDesignation(dto.getDesignation());
+        entity.setDoj(parseDate(dto.getDoj()));
+        entity.setBankName(dto.getBankName());
+        entity.setAccountNumber(dto.getAccountNumber());
+        entity.setIfscCode(dto.getIfscCode());
+        entity.setBranch(dto.getBranch());
+        entity.setFatherName(dto.getFatherName());
+        entity.setFatherPhone(dto.getFatherPhone());
+        entity.setLanguages(dto.getLanguages());
         entity.setStatus(RegistrationStatus.PENDING);
 
         // Handle photo upload
@@ -146,57 +157,84 @@ public class PendingRegistrationService {
             throw new BadRequestException("Registration is already " + pending.getStatus().name().toLowerCase());
         }
 
+        // Use provided employee code or auto-generate one
+        final String finalEmployeeCode;
         if (employeeCode == null || employeeCode.trim().isEmpty()) {
-            throw new BadRequestException("Employee code is required");
-        }
-
-        if (employeeRepository.existsByEmployeeCode(employeeCode.trim())) {
-            throw new com.ems.exception.DuplicateResourceException("Employee code already exists: " + employeeCode);
+            finalEmployeeCode = codeGenerator.generateNextCode();
+        } else {
+            finalEmployeeCode = employeeCode.trim();
+            if (employeeRepository.existsByEmployeeCodeIncludingDeleted(finalEmployeeCode)) {
+                throw new com.ems.exception.DuplicateResourceException("Employee code already exists: " + finalEmployeeCode);
+            }
         }
 
         // Build EmployeeDTO from pending registration data
         EmployeeDTO employeeDTO = EmployeeDTO.builder()
-            .employeeCode(employeeCode)
+            .employeeCode(finalEmployeeCode)
+            .prefix(pending.getPrefix())
             .firstName(pending.getFirstName())
             .surname(pending.getSurname())
             .mobile(pending.getMobile())
             .email(pending.getEmail())
             .dob(pending.getDob())
             .gender(pending.getGender())
+            .maritalStatus(pending.getMaritalStatus())
             .presentAddress(pending.getPresentAddress())
+            .permanentAddress(pending.getPermanentAddress())
             .aadharNumber(pending.getAadharNumber())
             .panNumber(pending.getPanNumber())
             .highestQualification(pending.getHighestQualification())
             .designation(pending.getDesignation())
+            .bankName(pending.getBankName())
+            .accountNumber(pending.getAccountNumber())
+            .ifscCode(pending.getIfscCode())
+            .branch(pending.getBranch())
+            .fatherName(pending.getFatherName())
+            .fatherPhone(pending.getFatherPhone())
+            .employeeStatus("LIVE")
             .build();
 
         // Create employee without photo (handle separately)
         EmployeeDTO created = employeeService.createEmployee(employeeDTO, null, username);
 
+        // Save languages from registration
+        if (pending.getLanguages() != null && !pending.getLanguages().isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.List<com.ems.dto.EmployeeLanguageDTO> langList = mapper.readValue(pending.getLanguages(),
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.List<com.ems.dto.EmployeeLanguageDTO>>() {});
+                employeeService.saveEmployeeLanguages(created.getId(), langList);
+                employeeService.updateLanguagesCanSpeakField(created.getId());
+                created.setLanguages(langList);
+            } catch (Exception e) {
+                log.error("Failed to parse/save languages for employee {}", finalEmployeeCode, e);
+            }
+        }
+
         // Copy photo to employee directory
         if (pending.getPhotoPath() != null) {
             try {
-                String newPhotoPath = copyFileToEmployee(pending.getPhotoPath(), employeeCode, "photos");
+                String newPhotoPath = copyFileToEmployee(pending.getPhotoPath(), finalEmployeeCode, "photos");
                 employeeService.updateEmployeePhoto(created.getId(), newPhotoPath);
                 created.setPhotoPath(newPhotoPath);
             } catch (Exception e) {
-                log.error("Failed to copy photo for employee {}", employeeCode, e);
+                log.error("Failed to copy photo for employee {}", finalEmployeeCode, e);
             }
         }
 
         // Copy documents
         if (pending.getAadharDocPath() != null) {
             try {
-                copyFileToEmployee(pending.getAadharDocPath(), employeeCode, "documents");
+                copyFileToEmployee(pending.getAadharDocPath(), finalEmployeeCode, "documents");
             } catch (Exception e) {
-                log.error("Failed to copy AADHAR for employee {}", employeeCode, e);
+                log.error("Failed to copy AADHAR for employee {}", finalEmployeeCode, e);
             }
         }
         if (pending.getPanDocPath() != null) {
             try {
-                copyFileToEmployee(pending.getPanDocPath(), employeeCode, "documents");
+                copyFileToEmployee(pending.getPanDocPath(), finalEmployeeCode, "documents");
             } catch (Exception e) {
-                log.error("Failed to copy PAN for employee {}", employeeCode, e);
+                log.error("Failed to copy PAN for employee {}", finalEmployeeCode, e);
             }
         }
 
@@ -206,8 +244,8 @@ public class PendingRegistrationService {
         pending.setApprovedBy(username);
         pendingRepository.save(pending);
 
-        log.info("Pending registration {} approved as employee {}", pending.getRegistrationCode(), employeeCode);
-        return APIResponse.success("Registration approved successfully. Employee code: " + employeeCode, created);
+        log.info("Pending registration {} approved as employee {}", pending.getRegistrationCode(), finalEmployeeCode);
+        return APIResponse.success("Registration approved successfully. Employee code: " + finalEmployeeCode, created);
     }
 
     @Transactional
@@ -293,5 +331,16 @@ public class PendingRegistrationService {
 
     public long countPending() {
         return pendingRepository.countPending();
+    }
+
+    private LocalDate parseDate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

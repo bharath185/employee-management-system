@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Data Transfer Object for Employee with all 80 fields.
@@ -80,12 +81,14 @@ public class EmployeeDTO {
     private String branch;
     private String employeeStatus;
     private String processAssigned;
+    private String department;
     private String esicNo;
     private String aadharSeeding;
     private String uanNo;
     private String pfNo;
     private String uanActivation;
     private String languagesCanSpeak;
+    private List<EmployeeLanguageDTO> languages;
     private String fatherName;
     private String fatherPhone;
     private String motherName;
@@ -177,6 +180,7 @@ public class EmployeeDTO {
             .branch(emp.getBranch())
             .employeeStatus(emp.getEmployeeStatus())
             .processAssigned(emp.getProcessAssigned())
+            .department(emp.getDepartment())
             .esicNo(emp.getEsicNo())
             .aadharSeeding(emp.getAadharSeeding())
             .uanNo(emp.getUanNo())
@@ -262,6 +266,7 @@ public class EmployeeDTO {
         emp.setBranch(this.branch);
         emp.setEmployeeStatus(this.employeeStatus);
         emp.setProcessAssigned(this.processAssigned);
+        emp.setDepartment(this.department);
         emp.setEsicNo(this.esicNo);
         emp.setAadharSeeding(this.aadharSeeding);
         emp.setUanNo(this.uanNo);

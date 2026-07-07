@@ -36,13 +36,17 @@ public class AttendanceService {
 
     private String monthAbbr(int m) { return MONTH_ABBR[m - 1]; }
 
-    public MonthlyAttendanceDTO getMonthlyAttendance(int year, int month, int page, int size) {
+    public MonthlyAttendanceDTO getMonthlyAttendance(int year, int month, int page, int size, String department) {
         LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
         LocalDate monthEnd = LocalDate.of(year, month, 25);
-        return buildGrid(year, month, monthStart, monthEnd, page, size);
+        return buildGrid(year, month, monthStart, monthEnd, page, size, department);
     }
 
-    private MonthlyAttendanceDTO buildGrid(int year, int month, LocalDate monthStart, LocalDate monthEnd, int page, int size) {
+    public List<String> getDepartments() {
+        return employeeRepository.findDistinctDepartments();
+    }
+
+    private MonthlyAttendanceDTO buildGrid(int year, int month, LocalDate monthStart, LocalDate monthEnd, int page, int size, String department) {
         int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
         List<DayColumnDTO> dayColumns = new ArrayList<>();
@@ -56,8 +60,16 @@ public class AttendanceService {
                 .build());
         }
 
-        int totalEmployees = (int) employeeRepository.count();
-        List<Employee> employees = employeeRepository.findAll(PageRequest.of(page, size)).getContent();
+        boolean hasDeptFilter = department != null && !department.trim().isEmpty();
+        int totalEmployees;
+        List<Employee> employees;
+        if (hasDeptFilter) {
+            totalEmployees = (int) employeeRepository.countByDepartmentAndIsDeletedFalse(department.trim());
+            employees = employeeRepository.findByDepartmentAndIsDeletedFalse(department.trim(), PageRequest.of(page, size));
+        } else {
+            totalEmployees = (int) employeeRepository.count();
+            employees = employeeRepository.findAll(PageRequest.of(page, size)).getContent();
+        }
 
         List<AttendanceRecord> allRecords = attendanceRepository.findByAttendanceDateBetween(monthStart, monthEnd);
 
@@ -114,7 +126,7 @@ public class AttendanceService {
                 .employeeCode(emp.getEmployeeCode())
                 .employeeName(emp.getFullName())
                 .gender(emp.getGender())
-                .department(emp.getProcessAssigned() != null ? emp.getProcessAssigned() : "")
+                .department(emp.getDepartment() != null ? emp.getDepartment() : "")
                 .designation(emp.getDesignation())
                 .doj(emp.getDoj() != null ? emp.getDoj().format(dateFormatter) : "")
                 .vintage(vintage)
@@ -168,7 +180,7 @@ public class AttendanceService {
     public byte[] exportExcel(int year, int month) {
         LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
         LocalDate monthEnd = LocalDate.of(year, month, 25);
-        MonthlyAttendanceDTO data = buildGrid(year, month, monthStart, monthEnd, 0, Integer.MAX_VALUE);
+        MonthlyAttendanceDTO data = buildGrid(year, month, monthStart, monthEnd, 0, Integer.MAX_VALUE, null);
         int numDays = data.getDayColumns().size();
         String monthLabel = data.getMonthLabel();
 

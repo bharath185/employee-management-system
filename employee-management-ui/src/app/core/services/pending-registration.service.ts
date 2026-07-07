@@ -27,8 +27,9 @@ export class PendingRegistrationService {
     return this.http.get<APIResponse<PendingRegistration>>(`${this.adminUrl}/${id}`);
   }
 
-  approve(id: number, employeeCode: string): Observable<APIResponse<any>> {
-    let params = new HttpParams().set('employeeCode', employeeCode);
+  approve(id: number, employeeCode?: string): Observable<APIResponse<any>> {
+    let params = new HttpParams();
+    if (employeeCode) params = params.set('employeeCode', employeeCode);
     return this.http.post<APIResponse<any>>(`${this.adminUrl}/${id}/approve`, {}, { params });
   }
 

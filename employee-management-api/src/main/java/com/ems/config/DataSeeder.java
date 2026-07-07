@@ -9,8 +9,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.ems.utils.EmployeeCodeGenerator;
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.ArrayList;
 
 @Component
 @RequiredArgsConstructor
@@ -27,9 +31,15 @@ public class DataSeeder implements CommandLineRunner {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final DocumentTemplateRepository documentTemplateRepository;
     private final RolePermissionRepository rolePermissionRepository;
+    private final EmployeeCodeGenerator employeeCodeGenerator;
+
+    private final DataSource dataSource;
+
+    private List<String> seededEmployeeCodes = new ArrayList<>();
 
     @Override
     public void run(String... args) {
+        fixColumnLengths();
         seedAdminUser();
         seedMasterData();
         seedLeaveTypes();
@@ -40,6 +50,22 @@ public class DataSeeder implements CommandLineRunner {
         seedLeaveBalances();
         seedDocumentTemplates();
         seedPermissions();
+    }
+
+    private void fixColumnLengths() {
+        String[] stmts = {
+            "ALTER TABLE employees ALTER COLUMN mobile TYPE VARCHAR(20)",
+            "ALTER TABLE employees ALTER COLUMN account_number TYPE VARCHAR(30)",
+            "ALTER TABLE pending_registrations ALTER COLUMN mobile TYPE VARCHAR(20)"
+        };
+        for (String sql : stmts) {
+            try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {
+                stmt.execute(sql);
+                log.info("Executed: {}", sql);
+            } catch (Exception e) {
+                log.info("Could not execute [{}]: {}", sql, e.getMessage());
+            }
+        }
     }
 
     private void seedAdminUser() {
@@ -101,7 +127,8 @@ public class DataSeeder implements CommandLineRunner {
             });
             seedCategory("EMPLOYEE_STATUS", new String[][]{
                 {"LIVE", "Live"}, {"QUIT", "Quit"},
-                {"ASKED_TO_GO", "Asked to Go"}, {"TERMINATED", "Terminated"}
+                {"ASKED_TO_GO", "Asked to Go"}, {"STOPPED_COMING", "Stopped Coming"},
+                {"TERMINATED", "Terminated"}
             });
             seedCategory("DESIGNATION", new String[][]{
                 {"MANAGER", "Manager"}, {"CHIEF_MANAGER", "Chief Manager"},
@@ -180,6 +207,24 @@ public class DataSeeder implements CommandLineRunner {
         } else {
             log.debug("Master data already exists, skipping seed");
         }
+
+        // Seed LANGUAGE independently — existing databases may have been seeded before LANGUAGE was added
+        seedCategory("LANGUAGE", new String[][]{
+            {"TELUGU", "Telugu"}, {"HINDI", "Hindi"}, {"ENGLISH", "English"},
+            {"TAMIL", "Tamil"}, {"KANNADA", "Kannada"}, {"MALAYALAM", "Malayalam"},
+            {"URDU", "Urdu"}, {"MARATHI", "Marathi"}, {"GUJARATI", "Gujarati"},
+            {"BENGALI", "Bengali"}, {"ORIYA", "Odia"}
+        });
+
+        // Seed DEPARTMENT independently
+        seedCategory("DEPARTMENT", new String[][]{
+            {"IT", "IT"}, {"HR", "HR"}, {"FINANCE", "Finance"},
+            {"OPERATIONS", "Operations"}, {"SALES", "Sales"},
+            {"MARKETING", "Marketing"}, {"ADMIN", "Admin"},
+            {"PRODUCTION", "Production"}, {"QUALITY", "Quality"},
+            {"RND", "R&D"}, {"PURCHASE", "Purchase"},
+            {"STORES", "Stores"}, {"MAINTENANCE", "Maintenance"}
+        });
     }
 
     private void seedLeaveTypes() {
@@ -234,195 +279,122 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedEmployees() {
-        if (employeeRepository.count() == 0) {
-            employeeRepository.save(Employee.builder()
-                .employeeCode("EMP001")
-                .prefix("MR")
-                .firstName("Ravi")
-                .surname("Kumar")
-                .gender("MALE")
-                .maritalStatus("MARRIED")
-                .fatherHusbandName("Surya Narayana")
-                .fMH("FATHER")
-                .occupationKin("SALARIED")
-                .occupationKinSub("MANAGER")
-                .doj(LocalDate.of(2020, 6, 15))
-                .highestQualification("MBA")
-                .levelOfEducation("MASTERS")
-                .yearOfPassing(2015)
-                .dob(LocalDate.of(1991, 3, 10))
-                .presentAddress("5-67, RTC Colony, Guntur - 522001")
-                .permanentAddress("5-67, RTC Colony, Guntur - 522001")
-                .email("ravi.kumar@company.com")
-                .mobile("9876543210")
-                .bloodGroup("B+")
-                .aadharNumber("1234-5678-9012")
-                .panNumber("ABCDE1234F")
-                .bankName("SBI")
-                .accountNumber("12345678901")
-                .ifscCode("SBIN0012345")
-                .branch("Guntur Main")
-                .employeeStatus("LIVE")
-                .designation("MANAGER")
-                .religion("HINDU")
-                .socialCategory("OC")
-                .build());
-            employeeRepository.save(Employee.builder()
-                .employeeCode("EMP002")
-                .prefix("MS")
-                .firstName("Priya")
-                .surname("Sharma")
-                .gender("FEMALE")
-                .maritalStatus("SINGLE")
-                .fatherHusbandName("Rajesh Sharma")
-                .fMH("FATHER")
-                .occupationKin("SALARIED")
-                .occupationKinSub("ENGINEER")
-                .doj(LocalDate.of(2022, 1, 10))
-                .highestQualification("B.Tech")
-                .levelOfEducation("BACHELORS")
-                .yearOfPassing(2017)
-                .dob(LocalDate.of(1996, 7, 25))
-                .presentAddress("Flat 201, Sai Towers, Vijayawada - 520001")
-                .permanentAddress("H.No 1-23, Old Town, Vijayawada - 520001")
-                .email("priya.sharma@company.com")
-                .mobile("9876543211")
-                .bloodGroup("O+")
-                .aadharNumber("2345-6789-0123")
-                .panNumber("FGHIJ5678K")
-                .bankName("HDFC")
-                .accountNumber("50100123456789")
-                .ifscCode("HDFC0001234")
-                .branch("Vijayawada")
-                .employeeStatus("LIVE")
-                .designation("ENGINEER")
-                .religion("HINDU")
-                .socialCategory("BC")
-                .build());
-            employeeRepository.save(Employee.builder()
-                .employeeCode("EMP003")
-                .prefix("MR")
-                .firstName("Venkata")
-                .surname("Rao")
-                .gender("MALE")
-                .maritalStatus("MARRIED")
-                .fatherHusbandName("Nageswara Rao")
-                .fMH("FATHER")
-                .occupationKin("SALARIED")
-                .occupationKinSub("ACCOUNTANT")
-                .doj(LocalDate.of(2018, 4, 1))
-                .highestQualification("M.Com")
-                .levelOfEducation("MASTERS")
-                .yearOfPassing(2000)
-                .dob(LocalDate.of(1979, 11, 15))
-                .presentAddress("12-34, Main Road, Tenali - 522201")
-                .permanentAddress("12-34, Main Road, Tenali - 522201")
-                .email("venkata.rao@company.com")
-                .mobile("9876543212")
-                .bloodGroup("A+")
-                .aadharNumber("3456-7890-1234")
-                .panNumber("KLMNO9012P")
-                .bankName("CANARA")
-                .accountNumber("78901234567")
-                .ifscCode("CNRB0012345")
-                .branch("Tenali")
-                .employeeStatus("LIVE")
-                .designation("ACCOUNTANT")
-                .religion("HINDU")
-                .socialCategory("OC")
-                .build());
-            employeeRepository.save(Employee.builder()
-                .employeeCode("EMP004")
-                .prefix("MR")
-                .firstName("Srinivas")
-                .surname("Reddy")
-                .gender("MALE")
-                .maritalStatus("MARRIED")
-                .fatherHusbandName("Narayana Reddy")
-                .fMH("FATHER")
-                .occupationKin("SALARIED")
-                .occupationKinSub("HR MANAGER")
-                .doj(LocalDate.of(2021, 8, 1))
-                .highestQualification("MBA")
-                .levelOfEducation("MASTERS")
-                .yearOfPassing(2016)
-                .dob(LocalDate.of(1992, 5, 20))
-                .presentAddress("3-45, HR Colony, Guntur - 522002")
-                .permanentAddress("3-45, HR Colony, Guntur - 522002")
-                .email("srinivas.reddy@company.com")
-                .mobile("9876543213")
-                .bloodGroup("AB+")
-                .aadharNumber("4567-8901-2345")
-                .panNumber("QRSTU3456V")
-                .bankName("AXIS")
-                .accountNumber("34567890123")
-                .ifscCode("AXIS0012345")
-                .branch("Guntur")
-                .employeeStatus("LIVE")
-                .designation("HR MANAGER")
-                .religion("HINDU")
-                .socialCategory("OC")
-                .build());
-            log.info("Employees seeded: EMP001 (Ravi), EMP002 (Priya), EMP003 (Venkata Rao), EMP004 (Srinivas)");
-        } else {
+        if (employeeRepository.countActive() > 0) {
             log.debug("Employees already exist, skipping seed");
+            return;
         }
+        seededEmployeeCodes = new ArrayList<>();
+        String[][] employeeData = {
+            {"MR", "Ravi", "Kumar", "MALE", "MARRIED", "Surya Narayana", "FATHER", "SALARIED", "MANAGER",
+             "2020-06-15", "MBA", "MASTERS", "2015", "1991-03-10", "ravi.kumar@company.com", "9876543210",
+             "B+", "1234-5678-9012", "ABCDE1234F", "SBI", "12345678901", "SBIN0012345", "Guntur Main",
+             "MANAGER", "HINDU", "OC", "5-67, RTC Colony, Guntur - 522001"},
+            {"MS", "Priya", "Sharma", "FEMALE", "SINGLE", "Rajesh Sharma", "FATHER", "SALARIED", "ENGINEER",
+             "2022-01-10", "B.Tech", "BACHELORS", "2017", "1996-07-25", "priya.sharma@company.com", "9876543211",
+             "O+", "2345-6789-0123", "FGHIJ5678K", "HDFC", "50100123456789", "HDFC0001234", "Vijayawada",
+             "ENGINEER", "HINDU", "BC", "Flat 201, Sai Towers, Vijayawada - 520001"},
+            {"MR", "Venkata", "Rao", "MALE", "MARRIED", "Nageswara Rao", "FATHER", "SALARIED", "ACCOUNTANT",
+             "2018-04-01", "M.Com", "MASTERS", "2000", "1979-11-15", "venkata.rao@company.com", "9876543212",
+             "A+", "3456-7890-1234", "KLMNO9012P", "CANARA", "78901234567", "CNRB0012345", "Tenali",
+             "ACCOUNTANT", "HINDU", "OC", "12-34, Main Road, Tenali - 522201"},
+            {"MR", "Srinivas", "Reddy", "MALE", "MARRIED", "Narayana Reddy", "FATHER", "SALARIED", "HR MANAGER",
+             "2021-08-01", "MBA", "MASTERS", "2016", "1992-05-20", "srinivas.reddy@company.com", "9876543213",
+             "AB+", "4567-8901-2345", "QRSTU3456V", "AXIS", "34567890123", "AXIS0012345", "Guntur",
+             "HR MANAGER", "HINDU", "OC", "3-45, HR Colony, Guntur - 522002"}
+        };
+        for (String[] d : employeeData) {
+            String code = employeeCodeGenerator.generateNextCode();
+            seededEmployeeCodes.add(code);
+            employeeRepository.save(Employee.builder()
+                .employeeCode(code)
+                .prefix(d[0]).firstName(d[1]).surname(d[2])
+                .gender(d[3]).maritalStatus(d[4]).fatherHusbandName(d[5]).fMH(d[6])
+                .occupationKin(d[7]).occupationKinSub(d[8])
+                .doj(LocalDate.parse(d[9]))
+                .highestQualification(d[10]).levelOfEducation(d[11]).yearOfPassing(Integer.parseInt(d[12]))
+                .dob(LocalDate.parse(d[13]))
+                .email(d[14]).mobile(d[15]).bloodGroup(d[16])
+                .aadharNumber(d[17]).panNumber(d[18])
+                .bankName(d[19]).accountNumber(d[20]).ifscCode(d[21]).branch(d[22])
+                .employeeStatus("LIVE").designation(d[23]).religion(d[24]).socialCategory(d[25])
+                .presentAddress(d[26]).permanentAddress(d[26])
+                .build());
+        }
+        log.info("Employees seeded: {} ({} employees)", seededEmployeeCodes, employeeData.length);
     }
 
     private void seedEmployeeUsers() {
-        String[][] emps = {{"EMP001", "EMPLOYEE"}, {"EMP002", "EMPLOYEE"}, {"EMP003", "EMPLOYEE"}, {"EMP004", "HR"}};
-        for (String[] e : emps) {
-            if (!userRepository.existsByUsername(e[0])) {
-                employeeRepository.findByEmployeeCode(e[0]).ifPresent(emp -> {
-                    User user = User.builder()
-                        .username(e[0])
-                        .password(passwordEncoder.encode("Admin@123"))
-                        .role(e[1])
-                        .employeeId(emp.getId())
-                        .enabled(true)
-                        .accountNonLocked(true)
-                        .build();
+        List<Employee> activeEmps = employeeRepository.findAllLiveEmployees();
+        if (activeEmps.isEmpty()) {
+            log.warn("No active employees found, skipping user seed");
+            return;
+        }
+        List<Employee> activeEmpsList = new ArrayList<>(activeEmps);
+        for (int i = 0; i < activeEmpsList.size(); i++) {
+            Employee emp = activeEmpsList.get(i);
+            String username = emp.getEmployeeCode();
+            String role = (i == 3) ? "HR" : "EMPLOYEE";
+            String finalRole = role;
+            userRepository.findByUsername(username).ifPresentOrElse(user -> {
+                boolean changed = false;
+                if (!emp.getId().equals(user.getEmployeeId())) {
+                    user.setEmployeeId(emp.getId());
+                    changed = true;
+                }
+                if (!finalRole.equals(user.getRole())) {
+                    user.setRole(finalRole);
+                    changed = true;
+                }
+                if (changed) {
                     userRepository.save(user);
-                    log.info("User created: {} / {} (linked to empId={})", e[0], e[1], emp.getId());
-                });
-            }
+                    log.info("User updated: {} -> empId={}, role={}", username, emp.getId(), finalRole);
+                }
+            }, () -> {
+                userRepository.save(User.builder()
+                    .username(username)
+                    .password(passwordEncoder.encode("Admin@123"))
+                    .role(role)
+                    .employeeId(emp.getId())
+                    .enabled(true)
+                    .accountNonLocked(true)
+                    .build());
+                log.info("User created: {} / {} (linked to empId={})", username, role, emp.getId());
+            });
         }
     }
 
     private void seedSalaries() {
-        if (salaryRepository.count() == 0) {
-            int currentYear = LocalDate.now().getYear();
-            int currentMonth = LocalDate.now().getMonthValue();
-
-            Employee emp1 = employeeRepository.findByEmployeeCode("EMP001").orElse(null);
-            Employee emp2 = employeeRepository.findByEmployeeCode("EMP002").orElse(null);
-            Employee emp3 = employeeRepository.findByEmployeeCode("EMP003").orElse(null);
-
-            if (emp1 == null || emp2 == null || emp3 == null) {
-                log.warn("Employees not found, skipping salary seed");
-                return;
-            }
-
-            // Seed salaries for current month and previous month
-            int[] months = {currentMonth, currentMonth > 1 ? currentMonth - 1 : 12};
-            int[] years = {currentYear, currentMonth > 1 ? currentYear : currentYear - 1};
-
-            for (int i = 0; i < months.length; i++) {
-                int m = months[i];
-                int y = years[i];
-                if (salaryRepository.existsByEmployeeIdAndWageYearAndWageMonth(emp1.getId(), y, m)) continue;
-
-                // Employee 1: Ravi - Basic 25000, HRA 10000, FPA 5000, OA 3000
-                saveSalary(emp1, m, y, 25000, 10000, 5000, 3000, 0);
-                // Employee 2: Priya - Basic 20000, HRA 8000, FPA 4000, OA 2000
-                saveSalary(emp2, m, y, 20000, 8000, 4000, 2000, 0);
-                // Employee 3: Venkata - Basic 18000, HRA 7200, FPA 3600, OA 1800
-                saveSalary(emp3, m, y, 18000, 7200, 3600, 1800, 0);
-            }
-            log.info("Salary records seeded for {} months", months.length);
-        } else {
+        if (salaryRepository.count() > 0) {
             log.debug("Salary records already exist, skipping seed");
+            return;
         }
+        List<Employee> activeEmps = employeeRepository.findAllLiveEmployees();
+        if (activeEmps.isEmpty()) {
+            log.warn("No active employees, skipping salary seed");
+            return;
+        }
+
+        int currentYear = LocalDate.now().getYear();
+        int currentMonth = LocalDate.now().getMonthValue();
+        int[] months = {currentMonth, currentMonth > 1 ? currentMonth - 1 : 12};
+        int[] years = {currentYear, currentMonth > 1 ? currentYear : currentYear - 1};
+
+        double[][] salaryData = {
+            {25000, 10000, 5000, 3000, 0},
+            {20000, 8000, 4000, 2000, 0},
+            {18000, 7200, 3600, 1800, 0}
+        };
+
+        for (int i = 0; i < months.length; i++) {
+            int m = months[i];
+            int y = years[i];
+            for (int e = 0; e < Math.min(activeEmps.size(), salaryData.length); e++) {
+                Employee emp = activeEmps.get(e);
+                if (salaryRepository.existsByEmployeeIdAndWageYearAndWageMonth(emp.getId(), y, m)) continue;
+                saveSalary(emp, m, y, salaryData[e][0], salaryData[e][1], salaryData[e][2], salaryData[e][3], salaryData[e][4]);
+            }
+        }
+        log.info("Salary records seeded for {} months ({} employees)", months.length, Math.min(activeEmps.size(), salaryData.length));
     }
 
     private void saveSalary(Employee emp, int month, int year,
@@ -860,12 +832,13 @@ public class DataSeeder implements CommandLineRunner {
         rolePermissionRepository.deleteAll();
 
         String[][] resources = {
-            {"dashboard", "1,1,1,1", "1,0,0,0", "1,0,0,0"},
+            {"dashboard", "1,1,1,1", "1,1,1,1", "1,0,0,0"},
             {"staff_master", "1,1,1,1", "1,0,1,0", "1,0,0,0"},
             {"company", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
             {"masters", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
             {"doc_templates", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
             {"payroll", "1,1,1,1", "1,1,1,0", "0,0,0,0"},
+            {"bills", "1,1,1,1", "1,1,1,0", "0,0,0,0"},
             {"leave", "1,1,1,1", "1,1,1,0", "1,1,0,0"},
             {"reports", "1,1,1,1", "1,0,0,0", "0,0,0,0"},
             {"registrations", "1,1,1,1", "1,0,1,0", "0,0,0,0"},

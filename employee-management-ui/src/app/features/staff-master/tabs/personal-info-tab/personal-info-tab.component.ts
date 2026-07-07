@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -7,8 +7,11 @@ import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzTableModule } from 'ng-zorro-antd/table';
 import { MasterDataService } from '../../../../core/services/master-data.service';
 import { MasterDataItem } from '../../../../core/models/api-response.model';
+import { EmployeeLanguage } from '../../../../core/models/employee.model';
 
 @Component({
   selector: 'app-personal-info-tab',
@@ -22,7 +25,9 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
     NzSelectModule,
     NzDatePickerModule,
     NzIconModule,
-    NzCheckboxModule
+    NzCheckboxModule,
+    NzButtonModule,
+    NzTableModule
   ],
   template: `
     <div class="tab-container">
@@ -36,7 +41,8 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
           <nz-form-item>
             <nz-form-label>Employee Code</nz-form-label>
             <nz-form-control>
-              <input nz-input [formControl]="form.get('employeeCode')!" [readonly]="isEditMode" placeholder="Enter employee code">
+              <input nz-input [formControl]="form.get('employeeCode')!" [readonly]="true" [placeholder]="isEditMode ? 'Employee code' : 'Auto-generated on save'">
+              <small *ngIf="!isEditMode" style="color:#999;display:block;margin-top:4px">Employee code will be auto-generated as PARI###</small>
             </nz-form-control>
           </nz-form-item>
 
@@ -302,6 +308,42 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
           </nz-form-item>
         </div>
       </div>
+
+      <!-- Languages -->
+      <div class="form-section">
+        <div class="form-section-header">
+          <div class="form-section-icon"><i nz-icon nzType="translation"></i></div>
+          <h4 class="form-section-title">Languages</h4>
+        </div>
+        <div class="lang-add-row">
+          <nz-select [ngModel]="selectedLanguage" (ngModelChange)="selectedLanguage = $event" [ngModelOptions]="{standalone: true}" nzPlaceHolder="Select language" style="width:240px">
+            <nz-option *ngFor="let opt of availableLanguageOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+          </nz-select>
+          <button nz-button nzType="primary" nzSize="small" (click)="addLanguage()" [disabled]="!selectedLanguage">
+            <i nz-icon nzType="plus"></i> Add
+          </button>
+        </div>
+        <nz-table *ngIf="languages.length > 0" [nzData]="languages" nzSize="small" nzFrontPagination="false" nzHideOnSinglePage="true" class="lang-table">
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th class="lang-check-col">Read</th>
+              <th class="lang-check-col">Write</th>
+              <th class="lang-check-col">Speak</th>
+              <th class="lang-remove-col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let lang of languages; let i = index">
+              <td>{{ lang.language }}</td>
+              <td class="lang-check-col"><label nz-checkbox [ngModel]="lang.canRead" (ngModelChange)="lang.canRead = $event" [ngModelOptions]="{standalone: true}"></label></td>
+              <td class="lang-check-col"><label nz-checkbox [ngModel]="lang.canWrite" (ngModelChange)="lang.canWrite = $event" [ngModelOptions]="{standalone: true}"></label></td>
+              <td class="lang-check-col"><label nz-checkbox [ngModel]="lang.canSpeak" (ngModelChange)="lang.canSpeak = $event" [ngModelOptions]="{standalone: true}"></label></td>
+              <td class="lang-remove-col"><button nz-button nzType="text" nzDanger (click)="removeLanguage(i)"><i nz-icon nzType="delete"></i></button></td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
     </div>
   `,
   styles: [`
@@ -318,12 +360,18 @@ import { MasterDataItem } from '../../../../core/models/api-response.model';
     .form-section-icon { width: 28px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #1f3d6e, #16213e); display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
     .form-section-icon i { font-size: 15px; }
     .form-section-title { font-size: 14px; font-weight: 600; color: #1f3d6e; margin: 0; }
+    .lang-add-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .lang-check-col { text-align: center; width: 60px; }
+    .lang-remove-col { text-align: center; width: 40px; }
+    :host ::ng-deep .lang-table .ant-table-thead > tr > th { background: #f8fafc !important; font-size: 12px; color: #374151; padding: 6px 8px !important; }
+    :host ::ng-deep .lang-table .ant-table-tbody > tr > td { padding: 6px 8px !important; font-size: 13px; }
   `]
 })
 export class PersonalInfoTabComponent implements OnInit {
   @Input() form!: any;
   @Input() masterData: any;
   @Input() isEditMode = false;
+  @Output() languagesChange = new EventEmitter<EmployeeLanguage[]>();
 
   currentYear = new Date().getFullYear();
   prefixOptions: { value: string; label: string }[] = [];
@@ -334,7 +382,16 @@ export class PersonalInfoTabComponent implements OnInit {
   yesNoOptions: { value: string; label: string }[] = [];
   qualificationOptions: { value: string; label: string }[] = [];
   educationLevelOptions: { value: string; label: string }[] = [];
+  languageOptions: { value: string; label: string }[] = [];
   sameAsPresent = false;
+
+  selectedLanguage: string | null = null;
+  languages: EmployeeLanguage[] = [];
+
+  get availableLanguageOptions(): { value: string; label: string }[] {
+    const addedNames = new Set(this.languages.map(l => l.language));
+    return this.languageOptions.filter(opt => !addedNames.has(opt.label));
+  }
 
   constructor(private masterDataService: MasterDataService) {}
 
@@ -363,6 +420,17 @@ export class PersonalInfoTabComponent implements OnInit {
     this.masterDataService.getByCategory('EDUCATION_LEVEL').subscribe(data => {
       this.educationLevelOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
+    this.masterDataService.refreshCategory('LANGUAGE');
+    this.masterDataService.getByCategory('LANGUAGE').subscribe(data => {
+      this.languageOptions = data.map(i => ({ value: i.code, label: i.value }));
+    });
+
+    // Listen for languages from the form input
+    this.form.get('languages')?.valueChanges.subscribe((langs: EmployeeLanguage[]) => {
+      if (langs && langs.length > 0) {
+        this.languages = langs;
+      }
+    });
   }
 
   copyAddress(checked: boolean): void {
@@ -388,5 +456,22 @@ export class PersonalInfoTabComponent implements OnInit {
       else if (age <= 50) this.form.get('ageBracket')?.setValue('41_50');
       else this.form.get('ageBracket')?.setValue('51_ABOVE');
     }
+  }
+
+  addLanguage(): void {
+    if (!this.selectedLanguage) return;
+    const label = this.languageOptions.find(o => o.value === this.selectedLanguage)?.label || this.selectedLanguage;
+    this.languages.push({ language: label, canRead: false, canWrite: false, canSpeak: false });
+    this.selectedLanguage = null;
+    this.emitLanguages();
+  }
+
+  removeLanguage(index: number): void {
+    this.languages.splice(index, 1);
+    this.emitLanguages();
+  }
+
+  private emitLanguages(): void {
+    this.languagesChange.emit(this.languages);
   }
 }

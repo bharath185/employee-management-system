@@ -43,6 +43,13 @@ logs/
 # Screenshots
 screenshots/
 
+# Docs (word, images etc — not source)
+docs/*.doc
+docs/*.docx
+docs/*.jpeg
+docs/*.jpg
+docs/*.png
+
 # Temp / generated files
 opencode/*.txt
 *.xlsx

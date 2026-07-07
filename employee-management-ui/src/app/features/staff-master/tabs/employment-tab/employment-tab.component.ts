@@ -44,6 +44,16 @@ import { MasterDataService } from '../../../../core/services/master-data.service
           </nz-form-control>
         </nz-form-item>
 
+        <!-- Department -->
+        <nz-form-item>
+          <nz-form-label>Department</nz-form-label>
+          <nz-form-control>
+            <nz-select [formControl]="form.get('department')!" nzPlaceHolder="Select department">
+              <nz-option *ngFor="let opt of departmentOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
         <!-- ESIC No. -->
         <nz-form-item>
           <nz-form-label>ESIC No.</nz-form-label>
@@ -88,15 +98,6 @@ import { MasterDataService } from '../../../../core/services/master-data.service
           </nz-form-control>
         </nz-form-item>
 
-        <!-- Languages -->
-        <nz-form-item>
-          <nz-form-label>Languages Can Speak</nz-form-label>
-          <nz-form-control>
-            <input nz-input [formControl]="form.get('languagesCanSpeak')!" placeholder="English, Hindi, Telugu..." maxlength="100">
-            <small class="hint-text">Separate languages with commas</small>
-          </nz-form-control>
-        </nz-form-item>
-
         <!-- Designation -->
         <nz-form-item>
           <nz-form-label>Designation</nz-form-label>
@@ -130,6 +131,7 @@ export class EmploymentTabComponent implements OnInit {
   yesNoOptions: { value: string; label: string }[] = [];
   employeeStatusOptions: { value: string; label: string }[] = [];
   processOptions: { value: string; label: string }[] = [];
+  departmentOptions: { value: string; label: string }[] = [];
   designationOptions: { value: string; label: string }[] = [];
 
   constructor(private masterDataService: MasterDataService) {}
@@ -143,6 +145,9 @@ export class EmploymentTabComponent implements OnInit {
     });
     this.masterDataService.getByCategory('PROCESS').subscribe(data => {
       this.processOptions = data.map(i => ({ value: i.code, label: i.value }));
+    });
+    this.masterDataService.getByCategory('DEPARTMENT').subscribe(data => {
+      this.departmentOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
     this.masterDataService.getByCategory('DESIGNATION').subscribe(data => {
       this.designationOptions = data.map(i => ({ value: i.code, label: i.value }));

@@ -16,6 +16,7 @@ import { Employee } from '../../core/models/employee.model';
 import { calculateAge, getAgeBracket } from '../../shared/pipes/age.pipe';
 import { OnCanDeactivate } from '../../core/guards/can-deactivate.guard';
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { Subscription } from 'rxjs';
 
 export function minAgeValidator(minAge: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -79,7 +80,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
         <form [formGroup]="employeeForm">
           <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex" (nzSelectedIndexChange)="onTabChange($event)">
             <nz-tab nzTitle="Personal Info">
-              <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode"></app-personal-info-tab>
+              <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode" (languagesChange)="onLanguagesChange($event)"></app-personal-info-tab>
             </nz-tab>
             <nz-tab nzTitle="Demographics">
               <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
@@ -301,8 +302,10 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   existingPhotoUrl: string = '';
   formErrors: string[] = [];
   selectedTabIndex = 0;
+  capturedLanguages: any[] = [];
   private previousTabIndex = 0;
   private readonly DRAFT_KEY = 'staff_form_draft';
+  private valueChangesSub!: Subscription;
 
   canDeactivate(): boolean {
     return !this.employeeForm.dirty;
@@ -334,7 +337,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     ['bloodGroup', 'aadharNumber', 'panNumber'],
     ['sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
     ['bankName', 'accountNumber', 'ifscCode', 'branch'],
-    ['employeeStatus', 'processAssigned', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation', 'languagesCanSpeak', 'designation'],
+    ['employeeStatus', 'processAssigned', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation', 'designation'],
     ['fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'spouseName', 'spousePhone'],
     ['pastExperience', 'organizationName', 'periodOfEmployment', 'ref1Name', 'ref1Relationship', 'ref1Address', 'ref1Mobile', 'ref2Name', 'ref2Relationship', 'ref2Address', 'ref2Mobile'],
     ['doe', 'deletionMonth', 'exitType', 'exitReason'],
@@ -368,11 +371,22 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       this.checkForDraft();
     }
 
+    // Show validation errors as user types
+    this.valueChangesSub = this.employeeForm.valueChanges.subscribe(() => {
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        if (control?.dirty && !control.touched) {
+          control.markAsTouched();
+        }
+      });
+    });
+
     // Unsaved changes warning
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
   ngOnDestroy(): void {
+    this.valueChangesSub?.unsubscribe();
     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
@@ -386,7 +400,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   private createForm(): FormGroup {
     return this.fb.group({
       // Personal Info
-      employeeCode: ['', [Validators.required, Validators.pattern('^[A-Za-z0-9]+$')]],
+      employeeCode: ['', Validators.pattern('^[A-Za-z0-9]+$')],
       userRole: [''],
       prefix: [''],
       firstName: ['', [Validators.required, Validators.maxLength(40)]],
@@ -450,6 +464,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       // Employment
       employeeStatus: ['', Validators.required],
       processAssigned: [''],
+      department: [''],
       esicNo: ['', Validators.maxLength(10)],
       aadharSeeding: [''],
       uanNo: ['', Validators.maxLength(12)],
@@ -485,7 +500,8 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       doe: [''],
       deletionMonth: ['', [Validators.pattern(/^(0[1-9]|1[0-2])\/[0-9]{4}$/)]],
       exitType: [''],
-      exitReason: ['', Validators.maxLength(256)]
+      exitReason: ['', Validators.maxLength(256)],
+      languages: [[]]
     });
   }
 
@@ -504,6 +520,10 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
         }
         if (emp.age) this.employeeForm.get('age')?.setValue(emp.age);
         if (emp.ageBracket) this.employeeForm.get('ageBracket')?.setValue(emp.ageBracket);
+        if (emp.languages && emp.languages.length > 0) {
+          this.employeeForm.get('languages')?.setValue(emp.languages);
+          this.capturedLanguages = emp.languages;
+        }
       },
       error: (err) => {
         this.message.error('Error loading employee data', { nzDuration: 3000 });
@@ -541,6 +561,11 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
   onPhotoChange(file: File | null): void {
     this.selectedFile = file;
+  }
+
+  onLanguagesChange(languages: any[]): void {
+    this.capturedLanguages = languages;
+    this.employeeForm.get('languages')?.setValue(languages);
   }
 
   private collectFormErrors(): string[] {
@@ -581,6 +606,10 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     Object.keys(employee).forEach(key => {
       if ((employee as any)[key] === '') (employee as any)[key] = undefined;
     });
+
+    if (this.capturedLanguages.length > 0) {
+      employee.languages = this.capturedLanguages;
+    }
 
     return employee;
   }

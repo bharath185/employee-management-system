@@ -21,6 +21,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 
 import { EmployeeService } from '../../core/services/employee.service';
 import { MasterDataService } from '../../core/services/master-data.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Employee } from '../../core/models/employee.model';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
@@ -60,15 +61,17 @@ import * as XLSX from 'xlsx';
           </div>
         </div>
         <div class="emp-header-actions">
-          <button nz-button nz-tooltip="Download Sample" class="hdr-btn" (click)="downloadSampleExcel()">
-            <i nz-icon nzType="file-text"></i>
-          </button>
-          <button nz-button nz-tooltip="Export Excel" class="hdr-btn" (click)="exportToExcel()">
-            <i nz-icon nzType="download"></i>
-          </button>
-          <button nz-button nz-tooltip="Import Excel" class="hdr-btn" (click)="triggerImport()">
-            <i nz-icon nzType="upload"></i>
-          </button>
+          <ng-container *ngIf="canImportExport">
+            <button nz-button nz-tooltip="Download Sample" class="hdr-btn" (click)="downloadSampleExcel()">
+              <i nz-icon nzType="file-text"></i>
+            </button>
+            <button nz-button nz-tooltip="Export Excel" class="hdr-btn" (click)="exportToExcel()">
+              <i nz-icon nzType="download"></i>
+            </button>
+            <button nz-button nz-tooltip="Import Excel" class="hdr-btn" (click)="triggerImport()">
+              <i nz-icon nzType="upload"></i>
+            </button>
+          </ng-container>
           <button nz-button nzType="primary" class="hdr-btn-primary" routerLink="/admin/employees/new">
             <i nz-icon nzType="plus"></i> Add Employee
           </button>
@@ -404,10 +407,16 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   constructor(
     private employeeService: EmployeeService,
     private masterDataService: MasterDataService,
+    private authService: AuthService,
     private router: Router,
     private message: NzMessageService,
     private modal: NzModalService
   ) {}
+
+  get canImportExport(): boolean {
+    const role = this.authService.getUserRole();
+    return role === 'ADMIN' || role === 'HR';
+  }
 
   getAvatarColor(code: string): string {
     const index = (code?.length || 0) % this.avatarColors.length;
@@ -564,9 +573,12 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
         next: (response) => {
           this.isLoading = false;
           if (response.success) {
-            this.message.success(
-              `Import completed: ${response.data?.successful} successful, ${response.data?.failed} failed`
-            );
+            const data = response.data;
+            if (data && data.failed > 0) {
+              this.showImportResultModal(data);
+            } else {
+              this.message.success(`Import completed: ${data?.successful} rows imported successfully`);
+            }
             this.loadEmployees();
           }
         },
@@ -577,5 +589,31 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
       });
     }
     input.value = '';
+  }
+
+  private showImportResultModal(data: any): void {
+    const errors = data.errors || [];
+    const errorListHtml = errors.length > 0
+      ? `<ul style="max-height:300px;overflow-y:auto;padding-left:16px;margin:0">
+          ${errors.map((e: any) => `<li><strong>Row ${e.row}:</strong> ${e.message}</li>`).join('')}
+         </ul>`
+      : '<p>No detailed errors available.</p>';
+
+    this.modal.info({
+      nzTitle: 'Import Results',
+      nzWidth: '600px',
+      nzContent: `
+        <div style="margin-bottom:16px">
+          <p><strong>Total rows:</strong> ${data.totalRows}</p>
+          <p><strong>Successful:</strong> <span style="color:#52c41a">${data.successful}</span></p>
+          <p><strong>Failed:</strong> <span style="color:#ff4d4f">${data.failed}</span></p>
+        </div>
+        <div *ngIf="${errors.length > 0}">
+          <p><strong>Errors:</strong></p>
+          ${errorListHtml}
+        </div>
+      `,
+      nzOkText: 'Close'
+    });
   }
 }
