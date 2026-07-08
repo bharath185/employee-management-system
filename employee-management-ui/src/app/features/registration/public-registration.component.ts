@@ -125,8 +125,8 @@ import { environment } from '../../../environments/environment';
 
             <nz-divider></nz-divider>
 
-            <!-- Identity -->
-            <h3 class="section-title">Identity</h3>
+            <!-- Identity & Demographics -->
+            <h3 class="section-title">Identity & Demographics</h3>
             <div class="form-row">
               <div class="form-group">
                 <label>Aadhar Number</label>
@@ -135,6 +135,39 @@ import { environment } from '../../../environments/environment';
               <div class="form-group">
                 <label>PAN Number</label>
                 <input nz-input [(ngModel)]="formData.panNumber" name="panNumber" placeholder="PAN number" maxlength="10" style="text-transform:uppercase" />
+              </div>
+              <div class="form-group">
+                <label>Blood Group</label>
+                <nz-select [(ngModel)]="formData.bloodGroup" name="bloodGroup" nzPlaceHolder="Select blood group" style="width:100%">
+                  <nz-option *ngFor="let opt of bloodGroups" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Religion</label>
+                <nz-select [(ngModel)]="formData.religion" name="religion" nzPlaceHolder="Select religion" style="width:100%">
+                  <nz-option *ngFor="let opt of religions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Social Category</label>
+                <nz-select [(ngModel)]="formData.socialCategory" name="socialCategory" nzPlaceHolder="Select category" style="width:100%">
+                  <nz-option *ngFor="let opt of socialCategories" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Social Subcategory</label>
+                <nz-select [(ngModel)]="formData.socialSubcategory" name="socialSubcategory" nzPlaceHolder="Select subcategory" style="width:100%">
+                  <nz-option *ngFor="let opt of socialSubcategories" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Ration Card</label>
+                <nz-select [(ngModel)]="formData.rationCard" name="rationCard" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option nzValue="YES" nzLabel="Yes"></nz-option>
+                  <nz-option nzValue="NO" nzLabel="No"></nz-option>
+                </nz-select>
               </div>
             </div>
 
@@ -154,10 +187,195 @@ import { environment } from '../../../environments/environment';
                 </nz-select>
               </div>
               <div class="form-group">
+                <label>Level of Education</label>
+                <nz-select [(ngModel)]="formData.levelOfEducation" name="levelOfEducation" nzPlaceHolder="Select level" style="width:100%">
+                  <nz-option *ngFor="let q of qualifications" [nzValue]="q.code" [nzLabel]="q.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
                 <label>Designation</label>
                 <nz-select [(ngModel)]="formData.designation" name="designation" nzPlaceHolder="Select designation" style="width:100%">
                   <nz-option *ngFor="let d of designations" [nzValue]="d.code" [nzLabel]="d.value"></nz-option>
                 </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Year of Passing</label>
+                <input nz-input [(ngModel)]="formData.yearOfPassing" name="yearOfPassing" placeholder="e.g. 2015" maxlength="4" />
+              </div>
+              <div class="form-group">
+                <label>% of Marks</label>
+                <input nz-input [(ngModel)]="formData.percentageMarks" name="percentageMarks" placeholder="e.g. 75" />
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Family & Kin -->
+            <h3 class="section-title">Family & Kin</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Father/Husband Name</label>
+                <input nz-input [(ngModel)]="formData.fatherHusbandName" name="fatherHusbandName" placeholder="Father or husband name" />
+              </div>
+              <div class="form-group">
+                <label>F/M/H</label>
+                <nz-select [(ngModel)]="formData.fMH" name="fMH" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of fMhOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Occupation of Kin</label>
+                <nz-select [(ngModel)]="formData.occupationKin" name="occupationKin" nzPlaceHolder="Select occupation" style="width:100%">
+                  <nz-option *ngFor="let opt of occupationKins" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Occupation Sub</label>
+                <nz-select [(ngModel)]="formData.occupationKinSub" name="occupationKinSub" nzPlaceHolder="Select sub" style="width:100%">
+                  <nz-option *ngFor="let opt of occupationSubs" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Close Relative Name</label>
+                <input nz-input [(ngModel)]="formData.closeRelativeName" name="closeRelativeName" placeholder="Close relative name" />
+              </div>
+              <div class="form-group">
+                <label>Close Relative Mobile</label>
+                <input nz-input [(ngModel)]="formData.closeRelativeMobile" name="closeRelativeMobile" placeholder="Mobile number" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Father Name</label>
+                <input nz-input [(ngModel)]="formData.fatherName" name="fatherName" placeholder="Father's name" />
+              </div>
+              <div class="form-group">
+                <label>Father Phone</label>
+                <input nz-input [(ngModel)]="formData.fatherPhone" name="fatherPhone" placeholder="Phone" maxlength="10" />
+              </div>
+              <div class="form-group">
+                <label>Mother Name</label>
+                <input nz-input [(ngModel)]="formData.motherName" name="motherName" placeholder="Mother's name" />
+              </div>
+              <div class="form-group">
+                <label>Mother Phone</label>
+                <input nz-input [(ngModel)]="formData.motherPhone" name="motherPhone" placeholder="Phone" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Spouse Name</label>
+                <input nz-input [(ngModel)]="formData.spouseName" name="spouseName" placeholder="Spouse name" />
+              </div>
+              <div class="form-group">
+                <label>Spouse Phone</label>
+                <input nz-input [(ngModel)]="formData.spousePhone" name="spousePhone" placeholder="Phone" maxlength="10" />
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Household Assets -->
+            <h3 class="section-title">Household Assets</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>TV</label>
+                <nz-select [(ngModel)]="formData.hasTv" name="hasTv" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Fridge</label>
+                <nz-select [(ngModel)]="formData.hasFridge" name="hasFridge" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Laptop</label>
+                <nz-select [(ngModel)]="formData.hasLaptop" name="hasLaptop" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>WiFi</label>
+                <nz-select [(ngModel)]="formData.hasWifi" name="hasWifi" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>2 Wheeler</label>
+                <nz-select [(ngModel)]="formData.has2wheeler" name="has2wheeler" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>4 Wheeler</label>
+                <nz-select [(ngModel)]="formData.has4wheeler" name="has4wheeler" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
+            <!-- Education Verification -->
+            <h3 class="section-title">Education Verification</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>SSC / 10th Status</label>
+                <nz-select [(ngModel)]="formData.sscStatus" name="sscStatus" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Intermediate / 12th Status</label>
+                <nz-select [(ngModel)]="formData.intermediateStatus" name="intermediateStatus" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Bachelor Degree</label>
+                <nz-select [(ngModel)]="formData.bachelorsDegree" name="bachelorsDegree" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Master Degree</label>
+                <nz-select [(ngModel)]="formData.mastersDegree" name="mastersDegree" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Aadhaar Verification</label>
+                <nz-select [(ngModel)]="formData.aadhaarVerification" name="aadhaarVerification" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>PAN Verification</label>
+                <nz-select [(ngModel)]="formData.panVerification" name="panVerification" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>OSV</label>
+                <nz-select [(ngModel)]="formData.osv" name="osv" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Remarks</label>
+                <textarea nz-input [(ngModel)]="formData.remarks" name="remarks" rows="2" placeholder="Any remarks"></textarea>
               </div>
             </div>
 
@@ -223,11 +441,78 @@ import { environment } from '../../../environments/environment';
 
             <nz-divider></nz-divider>
 
+            <!-- Experience & References -->
+            <h3 class="section-title">Past Experience</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Past Experience</label>
+                <nz-select [(ngModel)]="formData.pastExperience" name="pastExperience" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of yesNoOptions" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Organization Name</label>
+                <input nz-input [(ngModel)]="formData.organizationName" name="organizationName" placeholder="Previous organization" />
+              </div>
+              <div class="form-group">
+                <label>Employment Period</label>
+                <input nz-input [(ngModel)]="formData.periodOfEmployment" name="periodOfEmployment" placeholder="e.g. 2019-2023" />
+              </div>
+            </div>
+            <h3 class="section-title" style="margin-top:16px;">Reference 1</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Name</label>
+                <input nz-input [(ngModel)]="formData.ref1Name" name="ref1Name" placeholder="Reference name" />
+              </div>
+              <div class="form-group">
+                <label>Relationship</label>
+                <nz-select [(ngModel)]="formData.ref1Relationship" name="ref1Relationship" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of relationships" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Mobile</label>
+                <input nz-input [(ngModel)]="formData.ref1Mobile" name="ref1Mobile" placeholder="Phone" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Address</label>
+                <textarea nz-input [(ngModel)]="formData.ref1Address" name="ref1Address" rows="2" placeholder="Reference address"></textarea>
+              </div>
+            </div>
+            <h3 class="section-title" style="margin-top:16px;">Reference 2</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Name</label>
+                <input nz-input [(ngModel)]="formData.ref2Name" name="ref2Name" placeholder="Reference name" />
+              </div>
+              <div class="form-group">
+                <label>Relationship</label>
+                <nz-select [(ngModel)]="formData.ref2Relationship" name="ref2Relationship" nzPlaceHolder="Select" style="width:100%">
+                  <nz-option *ngFor="let opt of relationships" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group">
+                <label>Mobile</label>
+                <input nz-input [(ngModel)]="formData.ref2Mobile" name="ref2Mobile" placeholder="Phone" maxlength="10" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>Address</label>
+                <textarea nz-input [(ngModel)]="formData.ref2Address" name="ref2Address" rows="2" placeholder="Reference address"></textarea>
+              </div>
+            </div>
+
+            <nz-divider></nz-divider>
+
             <!-- Documents -->
             <h3 class="section-title">Documents</h3>
             <div class="form-row">
               <div class="form-group">
-                <label>Photo</label>
+                <label>Photo <span class="required">*</span></label>
                 <input type="file" accept="image/jpeg,image/png" (change)="onFileChange($event, 'photo')" />
                 <span *ngIf="selectedPhoto" class="file-name">{{ selectedPhoto.name }}</span>
               </div>
@@ -242,10 +527,29 @@ import { environment } from '../../../environments/environment';
                 <span *ngIf="selectedPanDoc" class="file-name">{{ selectedPanDoc.name }}</span>
               </div>
             </div>
+            <div class="form-row" style="margin-top:8px;">
+              <div class="form-group">
+                <label>Education Documents</label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple (change)="onMultiFileChange($event, 'educationDocs')" />
+                <div *ngFor="let f of selectedEducationDocs; let i = index" class="file-name">
+                  {{ f.name }} <button nz-button nzType="text" nzDanger nzSize="small" (click)="removeMultiFile(i, 'educationDocs')"><i nz-icon nzType="close"></i></button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Personal Documents</label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple (change)="onMultiFileChange($event, 'personalDocs')" />
+                <div *ngFor="let f of selectedPersonalDocs; let i = index" class="file-name">
+                  {{ f.name }} <button nz-button nzType="text" nzDanger nzSize="small" (click)="removeMultiFile(i, 'personalDocs')"><i nz-icon nzType="close"></i></button>
+                </div>
+              </div>
+            </div>
 
-            <div class="form-actions">
+            <div class="form-actions" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
               <button nz-button nzType="primary" nzSize="large" [nzLoading]="isSaving" [disabled]="!regForm.valid">
                 <i nz-icon nzType="check"></i> Submit Registration
+              </button>
+              <button nz-button nzType="default" nzSize="large" (click)="openJoiningLetter()">
+                <i nz-icon nzType="file-text"></i> View Sample Joining Letter
               </button>
             </div>
           </form>
@@ -253,6 +557,68 @@ import { environment } from '../../../environments/environment';
           <div *ngIf="loading" class="loading-section">
             <i nz-icon nzType="loading" style="font-size:32px;"></i>
             <p>Loading form data...</p>
+          </div>
+
+          <!-- Joining Letter Preview Modal -->
+          <div *ngIf="showJoiningLetter" class="modal-overlay" (click)="closeJoiningLetter()">
+            <div class="joining-letter-modal" (click)="$event.stopPropagation()">
+              <div class="modal-header">
+                <h2>Sample Joining Letter</h2>
+                <button nz-button nzType="text" (click)="closeJoiningLetter()"><i nz-icon nzType="close"></i></button>
+              </div>
+              <div class="joining-letter-content">
+                <div class="letter-header">
+                  <h2>EMPLOYMENT CONFIRMATION / JOINING LETTER</h2>
+                  <p><strong>Date:</strong> {{ formData.doj || '__/__/____' }}</p>
+                </div>
+                <div class="letter-body">
+                  <p>To,</p>
+                  <p><strong>{{ formData.prefix || '[Prefix]' }} {{ formData.firstName || '[First Name]' }} {{ formData.middleName || '' }} {{ formData.surname || '[Surname]' }}</strong></p>
+                  <p>{{ formData.presentAddress || '[Present Address]' }}</p>
+                  <br/>
+                  <p>Sub: <strong>Joining Report / Employment Confirmation</strong></p>
+                  <br/>
+                  <p>Dear {{ formData.firstName || 'Candidate' }},</p>
+                  <br/>
+                  <p>We are pleased to confirm your employment with our organization. Based on your application and the subsequent interview, you are hereby appointed to the position of <strong>{{ formData.designation || '[Designation]' }}</strong>.</p>
+                  <br/>
+                  <p>Your date of joining is <strong>{{ formData.doj || '[Date of Joining]' }}</strong>.</p>
+                  <br/>
+                  <p>Please find below your employee details for reference:</p>
+                  <table class="letter-table">
+                    <tr><td width="180"><strong>Employee Code</strong></td><td>: {{ formData.employeeCode || 'Will be generated' }}</td></tr>
+                    <tr><td><strong>Name</strong></td><td>: {{ formData.prefix || '' }} {{ formData.firstName || '' }} {{ formData.surname || '' }}</td></tr>
+                    <tr><td><strong>Designation</strong></td><td>: {{ formData.designation || '-' }}</td></tr>
+                    <tr><td><strong>Department</strong></td><td>: As assigned</td></tr>
+                    <tr><td><strong>Date of Joining</strong></td><td>: {{ formData.doj || '-' }}</td></tr>
+                    <tr><td><strong>Qualification</strong></td><td>: {{ formData.highestQualification || '-' }}</td></tr>
+                    <tr><td><strong>Mobile</strong></td><td>: {{ formData.mobile || '-' }}</td></tr>
+                    <tr><td><strong>Email</strong></td><td>: {{ formData.email || '-' }}</td></tr>
+                  </table>
+                  <br/>
+                  <p>You are requested to report to the HR department on your date of joining with the following documents:</p>
+                  <ul>
+                    <li>Aadhar Card (Original + 2 Copies)</li>
+                    <li>PAN Card (Original + 1 Copy)</li>
+                    <li>Educational Certificates (Original for verification)</li>
+                    <li>Previous Organization Experience Letters</li>
+                    <li>Passport-size Photographs (2 Nos)</li>
+                    <li>Bank Account Details (Cancelled Cheque)</li>
+                  </ul>
+                  <br/>
+                  <p>We look forward to having you on board and wish you a successful career with us.</p>
+                  <br/>
+                  <p>Yours faithfully,</p>
+                  <br/><br/>
+                  <p><strong>For {{ formData.organizationName || 'Company Name' }}</strong></p>
+                  <br/>
+                  <p>(Authorized Signatory)</p>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button nz-button nzType="primary" (click)="closeJoiningLetter()">Close</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -362,6 +728,35 @@ import { environment } from '../../../environments/environment';
     .reg-footer a { color: #1f3d6e; font-weight: 600; }
     .lang-section { padding: 8px 0; }
     nz-table { margin-top: 8px; }
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center;
+      justify-content: center; z-index: 1000; padding: 20px;
+    }
+    .joining-letter-modal {
+      background: #fff; border-radius: 12px; max-width: 800px;
+      width: 100%; max-height: 90vh; display: flex; flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 24px; border-bottom: 2px solid #1f3d6e;
+    }
+    .modal-header h2 { margin: 0; font-size: 18px; color: #1f3d6e; }
+    .joining-letter-content {
+      padding: 24px; overflow-y: auto; font-size: 14px; line-height: 1.6;
+    }
+    .joining-letter-content .letter-header { text-align: center; margin-bottom: 20px; }
+    .joining-letter-content .letter-header h2 {
+      font-size: 18px; color: #1f3d6e; margin: 0 0 8px;
+    }
+    .letter-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+    .letter-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+    .modal-footer {
+      padding: 12px 24px; border-top: 1px solid #f0f0f0;
+      text-align: center;
+    }
+    .form-actions button[nz-button] { min-width: 200px; }
   `]
 })
 export class PublicRegistrationComponent implements OnInit {
@@ -369,6 +764,8 @@ export class PublicRegistrationComponent implements OnInit {
   selectedPhoto: File | null = null;
   selectedAadharDoc: File | null = null;
   selectedPanDoc: File | null = null;
+  selectedEducationDocs: File[] = [];
+  selectedPersonalDocs: File[] = [];
   isSaving = false;
   submitted = false;
   registrationCode = '';
@@ -380,9 +777,19 @@ export class PublicRegistrationComponent implements OnInit {
   qualifications: any[] = [];
   designations: any[] = [];
   banks: any[] = [];
+  religions: any[] = [];
+  socialCategories: any[] = [];
+  socialSubcategories: any[] = [];
+  bloodGroups: any[] = [];
+  fMhOptions: any[] = [];
+  occupationKins: any[] = [];
+  occupationSubs: any[] = [];
+  yesNoOptions: any[] = [];
+  relationships: any[] = [];
   languageOptions: any[] = [];
   selectedLanguage: string | null = null;
   languages: { language: string; canRead: boolean; canWrite: boolean; canSpeak: boolean }[] = [];
+  showJoiningLetter = false;
 
   get availableLanguageOptions(): any[] {
     const added = new Set(this.languages.map(l => l.language));
@@ -419,6 +826,15 @@ export class PublicRegistrationComponent implements OnInit {
       { name: 'QUALIFICATION', target: 'qualifications' },
       { name: 'DESIGNATION', target: 'designations' },
       { name: 'BANK_NAME', target: 'banks' },
+      { name: 'RELIGION', target: 'religions' },
+      { name: 'SOCIAL_CATEGORY', target: 'socialCategories' },
+      { name: 'SOCIAL_SUBCATEGORY', target: 'socialSubcategories' },
+      { name: 'BLOOD_GROUP', target: 'bloodGroups' },
+      { name: 'F_M_H', target: 'fMhOptions' },
+      { name: 'OCCUPATION_KIN', target: 'occupationKins' },
+      { name: 'OCCUPATION_SUB', target: 'occupationSubs' },
+      { name: 'YES_NO', target: 'yesNoOptions' },
+      { name: 'RELATIONSHIP', target: 'relationships' },
       { name: 'LANGUAGE', target: 'languageOptions' }
     ];
 
@@ -448,6 +864,32 @@ export class PublicRegistrationComponent implements OnInit {
       else if (type === 'aadharDoc') this.selectedAadharDoc = file;
       else if (type === 'panDoc') this.selectedPanDoc = file;
     }
+  }
+
+  onMultiFileChange(event: any, type: string) {
+    const files = Array.from(event.target.files || []);
+    if (type === 'educationDocs') {
+      this.selectedEducationDocs = [...this.selectedEducationDocs, ...files] as File[];
+    } else if (type === 'personalDocs') {
+      this.selectedPersonalDocs = [...this.selectedPersonalDocs, ...files] as File[];
+    }
+    event.target.value = '';
+  }
+
+  removeMultiFile(index: number, type: string) {
+    if (type === 'educationDocs') {
+      this.selectedEducationDocs.splice(index, 1);
+    } else if (type === 'personalDocs') {
+      this.selectedPersonalDocs.splice(index, 1);
+    }
+  }
+
+  openJoiningLetter() {
+    this.showJoiningLetter = true;
+  }
+
+  closeJoiningLetter() {
+    this.showJoiningLetter = false;
   }
 
   onSubmit() {
@@ -480,6 +922,46 @@ export class PublicRegistrationComponent implements OnInit {
     fd.append('branch', this.formData.branch || '');
     fd.append('fatherName', this.formData.fatherName || '');
     fd.append('fatherPhone', this.formData.fatherPhone || '');
+    fd.append('motherName', this.formData.motherName || '');
+    fd.append('motherPhone', this.formData.motherPhone || '');
+    fd.append('spouseName', this.formData.spouseName || '');
+    fd.append('spousePhone', this.formData.spousePhone || '');
+    fd.append('closeRelativeName', this.formData.closeRelativeName || '');
+    fd.append('closeRelativeMobile', this.formData.closeRelativeMobile || '');
+    fd.append('rationCard', this.formData.rationCard || '');
+    fd.append('occupationKinSub', this.formData.occupationKinSub || '');
+    fd.append('religion', this.formData.religion || '');
+    fd.append('socialCategory', this.formData.socialCategory || '');
+    fd.append('socialSubcategory', this.formData.socialSubcategory || '');
+    fd.append('levelOfEducation', this.formData.levelOfEducation || '');
+    fd.append('yearOfPassing', this.formData.yearOfPassing || '');
+    fd.append('percentageMarks', this.formData.percentageMarks || '');
+    fd.append('hasTv', this.formData.hasTv || '');
+    fd.append('hasFridge', this.formData.hasFridge || '');
+    fd.append('hasLaptop', this.formData.hasLaptop || '');
+    fd.append('hasWifi', this.formData.hasWifi || '');
+    fd.append('has2wheeler', this.formData.has2wheeler || '');
+    fd.append('has4wheeler', this.formData.has4wheeler || '');
+    fd.append('bloodGroup', this.formData.bloodGroup || '');
+    fd.append('sscStatus', this.formData.sscStatus || '');
+    fd.append('intermediateStatus', this.formData.intermediateStatus || '');
+    fd.append('bachelorsDegree', this.formData.bachelorsDegree || '');
+    fd.append('mastersDegree', this.formData.mastersDegree || '');
+    fd.append('aadhaarVerification', this.formData.aadhaarVerification || '');
+    fd.append('panVerification', this.formData.panVerification || '');
+    fd.append('osv', this.formData.osv || '');
+    fd.append('remarks', this.formData.remarks || '');
+    fd.append('pastExperience', this.formData.pastExperience || '');
+    fd.append('organizationName', this.formData.organizationName || '');
+    fd.append('periodOfEmployment', this.formData.periodOfEmployment || '');
+    fd.append('ref1Name', this.formData.ref1Name || '');
+    fd.append('ref1Relationship', this.formData.ref1Relationship || '');
+    fd.append('ref1Address', this.formData.ref1Address || '');
+    fd.append('ref1Mobile', this.formData.ref1Mobile || '');
+    fd.append('ref2Name', this.formData.ref2Name || '');
+    fd.append('ref2Relationship', this.formData.ref2Relationship || '');
+    fd.append('ref2Address', this.formData.ref2Address || '');
+    fd.append('ref2Mobile', this.formData.ref2Mobile || '');
     if (this.languages.length > 0) {
       fd.append('languages', JSON.stringify(this.languages));
     }

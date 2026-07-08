@@ -39,6 +39,46 @@ public class PendingRegistrationDTO {
     private String branch;
     private String fatherName;
     private String fatherPhone;
+    private String motherName;
+    private String motherPhone;
+    private String spouseName;
+    private String spousePhone;
+    private String closeRelativeName;
+    private String closeRelativeMobile;
+    private String rationCard;
+    private String occupationKinSub;
+    private String religion;
+    private String socialCategory;
+    private String socialSubcategory;
+    private String levelOfEducation;
+    private String yearOfPassing;
+    private String percentageMarks;
+    private String hasTv;
+    private String hasFridge;
+    private String hasLaptop;
+    private String hasWifi;
+    private String has2wheeler;
+    private String has4wheeler;
+    private String bloodGroup;
+    private String sscStatus;
+    private String intermediateStatus;
+    private String bachelorsDegree;
+    private String mastersDegree;
+    private String aadhaarVerification;
+    private String panVerification;
+    private String osv;
+    private String remarks;
+    private String pastExperience;
+    private String organizationName;
+    private String periodOfEmployment;
+    private String ref1Name;
+    private String ref1Relationship;
+    private String ref1Address;
+    private String ref1Mobile;
+    private String ref2Name;
+    private String ref2Relationship;
+    private String ref2Address;
+    private String ref2Mobile;
     private String photoUrl;
     private String aadharDocUrl;
     private String panDocUrl;
@@ -75,6 +115,46 @@ public class PendingRegistrationDTO {
             .branch(entity.getBranch())
             .fatherName(entity.getFatherName())
             .fatherPhone(entity.getFatherPhone())
+            .motherName(entity.getMotherName())
+            .motherPhone(entity.getMotherPhone())
+            .spouseName(entity.getSpouseName())
+            .spousePhone(entity.getSpousePhone())
+            .closeRelativeName(entity.getCloseRelativeName())
+            .closeRelativeMobile(entity.getCloseRelativeMobile())
+            .rationCard(entity.getRationCard())
+            .occupationKinSub(entity.getOccupationKinSub())
+            .religion(entity.getReligion())
+            .socialCategory(entity.getSocialCategory())
+            .socialSubcategory(entity.getSocialSubcategory())
+            .levelOfEducation(entity.getLevelOfEducation())
+            .yearOfPassing(entity.getYearOfPassing())
+            .percentageMarks(entity.getPercentageMarks())
+            .hasTv(entity.getHasTv())
+            .hasFridge(entity.getHasFridge())
+            .hasLaptop(entity.getHasLaptop())
+            .hasWifi(entity.getHasWifi())
+            .has2wheeler(entity.getHas2wheeler())
+            .has4wheeler(entity.getHas4wheeler())
+            .bloodGroup(entity.getBloodGroup())
+            .sscStatus(entity.getSscStatus())
+            .intermediateStatus(entity.getIntermediateStatus())
+            .bachelorsDegree(entity.getBachelorsDegree())
+            .mastersDegree(entity.getMastersDegree())
+            .aadhaarVerification(entity.getAadhaarVerification())
+            .panVerification(entity.getPanVerification())
+            .osv(entity.getOsv())
+            .remarks(entity.getRemarks())
+            .pastExperience(entity.getPastExperience())
+            .organizationName(entity.getOrganizationName())
+            .periodOfEmployment(entity.getPeriodOfEmployment())
+            .ref1Name(entity.getRef1Name())
+            .ref1Relationship(entity.getRef1Relationship())
+            .ref1Address(entity.getRef1Address())
+            .ref1Mobile(entity.getRef1Mobile())
+            .ref2Name(entity.getRef2Name())
+            .ref2Relationship(entity.getRef2Relationship())
+            .ref2Address(entity.getRef2Address())
+            .ref2Mobile(entity.getRef2Mobile())
             .photoUrl(entity.getPhotoPath())
             .aadharDocUrl(entity.getAadharDocPath())
             .panDocUrl(entity.getPanDocPath())

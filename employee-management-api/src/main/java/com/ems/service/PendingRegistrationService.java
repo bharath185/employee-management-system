@@ -111,6 +111,46 @@ public class PendingRegistrationService {
         entity.setBranch(dto.getBranch());
         entity.setFatherName(dto.getFatherName());
         entity.setFatherPhone(dto.getFatherPhone());
+        entity.setMotherName(dto.getMotherName());
+        entity.setMotherPhone(dto.getMotherPhone());
+        entity.setSpouseName(dto.getSpouseName());
+        entity.setSpousePhone(dto.getSpousePhone());
+        entity.setCloseRelativeName(dto.getCloseRelativeName());
+        entity.setCloseRelativeMobile(dto.getCloseRelativeMobile());
+        entity.setRationCard(dto.getRationCard());
+        entity.setOccupationKinSub(dto.getOccupationKinSub());
+        entity.setReligion(dto.getReligion());
+        entity.setSocialCategory(dto.getSocialCategory());
+        entity.setSocialSubcategory(dto.getSocialSubcategory());
+        entity.setLevelOfEducation(dto.getLevelOfEducation());
+        entity.setYearOfPassing(dto.getYearOfPassing());
+        entity.setPercentageMarks(dto.getPercentageMarks());
+        entity.setHasTv(dto.getHasTv());
+        entity.setHasFridge(dto.getHasFridge());
+        entity.setHasLaptop(dto.getHasLaptop());
+        entity.setHasWifi(dto.getHasWifi());
+        entity.setHas2wheeler(dto.getHas2wheeler());
+        entity.setHas4wheeler(dto.getHas4wheeler());
+        entity.setBloodGroup(dto.getBloodGroup());
+        entity.setSscStatus(dto.getSscStatus());
+        entity.setIntermediateStatus(dto.getIntermediateStatus());
+        entity.setBachelorsDegree(dto.getBachelorsDegree());
+        entity.setMastersDegree(dto.getMastersDegree());
+        entity.setAadhaarVerification(dto.getAadhaarVerification());
+        entity.setPanVerification(dto.getPanVerification());
+        entity.setOsv(dto.getOsv());
+        entity.setRemarks(dto.getRemarks());
+        entity.setPastExperience(dto.getPastExperience());
+        entity.setOrganizationName(dto.getOrganizationName());
+        entity.setPeriodOfEmployment(dto.getPeriodOfEmployment());
+        entity.setRef1Name(dto.getRef1Name());
+        entity.setRef1Relationship(dto.getRef1Relationship());
+        entity.setRef1Address(dto.getRef1Address());
+        entity.setRef1Mobile(dto.getRef1Mobile());
+        entity.setRef2Name(dto.getRef2Name());
+        entity.setRef2Relationship(dto.getRef2Relationship());
+        entity.setRef2Address(dto.getRef2Address());
+        entity.setRef2Mobile(dto.getRef2Mobile());
         entity.setLanguages(dto.getLanguages());
         entity.setStatus(RegistrationStatus.PENDING);
 
@@ -191,6 +231,46 @@ public class PendingRegistrationService {
             .branch(pending.getBranch())
             .fatherName(pending.getFatherName())
             .fatherPhone(pending.getFatherPhone())
+            .motherName(pending.getMotherName())
+            .motherPhone(pending.getMotherPhone())
+            .spouseName(pending.getSpouseName())
+            .spousePhone(pending.getSpousePhone())
+            .closeRelativeName(pending.getCloseRelativeName())
+            .closeRelativeMobile(pending.getCloseRelativeMobile())
+            .rationCard(pending.getRationCard())
+            .occupationKinSub(pending.getOccupationKinSub())
+            .religion(pending.getReligion())
+            .socialCategory(pending.getSocialCategory())
+            .socialSubcategory(pending.getSocialSubcategory())
+            .levelOfEducation(pending.getLevelOfEducation())
+            .yearOfPassing(pending.getYearOfPassing() != null && !pending.getYearOfPassing().isEmpty() ? Integer.valueOf(pending.getYearOfPassing()) : null)
+            .percentageMarks(pending.getPercentageMarks() != null && !pending.getPercentageMarks().isEmpty() ? new java.math.BigDecimal(pending.getPercentageMarks()) : null)
+            .hasTv(pending.getHasTv())
+            .hasFridge(pending.getHasFridge())
+            .hasLaptop(pending.getHasLaptop())
+            .hasWifi(pending.getHasWifi())
+            .has2wheeler(pending.getHas2wheeler())
+            .has4wheeler(pending.getHas4wheeler())
+            .bloodGroup(pending.getBloodGroup())
+            .sscStatus(pending.getSscStatus())
+            .intermediateStatus(pending.getIntermediateStatus())
+            .bachelorsDegree(pending.getBachelorsDegree())
+            .mastersDegree(pending.getMastersDegree())
+            .aadhaarVerification(pending.getAadhaarVerification())
+            .panVerification(pending.getPanVerification())
+            .osv(pending.getOsv())
+            .remarks(pending.getRemarks())
+            .pastExperience(pending.getPastExperience())
+            .organizationName(pending.getOrganizationName())
+            .periodOfEmployment(pending.getPeriodOfEmployment())
+            .ref1Name(pending.getRef1Name())
+            .ref1Relationship(pending.getRef1Relationship())
+            .ref1Address(pending.getRef1Address())
+            .ref1Mobile(pending.getRef1Mobile())
+            .ref2Name(pending.getRef2Name())
+            .ref2Relationship(pending.getRef2Relationship())
+            .ref2Address(pending.getRef2Address())
+            .ref2Mobile(pending.getRef2Mobile())
             .employeeStatus("LIVE")
             .build();
 
