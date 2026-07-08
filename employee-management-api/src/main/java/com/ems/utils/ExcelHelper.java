@@ -332,7 +332,7 @@ public class ExcelHelper {
             sampleRow.createCell(46).setCellValue("HYDERABAD");
             sampleRow.createCell(47).setCellValue(first.apply("EMPLOYEE_STATUS", "LIVE"));
             sampleRow.createCell(48).setCellValue(first.apply("PROCESS", "PROCESS_A"));
-            sampleRow.createCell(49).setCellValue("ESIC1234567");
+            sampleRow.createCell(49).setCellValue("ESIC123456");
             sampleRow.createCell(50).setCellValue(yes.apply("YES_NO"));
             sampleRow.createCell(51).setCellValue("UAN123456789");
             sampleRow.createCell(52).setCellValue("PF1234567");
