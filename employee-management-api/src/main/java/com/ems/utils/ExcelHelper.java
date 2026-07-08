@@ -287,7 +287,7 @@ public class ExcelHelper {
             sampleRow.createCell(9).setCellValue("MANAGER");
             sampleRow.createCell(10).setCellValue("YES");
             sampleRow.createCell(11).setCellValue("01/01/2024");
-            sampleRow.createCell(12).setCellValue("POST_GRADUATE");
+            sampleRow.createCell(12).setCellValue("MBA");
             sampleRow.createCell(13).setCellValue("MASTERS");
             sampleRow.createCell(14).setCellValue("2015");
             sampleRow.createCell(15).setCellValue("75");
@@ -298,9 +298,9 @@ public class ExcelHelper {
             sampleRow.createCell(20).setCellValue("9876543210");
             sampleRow.createCell(21).setCellValue("Jane Doe");
             sampleRow.createCell(22).setCellValue("9876543210");
-            sampleRow.createCell(23).setCellValue("HINDUISM");
-            sampleRow.createCell(24).setCellValue("GENERAL");
-            sampleRow.createCell(25).setCellValue("NONE");
+            sampleRow.createCell(23).setCellValue("HINDU");
+            sampleRow.createCell(24).setCellValue("OC");
+            sampleRow.createCell(25).setCellValue("OC");
             sampleRow.createCell(26).setCellValue("YES");
             sampleRow.createCell(27).setCellValue("YES");
             sampleRow.createCell(28).setCellValue("YES");
@@ -340,11 +340,11 @@ public class ExcelHelper {
             sampleRow.createCell(62).setCellValue("Tech Corp Pvt Ltd");
             sampleRow.createCell(63).setCellValue("2019-2023");
             sampleRow.createCell(64).setCellValue("David Smith");
-            sampleRow.createCell(65).setCellValue("COLLEAGUE");
+            sampleRow.createCell(65).setCellValue("FRIEND");
             sampleRow.createCell(66).setCellValue("789 Office Lane, Hyderabad");
             sampleRow.createCell(67).setCellValue("9876543214");
             sampleRow.createCell(68).setCellValue("Emily Clark");
-            sampleRow.createCell(69).setCellValue("MANAGER");
+            sampleRow.createCell(69).setCellValue("FAMILY_FRIEND");
             sampleRow.createCell(70).setCellValue("321 Corporate Ave, Hyderabad");
             sampleRow.createCell(71).setCellValue("9876543215");
             sampleRow.createCell(72).setCellValue("MANAGER");
