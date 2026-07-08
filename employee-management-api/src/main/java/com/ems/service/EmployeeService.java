@@ -276,8 +276,10 @@ public class EmployeeService {
     private Map<String, List<String>> loadMasterDataOptionsForExcel() {
         List<String> categories = List.of(
             "PREFIX", "GENDER", "MARITAL_STATUS", "F_M_H", "OCCUPATION_KIN",
-            "RELIGION", "SOCIAL_CATEGORY", "SOCIAL_SUBCATEGORY", "BLOOD_GROUP",
-            "EMPLOYEE_STATUS", "DESIGNATION", "EXIT_TYPE", "YES_NO", "LANGUAGE"
+            "OCCUPATION_SUB", "RELIGION", "SOCIAL_CATEGORY", "SOCIAL_SUBCATEGORY",
+            "BLOOD_GROUP", "EMPLOYEE_STATUS", "DESIGNATION", "EXIT_TYPE",
+            "YES_NO", "LANGUAGE", "QUALIFICATION", "EDUCATION_LEVEL",
+            "PROCESS", "RELATIONSHIP", "BANK_NAME"
         );
         Map<String, List<String>> options = new HashMap<>();
         for (String category : categories) {
