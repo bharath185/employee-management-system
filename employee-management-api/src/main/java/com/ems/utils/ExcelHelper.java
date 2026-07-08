@@ -283,7 +283,7 @@ public class ExcelHelper {
             // Helper: get nth (0-based) code or fallback
             java.util.function.Function<String, String> yes = cat -> first.apply(cat, "YES");
 
-            sampleRow.createCell(0).setCellValue("PARI001");
+            sampleRow.createCell(0).setCellValue("");
             sampleRow.createCell(1).setCellValue(first.apply("PREFIX", "MR"));
             sampleRow.createCell(2).setCellValue("John");
             sampleRow.createCell(3).setCellValue("Doe");
