@@ -79,15 +79,15 @@ public class ExcelHelper {
         COLUMN_MASTER_CATEGORY.put(25, "SOCIAL_SUBCATEGORY");
         COLUMN_FIELD_NAME.put(32, "Blood Group");
         COLUMN_MASTER_CATEGORY.put(32, "BLOOD_GROUP");
-        COLUMN_FIELD_NAME.put(46, "Employee Status");
-        COLUMN_MASTER_CATEGORY.put(46, "EMPLOYEE_STATUS");
-        COLUMN_FIELD_NAME.put(74, "Designation");
-        COLUMN_MASTER_CATEGORY.put(74, "DESIGNATION");
-        COLUMN_FIELD_NAME.put(76, "Exit Type");
-        COLUMN_MASTER_CATEGORY.put(76, "EXIT_TYPE");
+        COLUMN_FIELD_NAME.put(47, "Employee Status");
+        COLUMN_MASTER_CATEGORY.put(47, "EMPLOYEE_STATUS");
+        COLUMN_FIELD_NAME.put(72, "Designation");
+        COLUMN_MASTER_CATEGORY.put(72, "DESIGNATION");
+        COLUMN_FIELD_NAME.put(75, "Exit Type");
+        COLUMN_MASTER_CATEGORY.put(75, "EXIT_TYPE");
 
         // Yes/No fields
-        int[] yesNoColumns = {26, 27, 28, 29, 30, 31, 35, 36, 37, 38, 39, 40, 41, 49, 52, 57};
+        int[] yesNoColumns = {26, 27, 28, 29, 30, 31, 35, 36, 37, 38, 39, 40, 41, 50, 53, 61};
         String[] yesNoNames = {"TV", "Fridge", "Laptop", "WiFi", "2 Wheeler", "4 Wheeler",
                 "SSC Status", "Intermediate Status", "Bachelor Degree", "Master Degree",
                 "Aadhaar Verification", "PAN Verification", "OSV", "Aadhar Seeding",
