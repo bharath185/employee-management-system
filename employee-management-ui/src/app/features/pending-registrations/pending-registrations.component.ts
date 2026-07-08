@@ -121,58 +121,186 @@ import { environment } from '../../../environments/environment';
     </div>
 
     <nz-modal [(nzVisible)]="isViewModalVisible" [nzTitle]="'Registration: ' + selectedReg?.registrationCode"
-      (nzOnCancel)="isViewModalVisible = false" nzWidth="600px" [nzFooter]="null">
+      (nzOnCancel)="isViewModalVisible = false" nzWidth="800px" [nzFooter]="null">
       <ng-template nzModalContent>
-        <nz-descriptions [nzColumn]="2" nzSize="small" *ngIf="selectedReg">
-          <nz-descriptions-item nzTitle="Prefix" [nzSpan]="1">{{ selectedReg.prefix || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Name" [nzSpan]="1">{{ selectedReg.firstName }} {{ selectedReg.middleName ? selectedReg.middleName + ' ' : '' }}{{ selectedReg.surname }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Mobile" [nzSpan]="1">{{ selectedReg.mobile }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Email" [nzSpan]="1">{{ selectedReg.email || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Gender" [nzSpan]="1">{{ selectedReg.gender || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="DOB" [nzSpan]="1">{{ selectedReg.dob || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Marital Status" [nzSpan]="1">{{ selectedReg.maritalStatus || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="DOJ" [nzSpan]="1">{{ selectedReg.doj || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Aadhar" [nzSpan]="1">{{ selectedReg.aadharNumber || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="PAN" [nzSpan]="1">{{ selectedReg.panNumber || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Qualification" [nzSpan]="1">{{ selectedReg.highestQualification || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Designation" [nzSpan]="1">{{ selectedReg.designation || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Bank" [nzSpan]="1">{{ selectedReg.bankName || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Account" [nzSpan]="1">{{ selectedReg.accountNumber || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="IFSC" [nzSpan]="1">{{ selectedReg.ifscCode || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Branch" [nzSpan]="1">{{ selectedReg.branch || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Father's Name" [nzSpan]="1">{{ selectedReg.fatherName || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Father's Phone" [nzSpan]="1">{{ selectedReg.fatherPhone || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Languages" [nzSpan]="2">
-            <ng-container *ngIf="getParsedLanguages(selectedReg) as langList">
-              <div *ngIf="langList.length === 0">-</div>
-              <div *ngFor="let lang of langList" style="margin-bottom:2px">
-                <strong>{{ lang.language }}</strong>:
-                <span *ngIf="lang.canRead" style="color:#10b981">Read </span>
-                <span *ngIf="lang.canWrite" style="color:#10b981">Write </span>
-                <span *ngIf="lang.canSpeak" style="color:#10b981">Speak</span>
-                <span *ngIf="!lang.canRead && !lang.canWrite && !lang.canSpeak" style="color:#9ca3af">Not specified</span>
-              </div>
-            </ng-container>
-          </nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Present Address" [nzSpan]="2">{{ selectedReg.presentAddress || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Permanent Address" [nzSpan]="2">{{ selectedReg.permanentAddress || '-' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Status" [nzSpan]="2">
-            <nz-tag [nzColor]="selectedReg.status === 'PENDING' ? 'processing' : selectedReg.status === 'APPROVED' ? 'success' : 'error'">
-              {{ selectedReg.status }}
-            </nz-tag>
-          </nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Submitted" [nzSpan]="2">{{ selectedReg.createdAt | date:'medium' }}</nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Rejection Reason" *ngIf="selectedReg.rejectionReason" [nzSpan]="2">
-            {{ selectedReg.rejectionReason }}
-          </nz-descriptions-item>
-        </nz-descriptions>
-        <div *ngIf="selectedReg?.status === 'PENDING'" class="detail-actions">
-          <button nz-button nzType="primary" (click)="showApproveModal(selectedReg!)">
-            <i nz-icon nzType="check"></i> Approve
-          </button>
-          <button nz-button nzType="default" nzDanger (click)="showRejectModal(selectedReg!)" style="margin-left:8px">
-            <i nz-icon nzType="close"></i> Reject
-          </button>
+        <div *ngIf="selectedReg" class="jr-report">
+          <div class="jr-header">
+            <div class="jr-brand">PARIKAR</div>
+            <div class="jr-tagline">Transforming Business Support Services</div>
+          </div>
+          <h1 class="jr-title">New Employee Joining Report</h1>
+          <table class="jr-table">
+            <tbody>
+              <tr>
+                <td class="jr-label">Employee Code</td>
+                <td class="jr-value">{{ selectedReg.registrationCode }}</td>
+                <td class="jr-label">Date of Joining :</td>
+                <td class="jr-value">{{ selectedReg.doj || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Employee Name with Surname</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.prefix || '' }} {{ selectedReg.firstName || '' }} {{ selectedReg.middleName || '' }} {{ selectedReg.surname || '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Date of Birth</td>
+                <td class="jr-value">{{ selectedReg.dob || '-' }}</td>
+                <td class="jr-label">Gender</td>
+                <td class="jr-value">{{ selectedReg.gender || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Blood Group</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.bloodGroup || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Father's Name</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.fatherName || '-' }}</td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">Address &amp; Contact Details</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Present Address</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.presentAddress || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Permanent Address</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.permanentAddress || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Contact No</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.mobile || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Email ID</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.email || '-' }}</td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">Identity Documents</td>
+              </tr>
+              <tr>
+                <td class="jr-label">PAN</td>
+                <td class="jr-value">{{ selectedReg.panNumber || '-' }}</td>
+                <td class="jr-label">PAN Card</td>
+                <td class="jr-value">
+                  <button *ngIf="selectedReg.panDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.panDocUrl)" style="padding:0">View</button>
+                  <span *ngIf="!selectedReg.panDocUrl">-</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="jr-label">AADHAR No.</td>
+                <td class="jr-value">{{ selectedReg.aadharNumber || '-' }}</td>
+                <td class="jr-label">Aadhar Card</td>
+                <td class="jr-value">
+                  <button *ngIf="selectedReg.aadharDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.aadharDocUrl)" style="padding:0">View</button>
+                  <span *ngIf="!selectedReg.aadharDocUrl">-</span>
+                </td>
+              </tr>
+              <tr>
+                <td class="jr-label">Photo</td>
+                <td class="jr-value" colspan="3">
+                  <button *ngIf="selectedReg.photoUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.photoUrl)" style="padding:0">View Photo</button>
+                  <span *ngIf="!selectedReg.photoUrl">-</span>
+                </td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">Family Details</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Father Name &amp; Phone</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.fatherName || '-' }} {{ selectedReg.fatherPhone ? '- ' + selectedReg.fatherPhone : '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Mother Name &amp; Phone</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.motherName || '-' }} {{ selectedReg.motherPhone ? '- ' + selectedReg.motherPhone : '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Spouse Name &amp; Phone</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.spouseName || '-' }} {{ selectedReg.spousePhone ? '- ' + selectedReg.spousePhone : '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Marital Status</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.maritalStatus || '-' }}</td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">Education &amp; Experience</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Qualification / Year / %</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.highestQualification || '-' }}{{ selectedReg.yearOfPassing ? ' | ' + selectedReg.yearOfPassing : '' }}{{ selectedReg.percentageMarks ? ' | ' + selectedReg.percentageMarks + '%' : '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Past Organization</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.organizationName || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Period of Employment</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.periodOfEmployment || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Designation</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.designation || '-' }}</td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">Bank Account Details</td>
+              </tr>
+              <tr>
+                <td class="jr-label">Account No.</td>
+                <td class="jr-value">{{ selectedReg.accountNumber || '-' }}</td>
+                <td class="jr-label">Bank &amp; Branch</td>
+                <td class="jr-value">{{ selectedReg.bankName || '-' }}{{ selectedReg.branch ? ', ' + selectedReg.branch : '' }}</td>
+              </tr>
+              <tr>
+                <td class="jr-label">IFSC Code</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.ifscCode || '-' }}</td>
+              </tr>
+              <tr class="jr-section">
+                <td colspan="4">References</td>
+              </tr>
+              <tr>
+                <td class="jr-label" style="vertical-align:top;">Reference 1</td>
+                <td class="jr-value" colspan="3">
+                  <div><strong>Name :</strong> {{ selectedReg.ref1Name || '-' }}</div>
+                  <div><strong>Relationship :</strong> {{ selectedReg.ref1Relationship || '-' }}</div>
+                  <div><strong>Address :</strong> {{ selectedReg.ref1Address || '-' }}</div>
+                  <div><strong>Mobile :</strong> {{ selectedReg.ref1Mobile || '-' }}</div>
+                </td>
+              </tr>
+              <tr>
+                <td class="jr-label" style="vertical-align:top;">Reference 2</td>
+                <td class="jr-value" colspan="3">
+                  <div><strong>Name :</strong> {{ selectedReg.ref2Name || '-' }}</div>
+                  <div><strong>Relationship :</strong> {{ selectedReg.ref2Relationship || '-' }}</div>
+                  <div><strong>Address :</strong> {{ selectedReg.ref2Address || '-' }}</div>
+                  <div><strong>Mobile :</strong> {{ selectedReg.ref2Mobile || '-' }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="jr-declaration">
+            I hereby declare that the details furnished above are correct. Wherever required, copies of documents attached.
+          </div>
+          <div class="jr-signature">
+            <div class="jr-sig-info">
+              <div>(Signature of New Joinee)</div>
+            </div>
+          </div>
+          <div class="detail-actions" *ngIf="selectedReg?.status === 'PENDING'">
+            <button nz-button nzType="primary" (click)="showApproveModal(selectedReg!)">
+              <i nz-icon nzType="check"></i> Approve
+            </button>
+            <button nz-button nzType="default" nzDanger (click)="showRejectModal(selectedReg!)" style="margin-left:8px">
+              <i nz-icon nzType="close"></i> Reject
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </nz-modal>
+
+    <nz-modal [(nzVisible)]="isDocPreviewVisible" nzTitle="Document Preview" (nzOnCancel)="isDocPreviewVisible = false"
+      [nzFooter]="null" nzWidth="700px">
+      <ng-template nzModalContent>
+        <div class="doc-preview-wrap" *ngIf="docPreviewUrl">
+          <img [src]="docPreviewUrl" style="width:100%;height:auto;border-radius:4px;" />
         </div>
       </ng-template>
     </nz-modal>
@@ -367,6 +495,23 @@ import { environment } from '../../../environments/environment';
     .pending-content::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
     .pending-content::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
     .pending-content::-webkit-scrollbar-thumb:hover { background: #a1a1a1; }
+
+    /* ── Joining Report ── */
+    .jr-report { font-size: 13px; line-height: 1.5; }
+    .jr-report .jr-header { text-align: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #1a3a5c; }
+    .jr-report .jr-brand { font-size: 18px; font-weight: 800; color: #1a3a5c; letter-spacing: 1px; text-transform: uppercase; }
+    .jr-report .jr-tagline { font-size: 10px; color: #2b7fc1; letter-spacing: 1px; margin-top: 2px; }
+    .jr-report .jr-title { text-align: center; font-size: 15px; font-weight: 700; color: #1a3a5c; margin-bottom: 12px; letter-spacing: 0.5px; }
+    .jr-report .jr-title::after { content: ''; display: block; width: 40px; height: 2px; background: #2b7fc1; margin: 4px auto 0; }
+    .jr-report .jr-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .jr-report .jr-table td { padding: 3px 7px; border: 1px solid #cbd5e1; vertical-align: middle; font-size: 12px; }
+    .jr-report .jr-table .jr-label { background: #e8f0f8; font-weight: 600; color: #0f2740; width: 24%; white-space: nowrap; }
+    .jr-report .jr-table .jr-value { font-weight: 500; color: #1e293b; }
+    .jr-report .jr-table .jr-section td { background: #1a3a5c; color: #fff; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 7px; }
+    .jr-report .jr-declaration { padding: 6px 10px; background: #e8f0f8; border-left: 3px solid #2b7fc1; font-size: 11px; margin-bottom: 10px; font-weight: 500; }
+    .jr-report .jr-signature { margin-top: 10px; }
+    .doc-preview-wrap { text-align: center; }
+    .doc-preview-wrap img { max-width: 100%; max-height: 70vh; }
   `]
 })
 export class PendingRegistrationsComponent implements OnInit {
@@ -382,6 +527,9 @@ export class PendingRegistrationsComponent implements OnInit {
   isRejecting = false;
   isApproveModalVisible = false;
   isApproving = false;
+  isDocPreviewVisible = false;
+  docPreviewUrl = '';
+  apiBase = environment.apiUrl;
 
   isQrModalVisible = false;
   qrDataUrl = '';
@@ -504,5 +652,10 @@ export class PendingRegistrationsComponent implements OnInit {
 
   selectUrl(event: MouseEvent) {
     (event.target as HTMLInputElement).select();
+  }
+
+  viewDoc(path: string) {
+    this.docPreviewUrl = path.startsWith('http') ? path : this.apiBase + path;
+    this.isDocPreviewVisible = true;
   }
 }

@@ -548,9 +548,7 @@ import { environment } from '../../../environments/environment';
               <button nz-button nzType="primary" nzSize="large" [nzLoading]="isSaving" [disabled]="!regForm.valid">
                 <i nz-icon nzType="check"></i> Submit Registration
               </button>
-              <button nz-button nzType="default" nzSize="large" (click)="openJoiningLetter()">
-                <i nz-icon nzType="file-text"></i> View Sample Joining Letter
-              </button>
+            
             </div>
           </form>
 
@@ -559,181 +557,7 @@ import { environment } from '../../../environments/environment';
             <p>Loading form data...</p>
           </div>
 
-          <!-- Joining Letter Preview Modal -->
-          <div *ngIf="showJoiningLetter" class="modal-overlay" (click)="closeJoiningLetter()">
-            <div class="joining-letter-modal" (click)="$event.stopPropagation()">
-              <div class="modal-header">
-                <h2>New Employee Joining Report</h2>
-                <button nz-button nzType="text" (click)="closeJoiningLetter()"><i nz-icon nzType="close"></i></button>
-              </div>
-              <div class="joining-letter-content">
-                <div class="jr-header">
-                  <div class="jr-brand">PARIKAR</div>
-                  <div class="jr-tagline">Transforming Business Support Services</div>
-                </div>
-                <h1 class="jr-title">New Employee Joining Report</h1>
-                <table class="jr-table">
-                  <tbody>
-                    <tr>
-                      <td class="jr-label">Employee Code</td>
-                      <td class="jr-value">{{ formData.employeeCode || 'Will be generated' }}</td>
-                      <td class="jr-label">Date of Joining :</td>
-                      <td class="jr-value">{{ formData.doj || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Employee Name with Surname</td>
-                      <td class="jr-value" colspan="3">{{ formData.prefix || '' }} {{ formData.firstName || '' }} {{ formData.middleName || '' }} {{ formData.surname || '' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Date of Birth</td>
-                      <td class="jr-value">{{ formData.dob || '-' }}</td>
-                      <td class="jr-label">Gender</td>
-                      <td class="jr-value">{{ formData.gender || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Blood Group</td>
-                      <td class="jr-value" colspan="3">{{ formData.bloodGroup || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Father's Name</td>
-                      <td class="jr-value" colspan="3">{{ formData.fatherName || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Address &amp; Contact Details</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Present Address (with City &amp; Pin Code)</td>
-                      <td class="jr-value" colspan="3">{{ formData.presentAddress || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Permanent Address (with City &amp; Pin Code)</td>
-                      <td class="jr-value" colspan="3">{{ formData.permanentAddress || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Contact No</td>
-                      <td class="jr-value" colspan="3">{{ formData.mobile || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Email ID</td>
-                      <td class="jr-value" colspan="3">{{ formData.email || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Identity Documents</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">PAN</td>
-                      <td class="jr-value" colspan="3">{{ formData.panNumber || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">AADHAR No.</td>
-                      <td class="jr-value" colspan="3">{{ formData.aadharNumber || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Family Details</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Father Name &amp; Phone Number</td>
-                      <td class="jr-value" colspan="3">{{ formData.fatherName || '-' }} - {{ formData.fatherPhone || '' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Mother Name &amp; Phone Number</td>
-                      <td class="jr-value" colspan="3">{{ formData.motherName || '-' }} - {{ formData.motherPhone || '' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Spouse Name &amp; Phone Number</td>
-                      <td class="jr-value" colspan="3">{{ formData.spouseName || '-' }} - {{ formData.spousePhone || '' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Marital Status</td>
-                      <td class="jr-value" colspan="3">{{ formData.maritalStatus || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Education &amp; Experience</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Educational Qualification, with year of passing and % of Aggregate Marks</td>
-                      <td class="jr-value" colspan="3">{{ formData.highestQualification || '-' }} | Year: {{ formData.yearOfPassing || '-' }} | {{ formData.percentageMarks || '' }}%</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Past Experience – Name of the Organization(s)</td>
-                      <td class="jr-value" colspan="3">{{ formData.organizationName || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Period of Employment</td>
-                      <td class="jr-value" colspan="3">{{ formData.periodOfEmployment || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Designation</td>
-                      <td class="jr-value" colspan="3">{{ formData.designation || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Bank Account Details</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Employee Bank Account No.</td>
-                      <td class="jr-value" colspan="3">{{ formData.accountNumber || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Bank Name &amp; Branch</td>
-                      <td class="jr-value" colspan="3">{{ formData.bankName || '-' }}, {{ formData.branch || '' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">Bank A/c IFSC Code</td>
-                      <td class="jr-value" colspan="3">{{ formData.ifscCode || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">Statutory Details</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">PF UAN Number</td>
-                      <td class="jr-value" colspan="3">{{ formData.uanNo || '-' }}</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label">ESIC Number</td>
-                      <td class="jr-value" colspan="3">{{ formData.esicNo || '-' }}</td>
-                    </tr>
-                    <tr class="jr-section">
-                      <td colspan="4">References</td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label" style="vertical-align:top;">Reference 1</td>
-                      <td class="jr-value" colspan="3">
-                        <div><strong>Name :</strong> {{ formData.ref1Name || '-' }}</div>
-                        <div><strong>Relationship :</strong> {{ formData.ref1Relationship || '-' }}</div>
-                        <div><strong>Address :</strong> {{ formData.ref1Address || '-' }}</div>
-                        <div><strong>Mobile :</strong> {{ formData.ref1Mobile || '-' }}</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="jr-label" style="vertical-align:top;">Reference 2</td>
-                      <td class="jr-value" colspan="3">
-                        <div><strong>Name :</strong> {{ formData.ref2Name || '-' }}</div>
-                        <div><strong>Relationship :</strong> {{ formData.ref2Relationship || '-' }}</div>
-                        <div><strong>Address :</strong> {{ formData.ref2Address || '-' }}</div>
-                        <div><strong>Mobile :</strong> {{ formData.ref2Mobile || '-' }}</div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="jr-declaration">
-                  I hereby declare that the details furnished above are correct. Wherever required, copies of documents attached.
-                </div>
-                <div class="jr-signature">
-                  <div class="jr-sig-info">
-                    <div class="jr-sig-line">(Signature of New Joinee)</div>
-                    <div class="jr-sig-date">Date : {{ today }}</div>
-                  </div>
-                  <div class="jr-photo">
-                    <div class="jr-photo-box"></div>
-                    <div class="jr-photo-label">Photo</div>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button nz-button nzType="primary" (click)="closeJoiningLetter()">Close</button>
-              </div>
-            </div>
-          </div>
+
         </div>
 
         <div class="reg-footer">
@@ -847,40 +671,7 @@ import { environment } from '../../../environments/environment';
       background: rgba(0,0,0,0.5); display: flex; align-items: center;
       justify-content: center; z-index: 1000; padding: 20px;
     }
-    .joining-letter-modal {
-      background: #fff; border-radius: 12px; max-width: 800px;
-      width: 100%; max-height: 90vh; display: flex; flex-direction: column;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    .modal-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 16px 24px; border-bottom: 2px solid #1f3d6e;
-    }
-    .modal-header h2 { margin: 0; font-size: 18px; color: #1f3d6e; }
-    .joining-letter-content {
-      padding: 24px; overflow-y: auto; font-size: 13px; line-height: 1.5; max-height: 70vh;
-    }
-    .jr-header { text-align: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #1a3a5c; }
-    .jr-brand { font-size: 20px; font-weight: 800; color: #1a3a5c; letter-spacing: 1px; text-transform: uppercase; }
-    .jr-tagline { font-size: 10px; color: #2b7fc1; letter-spacing: 1px; margin-top: 2px; }
-    .jr-title { text-align: center; font-size: 16px; font-weight: 700; color: #1a3a5c; margin-bottom: 14px; letter-spacing: 0.5px; }
-    .jr-title::after { content: ''; display: block; width: 40px; height: 2px; background: #2b7fc1; margin: 4px auto 0; }
-    .jr-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-    .jr-table td { padding: 4px 8px; border: 1px solid #cbd5e1; vertical-align: middle; font-size: 12px; }
-    .jr-table .jr-label { background: #e8f0f8; font-weight: 600; color: #0f2740; width: 28%; white-space: nowrap; }
-    .jr-table .jr-value { font-weight: 500; color: #1e293b; }
-    .jr-table .jr-section td { background: #1a3a5c; color: #fff; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 8px; }
-    .jr-declaration { padding: 8px 12px; background: #e8f0f8; border-left: 3px solid #2b7fc1; font-size: 12px; margin-bottom: 12px; font-weight: 500; }
-    .jr-signature { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; }
-    .jr-sig-line { font-size: 12px; margin-bottom: 4px; }
-    .jr-sig-date { font-size: 12px; color: #475569; }
-    .jr-photo { text-align: center; }
-    .jr-photo-box { width: 100px; height: 130px; border: 2px dashed #cbd5e1; border-radius: 4px; }
-    .jr-photo-label { font-size: 11px; color: #475569; margin-top: 4px; }
-    .modal-footer {
-      padding: 12px 24px; border-top: 1px solid #f0f0f0;
-      text-align: center;
-    }
+
     .form-actions button[nz-button] { min-width: 200px; }
   `]
 })
@@ -914,8 +705,7 @@ export class PublicRegistrationComponent implements OnInit {
   languageOptions: any[] = [];
   selectedLanguage: string | null = null;
   languages: { language: string; canRead: boolean; canWrite: boolean; canSpeak: boolean }[] = [];
-  showJoiningLetter = false;
-  today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
 
   get availableLanguageOptions(): any[] {
     const added = new Set(this.languages.map(l => l.language));
@@ -1008,14 +798,6 @@ export class PublicRegistrationComponent implements OnInit {
     } else if (type === 'personalDocs') {
       this.selectedPersonalDocs.splice(index, 1);
     }
-  }
-
-  openJoiningLetter() {
-    this.showJoiningLetter = true;
-  }
-
-  closeJoiningLetter() {
-    this.showJoiningLetter = false;
   }
 
   onSubmit() {
