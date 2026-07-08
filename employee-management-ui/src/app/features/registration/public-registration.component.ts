@@ -568,51 +568,30 @@ import { environment } from '../../../environments/environment';
               </div>
               <div class="joining-letter-content">
                 <div class="letter-header">
-                  <h2>EMPLOYMENT CONFIRMATION / JOINING LETTER</h2>
-                  <p><strong>Date:</strong> {{ formData.doj || '__/__/____' }}</p>
+                  <h1>JOINING LETTER</h1>
                 </div>
                 <div class="letter-body">
+                  <p><strong>Date:</strong> {{ formData.doj || '__/__/____' }}</p>
+                  <br/>
                   <p>To,</p>
                   <p><strong>{{ formData.prefix || '[Prefix]' }} {{ formData.firstName || '[First Name]' }} {{ formData.middleName || '' }} {{ formData.surname || '[Surname]' }}</strong></p>
                   <p>{{ formData.presentAddress || '[Present Address]' }}</p>
                   <br/>
-                  <p>Sub: <strong>Joining Report / Employment Confirmation</strong></p>
+                  <p>Dear <strong>{{ formData.firstName || 'Candidate' }}</strong>,</p>
                   <br/>
-                  <p>Dear {{ formData.firstName || 'Candidate' }},</p>
+                  <p>We are pleased to have you join <strong>{{ formData.organizationName || 'the Company' }}</strong> as <strong>{{ formData.designation || '[Designation]' }}</strong>.</p>
                   <br/>
-                  <p>We are pleased to confirm your employment with our organization. Based on your application and the subsequent interview, you are hereby appointed to the position of <strong>{{ formData.designation || '[Designation]' }}</strong>.</p>
+                  <p>Your date of joining is <strong>{{ formData.doj || '[Date of Joining]' }}</strong>. Please report to the HR department on your first day.</p>
                   <br/>
-                  <p>Your date of joining is <strong>{{ formData.doj || '[Date of Joining]' }}</strong>.</p>
+                  <p>We look forward to a long and mutually beneficial association with you.</p>
                   <br/>
-                  <p>Please find below your employee details for reference:</p>
-                  <table class="letter-table">
-                    <tr><td width="180"><strong>Employee Code</strong></td><td>: {{ formData.employeeCode || 'Will be generated' }}</td></tr>
-                    <tr><td><strong>Name</strong></td><td>: {{ formData.prefix || '' }} {{ formData.firstName || '' }} {{ formData.surname || '' }}</td></tr>
-                    <tr><td><strong>Designation</strong></td><td>: {{ formData.designation || '-' }}</td></tr>
-                    <tr><td><strong>Department</strong></td><td>: As assigned</td></tr>
-                    <tr><td><strong>Date of Joining</strong></td><td>: {{ formData.doj || '-' }}</td></tr>
-                    <tr><td><strong>Qualification</strong></td><td>: {{ formData.highestQualification || '-' }}</td></tr>
-                    <tr><td><strong>Mobile</strong></td><td>: {{ formData.mobile || '-' }}</td></tr>
-                    <tr><td><strong>Email</strong></td><td>: {{ formData.email || '-' }}</td></tr>
-                  </table>
-                  <br/>
-                  <p>You are requested to report to the HR department on your date of joining with the following documents:</p>
-                  <ul>
-                    <li>Aadhar Card (Original + 2 Copies)</li>
-                    <li>PAN Card (Original + 1 Copy)</li>
-                    <li>Educational Certificates (Original for verification)</li>
-                    <li>Previous Organization Experience Letters</li>
-                    <li>Passport-size Photographs (2 Nos)</li>
-                    <li>Bank Account Details (Cancelled Cheque)</li>
-                  </ul>
-                  <br/>
-                  <p>We look forward to having you on board and wish you a successful career with us.</p>
-                  <br/>
-                  <p>Yours faithfully,</p>
-                  <br/><br/>
-                  <p><strong>For {{ formData.organizationName || 'Company Name' }}</strong></p>
-                  <br/>
-                  <p>(Authorized Signatory)</p>
+                  <div class="signature-section">
+                    <p>Yours sincerely,</p>
+                    <br/><br/>
+                    <p><strong>{{ formData.organizationName || 'Company Name' }}</strong></p>
+                    <br/>
+                    <p>(Authorized Signatory)</p>
+                  </div>
                 </div>
               </div>
               <div class="modal-footer">
@@ -746,12 +725,13 @@ import { environment } from '../../../environments/environment';
     .joining-letter-content {
       padding: 24px; overflow-y: auto; font-size: 14px; line-height: 1.6;
     }
-    .joining-letter-content .letter-header { text-align: center; margin-bottom: 20px; }
-    .joining-letter-content .letter-header h2 {
-      font-size: 18px; color: #1f3d6e; margin: 0 0 8px;
+    .joining-letter-content .letter-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1f3d6e; padding-bottom: 12px; }
+    .joining-letter-content .letter-header h1 {
+      font-size: 22px; color: #1f3d6e; margin: 0; letter-spacing: 2px;
     }
-    .letter-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
-    .letter-table td { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; }
+    .joining-letter-content .signature-section {
+      margin-top: 20px; padding-top: 12px; border-top: 1px solid #d9d9d9;
+    }
     .modal-footer {
       padding: 12px 24px; border-top: 1px solid #f0f0f0;
       text-align: center;
