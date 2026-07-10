@@ -25,6 +25,9 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     @Query("SELECT s FROM Salary s WHERE s.employee.id = :employeeId ORDER BY s.wageYear DESC, s.wageMonth DESC")
     List<Salary> findByEmployeeId(@Param("employeeId") Long employeeId);
 
+    @Query("SELECT s FROM Salary s JOIN FETCH s.employee WHERE s.wageYear = :year AND s.wageMonth = :month")
+    List<Salary> findByWageYearAndWageMonthWithEmployee(@Param("year") Integer year, @Param("month") Integer month);
+
     @Query("SELECT DISTINCT s.wageYear FROM Salary s ORDER BY s.wageYear DESC")
     List<Integer> findDistinctWageYears();
 

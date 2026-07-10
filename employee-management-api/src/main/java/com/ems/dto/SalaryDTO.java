@@ -35,6 +35,7 @@ public class SalaryDTO {
     private BigDecimal pfDeduction;
     private BigDecimal esiDeduction;
     private BigDecimal ptDeduction;
+    private BigDecimal healthInsurance;
     private BigDecimal overtimeWages;
     private BigDecimal netPay;
     private Integer workingHoursPerDay;
@@ -64,6 +65,7 @@ public class SalaryDTO {
             .pfDeduction(salary.getPfDeduction())
             .esiDeduction(salary.getEsiDeduction())
             .ptDeduction(salary.getPtDeduction())
+            .healthInsurance(salary.getHealthInsurance())
             .overtimeWages(salary.getOvertimeWages())
             .netPay(salary.getNetPay())
             .workingHoursPerDay(salary.getWorkingHoursPerDay())

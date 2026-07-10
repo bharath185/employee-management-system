@@ -7,15 +7,18 @@ import com.ems.model.*;
 import com.ems.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -145,6 +148,206 @@ public class PayrollService {
 
         log.info("Payroll processed for {}/{}: {}/{} employees", month, year, processed, total);
         return PayrollProcessDTO.fromEntity(process);
+    }
+
+    /**
+     * Upload a Salary Statement Excel file, parse data rows, create Salary and Payslip records.
+     * Expects the standard "Salary Statement" template format.
+     */
+    @Transactional
+    public Map<String, Object> uploadSalaryStatement(MultipartFile file, Integer year, Integer month) {
+        int totalRows = 0;
+        int successCount = 0;
+        int failureCount = 0;
+        List<Map<String, String>> errors = new ArrayList<>();
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            int lastRowNum = sheet.getLastRowNum();
+
+            for (int i = 11; i <= lastRowNum; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                String slNo = getCellString(row, 0);
+                String name = getCellString(row, 1);
+                String empCode = getCellString(row, 2);
+
+                // Skip empty rows and Grand Total row
+                if (empCode.isEmpty() && name.isEmpty()) continue;
+                if ("Grand Total".equalsIgnoreCase(slNo) || "Grand Total".equalsIgnoreCase(name)) break;
+
+                totalRows++;
+
+                try {
+                    // Look up employee
+                    if (empCode.isEmpty()) {
+                        failureCount++;
+                        errors.add(Map.of("row", String.valueOf(i + 1), "message", "Employee Code empty"));
+                        continue;
+                    }
+                    Employee employee = employeeRepository.findByEmployeeCode(empCode).orElse(null);
+                    if (employee == null) {
+                        failureCount++;
+                        errors.add(Map.of("row", String.valueOf(i + 1), "message", "Employee not found: " + empCode));
+                        continue;
+                    }
+
+                    // Parse numeric fields
+                    BigDecimal basic = parseDecimal(getCellString(row, 9));
+                    BigDecimal hra = parseDecimal(getCellString(row, 10));
+                    BigDecimal fpa = parseDecimal(getCellString(row, 11));
+                    BigDecimal oa = parseDecimal(getCellString(row, 12));
+                    BigDecimal overtime = parseDecimal(getCellString(row, 17));
+                    BigDecimal grossWages = parseDecimal(getCellString(row, 18));
+                    BigDecimal pf = parseDecimal(getCellString(row, 19));
+                    BigDecimal esi = parseDecimal(getCellString(row, 20));
+                    BigDecimal pt = parseDecimal(getCellString(row, 21));
+                    BigDecimal hi = parseDecimal(getCellString(row, 22));
+                    BigDecimal actualWages = parseDecimal(getCellString(row, 23));
+
+                    // Parse integer fields
+                    Integer workingDays = parseInt(getCellString(row, 14));
+                    Integer lop = parseInt(getCellString(row, 15));
+                    Integer effWorkdays = parseInt(getCellString(row, 16));
+
+                    // Parse date of payment
+                    LocalDateTime dateOfPayment = parseDate(getCellString(row, 24));
+
+                    // Find or create Salary record
+                    Salary salary = salaryRepository
+                        .findByEmployeeIdAndWageYearAndWageMonth(employee.getId(), year, month)
+                        .orElseGet(() -> Salary.builder()
+                            .employee(employee)
+                            .wageMonth(month)
+                            .wageYear(year)
+                            .build());
+
+                    // Set all fields from file, skip auto-computation
+                    salary.setSkipComputation(true);
+                    salary.setBasic(basic);
+                    salary.setHra(hra);
+                    salary.setFixedPersonalAllowance(fpa);
+                    salary.setOtherAllowance(oa);
+                    salary.setBonus(BigDecimal.ZERO);
+                    salary.setAppraisalAmount(BigDecimal.ZERO);
+                    salary.setLateSittingAmount(BigDecimal.ZERO);
+                    salary.setGrossSalary(grossWages);
+                    salary.setPfDeduction(pf);
+                    salary.setEsiDeduction(esi);
+                    salary.setPtDeduction(pt);
+                    salary.setHealthInsurance(hi);
+                    salary.setOvertimeWages(overtime);
+                    salary.setNetPay(actualWages);
+                    salary.setDateOfPayment(dateOfPayment);
+                    salary.setWorkingHoursPerDay(8);
+                    salary.setWeeklyOff("Allowed");
+                    salary.setWorkerType("Permanent");
+                    salaryRepository.save(salary);
+
+                    // Create Payslip snapshot
+                    BigDecimal totalDeductions = pf.add(esi).add(pt).add(hi);
+                    Payslip payslip = Payslip.builder()
+                        .employee(employee)
+                        .wageMonth(month)
+                        .wageYear(year)
+                        .basic(basic)
+                        .hra(hra)
+                        .fixedPersonalAllowance(fpa)
+                        .otherAllowance(oa)
+                        .bonus(BigDecimal.ZERO)
+                        .appraisalAmount(BigDecimal.ZERO)
+                        .lateSittingAmount(BigDecimal.ZERO)
+                        .grossSalary(grossWages)
+                        .pfDeduction(pf)
+                        .esiDeduction(esi)
+                        .ptDeduction(pt)
+                        .healthInsurance(hi)
+                        .overtimeWages(overtime)
+                        .totalDeductions(totalDeductions)
+                        .netPay(actualWages)
+                        .presentDays(effWorkdays)
+                        .absentDays(0)
+                        .leaveDays(lop)
+                        .totalWorkingDays(workingDays)
+                        .lopDays(lop)
+                        .effectiveWorkdays(effWorkdays)
+                        .status("GENERATED")
+                        .generatedAt(LocalDateTime.now())
+                        .build();
+                    payslipRepository.save(payslip);
+                    successCount++;
+
+                } catch (Exception e) {
+                    log.error("Error processing row {}: {}", i + 1, e.getMessage());
+                    failureCount++;
+                    errors.add(Map.of("row", String.valueOf(i + 1), "message", e.getMessage()));
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse uploaded Excel: {}", e.getMessage());
+            throw new RuntimeException("Failed to parse uploaded Excel file", e);
+        }
+
+        log.info("Salary statement upload: {} total, {} success, {} failure", totalRows, successCount, failureCount);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalRows", totalRows);
+        result.put("successCount", successCount);
+        result.put("failureCount", failureCount);
+        result.put("errors", errors);
+        return result;
+    }
+
+    private String getCellString(Row row, int idx) {
+        Cell cell = row.getCell(idx);
+        if (cell == null) return "";
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> {
+                double val = cell.getNumericCellValue();
+                yield (val == Math.floor(val) && !Double.isInfinite(val))
+                    ? String.valueOf((long) val)
+                    : String.valueOf(val);
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> "";
+        };
+    }
+
+    private BigDecimal parseDecimal(String val) {
+        if (val == null || val.isBlank()) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(val.replaceAll(",", "").trim());
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private Integer parseInt(String val) {
+        if (val == null || val.isBlank()) return 0;
+        try {
+            return Integer.parseInt(val.replaceAll(",", "").trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private LocalDateTime parseDate(String val) {
+        if (val == null || val.isBlank()) return null;
+        val = val.trim();
+        try {
+            return LocalDate.parse(val, DateTimeFormatter.ofPattern("dd/MM/yyyy")).atStartOfDay();
+        } catch (DateTimeParseException e) {
+            try {
+                return LocalDate.parse(val, DateTimeFormatter.ofPattern("yyyy-MM-dd")).atStartOfDay();
+            } catch (DateTimeParseException e2) {
+                try {
+                    return LocalDate.parse(val, DateTimeFormatter.ofPattern("dd-MM-yyyy")).atStartOfDay();
+                } catch (DateTimeParseException e3) {
+                    return null;
+                }
+            }
+        }
     }
 
     public PayrollProcessDTO getPayrollStatus(Integer year, Integer month) {

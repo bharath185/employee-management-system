@@ -287,18 +287,42 @@ public class DataSeeder implements CommandLineRunner {
              "2020-06-15", "MBA", "MASTERS", "2015", "1991-03-10", "ravi.kumar@company.com", "9876543210",
              "B+", "1234-5678-9012", "ABCDE1234F", "SBI", "12345678901", "SBIN0012345", "Guntur Main",
              "MANAGER", "HINDU", "OC", "5-67, RTC Colony, Guntur - 522001"},
-            {"MS", "Priya", "Sharma", "FEMALE", "SINGLE", "Rajesh Sharma", "FATHER", "SALARIED", "ENGINEER",
+            {"MS", "Priya", "Sharma", "FEMALE", "SINGLE", "Rajesh Sharma", "FATHER", "SALARIED", "SP_ASSOCIATE",
              "2022-01-10", "B.Tech", "BACHELORS", "2017", "1996-07-25", "priya.sharma@company.com", "9876543211",
              "O+", "2345-6789-0123", "FGHIJ5678K", "HDFC", "50100123456789", "HDFC0001234", "Vijayawada",
-             "ENGINEER", "HINDU", "BC", "Flat 201, Sai Towers, Vijayawada - 520001"},
+             "SP_ASSOCIATE", "HINDU", "BC", "Flat 201, Sai Towers, Vijayawada - 520001"},
             {"MR", "Venkata", "Rao", "MALE", "MARRIED", "Nageswara Rao", "FATHER", "SALARIED", "ACCOUNTANT",
              "2018-04-01", "M.Com", "MASTERS", "2000", "1979-11-15", "venkata.rao@company.com", "9876543212",
              "A+", "3456-7890-1234", "KLMNO9012P", "CANARA", "78901234567", "CNRB0012345", "Tenali",
              "ACCOUNTANT", "HINDU", "OC", "12-34, Main Road, Tenali - 522201"},
-            {"MR", "Srinivas", "Reddy", "MALE", "MARRIED", "Narayana Reddy", "FATHER", "SALARIED", "HR MANAGER",
+            {"MR", "Srinivas", "Reddy", "MALE", "MARRIED", "Narayana Reddy", "FATHER", "SALARIED", "CHIEF_MANAGER",
              "2021-08-01", "MBA", "MASTERS", "2016", "1992-05-20", "srinivas.reddy@company.com", "9876543213",
              "AB+", "4567-8901-2345", "QRSTU3456V", "AXIS", "34567890123", "AXIS0012345", "Guntur",
-             "HR MANAGER", "HINDU", "OC", "3-45, HR Colony, Guntur - 522002"}
+             "CHIEF_MANAGER", "HINDU", "OC", "3-45, HR Colony, Guntur - 522002"},
+            {"MR", "Mohan", "Das", "MALE", "MARRIED", "Krishna Das", "FATHER", "SALARIED", "ASST_MANAGER",
+             "2019-11-01", "BBA", "BACHELORS", "2012", "1990-08-12", "mohan.das@company.com", "9876543214",
+             "A-", "5678-9012-3456", "TUVWX7890Y", "ICICI", "45678901234", "ICIC0012345", "Ongole",
+             "ASST_MANAGER", "HINDU", "BC", "7-89, New Colony, Ongole - 523001"},
+            {"MR", "Suresh", "Naidu", "MALE", "MARRIED", "Venkata Naidu", "FATHER", "SALARIED", "TEAM_LEADER",
+             "2021-02-15", "BCA", "BACHELORS", "2017", "1995-12-05", "suresh.naidu@company.com", "9876543215",
+             "B+", "6789-0123-4567", "YZABC1234D", "HDFC", "56789012345", "HDFC0005678", "Nellore",
+             "TEAM_LEADER", "HINDU", "OC", "Flat 102, Lake View, Nellore - 524001"},
+            {"MS", "Lakshmi", "Devi", "FEMALE", "MARRIED", "Ramana Reddy", "HUSBAND", "SALARIED", "JP_ASSOCIATE",
+             "2023-06-01", "B.Com", "BACHELORS", "2020", "1998-04-18", "lakshmi.devi@company.com", "9876543216",
+             "O+", "7890-1234-5678", "EFGHI5678J", "SBI", "67890123456", "SBIN0067890", "Kurnool",
+             "JP_ASSOCIATE", "HINDU", "BC", "2-34, Temple Street, Kurnool - 518001"},
+            {"MR", "Arun", "Kumar", "MALE", "SINGLE", "Sundaram Pillai", "FATHER", "SALARIED", "WORK_LEADER",
+             "2024-01-08", "B.Sc", "BACHELORS", "2022", "2000-09-22", "arun.kumar@company.com", "9876543217",
+             "AB-", "8901-2345-6789", "KLMNO1234P", "AXIS", "78901234567", "AXIS0067890", "Tirupati",
+             "WORK_LEADER", "HINDU", "OC", "1-23, Main Bazaar, Tirupati - 517501"},
+            {"MR", "Rajesh", "Yadav", "MALE", "SINGLE", "Shyam Yadav", "FATHER", "SALARIED", "MANAGER",
+             "2020-03-01", "MBA", "MASTERS", "2018", "1994-07-14", "rajesh.yadav@company.com", "9876543218",
+             "B-", "9012-3456-7890", "QRSTU9012V", "ICICI", "89012345678", "ICIC0078901", "Kadapa",
+             "MANAGER", "HINDU", "OC", "4-56, Gandhi Nagar, Kadapa - 516001"},
+            {"MS", "Anitha", "Reddy", "FEMALE", "MARRIED", "Gopal Reddy", "HUSBAND", "SALARIED", "SP_ASSOCIATE",
+             "2022-09-12", "MCA", "MASTERS", "2021", "1997-11-30", "anitha.reddy@company.com", "9876543219",
+             "A+", "0123-4567-8901", "VWXYZ2345A", "HDFC", "90123456789", "HDFC0089012", "Chittoor",
+             "SP_ASSOCIATE", "HINDU", "BC", "8-90, RTO Road, Chittoor - 517001"}
         };
         for (String[] d : employeeData) {
             String code = employeeCodeGenerator.generateNextCode();
@@ -380,7 +404,14 @@ public class DataSeeder implements CommandLineRunner {
         double[][] salaryData = {
             {25000, 10000, 5000, 3000, 0},
             {20000, 8000, 4000, 2000, 0},
-            {18000, 7200, 3600, 1800, 0}
+            {18000, 7200, 3600, 1800, 0},
+            {30000, 12000, 6000, 4000, 0},
+            {22000, 8800, 4400, 2500, 0},
+            {20000, 8000, 4000, 2000, 0},
+            {15000, 6000, 3000, 1500, 0},
+            {16000, 6400, 3200, 1600, 0},
+            {25000, 10000, 5000, 3000, 0},
+            {20000, 8000, 4000, 2000, 0}
         };
 
         for (int i = 0; i < months.length; i++) {

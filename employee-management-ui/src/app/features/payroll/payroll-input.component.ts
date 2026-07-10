@@ -32,12 +32,7 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
           <i nz-icon nzType="play-circle"></i><span>Process</span>
         </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
-          <i nz-icon nzType="bank"></i><span>Salary Master</span>
-        </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </a>
+
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -45,7 +40,7 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <app-page-header icon="edit" title="Employee Pay Input" subtitle="Per-month adjustments (bonus, appraisal, late sitting) — structural fields pre-filled from Salary Master">
+      <app-page-header icon="edit" title="Employee Pay Input" subtitle="Per-month adjustments (bonus, appraisal, late sitting)">
         <span class="pi-source-badge">
           <i nz-icon nzType="database"></i> Master
         </span>
@@ -57,7 +52,7 @@ import { PayrollInput, SalaryMasterDTO } from '../../core/models/payroll.models'
       <!-- ===== INFO BANNER ===== -->
       <div class="pi-info-bar">
         <i nz-icon nzType="info-circle" nzTheme="fill" style="color:#1f3d6e"></i>
-        <span><strong>Basic, HRA, PF, ESI, PT</strong> come from Salary Master. <strong>Bonus, Appraisal, Late Sitting, Overtime</strong> are per-month — enter them fresh each month.</span>
+        <span><strong>Bonus, Appraisal, Late Sitting, Overtime</strong> are per-month — enter them fresh each month.</span>
       </div>
 
       <!-- ===== CONTROLS CARD ===== -->

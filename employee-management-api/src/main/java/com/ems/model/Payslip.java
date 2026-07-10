@@ -83,6 +83,10 @@ public class Payslip {
     @Builder.Default
     private BigDecimal ptDeduction = BigDecimal.ZERO;
 
+    @Column(name = "health_insurance", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal healthInsurance = BigDecimal.ZERO;
+
     @Column(precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal overtimeWages = BigDecimal.ZERO;
@@ -106,6 +110,12 @@ public class Payslip {
 
     @Column(name = "total_working_days")
     private Integer totalWorkingDays;
+
+    @Column(name = "lop_days")
+    private Integer lopDays;
+
+    @Column(name = "effective_workdays")
+    private Integer effectiveWorkdays;
 
     @Column(length = 20)
     @Builder.Default

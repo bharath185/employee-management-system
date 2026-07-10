@@ -34,6 +34,7 @@ public class PayslipDTO {
     private BigDecimal pfDeduction;
     private BigDecimal esiDeduction;
     private BigDecimal ptDeduction;
+    private BigDecimal healthInsurance;
     private BigDecimal overtimeWages;
     private BigDecimal totalDeductions;
     private BigDecimal netPay;
@@ -41,6 +42,8 @@ public class PayslipDTO {
     private Integer absentDays;
     private Integer leaveDays;
     private Integer totalWorkingDays;
+    private Integer lopDays;
+    private Integer effectiveWorkdays;
     private String status;
     private LocalDateTime generatedAt;
     private LocalDateTime sentAt;
@@ -67,6 +70,7 @@ public class PayslipDTO {
             .pfDeduction(payslip.getPfDeduction())
             .esiDeduction(payslip.getEsiDeduction())
             .ptDeduction(payslip.getPtDeduction())
+            .healthInsurance(payslip.getHealthInsurance())
             .overtimeWages(payslip.getOvertimeWages())
             .totalDeductions(payslip.getTotalDeductions())
             .netPay(payslip.getNetPay())
@@ -74,6 +78,8 @@ public class PayslipDTO {
             .absentDays(payslip.getAbsentDays())
             .leaveDays(payslip.getLeaveDays())
             .totalWorkingDays(payslip.getTotalWorkingDays())
+            .lopDays(payslip.getLopDays())
+            .effectiveWorkdays(payslip.getEffectiveWorkdays())
             .status(payslip.getStatus())
             .generatedAt(payslip.getGeneratedAt())
             .sentAt(payslip.getSentAt())

@@ -84,6 +84,10 @@ public class Salary {
     @Builder.Default
     private BigDecimal ptDeduction = BigDecimal.ZERO;
 
+    @Column(name = "health_insurance", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal healthInsurance = BigDecimal.ZERO;
+
     @Column(name = "overtime_wages", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal overtimeWages = BigDecimal.ZERO;
@@ -91,6 +95,10 @@ public class Salary {
     @Column(name = "net_pay", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal netPay = BigDecimal.ZERO;
+
+    @Transient
+    @Builder.Default
+    private boolean skipComputation = false;
 
     @Column(name = "working_hours_per_day")
     @Builder.Default
@@ -126,6 +134,7 @@ public class Salary {
     @PrePersist
     @PreUpdate
     public void computeDerivedFields() {
+        if (skipComputation) return;
         this.grossSalary = BigDecimal.ZERO
             .add(safe(basic))
             .add(safe(hra))
@@ -139,6 +148,7 @@ public class Salary {
             .subtract(safe(pfDeduction))
             .subtract(safe(esiDeduction))
             .subtract(safe(ptDeduction))
+            .subtract(safe(healthInsurance))
             .add(safe(overtimeWages));
     }
 

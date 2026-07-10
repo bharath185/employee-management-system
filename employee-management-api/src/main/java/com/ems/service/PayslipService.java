@@ -89,6 +89,7 @@ public class PayslipService {
         String fmtPt = fmt.format(payslip.getPtDeduction());
         String fmtNet = fmt.format(payslip.getNetPay());
         String fmtOt = fmt.format(payslip.getOvertimeWages());
+        String fmtHi = fmt.format(payslip.getHealthInsurance());
         String fmtTotalDed = fmt.format(payslip.getTotalDeductions());
 
         String cName = safe(company.getCompanyName());
@@ -178,6 +179,7 @@ public class PayslipService {
                 <tr><td>Appraisal Amount</td><td class="amt">%s</td><td></td><td></td></tr>
                 <tr><td>Late Sitting Amount</td><td class="amt">%s</td><td></td><td></td></tr>
                 <tr><td>Overtime Wages</td><td class="amt">%s</td><td></td><td></td></tr>
+                <tr><td></td><td></td><td>Health Insurance</td><td class="amt">%s</td></tr>
                 <tr class="total-row"><td>Gross Earnings</td><td class="amt">%s</td><td>Total Deductions</td><td class="amt">%s</td></tr>
                 <tr class="net-row"><td colspan="2"></td><td><strong>Net Pay</strong></td><td class="amt net-amt"><strong>%s</strong></td></tr>
               </table>
@@ -199,7 +201,7 @@ public class PayslipService {
             cName, cAddr, cGst, cPan, monthName, year,
             eName, eCode, eDesig, eDept, doj, eUan, ePf, eEsic, eBank, eAcc,
             fmtBasic, fmtPf, fmtHra, fmtEsi, fmtFpa, fmtPt, fmtOa, fmtBonus, fmtAppraisal, fmtLateSitting, fmtOt,
-            fmtGross, fmtTotalDed, fmtNet,
+            fmtHi, fmtGross, fmtTotalDed, fmtNet,
             payslip.getPresentDays() != null ? payslip.getPresentDays() : 0,
             payslip.getAbsentDays() != null ? payslip.getAbsentDays() : 0,
             payslip.getLeaveDays() != null ? payslip.getLeaveDays() : 0,

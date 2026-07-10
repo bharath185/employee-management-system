@@ -16,6 +16,7 @@ export interface Salary {
   pfDeduction: number;
   esiDeduction: number;
   ptDeduction: number;
+  healthInsurance: number;
   overtimeWages: number;
   netPay: number;
   workingHoursPerDay: number;
@@ -56,6 +57,7 @@ export interface Payslip {
   pfDeduction: number;
   esiDeduction: number;
   ptDeduction: number;
+  healthInsurance: number;
   overtimeWages: number;
   totalDeductions: number;
   netPay: number;
@@ -63,6 +65,8 @@ export interface Payslip {
   absentDays: number;
   leaveDays: number;
   totalWorkingDays: number;
+  lopDays: number;
+  effectiveWorkdays: number;
   status: string;
   generatedAt?: string;
   sentAt?: string;

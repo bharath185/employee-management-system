@@ -11,6 +11,13 @@ export class PayrollService {
 
   constructor(private http: HttpClient) {}
 
+  // ===================== Upload Excel =====================
+  uploadSalaryStatement(file: File, year: number, month: number): Observable<APIResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/upload/${year}/${month}`, formData);
+  }
+
   // ===================== Process =====================
   processPayroll(year: number, month: number): Observable<APIResponse<PayrollProcess>> {
     return this.http.post<APIResponse<PayrollProcess>>(`${this.apiUrl}/process/${year}/${month}`, {});
@@ -72,6 +79,14 @@ export class PayrollService {
 
   downloadPayrollReport(year: number, month: number): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/export/report/${year}/${month}`, { responseType: 'blob' });
+  }
+
+  downloadSalaryStatement(year: number, month: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/statement/${year}/${month}`, { responseType: 'blob' });
+  }
+
+  downloadSampleStatement(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/sample-statement`, { responseType: 'blob' });
   }
 
   // ===================== Stats =====================

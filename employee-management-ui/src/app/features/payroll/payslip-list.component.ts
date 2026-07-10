@@ -31,12 +31,7 @@ import { saveAs } from 'file-saver';
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
           <i nz-icon nzType="play-circle"></i><span>Process</span>
         </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
-          <i nz-icon nzType="bank"></i><span>Salary Master</span>
-        </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </a>
+
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -45,6 +40,9 @@ import { saveAs } from 'file-saver';
         </a>
       </div>
       <app-page-header icon="file-text" title="Payslips" subtitle="View and manage employee payslips">
+        <button nz-button (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
+          <i nz-icon nzType="file-excel"></i> Statement
+        </button>
         <button nz-button (click)="downloadBankFile()" nz-tooltip="Download Bank File">
           <i nz-icon nzType="bank"></i> Bank File
         </button>
@@ -568,6 +566,13 @@ export class PayslipListComponent implements OnInit {
     this.payrollService.downloadPayrollReport(this.selectedYear, this.selectedMonth).subscribe({
       next: (blob) => saveAs(blob, `Payroll_Report_${this.selectedYear}_${this.selectedMonth}.xlsx`),
       error: () => this.msg.error('Failed to download report')
+    });
+  }
+
+  downloadStatement(): void {
+    this.payrollService.downloadSalaryStatement(this.selectedYear, this.selectedMonth).subscribe({
+      next: (blob) => saveAs(blob, `Salary_Statement_${this.selectedYear}_${this.selectedMonth}.xlsx`),
+      error: () => this.msg.error('No data found for the selected period')
     });
   }
 }

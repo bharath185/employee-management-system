@@ -37,12 +37,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
           <i nz-icon nzType="play-circle"></i><span>Process</span>
         </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
-          <i nz-icon nzType="bank"></i><span>Salary Master</span>
-        </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </a>
+
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -60,7 +55,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
         <div class="sm-toolbar">
           <div class="sm-info">
             <i nz-icon nzType="info-circle" nzTheme="fill" style="color:#1f3d6e;font-size:14px"></i>
-            Values set here carry forward every month. Use <strong>Employee Input</strong> for one-time adjustments (bonus, appraisal).
+            Values set here carry forward every month.
           </div>
           <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving" [disabled]="!hasChanges">
             <i nz-icon nzType="save"></i> Save All

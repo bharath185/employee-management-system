@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Month;
 import java.util.ArrayList;
@@ -29,6 +30,20 @@ public class PayrollController {
     private final EmailConfigService emailConfigService;
     private final PayrollExportService payrollExportService;
     private final EmployeeRepository employeeRepository;
+
+    // ==================== PAYROLL UPLOAD (Excel) ====================
+
+    @PostMapping("/upload/{year}/{month}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Map<String, Object>>> uploadSalaryStatement(
+            @PathVariable Integer year, @PathVariable Integer month,
+            @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(APIResponse.error("No file uploaded"));
+        }
+        Map<String, Object> result = payrollService.uploadSalaryStatement(file, year, month);
+        return ResponseEntity.ok(APIResponse.success("Salary statement uploaded and processed", result));
+    }
 
     // ==================== PAYROLL PROCESSING ====================
 
@@ -175,6 +190,13 @@ public class PayrollController {
 
     // ==================== EXPORTS ====================
 
+    @GetMapping("/export/statement/{year}/{month}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> exportSalaryStatement(
+            @PathVariable Integer year, @PathVariable Integer month) {
+        return payrollExportService.exportSalaryStatement(year, month);
+    }
+
     @GetMapping("/export/bank-file/{year}/{month}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<byte[]> downloadBankFile(
@@ -187,6 +209,12 @@ public class PayrollController {
     public ResponseEntity<byte[]> downloadPayrollReport(
             @PathVariable Integer year, @PathVariable Integer month) {
         return payrollExportService.exportPayrollReport(year, month);
+    }
+
+    @GetMapping("/export/sample-statement")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> downloadSampleStatement() {
+        return payrollExportService.generateSampleStatement();
     }
 
     // ==================== STATS ====================

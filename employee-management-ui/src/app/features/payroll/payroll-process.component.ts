@@ -9,20 +9,18 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzStatisticModule } from 'ng-zorro-antd/statistic';
-import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzUploadModule } from 'ng-zorro-antd/upload';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PayrollService } from '../../core/services/payroll.service';
-import { PayrollProcess } from '../../core/models/payroll.models';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-payroll-process',
   standalone: true,
   imports: [
     CommonModule, FormsModule, RouterLink, RouterLinkActive, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzStatisticModule,
-    NzPopconfirmModule,
+    NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzUploadModule,
     PageHeaderComponent
   ],
   template: `
@@ -30,14 +28,9 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       <!-- ===== SUB NAV ===== -->
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
-          <i nz-icon nzType="play-circle"></i><span>Process</span>
+          <i nz-icon nzType="upload"></i><span>Upload</span>
         </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
-          <i nz-icon nzType="bank"></i><span>Salary Master</span>
-        </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </a>
+
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -46,105 +39,73 @@ import { PayrollProcess } from '../../core/models/payroll.models';
         </a>
       </div>
 
-      <app-page-header icon="calculator" title="Payroll Processing" subtitle="Process monthly payroll for all employees"></app-page-header>
+      <app-page-header icon="upload" title="Upload Salary Statement" subtitle="Upload monthly salary statement Excel to generate payslips">
+        <button nz-button (click)="downloadSample()" nz-tooltip="Download a blank sample template with demo data">
+          <i nz-icon nzType="download"></i> Download Sample
+        </button>
+        <button nz-button (click)="downloadStatement()" nz-tooltip="Download Salary Statement for selected period">
+          <i nz-icon nzType="file-excel"></i> Download Statement
+        </button>
+      </app-page-header>
 
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pp-controls-card" nzSize="small">
         <div class="pp-controls">
           <div class="pp-filters">
-            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzPlaceHolder="Year" class="filter-select" style="width:110px">
+            <nz-select [(ngModel)]="selectedYear" nzPlaceHolder="Year" class="filter-select" style="width:110px">
               <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzPlaceHolder="Month" class="filter-select" style="width:140px">
+            <nz-select [(ngModel)]="selectedMonth" nzPlaceHolder="Month" class="filter-select" style="width:140px">
               <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
             </nz-select>
           </div>
           <div class="pp-actions">
-            <button nz-button class="btn-primary-gradient" (click)="processPayroll()"
-              [nzLoading]="processing" [disabled]="!!currentProcess?.status && currentProcess?.status === 'PROCESSING'">
-              <i nz-icon nzType="play-circle"></i>
-              {{ processing ? 'Processing...' : 'Process Payroll' }}
+            <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelected($event)" style="display:none">
+            <button nz-button class="btn-primary-gradient" (click)="fileInput.click()" [disabled]="uploading">
+              <i nz-icon nzType="upload"></i>
+              {{ uploading ? 'Uploading...' : 'Upload Excel' }}
             </button>
           </div>
         </div>
       </nz-card>
 
-      <!-- ===== STATUS CARD ===== -->
-      <nz-card class="pp-status-card" nzSize="small" *ngIf="currentProcess">
-        <div class="status-header">
-          <span class="status-title">Current Status</span>
-          <nz-tag [nzColor]="statusColor(currentProcess.status)" class="status-badge">
-            {{ currentProcess.status }}
+      <!-- ===== UPLOAD RESULT ===== -->
+      <nz-card class="pp-status-card" nzSize="small" *ngIf="uploadResult">
+        <div class="result-header">
+          <span class="result-title">Upload Result</span>
+          <nz-tag [nzColor]="uploadResult.failureCount === 0 ? '#52c41a' : '#fa8c16'">
+            {{ uploadResult.failureCount === 0 ? 'ALL OK' : 'PARTIAL' }}
           </nz-tag>
         </div>
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="stat-label">Total Employees</span>
-            <span class="stat-value">{{ currentProcess.totalEmployees }}</span>
+        <div class="result-grid">
+          <div class="result-item">
+            <span class="stat-label">Total Rows</span>
+            <span class="stat-value">{{ uploadResult.totalRows }}</span>
           </div>
-          <div class="status-item">
-            <span class="stat-label">Processed</span>
-            <span class="stat-value">{{ currentProcess.processedCount }}</span>
+          <div class="result-item">
+            <span class="stat-label">Success</span>
+            <span class="stat-value stat-success">{{ uploadResult.successCount }}</span>
           </div>
-          <div class="status-item" *ngIf="currentProcess.errorMessage">
-            <span class="stat-label">Error</span>
-            <span class="stat-value stat-error">{{ currentProcess.errorMessage }}</span>
-          </div>
-          <div class="status-item" *ngIf="currentProcess.startedAt">
-            <span class="stat-label">Started</span>
-            <span class="stat-value">{{ currentProcess.startedAt | date:'medium' }}</span>
-          </div>
-          <div class="status-item" *ngIf="currentProcess.completedAt">
-            <span class="stat-label">Completed</span>
-            <span class="stat-value">{{ currentProcess.completedAt | date:'medium' }}</span>
+          <div class="result-item">
+            <span class="stat-label">Failed</span>
+            <span class="stat-value" [class.stat-error]="uploadResult.failureCount > 0">{{ uploadResult.failureCount }}</span>
           </div>
         </div>
-        <div class="progress-section" *ngIf="currentProcess.status === 'PROCESSING'">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
-          </div>
-          <span class="progress-text">{{ progressPercent }}%</span>
-        </div>
-      </nz-card>
 
-      <!-- ===== HISTORY TABLE ===== -->
-      <nz-card class="pp-history-card" nzSize="small">
-        <div class="history-title">Processing History</div>
-        <nz-table #historyTable
-          [nzData]="history"
-          [nzLoading]="loadingHistory"
-          [nzPageSize]="10"
-          nzBordered nzSize="small"
-          class="theme-table">
+        <!-- Errors table -->
+        <nz-table *ngIf="uploadResult.errors && uploadResult.errors.length > 0"
+          [nzData]="uploadResult.errors" [nzPageSize]="50" nzSize="small" nzBordered class="theme-table"
+          style="margin-top:12px">
           <thead>
             <tr>
-              <th class="th-sno">#</th>
-              <th>Year</th>
-              <th>Month</th>
-              <th>Total Employees</th>
-              <th>Processed</th>
-              <th>Status</th>
-              <th>Started At</th>
-              <th>Completed At</th>
+              <th>Row</th>
               <th>Error</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of historyTable.data; let i = index">
-              <td class="td-center">{{ i + 1 }}</td>
-              <td>{{ p.processYear }}</td>
-              <td>{{ monthLabel(p.processMonth) }}</td>
-              <td class="td-center">{{ p.totalEmployees }}</td>
-              <td class="td-center">{{ p.processedCount }}</td>
-              <td class="td-center">
-                <nz-tag [nzColor]="statusColor(p.status)">{{ p.status }}</nz-tag>
-              </td>
-              <td>{{ p.startedAt ? (p.startedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
-              <td>{{ p.completedAt ? (p.completedAt | date:'dd/MM/yyyy HH:mm') : '-' }}</td>
-              <td class="td-error">{{ p.errorMessage || '-' }}</td>
-            </tr>
-            <tr *ngIf="history.length === 0 && !loadingHistory">
-              <td colspan="9" class="empty-cell">No processing history found</td>
+            <tr *ngFor="let e of uploadResult.errors">
+              <td class="td-center">{{ e.row }}</td>
+              <td class="td-error">{{ e.message }}</td>
             </tr>
           </tbody>
         </nz-table>
@@ -189,7 +150,7 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       box-shadow: 0 2px 8px rgba(37,99,235,0.25);
     }
     .pp-nav-item.active i { color: #fff; }
-    .pp-controls-card, .pp-status-card, .pp-history-card {
+    .pp-controls-card, .pp-status-card {
       border-radius: 10px !important;
       border: 1px solid #e8eaed !important;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
@@ -200,9 +161,6 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       padding: 14px 16px !important;
     }
     :host ::ng-deep .pp-status-card .ant-card-body {
-      padding: 14px 16px !important;
-    }
-    :host ::ng-deep .pp-history-card .ant-card-body {
       padding: 14px 16px !important;
     }
     .pp-controls {
@@ -266,32 +224,23 @@ import { PayrollProcess } from '../../core/models/payroll.models';
     .btn-primary-gradient:active {
       transform: translateY(0) !important;
     }
-    .status-header {
+    .result-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
     }
-    .status-title {
+    .result-title {
       font-size: 14px;
       font-weight: 700;
       color: #1f3d6e;
     }
-    .status-badge {
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      padding: 0 10px !important;
-      line-height: 22px !important;
-      border-radius: 4px !important;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .status-grid {
+    .result-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 12px;
     }
-    .status-item {
+    .result-item {
       display: flex;
       flex-direction: column;
       gap: 2px;
@@ -300,56 +249,30 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       border-radius: 8px;
       border: 1px solid #e8eaed;
     }
-    .status-item .stat-label {
+    .stat-label {
       font-size: 10px;
       font-weight: 600;
       color: #6c757d;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    .status-item .stat-value {
+    .stat-value {
       font-size: 14px;
       font-weight: 700;
       color: #374151;
     }
+    .stat-success {
+      color: #059669;
+    }
     .stat-error {
       color: #ef4444 !important;
-      font-size: 12px !important;
-      word-break: break-all;
     }
-    .progress-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 12px;
+    .td-center {
+      text-align: center !important;
     }
-    .progress-bar-bg {
-      flex: 1;
-      height: 8px;
-      background: #e8eaed;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(135deg, #4361ee, #3a0ca3);
-      border-radius: 4px;
-      transition: width 0.5s ease;
-    }
-    .progress-text {
+    .td-error {
+      color: #ef4444 !important;
       font-size: 12px;
-      font-weight: 700;
-      color: #4361ee;
-      min-width: 36px;
-    }
-    .history-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1f3d6e;
-      margin-bottom: 12px;
-    }
-    :host ::ng-deep .theme-table {
-      width: 100% !important;
     }
     :host ::ng-deep .theme-table .ant-table {
       font-size: 13px;
@@ -364,62 +287,12 @@ import { PayrollProcess } from '../../core/models/payroll.models';
       letter-spacing: 0.5px !important;
       padding: 10px 10px !important;
       border-bottom: 2px solid #1f3d6e !important;
-      white-space: nowrap;
-    }
-    :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) {
-      border-right: 1px solid #e8ecf1;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
       padding: 8px 10px !important;
       border-bottom: 1px solid #f0f2f5 !important;
       font-size: 12px;
       color: #374151;
-    }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
-      background: rgba(31,61,110,0.03) !important;
-    }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr:last-child > td {
-      border-bottom: none;
-    }
-    :host ::ng-deep .theme-table .ant-table-placeholder {
-      display: none !important;
-    }
-    .th-sno {
-      width: 42px !important;
-      text-align: center !important;
-    }
-    .td-center {
-      text-align: center !important;
-    }
-    .td-error {
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #ef4444 !important;
-      font-size: 11px;
-    }
-    .empty-cell {
-      text-align: center !important;
-      padding: 28px !important;
-      color: #9ca3af !important;
-      font-size: 13px;
-      font-style: italic;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-track {
-      background: #f1f3f5;
-      border-radius: 3px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb {
-      background: #c4c9d4;
-      border-radius: 10px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb:hover {
-      background: #a0a8b7;
     }
     :host ::ng-deep .ant-select-dropdown {
       border-radius: 8px !important;
@@ -445,12 +318,8 @@ import { PayrollProcess } from '../../core/models/payroll.models';
 export class PayrollProcessComponent implements OnInit {
   selectedYear: number;
   selectedMonth: number;
-  currentCycleYear: number;
-  currentCycleMonth: number;
-  processing = false;
-  loadingHistory = false;
-  currentProcess: PayrollProcess | null = null;
-  history: PayrollProcess[] = [];
+  uploading = false;
+  uploadResult: any = null;
 
   yearList: number[] = [];
   monthList = [
@@ -467,17 +336,8 @@ export class PayrollProcessComponent implements OnInit {
     private msg: NzMessageService
   ) {
     const now = new Date();
-    this.currentCycleYear = now.getFullYear();
-    this.currentCycleMonth = now.getMonth() + 1;
-    if (now.getDate() >= 26) {
-      this.currentCycleMonth++;
-      if (this.currentCycleMonth > 12) {
-        this.currentCycleMonth = 1;
-        this.currentCycleYear++;
-      }
-    }
-    this.selectedYear = this.currentCycleYear;
-    this.selectedMonth = this.currentCycleMonth;
+    this.selectedYear = now.getFullYear();
+    this.selectedMonth = now.getMonth() + 1;
   }
 
   ngOnInit(): void {
@@ -485,106 +345,56 @@ export class PayrollProcessComponent implements OnInit {
     for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
       this.yearList.push(y);
     }
-    this.loadStatus();
-    this.loadHistory();
   }
 
-  get progressPercent(): number {
-    if (!this.currentProcess || this.currentProcess.totalEmployees === 0) return 0;
-    return Math.round((this.currentProcess.processedCount / this.currentProcess.totalEmployees) * 100);
-  }
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
 
-  onFilterChange(): void {
-    this.loadStatus();
-    this.loadHistory();
-  }
-
-  monthLabel(m: number): string {
-    return this.monthList[m - 1]?.label || '';
-  }
-
-  statusColor(status: string): string {
-    switch (status) {
-      case 'COMPLETED': return '#52c41a';
-      case 'PROCESSING': return '#1890ff';
-      case 'FAILED': return '#f5222d';
-      case 'PENDING': return '#fa8c16';
-      default: return '#d9d9d9';
+    const file = input.files[0];
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      this.msg.error('Please select an Excel file (.xlsx or .xls)');
+      return;
     }
-  }
 
-  loadStatus(): void {
-    this.payrollService.getProcessStatus(this.selectedYear, this.selectedMonth).subscribe({
+    this.uploading = true;
+    this.uploadResult = null;
+
+    this.payrollService.uploadSalaryStatement(file, this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
+        this.uploading = false;
         if (res.success && res.data) {
-          this.currentProcess = res.data;
-        } else {
-          this.currentProcess = null;
-        }
-      },
-      error: () => {
-        this.currentProcess = null;
-      }
-    });
-  }
-
-  loadHistory(): void {
-    this.loadingHistory = true;
-    this.payrollService.getProcessHistory(this.selectedYear, this.selectedMonth).subscribe({
-      next: (res) => {
-        this.history = res.data || [];
-        this.loadingHistory = false;
-      },
-      error: () => {
-        this.loadingHistory = false;
-      }
-    });
-  }
-
-  processPayroll(): void {
-    this.processing = true;
-    this.payrollService.processPayroll(this.selectedYear, this.selectedMonth).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.msg.success('Payroll processing started');
-          this.currentProcess = res.data;
-          this.loadHistory();
-          this.pollStatus();
-        }
-        this.processing = false;
-      },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to start payroll processing');
-        this.processing = false;
-      }
-    });
-  }
-
-  pollStatus(): void {
-    let attempts = 0;
-    const maxAttempts = 30;
-    const interval = setInterval(() => {
-      attempts++;
-      this.payrollService.getProcessStatus(this.selectedYear, this.selectedMonth).subscribe({
-        next: (res) => {
-          if (res.success && res.data) {
-            this.currentProcess = res.data;
-            if (res.data.status === 'COMPLETED' || res.data.status === 'FAILED') {
-              clearInterval(interval);
-              this.loadHistory();
-              if (res.data.status === 'COMPLETED') {
-                this.msg.success('Payroll processing completed');
-              } else {
-                this.msg.error(res.data.errorMessage || 'Payroll processing failed');
-              }
-            }
+          this.uploadResult = res.data;
+          const total = res.data.totalRows || 0;
+          const success = res.data.successCount || 0;
+          const failed = res.data.failureCount || 0;
+          if (failed === 0) {
+            this.msg.success(`Uploaded ${success} of ${total} records successfully`);
+          } else {
+            this.msg.warning(`Uploaded ${success}/${total} records with ${failed} errors`);
           }
         }
-      });
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-        this.msg.warning('Polling ended - check status manually');
+      },
+      error: (err) => {
+        this.uploading = false;
+        this.msg.error(err.error?.message || 'Failed to upload salary statement');
       }
-    }, 3000);
+    });
+
+    input.value = '';
+  }
+
+  downloadStatement(): void {
+    this.payrollService.downloadSalaryStatement(this.selectedYear, this.selectedMonth).subscribe({
+      next: (blob) => saveAs(blob, `Salary_Statement_${this.selectedYear}_${this.selectedMonth}.xlsx`),
+      error: () => this.msg.error('No data found for the selected period')
+    });
+  }
+
+  downloadSample(): void {
+    this.payrollService.downloadSampleStatement().subscribe({
+      next: (blob) => saveAs(blob, 'Salary_Statement_Sample.xlsx'),
+      error: () => this.msg.error('Failed to download sample')
+    });
   }
 }

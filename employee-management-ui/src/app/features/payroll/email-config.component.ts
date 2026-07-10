@@ -30,12 +30,7 @@ import { EmailConfig } from '../../core/models/payroll.models';
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
           <i nz-icon nzType="play-circle"></i><span>Process</span>
         </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
-          <i nz-icon nzType="bank"></i><span>Salary Master</span>
-        </a>
-        <a class="pp-nav-item" routerLink="/admin/payroll/input" routerLinkActive="active">
-          <i nz-icon nzType="edit"></i><span>Employee Input</span>
-        </a>
+
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
