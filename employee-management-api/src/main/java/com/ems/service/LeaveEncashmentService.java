@@ -43,26 +43,34 @@ public class LeaveEncashmentService {
     }
 
     @Transactional
-    public LeaveEncashmentDTO createEncashment(LeaveEncashment encashment) {
-        Employee employee = employeeRepository.findById(encashment.getEmployee().getId())
+    public LeaveEncashmentDTO createEncashment(LeaveEncashmentDTO dto) {
+        Employee employee = employeeRepository.findById(dto.getEmployeeId())
             .orElseThrow(() -> new RuntimeException("Employee not found"));
-        LeaveType leaveType = leaveTypeRepository.findById(encashment.getLeaveType().getId())
+        LeaveType leaveType = leaveTypeRepository.findById(dto.getLeaveTypeId())
             .orElseThrow(() -> new RuntimeException("Leave type not found"));
 
-        int year = encashment.getYear() != null ? encashment.getYear() : java.time.Year.now().getValue();
+        int year = dto.getYear() != null ? dto.getYear() : java.time.Year.now().getValue();
+        int month = dto.getMonth() != null ? dto.getMonth() : java.time.LocalDate.now().getMonthValue();
         Optional<LeaveBalance> balanceOpt = leaveBalanceRepository
             .findByEmployeeIdAndLeaveTypeIdAndYear(employee.getId(), leaveType.getId(), year);
         if (balanceOpt.isEmpty() || balanceOpt.get().getBalance() <= 0) {
             throw new BadRequestException("No available balance to encash for " + leaveType.getName());
         }
-        if (balanceOpt.get().getBalance() < encashment.getEncashedDays()) {
+        if (balanceOpt.get().getBalance() < dto.getEncashedDays()) {
             throw new BadRequestException("Insufficient balance: " + balanceOpt.get().getBalance()
-                + " available, " + encashment.getEncashedDays() + " requested");
+                + " available, " + dto.getEncashedDays() + " requested");
         }
 
-        encashment.setEmployee(employee);
-        encashment.setLeaveType(leaveType);
-        encashment.setStatus("PENDING");
+        LeaveEncashment encashment = LeaveEncashment.builder()
+            .employee(employee)
+            .leaveType(leaveType)
+            .encashedDays(dto.getEncashedDays())
+            .encashmentAmount(dto.getEncashmentAmount())
+            .month(month)
+            .year(year)
+            .remarks(dto.getRemarks())
+            .status("PENDING")
+            .build();
         LeaveEncashment saved = encashmentRepository.save(encashment);
         return LeaveEncashmentDTO.fromEntity(saved);
     }

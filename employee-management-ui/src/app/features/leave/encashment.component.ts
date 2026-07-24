@@ -310,8 +310,8 @@ export class EncashmentComponent implements OnInit {
     this.saving = true;
     const now = new Date();
     this.encashmentService.createEncashment({
-      employee: { id: this.form.employeeId },
-      leaveType: { id: this.form.leaveTypeId },
+      employeeId: this.form.employeeId,
+      leaveTypeId: this.form.leaveTypeId,
       encashedDays: this.form.encashedDays,
       encashmentAmount: this.form.encashmentAmount,
       month: now.getMonth() + 1,

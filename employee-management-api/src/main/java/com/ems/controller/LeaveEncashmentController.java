@@ -2,7 +2,6 @@ package com.ems.controller;
 
 import com.ems.dto.APIResponse;
 import com.ems.dto.LeaveEncashmentDTO;
-import com.ems.model.LeaveEncashment;
 import com.ems.security.CustomUserDetails;
 import com.ems.service.LeaveEncashmentService;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +34,8 @@ public class LeaveEncashmentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<LeaveEncashmentDTO>> createEncashment(@RequestBody LeaveEncashment encashment) {
-        return ResponseEntity.ok(APIResponse.success("Encashment created", encashmentService.createEncashment(encashment)));
+    public ResponseEntity<APIResponse<LeaveEncashmentDTO>> createEncashment(@RequestBody LeaveEncashmentDTO dto) {
+        return ResponseEntity.ok(APIResponse.success("Encashment created", encashmentService.createEncashment(dto)));
     }
 
     @PutMapping("/{id}/approve")
