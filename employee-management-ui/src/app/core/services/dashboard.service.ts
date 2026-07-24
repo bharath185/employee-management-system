@@ -28,4 +28,8 @@ export class DashboardService {
   getDesignationDistribution(): Observable<APIResponse<{ designation: string; count: number }[]>> {
     return this.http.get<APIResponse<{ designation: string; count: number }[]>>(`${this.baseUrl}/dashboard/charts/designation`);
   }
+
+  getReportAnalytics(): Observable<APIResponse<any>> {
+    return this.http.get<APIResponse<any>>(`${this.baseUrl}/dashboard/report-analytics`);
+  }
 }

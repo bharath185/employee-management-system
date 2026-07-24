@@ -56,7 +56,8 @@ public class DataSeeder implements CommandLineRunner {
         String[] stmts = {
             "ALTER TABLE employees ALTER COLUMN mobile TYPE VARCHAR(20)",
             "ALTER TABLE employees ALTER COLUMN account_number TYPE VARCHAR(30)",
-            "ALTER TABLE pending_registrations ALTER COLUMN mobile TYPE VARCHAR(20)"
+            "ALTER TABLE pending_registrations ALTER COLUMN mobile TYPE VARCHAR(20)",
+            "ALTER TABLE leave_balances ADD COLUMN IF NOT EXISTS encashed INTEGER NOT NULL DEFAULT 0"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {

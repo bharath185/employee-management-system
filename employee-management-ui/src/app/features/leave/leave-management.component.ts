@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpParams } from '@angular/common/http';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
@@ -17,7 +18,9 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { LeaveService } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { HolidayListComponent } from './holiday-list.component';
+import { CompOffTrackingComponent } from './comp-off-tracking.component';
+import { EncashmentComponent } from './encashment.component';
 import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/payroll.models';
 
 @Component({
@@ -26,124 +29,159 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzInputModule, NzInputNumberModule, NzDatePickerModule,
-    NzTabsModule, NzCardModule, NzTagModule,     NzPopconfirmModule, NzSpinModule,
-    PageHeaderComponent
+    NzTabsModule, NzCardModule, NzTagModule, NzPopconfirmModule, NzSpinModule,
+    HolidayListComponent, CompOffTrackingComponent, EncashmentComponent
   ],
   template: `
     <div class="leave-container page-enter">
-      <app-page-header icon="carry-out" title="Leave Management" subtitle="Manage employee leave applications and balances">
-        <button nz-button (click)="showApplyModal()">
-          <i nz-icon nzType="plus"></i> Apply Leave
-        </button>
-      </app-page-header>
 
       <!-- ===== TABS ===== -->
       <nz-tabset class="employee-tabs">
         <nz-tab nzTitle="Applications">
-          <div class="tab-filters">
-            <nz-select [(ngModel)]="statusFilter" (ngModelChange)="loadApplications()" nzPlaceHolder="Filter by status" class="filter-select">
-              <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
-              <nz-option nzValue="PENDING" nzLabel="Pending"></nz-option>
-              <nz-option nzValue="APPROVED" nzLabel="Approved"></nz-option>
-              <nz-option nzValue="REJECTED" nzLabel="Rejected"></nz-option>
-            </nz-select>
-          </div>
+          <div class="leave-card">
+            <div class="tab-filters">
+              <nz-select [(ngModel)]="statusFilter" (ngModelChange)="loadApplications()" nzPlaceHolder="Filter by status" class="filter-select">
+                <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
+                <nz-option nzValue="PENDING" nzLabel="Pending"></nz-option>
+                <nz-option nzValue="APPROVED" nzLabel="Approved"></nz-option>
+                <nz-option nzValue="REJECTED" nzLabel="Rejected"></nz-option>
+              </nz-select>
+              <button nz-button class="apply-leave-btn" (click)="showApplyModal()">
+                <i nz-icon nzType="plus"></i> Apply Leave
+              </button>
+            </div>
 
-          <nz-table #appTable [nzData]="applications" [nzLoading]="loadingApps" class="theme-table" nzSize="small">
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Leave Type</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Days</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th class="th-actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let app of appTable.data">
-                <td><span class="emp-cell">{{ app.employeeCode }} - {{ app.employeeName }}</span></td>
-                <td>{{ app.leaveTypeName }}</td>
-                <td>{{ app.fromDate }}</td>
-                <td>{{ app.toDate }}</td>
-                <td class="td-center"><span class="days-badge">{{ app.days }}</span></td>
-                <td><span class="reason-text">{{ app.reason }}</span></td>
-                <td>
-                  <nz-tag [nzColor]="app.status === 'APPROVED' ? 'green' : app.status === 'REJECTED' ? 'red' : 'orange'" class="status-tag">
-                    {{ app.status }}
-                  </nz-tag>
-                </td>
-                <td class="td-actions">
-                  <ng-container *ngIf="app.status === 'PENDING' && authService.canManageStaff()">
-                    <button nz-button nzType="link" nzSize="small" class="action-btn action-approve" (click)="approve(app.id)" nz-tooltip="Approve">
-                      <i nz-icon nzType="check-circle"></i>
-                    </button>
-                    <button nz-button nzType="link" nzSize="small" class="action-btn action-reject" (click)="reject(app.id)" nz-tooltip="Reject">
-                      <i nz-icon nzType="close-circle"></i>
-                    </button>
-                  </ng-container>
-                  <span *ngIf="app.status !== 'PENDING'" class="text-muted">—</span>
-                </td>
-              </tr>
-              <tr *ngIf="applications.length === 0 && !loadingApps">
-                <td colspan="8" class="empty-cell">No leave applications found</td>
-              </tr>
-            </tbody>
-          </nz-table>
+            <nz-table #appTable [nzData]="applications" [nzLoading]="loadingApps" class="theme-table" nzSize="small">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Leave Type</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Days</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th class="th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let app of appTable.data">
+                  <td><span class="emp-cell">{{ app.employeeCode }} - {{ app.employeeName }}</span></td>
+                  <td>{{ app.leaveTypeName }}</td>
+                  <td>{{ app.fromDate }}</td>
+                  <td>{{ app.toDate }}</td>
+                  <td class="td-center"><span class="days-badge">{{ app.days }}</span></td>
+                  <td><span class="reason-text">{{ app.reason }}</span></td>
+                  <td>
+                    <nz-tag [nzColor]="app.status === 'APPROVED' ? 'green' : app.status === 'REJECTED' ? 'red' : 'orange'" class="status-tag">
+                      {{ app.status }}
+                    </nz-tag>
+                  </td>
+                  <td class="td-actions">
+                    <ng-container *ngIf="app.status === 'PENDING' && authService.canManageStaff()">
+                      <button nz-button nzType="link" nzSize="small" class="action-btn action-approve" (click)="approve(app.id)" nz-tooltip="Approve">
+                        <i nz-icon nzType="check-circle"></i>
+                      </button>
+                      <button nz-button nzType="link" nzSize="small" class="action-btn action-reject" (click)="reject(app.id)" nz-tooltip="Reject">
+                        <i nz-icon nzType="close-circle"></i>
+                      </button>
+                    </ng-container>
+                    <span *ngIf="app.status !== 'PENDING'" class="text-muted">—</span>
+                  </td>
+                </tr>
+                <tr *ngIf="applications.length === 0 && !loadingApps">
+                  <td colspan="8" class="empty-cell">No leave applications found</td>
+                </tr>
+              </tbody>
+            </nz-table>
+          </div>
         </nz-tab>
 
-        <nz-tab nzTitle="Balances">
-          <div class="tab-filters">
-            <nz-select [(ngModel)]="balanceYear" (ngModelChange)="loadBalances()" class="filter-select" style="width:110px">
-              <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
-            </nz-select>
-            <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
-              <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-              <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
-            </nz-select>
-            <button nz-button class="filter-action-btn" (click)="initAllBalances()" [nzLoading]="initing"
-                    *ngIf="authService.canManageStaff()">
-              <i nz-icon nzType="team"></i> Initialize All
-            </button>
-          </div>
+        <nz-tab nzTitle="Leave Balances">
+          <div class="leave-card">
+            <div class="tab-filters">
+              <nz-select [(ngModel)]="balanceYear" (ngModelChange)="loadBalances()" class="filter-select" style="width:110px">
+                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+              </nz-select>
+              <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
+                <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
+              </nz-select>
+              <button nz-button class="filter-action-btn" (click)="fileInput.click()" [nzLoading]="uploading"
+                      *ngIf="authService.canManageStaff()" nz-tooltip="Upload Excel file and sync to database">
+                <i nz-icon nzType="upload"></i> Import Excel
+              </button>
+              <input #fileInput type="file" accept=".xlsx" (change)="onFileSelected($event)" style="display:none">
+              <button nz-button class="filter-action-btn" (click)="exportToExcel()" [nzLoading]="exporting"
+                      *ngIf="authService.canManageStaff()" nz-tooltip="Download Excel with current data">
+                <i nz-icon nzType="download"></i> Export Excel
+              </button>
+              <button nz-button class="filter-action-btn" (click)="downloadSample()" [nzLoading]="sampling"
+                      *ngIf="authService.canManageStaff()" nz-tooltip="Download sample Excel template">
+                <i nz-icon nzType="file"></i> Sample Excel
+              </button>
+              <button nz-button class="filter-action-btn filter-action-btn-danger"
+                      nz-popconfirm nzPopconfirmTitle="Delete all leave balance records?"
+                      (nzOnConfirm)="clearAllBalances()" [nzLoading]="clearing"
+                      *ngIf="authService.canManageStaff()" nz-tooltip="Delete all leave balance records">
+                <i nz-icon nzType="delete"></i> Clear All
+              </button>
+            </div>
 
-          <nz-table #balTable [nzData]="balances" [nzLoading]="loadingBals" class="theme-table" nzSize="small">
-            <thead>
-              <tr>
-                <th>Employee Code</th>
-                <th>Name</th>
-                <th>Leave Type</th>
-                <th class="td-center">Entitled</th>
-                <th class="td-center">Taken</th>
-                <th class="td-center">Balance</th>
-                <th class="th-actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let b of balTable.data">
-                <td><span class="emp-code-text">{{ b.employeeCode }}</span></td>
-                <td>{{ b.employeeName }}</td>
-                <td>{{ b.leaveTypeName }}</td>
-                <td class="td-center">{{ b.entitled }}</td>
-                <td class="td-center">{{ b.taken }}</td>
-                <td class="td-center">
-                  <span class="balance-badge" [class.balance-low]="b.balance <= 2">{{ b.balance }}</span>
-                </td>
-                <td class="td-actions">
-                  <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editBalance(b)" *ngIf="authService.canManageStaff()" nz-tooltip="Edit Balance">
-                    <i nz-icon nzType="edit"></i>
-                  </button>
-                  <span *ngIf="!authService.canManageStaff()" class="text-muted">—</span>
-                </td>
-              </tr>
-              <tr *ngIf="balances.length === 0 && !loadingBals">
-                <td colspan="7" class="empty-cell">No balances found</td>
-              </tr>
-            </tbody>
-          </nz-table>
+            <nz-table #balTable [nzData]="balances" [nzLoading]="loadingBals" class="theme-table" nzSize="small">
+              <thead>
+                <tr>
+                  <th>Employee Code</th>
+                  <th>Name</th>
+                  <th>Leave Type</th>
+                  <th class="td-center">Entitled</th>
+                  <th class="td-center">Taken</th>
+                  <th class="td-center">Encashed</th>
+                  <th class="td-center">Balance</th>
+                  <th class="th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let b of balTable.data">
+                  <td><span class="emp-code-text">{{ b.employeeCode }}</span></td>
+                  <td>{{ b.employeeName }}</td>
+                  <td>{{ b.leaveTypeName }}</td>
+                  <td class="td-center">{{ b.entitled }}</td>
+                  <td class="td-center">{{ b.taken }}</td>
+                  <td class="td-center">{{ b.encashed || 0 }}</td>
+                  <td class="td-center">
+                    <span class="balance-badge" [class.balance-low]="b.balance <= 2">{{ b.balance }}</span>
+                  </td>
+                  <td class="td-actions">
+                    <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editBalance(b)" *ngIf="authService.canManageStaff()" nz-tooltip="Edit Balance">
+                      <i nz-icon nzType="edit"></i>
+                    </button>
+                    <span *ngIf="!authService.canManageStaff()" class="text-muted">—</span>
+                  </td>
+                </tr>
+                <tr *ngIf="balances.length === 0 && !loadingBals">
+                  <td colspan="7" class="empty-cell">No balances found</td>
+                </tr>
+              </tbody>
+            </nz-table>
+          </div>
         </nz-tab>
+        <nz-tab nzTitle="Holiday List">
+          <div class="leave-card">
+            <app-holiday-list></app-holiday-list>
+          </div>
+        </nz-tab>
+        <nz-tab nzTitle="Comp Off Tracking">
+          <div class="leave-card">
+            <app-comp-off-tracking></app-comp-off-tracking>
+          </div>
+        </nz-tab>
+        <nz-tab nzTitle="Leave Encashment">
+          <div class="leave-card">
+            <app-encashment></app-encashment>
+          </div>
+        </nz-tab>
+
       </nz-tabset>
 
       <!-- ===== APPLY LEAVE MODAL (custom overlay) ===== -->
@@ -212,8 +250,12 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               <nz-input-number [(ngModel)]="editBalanceData.taken" name="taken" [nzMin]="0" [nzMax]="365" class="theme-input-number"></nz-input-number>
             </div>
             <div class="form-row">
-              <label>Balance (auto-calculated)</label>
-              <nz-input-number [ngModel]="editBalanceData.entitled - editBalanceData.taken" name="balance" [nzDisabled]="true" class="theme-input-number"></nz-input-number>
+              <label>Encashed</label>
+              <nz-input-number [(ngModel)]="editBalanceData.encashed" name="encashed" [nzMin]="0" [nzMax]="365" class="theme-input-number" [nzDisabled]="true"></nz-input-number>
+            </div>
+            <div class="form-row">
+              <label>Balance</label>
+              <nz-input-number [ngModel]="editBalanceData.entitled - editBalanceData.taken - (editBalanceData.encashed || 0)" name="balance" [nzDisabled]="true" class="theme-input-number"></nz-input-number>
             </div>
           </div>
           <div class="modal-footer">
@@ -228,60 +270,82 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
     /* ===== CONTAINER ===== */
     .leave-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 12px 16px;
+      padding: 0 16px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
     }
 
-    /* ===== EMPLOYEE TABS ===== */
+    /* ===== TABS AS SUB-NAV ===== */
     .employee-tabs {
-      background: #ffffff !important;
-      border: 1px solid #e8eaed !important;
-      border-radius: 10px !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       display: block;
-      overflow: hidden;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-nav {
-      padding: 0 16px !important;
-      margin-bottom: 0 !important;
-      background: #f8fafc !important;
-      border-bottom: 1px solid #e8eaed !important;
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav {
+      margin-bottom: 12px !important;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-nav-wrap {
-      padding-top: 4px;
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-nav-list {
+      background: #f0f4ff;
+      border-radius: 10px;
+      padding: 4px;
+      border: 1px solid #e0e7ff;
+      display: flex;
+      gap: 2px;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab {
-      font-size: 12px !important;
-      padding: 7px 14px !important;
-      margin: 0 2px !important;
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab {
+      font-size: 13px !important;
+      padding: 8px 16px !important;
+      margin: 0 !important;
       color: #6c757d !important;
-      transition: all 0.2s ease !important;
-      border-radius: 6px 6px 0 0 !important;
-      letter-spacing: 0.3px !important;
-    }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab:hover {
-      color: #1f3d6e !important;
-      background: rgba(31,61,110,0.04) !important;
-    }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-active {
-      color: #1f3d6e !important;
       font-weight: 600 !important;
+      border-radius: 8px !important;
+      border: none !important;
+      background: transparent !important;
+      transition: all 0.2s ease;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
+      background: #ffffff !important;
       color: #1f3d6e !important;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1) !important;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-ink-bar {
-      background: #1f3d6e !important;
-      height: 3px !important;
-      border-radius: 3px 3px 0 0 !important;
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-ink-bar {
+      display: none !important;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-content-holder {
+    :host ::ng-deep .employee-tabs > .ant-tabs-content-holder {
+      background: transparent !important;
+      border: none !important;
       padding: 0 !important;
+      box-shadow: none !important;
     }
-    :host ::ng-deep .employee-tabs .ant-tabs-tabpane {
-      padding: 14px 16px !important;
+
+    /* Wrap table/filters in card */
+    .leave-card {
+      background: #fff;
+      border: 1px solid #e8ecf3;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+
+    .apply-leave-btn {
+      height: 32px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      background: #1f3d6e !important;
+      color: #fff !important;
+      border: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px;
+      white-space: nowrap;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+    .apply-leave-btn:hover {
+      background: #2a4a8a !important;
+      color: #fff !important;
     }
 
     /* ===== TAB FILTERS ===== */
@@ -332,6 +396,15 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       border-color: #1f3d6e !important;
       color: #1f3d6e !important;
       background: rgba(31,61,110,0.04) !important;
+    }
+    .filter-action-btn-danger {
+      border-color: #fca5a5 !important;
+      color: #dc2626 !important;
+    }
+    .filter-action-btn-danger:hover {
+      border-color: #dc2626 !important;
+      color: #fff !important;
+      background: #dc2626 !important;
     }
 
     /* ===== THEME TABLE ===== */
@@ -770,7 +843,10 @@ export class LeaveManagementComponent implements OnInit {
   loadingApps = false;
   loadingBals = false;
   savingApp = false;
-  initing = false;
+  uploading = false;
+  exporting = false;
+  sampling = false;
+  clearing = false;
   applyModalVisible = false;
   editBalanceVisible = false;
   savingBalance = false;
@@ -876,23 +952,83 @@ export class LeaveManagementComponent implements OnInit {
     });
   }
 
-  initAllBalances(): void {
-    this.initing = true;
-    this.leaveService.initializeAllBalances(this.balanceYear).subscribe({
+  onFileSelected(event: any): void {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    this.uploading = true;
+    const now = new Date();
+    this.leaveService.uploadExcel(file, now.getMonth() + 1, now.getFullYear()).subscribe({
       next: (res) => {
-        this.msg.success(res.data || 'Leave balances initialized');
+        this.msg.success(res.message || 'Excel uploaded and synced');
         this.loadBalances();
-        this.initing = false;
+        this.uploading = false;
       },
       error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to initialize');
-        this.initing = false;
+        this.msg.error(err.error?.message || 'Failed to upload Excel');
+        this.uploading = false;
+      }
+    });
+    event.target.value = '';
+  }
+
+  exportToExcel(): void {
+    this.exporting = true;
+    const now = new Date();
+    const params = new HttpParams().set('month', (now.getMonth() + 1).toString()).set('year', now.getFullYear().toString());
+    this.leaveService.exportExcelBlob(params).subscribe({
+      next: (blob: Blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Leve_details_format_${now.toISOString().slice(0, 7)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        this.msg.success('Excel downloaded');
+        this.exporting = false;
+      },
+      error: (err) => {
+        this.msg.error('Failed to export Excel');
+        this.exporting = false;
+      }
+    });
+  }
+
+  downloadSample(): void {
+    this.sampling = true;
+    const now = new Date();
+    this.leaveService.downloadSampleExcel(now.getMonth() + 1, now.getFullYear()).subscribe({
+      next: (blob: Blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Leave_Sample_Format.xlsx';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        this.msg.success('Sample Excel downloaded');
+        this.sampling = false;
+      },
+      error: (err) => {
+        this.msg.error('Failed to download sample');
+        this.sampling = false;
+      }
+    });
+  }
+
+  clearAllBalances(): void {
+    this.clearing = true;
+    this.leaveService.clearAllBalances().subscribe({
+      next: (res) => {
+        this.msg.success(res.message || 'All balances cleared');
+        this.clearing = false;
+        this.loadBalances();
+      },
+      error: (err) => {
+        this.msg.error(err.error?.message || 'Failed to clear balances');
+        this.clearing = false;
       }
     });
   }
 
   editBalance(b: any): void {
-    this.editBalanceData = { id: b.id, employeeName: b.employeeName, leaveTypeName: b.leaveTypeName, entitled: b.entitled, taken: b.taken };
+    this.editBalanceData = { id: b.id, employeeName: b.employeeName, leaveTypeName: b.leaveTypeName, entitled: b.entitled, taken: b.taken, encashed: b.encashed || 0 };
     this.editBalanceVisible = true;
   }
 

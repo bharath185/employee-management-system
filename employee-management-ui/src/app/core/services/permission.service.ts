@@ -59,7 +59,7 @@ export class PermissionService {
     const labels: Record<string, string> = {
       dashboard: 'Dashboard', staff_master: 'Staff Master', company: 'Company Setup',
       masters: 'Master Data', doc_templates: 'Document Templates', payroll: 'Payroll',
-      leave: 'Leave Management', reports: 'Statutory Reports', registrations: 'Registrations',
+      leave: 'Leave & Attendance', reports: 'Reports', registrations: 'Registrations',
       chat: 'Chat Assistant'
     };
     return labels[resource] || resource;

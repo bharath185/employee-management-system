@@ -51,6 +51,14 @@ import { AuthService } from '../../core/services/auth.service';
               <i nz-icon nzType="schedule"></i>
               <span *ngIf="!isCollapsed()">My Leave</span>
             </li>
+            <li nz-menu-item routerLink="/employee/comp-offs" routerLinkActive="ant-menu-item-selected">
+              <i nz-icon nzType="clock-circle"></i>
+              <span *ngIf="!isCollapsed()">My Comp-Offs</span>
+            </li>
+            <li nz-menu-item routerLink="/employee/encashments" routerLinkActive="ant-menu-item-selected">
+              <i nz-icon nzType="dollar"></i>
+              <span *ngIf="!isCollapsed()">My Encashments</span>
+            </li>
           </ul>
           <div class="emp-sidenav-spacer"></div>
           <div class="emp-sidenav-user-section">
@@ -107,6 +115,14 @@ import { AuthService } from '../../core/services/auth.service';
               <li nz-menu-item routerLink="/employee/leave">
                 <i nz-icon nzType="schedule"></i>
                 <span>My Leave</span>
+              </li>
+              <li nz-menu-item routerLink="/employee/comp-offs">
+                <i nz-icon nzType="clock-circle"></i>
+                <span>My Comp-Offs</span>
+              </li>
+              <li nz-menu-item routerLink="/employee/encashments">
+                <i nz-icon nzType="dollar"></i>
+                <span>My Encashments</span>
               </li>
               <li nz-menu-divider></li>
               <li nz-menu-item (click)="logout()">

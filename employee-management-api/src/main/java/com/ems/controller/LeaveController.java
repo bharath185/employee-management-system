@@ -5,14 +5,24 @@ import com.ems.dto.LeaveApplicationDTO;
 import com.ems.dto.LeaveBalanceDTO;
 import com.ems.model.LeaveType;
 import com.ems.security.CustomUserDetails;
+import com.ems.service.LeaveExcelService;
 import com.ems.service.LeaveService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 @RestController
@@ -21,6 +31,7 @@ import java.util.List;
 public class LeaveController {
 
     private final LeaveService leaveService;
+    private final LeaveExcelService leaveExcelService;
 
     @GetMapping("/types")
     public ResponseEntity<APIResponse<List<LeaveType>>> getLeaveTypes() {
@@ -145,5 +156,95 @@ public class LeaveController {
     public ResponseEntity<APIResponse<List<LeaveApplicationDTO>>> getMyApplications(
             @AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.ok(APIResponse.success(leaveService.getLeaveApplicationsByEmployee(user.getEmployeeId())));
+    }
+
+    // ==================== EXCEL SYNC ====================
+
+    @PostMapping("/sync-excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> syncFromExcel(
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getMonthValue()}") int month,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
+        leaveExcelService.initFromExcel(month, year);
+        return ResponseEntity.ok(APIResponse.success("Leave data synced from Excel"));
+    }
+
+    @PostMapping("/export-excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<Resource> exportToExcel(
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getMonthValue()}") int month,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
+        leaveExcelService.syncFromDbToExcel(month, year);
+        File file = new File("H:\\PARIKAR\\docs\\Leve details format.xlsx");
+        Resource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leve_details_format.xlsx")
+            .body(resource);
+    }
+
+    @PostMapping("/upload-excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> uploadExcel(
+            @RequestParam MultipartFile file,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getMonthValue()}") int month,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
+        String path = "H:\\PARIKAR\\docs\\Leve details format.xlsx";
+        try (InputStream is = file.getInputStream();
+             FileOutputStream fos = new FileOutputStream(path)) {
+            is.transferTo(fos);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError()
+                .body(APIResponse.error("Failed to upload Excel: " + e.getMessage()));
+        }
+        leaveExcelService.initFromExcel(month, year);
+        return ResponseEntity.ok(APIResponse.success("Excel uploaded and synced to database"));
+    }
+
+    @PostMapping("/credit-monthly")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> creditMonthlyLeave(
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getMonthValue()}") int month,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
+        leaveExcelService.creditMonthlyLeave(month, year);
+        return ResponseEntity.ok(APIResponse.success("Monthly leave credited to eligible employees"));
+    }
+
+    @GetMapping("/download-excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<Resource> downloadExcel() {
+        File file = new File("H:\\PARIKAR\\docs\\Leve details format.xlsx");
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leve_details_format.xlsx")
+            .body(resource);
+    }
+
+    @GetMapping("/download-sample-excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<Resource> downloadSampleExcel(
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getMonthValue()}") int month,
+            @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
+        leaveExcelService.createSampleSheet(month, year);
+        File file = new File("H:\\PARIKAR\\docs\\Leve details format_sample.xlsx");
+        if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        Resource resource = new FileSystemResource(file);
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leave_Sample_Format.xlsx")
+            .body(resource);
+    }
+
+    @DeleteMapping("/clear")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<APIResponse<String>> clearAllBalances() {
+        leaveService.clearAllLeaveBalances();
+        return ResponseEntity.ok(APIResponse.<String>success("All leave balances cleared successfully", null));
     }
 }

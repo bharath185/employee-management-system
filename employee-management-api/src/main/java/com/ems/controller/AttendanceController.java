@@ -25,12 +25,13 @@ public class AttendanceController {
 
     @GetMapping("/monthly")
     public ResponseEntity<APIResponse<MonthlyAttendanceDTO>> getMonthlyAttendance(
-            @RequestParam int year,
-            @RequestParam int month,
+            @RequestParam String fromDate,
+            @RequestParam String toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) String department) {
-        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(year, month, page, size, department)));
+        return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(
+            LocalDate.parse(fromDate), LocalDate.parse(toDate), page, size, department)));
     }
 
     @GetMapping("/departments")
@@ -47,13 +48,9 @@ public class AttendanceController {
 
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<byte[]> exportExcel(@RequestParam int year, @RequestParam int month) {
-        byte[] data = attendanceService.exportExcel(year, month);
-        String filename = String.format("Attendance_%s_%d.xlsx",
-            String.format("%s'%04d",
-                new String[]{"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"}[month-1],
-                year),
-            month);
+    public ResponseEntity<byte[]> exportExcel(@RequestParam String fromDate, @RequestParam String toDate) {
+        byte[] data = attendanceService.exportExcel(LocalDate.parse(fromDate), LocalDate.parse(toDate));
+        String filename = "Attendance_" + fromDate + "_to_" + toDate + ".xlsx";
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
@@ -64,9 +61,9 @@ public class AttendanceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<Map<String, Object>>> importExcel(
             @RequestParam("file") MultipartFile file,
-            @RequestParam int year,
-            @RequestParam int month) {
-        Map<String, Object> result = attendanceService.importExcel(file, year, month);
+            @RequestParam String fromDate,
+            @RequestParam String toDate) {
+        Map<String, Object> result = attendanceService.importExcel(file, LocalDate.parse(fromDate), LocalDate.parse(toDate));
         return ResponseEntity.ok(APIResponse.success("Import completed", result));
     }
 

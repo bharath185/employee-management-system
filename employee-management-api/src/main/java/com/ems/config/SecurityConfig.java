@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/masters/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/dashboard/**").hasAnyRole("ADMIN", "HR")
+                .requestMatchers("/email-config/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/salaries/**").authenticated()
                 .requestMatchers("/payroll/**").authenticated()
                 .requestMatchers("/statutory-reports/**").hasAnyRole("ADMIN", "HR")

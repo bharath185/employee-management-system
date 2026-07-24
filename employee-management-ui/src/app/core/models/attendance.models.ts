@@ -28,9 +28,8 @@ export interface EmployeeAttendance {
 }
 
 export interface MonthlyAttendance {
-  year: number;
-  month: number;
-  monthLabel: string;
+  fromDate: string;
+  toDate: string;
   totalEmployees: number;
   page: number;
   size: number;

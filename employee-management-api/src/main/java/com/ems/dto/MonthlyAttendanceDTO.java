@@ -12,9 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MonthlyAttendanceDTO {
-    private int year;
-    private int month;
-    private String monthLabel;
+    private String fromDate;
+    private String toDate;
     private int totalEmployees;
     private int page;
     private int size;

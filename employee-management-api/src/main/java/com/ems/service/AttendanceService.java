@@ -3,9 +3,13 @@ package com.ems.service;
 import com.ems.dto.*;
 import com.ems.exception.ResourceNotFoundException;
 import com.ems.model.AttendanceRecord;
+import com.ems.model.CompOff;
 import com.ems.model.Employee;
+import com.ems.model.Holiday;
 import com.ems.repository.AttendanceRepository;
+import com.ems.repository.CompOffRepository;
 import com.ems.repository.EmployeeRepository;
+import com.ems.repository.HolidayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -17,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -31,22 +36,18 @@ public class AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final HolidayRepository holidayRepository;
+    private final CompOffRepository compOffRepository;
 
-    private static final String[] MONTH_ABBR = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-
-    private String monthAbbr(int m) { return MONTH_ABBR[m - 1]; }
-
-    public MonthlyAttendanceDTO getMonthlyAttendance(int year, int month, int page, int size, String department) {
-        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
-        LocalDate monthEnd = LocalDate.of(year, month, 25);
-        return buildGrid(year, month, monthStart, monthEnd, page, size, department);
+    public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String department) {
+        return buildGrid(fromDate, toDate, page, size, department);
     }
 
     public List<String> getDepartments() {
         return employeeRepository.findDistinctDepartments();
     }
 
-    private MonthlyAttendanceDTO buildGrid(int year, int month, LocalDate monthStart, LocalDate monthEnd, int page, int size, String department) {
+    private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String department) {
         int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
         List<DayColumnDTO> dayColumns = new ArrayList<>();
@@ -139,9 +140,8 @@ public class AttendanceService {
         }
 
         return MonthlyAttendanceDTO.builder()
-            .year(year)
-            .month(month)
-            .monthLabel(String.format("%s'%04d", monthAbbr(month), year))
+            .fromDate(monthStart.toString())
+            .toDate(monthEnd.toString())
             .totalEmployees(totalEmployees)
             .page(page)
             .size(size)
@@ -160,6 +160,7 @@ public class AttendanceService {
 
     @Transactional
     public void bulkUpsert(List<AttendanceDTO> records) {
+        List<CompOff> earnedCompOffs = new ArrayList<>();
         for (AttendanceDTO dto : records) {
             if (dto.getStatus() == null || dto.getStatus().isBlank()) continue;
             Employee employee = employeeRepository.findById(dto.getEmployeeId())
@@ -173,19 +174,37 @@ public class AttendanceService {
             record.setStatus(dto.getStatus());
             record.setEmployee(employee);
             attendanceRepository.save(record);
+
+            if ("P".equals(dto.getStatus()) && isHolidayOrWeekOff(dto.getDate())) {
+                if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(employee.getId(), dto.getDate(), "EARNED")) {
+                    CompOff co = CompOff.builder()
+                        .employee(employee)
+                        .earnedDate(dto.getDate())
+                        .expiryDate(dto.getDate().plusMonths(3))
+                        .status("EARNED")
+                        .remarks("Auto-earned: Worked on holiday/week-off")
+                        .build();
+                    earnedCompOffs.add(compOffRepository.save(co));
+                }
+            }
+        }
+        if (!earnedCompOffs.isEmpty()) {
+            log.info("Auto-earned {} Comp-Off(s) for working on holidays/week-offs", earnedCompOffs.size());
         }
         log.info("Attendance bulk upsert: {} records", records.size());
     }
 
-    public byte[] exportExcel(int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
-        LocalDate monthEnd = LocalDate.of(year, month, 25);
-        MonthlyAttendanceDTO data = buildGrid(year, month, monthStart, monthEnd, 0, Integer.MAX_VALUE, null);
+    private boolean isHolidayOrWeekOff(LocalDate date) {
+        if (holidayRepository.existsByDate(date)) return true;
+        return date.getDayOfWeek() == DayOfWeek.SUNDAY;
+    }
+
+    public byte[] exportExcel(LocalDate fromDate, LocalDate toDate) {
+        MonthlyAttendanceDTO data = buildGrid(fromDate, toDate, 0, Integer.MAX_VALUE, null);
         int numDays = data.getDayColumns().size();
-        String monthLabel = data.getMonthLabel();
 
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Attendance_" + monthLabel);
+            Sheet sheet = workbook.createSheet("Attendance");
 
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
@@ -278,9 +297,9 @@ public class AttendanceService {
     }
 
     @Transactional
-    public Map<String, Object> importExcel(MultipartFile file, int year, int month) {
-        LocalDate monthStart = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(26);
-        LocalDate monthEnd = LocalDate.of(year, month, 25);
+    public Map<String, Object> importExcel(MultipartFile file, LocalDate fromDate, LocalDate toDate) {
+        LocalDate monthStart = fromDate;
+        LocalDate monthEnd = toDate;
         int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
         List<Map<String, String>> errors = new ArrayList<>();
@@ -323,6 +342,19 @@ public class AttendanceService {
                     if (record.getEmployee() == null) record.setEmployee(emp);
                     attendanceRepository.save(record);
                     imported++;
+
+                    if ("P".equals(status) && isHolidayOrWeekOff(date)) {
+                        if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(emp.getId(), date, "EARNED")) {
+                            CompOff co = CompOff.builder()
+                                .employee(emp)
+                                .earnedDate(date)
+                                .expiryDate(date.plusMonths(3))
+                                .status("EARNED")
+                                .remarks("Auto-earned: Worked on holiday/week-off")
+                                .build();
+                            compOffRepository.save(co);
+                        }
+                    }
                 }
             }
         } catch (IOException e) {

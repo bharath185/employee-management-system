@@ -76,6 +76,11 @@ public class EmailConfigService {
      * Send an email using the active email configuration.
      */
     public void sendEmail(String to, String subject, String htmlBody) {
+        sendEmailWithAttachment(to, subject, htmlBody, null, null);
+    }
+
+    public void sendEmailWithAttachment(String to, String subject, String htmlBody,
+                                          byte[] attachmentData, String attachmentName) {
         EmailConfig config = emailConfigRepository.findFirstByIsActiveTrue()
             .orElseThrow(() -> new ResourceNotFoundException("No active email configuration found"));
 
@@ -87,6 +92,12 @@ public class EmailConfigService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
+
+            if (attachmentData != null && attachmentName != null) {
+                helper.addAttachment(attachmentName,
+                    () -> new java.io.ByteArrayInputStream(attachmentData));
+            }
+
             mailSender.send(message);
             log.info("Email sent successfully to {}", to);
         } catch (MessagingException e) {

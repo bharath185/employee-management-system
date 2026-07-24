@@ -9,10 +9,11 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
 import { MonthlyAttendance, EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -20,23 +21,21 @@ import { saveAs } from 'file-saver';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule,
-    PageHeaderComponent
+    NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule, NzDatePickerModule,
+
   ],
   template: `
     <div class="att-container">
-      <app-page-header icon="calendar" title="Attendance" subtitle="{{ data?.monthLabel || '' }}">
-        <div class="month-nav">
-          <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(-1)">
+      <div class="att-header-pill">
+        <span class="att-pill-title"><i nz-icon nzType="calendar"></i> Attendance</span>
+        <div class="date-range-picker">
+          <nz-date-picker [(ngModel)]="fromDate" (ngModelChange)="onDateRangeChange()" nzPlaceHolder="From date" nzSize="small" style="width:130px"></nz-date-picker>
+          <span class="date-sep">to</span>
+          <nz-date-picker [(ngModel)]="toDate" (ngModelChange)="onDateRangeChange()" nzPlaceHolder="To date" nzSize="small" style="width:130px"></nz-date-picker>
+          <button nz-button nzType="text" class="nav-btn" (click)="shiftRange(-1)" nz-tooltip="Previous period">
             <i nz-icon nzType="left"></i>
           </button>
-          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:68px">
-            <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-          </nz-select>
-          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless style="width:92px">
-            <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label.substring(0,3)"></nz-option>
-          </nz-select>
-          <button nz-button nzType="text" class="nav-btn" (click)="changeMonth(1)">
+          <button nz-button nzType="text" class="nav-btn" (click)="shiftRange(1)" nz-tooltip="Next period">
             <i nz-icon nzType="right"></i>
           </button>
           <span class="nav-sep"></span>
@@ -47,14 +46,14 @@ import { saveAs } from 'file-saver';
           </nz-select>
         </div>
         <div class="toolbar-actions">
-          <button nz-button nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
-            <i nz-icon nzType="download"></i>
+          <button nz-button nzType="default" nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
+            <i nz-icon nzType="download"></i> Export
           </button>
-          <button nz-button nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
-            <i nz-icon nzType="upload"></i>
+          <button nz-button nzType="default" nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
+            <i nz-icon nzType="upload"></i> Import
           </button>
           <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
-          <button nz-button nzSize="small" *ngIf="isCurrentMonth"
+          <button nz-button nzSize="small"
             [nzType]="isEditMode ? 'primary' : 'default'"
             class="edit-btn" [class.saving]="saving"
             (click)="toggleEdit()" [disabled]="saving">
@@ -63,7 +62,7 @@ import { saveAs } from 'file-saver';
             <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
           </button>
         </div>
-      </app-page-header>
+      </div>
 
       <div class="legend-bar" *ngIf="data">
         <div class="legend-item" *ngFor="let l of legendItems">
@@ -125,8 +124,7 @@ import { saveAs } from 'file-saver';
               <th rowSpan="2" class="th-sno">#</th>
               <th rowSpan="2" class="th-emp">Emp Code</th>
               <th [attr.colSpan]="dayColCount()" class="th-days">
-                <span class="th-month">{{ data?.monthLabel || '' }}</span>
-                <span class="th-range">26 {{ prevMonthAbbr }} - 25 {{ curMonthAbbr }}</span>
+                <span class="th-range">{{ data?.fromDate || '' }} - {{ data?.toDate || '' }}</span>
               </th>
               <th rowSpan="2" class="th-sum th-sum-p">P</th>
               <th rowSpan="2" class="th-sum th-sum-l">Lv</th>
@@ -187,18 +185,49 @@ import { saveAs } from 'file-saver';
   `,
   styles: [`
     .att-container { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:0 16px 16px; }
-    .month-nav { display:flex; align-items:center; gap:2px; background:rgba(255,255,255,.12); border-radius:8px; padding:2px 4px; }
-    .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:rgba(255,255,255,.75); border:none; background:transparent; cursor:pointer; transition:all .2s; }
-    .nav-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
-    .nav-sep { width:1px; height:20px; background:rgba(255,255,255,.15); margin:0 6px; flex-shrink:0; }
-    .month-nav ::ng-deep .ant-select { background:transparent; }
-    .month-nav ::ng-deep .ant-select-selection-item { color:rgba(255,255,255,.9) !important; font-weight:600; font-size:12px; }
-    .month-nav ::ng-deep .ant-select-arrow { color:rgba(255,255,255,.5); }
-    .dept-select { min-width:130px; }
-    .dept-select ::ng-deep .ant-select-selection-item { font-size:11px !important; }
-    .toolbar-actions { display:flex; align-items:center; gap:5px; }
-    .toolbar-actions button { height:30px; font-size:12px; border-radius:6px; border:none; background:rgba(255,255,255,.12); color:rgba(255,255,255,.8); padding:0 10px; transition:all .2s; }
-    .toolbar-actions button:hover:not(:disabled) { background:rgba(255,255,255,.2); color:#fff; }
+
+    /* Pill-style header bar matching sub-nav */
+    .att-header-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f0f4ff;
+      border-radius: 10px;
+      padding: 6px 14px;
+      margin-bottom: 16px;
+      border: 1px solid #e0e7ff;
+      flex-wrap: wrap;
+    }
+    .att-pill-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f3d6e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .att-pill-title i {
+      font-size: 16px;
+    }
+    .date-range-picker { display:flex; align-items:center; gap:4px; background:#ffffff; border-radius:8px; padding:2px 4px; border:1px solid #e0e7ff; flex-wrap:wrap; }
+    .date-sep { font-size:11px; color:#6c757d; font-weight:500; }
+    .nav-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; color:#6c757d; border:none; background:transparent; cursor:pointer; transition:all .2s; }
+    .nav-btn:hover { background:rgba(31,61,110,.08); color:#1f3d6e; }
+    .nav-sep { width:1px; height:20px; background:#e0e7ff; margin:0 6px; flex-shrink:0; }
+    .date-range-picker ::ng-deep .ant-select { background:transparent; }
+    .date-range-picker ::ng-deep .ant-select-selection-item { color:#1f3d6e !important; font-weight:600; font-size:12px; }
+    .date-range-picker ::ng-deep .ant-select-arrow { color:#6c757d; }
+    .date-range-picker ::ng-deep .ant-picker { border-radius:6px; height:28px; font-size:12px; }
+    .date-range-picker ::ng-deep .ant-picker-input > input { font-size:12px; }
+
+    .dept-select { margin-left:4px; }
+    .dept-select ::ng-deep .ant-select-selection-item { max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+
+    .toolbar-actions { display:flex; align-items:center; gap:5px; margin-left:auto; }
+    .toolbar-actions button { height:30px; font-size:12px; border-radius:6px; border:1px solid #e0e7ff; background:#ffffff; color:#6c757d; padding:0 10px; transition:all .2s; display:inline-flex; align-items:center; gap:4px; }
+    .toolbar-actions button i { display:inline-flex; font-size:14px; }
+    .toolbar-actions button:hover:not(:disabled) { border-color:#1f3d6e; color:#1f3d6e; }
     .edit-btn { font-weight:600 !important; letter-spacing:.3px; }
     .edit-btn.saving { opacity:.7; cursor:not-allowed; }
     .legend-bar { display:flex; flex-wrap:wrap; gap:4px 12px; margin-bottom:10px; padding:8px 14px; background:#fff; border:1px solid #e8eaed; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.04); }
@@ -285,10 +314,8 @@ import { saveAs } from 'file-saver';
 export class AttendanceComponent implements OnInit {
   loading = false;
   saving = false;
-  selectedYear: number;
-  selectedMonth: number;
-  currentCycleYear: number;
-  currentCycleMonth: number;
+  fromDate: Date;
+  toDate: Date;
   page = 0;
   size = 50;
   data: MonthlyAttendance | null = null;
@@ -297,8 +324,7 @@ export class AttendanceComponent implements OnInit {
   scrollX = '';
   selectedDepartment = '';
   departmentList: string[] = [];
-
-  yearList: number[] = [];
+  rangeDays = 30;
 
   legendItems = [
     { code: 'P', label: 'P = Present', color: '#52c41a' },
@@ -310,53 +336,29 @@ export class AttendanceComponent implements OnInit {
     { code: 'R', label: 'R = Resign', color: '#cf1322' },
     { code: 'CO', label: 'CO = Comp Off', color: '#13c2c2' },
   ];
-  monthList = [
-    { value: 1, label: 'January' }, { value: 2, label: 'February' }, { value: 3, label: 'March' },
-    { value: 4, label: 'April' }, { value: 5, label: 'May' }, { value: 6, label: 'June' },
-    { value: 7, label: 'July' }, { value: 8, label: 'August' }, { value: 9, label: 'September' },
-    { value: 10, label: 'October' }, { value: 11, label: 'November' }, { value: 12, label: 'December' }
-  ];
 
   constructor(
     private attendanceService: AttendanceService,
     private msg: NzMessageService
   ) {
     const now = new Date();
-    this.currentCycleYear = now.getFullYear();
-    this.currentCycleMonth = now.getMonth() + 1;
-    if (now.getDate() >= 26) {
-      this.currentCycleMonth++;
-      if (this.currentCycleMonth > 12) {
-        this.currentCycleMonth = 1;
-        this.currentCycleYear++;
-      }
-    }
-    this.selectedYear = this.currentCycleYear;
-    this.selectedMonth = this.currentCycleMonth;
-  }
-
-  get isCurrentMonth(): boolean {
-    return this.selectedYear === this.currentCycleYear && this.selectedMonth === this.currentCycleMonth;
-  }
-
-  get prevMonthAbbr(): string {
-    const m = this.selectedMonth === 1 ? 12 : this.selectedMonth - 1;
-    return this.monthList[m - 1].label.substring(0, 3);
-  }
-
-  get curMonthAbbr(): string {
-    return this.monthList[this.selectedMonth - 1].label.substring(0, 3);
+    this.toDate = new Date(now.getFullYear(), now.getMonth(), 25);
+    this.fromDate = new Date(now.getFullYear(), now.getMonth() - 1, 26);
+    this.rangeDays = Math.round((this.toDate.getTime() - this.fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   }
 
   ngOnInit(): void {
-    const now = new Date();
-    for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
-      this.yearList.push(y);
-    }
     this.attendanceService.getDepartments().subscribe(res => {
       this.departmentList = res.data || [];
     });
     this.loadData();
+  }
+
+  onDateRangeChange(): void {
+    if (this.fromDate && this.toDate) {
+      this.rangeDays = Math.round((this.toDate.getTime() - this.fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      this.onFilterChange();
+    }
   }
 
   onFilterChange(): void {
@@ -366,19 +368,22 @@ export class AttendanceComponent implements OnInit {
     this.loadData();
   }
 
-  changeMonth(delta: number): void {
-    this.selectedMonth += delta;
-    if (this.selectedMonth > 12) { this.selectedMonth = 1; this.selectedYear++; }
-    else if (this.selectedMonth < 1) { this.selectedMonth = 12; this.selectedYear--; }
-    this.onFilterChange();
+  shiftRange(delta: number): void {
+    const days = this.rangeDays;
+    this.fromDate = new Date(this.fromDate.getTime() + delta * days * 24 * 60 * 60 * 1000);
+    this.toDate = new Date(this.toDate.getTime() + delta * days * 24 * 60 * 60 * 1000);
+    this.onDateRangeChange();
   }
 
   onPageIndexChange(index: number): void { this.page = index - 1; this.loadData(); }
   onPageSizeChange(size: number): void { this.size = size; this.page = 0; this.loadData(); }
 
   loadData(): void {
+    if (!this.fromDate || !this.toDate) return;
     this.loading = true;
-    this.attendanceService.getMonthlyAttendance(this.selectedYear, this.selectedMonth, this.page, this.size, this.selectedDepartment).subscribe({
+    const from = this.formatDate(this.fromDate);
+    const to = this.formatDate(this.toDate);
+    this.attendanceService.getMonthlyAttendance(from, to, this.page, this.size, this.selectedDepartment).subscribe({
       next: (res) => {
         this.data = res.data;
         const cols = 2 + (this.data?.dayColumns?.length || 30) + 4;
@@ -387,6 +392,13 @@ export class AttendanceComponent implements OnInit {
       },
       error: () => { this.loading = false; this.msg.error('Failed to load data'); }
     });
+  }
+
+  private formatDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = ('0' + (d.getMonth() + 1)).slice(-2);
+    const day = ('0' + d.getDate()).slice(-2);
+    return `${y}-${m}-${day}`;
   }
 
   markChanged(employeeId: number, dayIndex: number, status: string): void {
@@ -433,17 +445,23 @@ export class AttendanceComponent implements OnInit {
   }
 
   exportExcel(): void {
-    this.attendanceService.exportExcel(this.selectedYear, this.selectedMonth).subscribe({
-      next: (blob) => saveAs(blob, `Attendance_${this.data?.monthLabel || ''}.xlsx`),
+    if (!this.fromDate || !this.toDate) return;
+    const from = this.formatDate(this.fromDate);
+    const to = this.formatDate(this.toDate);
+    this.attendanceService.exportExcel(from, to).subscribe({
+      next: (blob) => saveAs(blob, `Attendance_${from}_to_${to}.xlsx`),
       error: () => this.msg.error('Export failed')
     });
   }
 
   importExcel(event: Event): void {
+    if (!this.fromDate || !this.toDate) return;
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
+    const from = this.formatDate(this.fromDate);
+    const to = this.formatDate(this.toDate);
     this.loading = true;
-    this.attendanceService.importExcel(input.files[0], this.selectedYear, this.selectedMonth).subscribe({
+    this.attendanceService.importExcel(input.files[0], from, to).subscribe({
       next: (res) => {
         this.msg.success(`Imported ${res.data?.imported || 0} records`);
         this.loading = false; input.value = '';

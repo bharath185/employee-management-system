@@ -13,10 +13,10 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyAttendance(year: number, month: number, page = 0, size = 50, department = ''): Observable<APIResponse<MonthlyAttendance>> {
+  getMonthlyAttendance(fromDate: string, toDate: string, page = 0, size = 50, department = ''): Observable<APIResponse<MonthlyAttendance>> {
     let params = new HttpParams()
-      .set('year', year.toString())
-      .set('month', month.toString())
+      .set('fromDate', fromDate)
+      .set('toDate', toDate)
       .set('page', page.toString())
       .set('size', size.toString());
     if (department) {
@@ -33,16 +33,16 @@ export class AttendanceService {
     return this.http.put<APIResponse<void>>(`${this.apiUrl}/bulk`, records);
   }
 
-  exportExcel(year: number, month: number): Observable<Blob> {
-    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+  exportExcel(fromDate: string, toDate: string): Observable<Blob> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
     return this.http.get(`${this.apiUrl}/export`, { params, responseType: 'blob' });
   }
 
-  importExcel(file: File, year: number, month: number): Observable<APIResponse<any>> {
+  importExcel(file: File, fromDate: string, toDate: string): Observable<APIResponse<any>> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('year', year.toString());
-    formData.append('month', month.toString());
+    formData.append('fromDate', fromDate);
+    formData.append('toDate', toDate);
     return this.http.post<APIResponse<any>>(`${this.apiUrl}/import`, formData);
   }
 }

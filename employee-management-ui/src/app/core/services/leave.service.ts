@@ -88,4 +88,52 @@ export class LeaveService {
   cancelMyLeave(id: number): Observable<APIResponse<void>> {
     return this.http.put<APIResponse<void>>(`${this.apiUrl}/applications/${id}/cancel/self`, {});
   }
+
+  downloadSampleBalances(year: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/sample-balances?year=${year}`, { responseType: 'blob' });
+  }
+
+  exportBalances(year: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export/balances?year=${year}`, { responseType: 'blob' });
+  }
+
+  importBalances(file: File, year: number): Observable<APIResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('year', year.toString());
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/export/import-balances`, formData);
+  }
+
+  syncFromExcel(month: number, year: number): Observable<APIResponse<string>> {
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/sync-excel?month=${month}&year=${year}`, {});
+  }
+
+  exportToExcel(month: number, year: number): Observable<APIResponse<string>> {
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/export-excel?month=${month}&year=${year}`, {});
+  }
+
+  creditMonthlyLeave(month: number, year: number): Observable<APIResponse<string>> {
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/credit-monthly?month=${month}&year=${year}`, {});
+  }
+
+  uploadExcel(file: File, month: number, year: number): Observable<APIResponse<string>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('month', month.toString());
+    formData.append('year', year.toString());
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/upload-excel`, formData);
+  }
+
+  exportExcelBlob(params: HttpParams): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/export-excel`, null, { params, responseType: 'blob' });
+  }
+
+  downloadSampleExcel(month: number, year: number): Observable<Blob> {
+    const params = new HttpParams().set('month', month.toString()).set('year', year.toString());
+    return this.http.get(`${this.apiUrl}/download-sample-excel`, { params, responseType: 'blob' });
+  }
+
+  clearAllBalances(): Observable<APIResponse<string>> {
+    return this.http.delete<APIResponse<string>>(`${this.apiUrl}/clear`);
+  }
 }

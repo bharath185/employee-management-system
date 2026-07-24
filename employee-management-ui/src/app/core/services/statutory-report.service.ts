@@ -41,8 +41,11 @@ export class StatutoryReportService {
     });
   }
 
-  downloadLeaveRegisterExcel(year: number): Observable<Blob> {
-    const params = new HttpParams().set('year', year.toString());
+  downloadLeaveRegisterExcel(year: number, employeeIds: number[] = []): Observable<Blob> {
+    let params = new HttpParams().set('year', year.toString());
+    if (employeeIds && employeeIds.length > 0) {
+      params = params.set('employeeIds', employeeIds.join(','));
+    }
     return this.http.get(`${this.apiUrl}/leave-register/excel`, {
       params, responseType: 'blob'
     });

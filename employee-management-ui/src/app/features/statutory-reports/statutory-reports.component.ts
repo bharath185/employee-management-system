@@ -10,6 +10,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { StatutoryReportService } from '../../core/services/statutory-report.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AuthService } from '../../core/services/auth.service';
+import { EmployeeService } from '../../core/services/employee.service';
 
 @Component({
   selector: 'app-statutory-reports',
@@ -21,7 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
   ],
   template: `
     <div class="sr-container page-enter">
-      <app-page-header icon="file-text" title="Statutory Reports"></app-page-header>
+      <app-page-header icon="file-text" title="Reports"></app-page-header>
 
       <!-- Access Denied -->
       <div *ngIf="!authService.canAccessReports()" class="sr-denied">
@@ -90,6 +91,10 @@ import { AuthService } from '../../core/services/auth.service';
             <nz-select [(ngModel)]="selectedYear3" class="sr-select" nzPlaceHolder="Year">
               <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
             </nz-select>
+            <nz-select [(ngModel)]="selectedEmployees3" class="sr-select-emp" nzPlaceHolder="All Employees" nzMode="multiple" [nzMaxTagCount]="2" [nzMaxTagPlaceholder]="tagPlaceholder">
+              <nz-option *ngFor="let e of employeeList" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.fullName"></nz-option>
+            </nz-select>
+            <ng-template #tagPlaceholder>more</ng-template>
             <button nz-button class="sr-btn-primary" [nzLoading]="loading3" (click)="openReport('leave-register')">
               <i nz-icon nzType="file-text"></i> Preview
             </button>
@@ -142,11 +147,14 @@ import { AuthService } from '../../core/services/auth.service';
 
     /* ─── Select Dropdowns ─── */
     .sr-select { width: 110px; }
-    .sr-select ::ng-deep .ant-select-selector { height: 32px !important; border-radius: 6px !important; border: 1px solid #d0d5dd !important; box-shadow: none !important; padding: 0 8px !important; transition: all .2s; background: #fff !important; }
-    .sr-select ::ng-deep .ant-select-selection-item { line-height: 30px !important; font-size: 12px; font-weight: 500; color: #333; }
-    .sr-select ::ng-deep .ant-select-arrow { color: #a0a8b4; }
-    .sr-select ::ng-deep .ant-select-selector:hover { border-color: #4361ee !important; }
-    .sr-select ::ng-deep .ant-select-focused .ant-select-selector { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,.12) !important; }
+    .sr-select-emp { min-width: 200px; flex: 1; max-width: 320px; }
+    .sr-select ::ng-deep .ant-select-selector, .sr-select-emp ::ng-deep .ant-select-selector { height: 32px !important; border-radius: 6px !important; border: 1px solid #d0d5dd !important; box-shadow: none !important; padding: 0 8px !important; transition: all .2s; background: #fff !important; }
+    .sr-select ::ng-deep .ant-select-selection-item, .sr-select-emp ::ng-deep .ant-select-selection-item { line-height: 30px !important; font-size: 12px; font-weight: 500; color: #333; }
+    .sr-select ::ng-deep .ant-select-arrow, .sr-select-emp ::ng-deep .ant-select-arrow { color: #a0a8b4; }
+    .sr-select ::ng-deep .ant-select-selector:hover, .sr-select-emp ::ng-deep .ant-select-selector:hover { border-color: #4361ee !important; }
+    .sr-select ::ng-deep .ant-select-focused .ant-select-selector, .sr-select-emp ::ng-deep .ant-select-focused .ant-select-selector { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,.12) !important; }
+    .sr-select-emp ::ng-deep .ant-select-selection-search-input { font-size: 12px !important; }
+    .sr-select-emp ::ng-deep .ant-select-selection-placeholder { font-size: 12px; color: #a0a8b4; }
 
     /* ─── Primary Button (Preview) with Gradient ─── */
     .sr-btn-primary { height: 32px; padding: 0 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 2px 6px rgba(67, 97, 238, .35); transition: all .2s; letter-spacing: .3px; display: inline-flex; align-items: center; gap: 5px; }
@@ -176,6 +184,8 @@ export class StatutoryReportsComponent implements OnInit {
   selectedYear2 = new Date().getFullYear();
   selectedMonth2 = new Date().getMonth() + 1;
   selectedYear3 = new Date().getFullYear();
+  selectedEmployees3: number[] = [];
+  employeeList: { id: number; fullName: string; employeeCode: string }[] = [];
 
   loading1 = false;
   loading2 = false;
@@ -187,11 +197,22 @@ export class StatutoryReportsComponent implements OnInit {
   constructor(
     private reportService: StatutoryReportService,
     public authService: AuthService,
-    private msg: NzMessageService
+    private msg: NzMessageService,
+    private employeeService: EmployeeService
   ) {}
 
   ngOnInit(): void {
     this.years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+    this.employeeService.getEmployees({ size: 200 }).subscribe({
+      next: (res: any) => {
+        const list = res.data?.content || res.data || [];
+        this.employeeList = list.map((e: any) => ({
+          id: e.id,
+          fullName: e.fullName || (e.firstName + ' ' + e.surname),
+          employeeCode: e.employeeCode
+        }));
+      }
+    });
   }
 
   openReport(type: string): void {
@@ -259,7 +280,7 @@ export class StatutoryReportsComponent implements OnInit {
       obs = this.reportService.downloadWagesRegisterExcel(this.selectedYear2, this.selectedMonth2);
       filename = `Wages_Register_${this.selectedYear2}_${this.selectedMonth2}.xlsx`;
     } else {
-      obs = this.reportService.downloadLeaveRegisterExcel(this.selectedYear3);
+      obs = this.reportService.downloadLeaveRegisterExcel(this.selectedYear3, this.selectedEmployees3);
       filename = `Leave_Register_${this.selectedYear3}.xlsx`;
     }
 

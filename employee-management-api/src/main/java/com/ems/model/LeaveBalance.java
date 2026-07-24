@@ -42,6 +42,10 @@ public class LeaveBalance {
     @Builder.Default
     private Integer taken = 0;
 
+    @Column(name = "encashed", nullable = false)
+    @Builder.Default
+    private Integer encashed = 0;
+
     @Column(name = "balance", nullable = false)
     @Builder.Default
     private Integer balance = 0;
@@ -49,6 +53,6 @@ public class LeaveBalance {
     @PrePersist
     @PreUpdate
     public void computeBalance() {
-        this.balance = this.entitled - this.taken;
+        this.balance = this.entitled - this.taken - this.encashed;
     }
 }

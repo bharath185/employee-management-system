@@ -95,39 +95,42 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                 <i nz-icon nzType="audit"></i>
                 <span *ngIf="!isCollapsed()">Vendor Bills</span>
               </li>
-              <li nz-menu-item routerLink="/admin/leave"
+              <li nz-submenu
                   *ngIf="can('leave')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="calendar"></i>
-                <span *ngIf="!isCollapsed()">Leave</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/attendance"
-                  *ngIf="can('attendance')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="schedule"></i>
-                <span *ngIf="!isCollapsed()">Attendance</span>
+                  (click)="closeDrawerOnMobile()"
+                  nzTitle="Leave & Attendance"
+                  nzIcon="calendar"
+                  [nzOpen]="isLeaveMenuOpen"
+                  (nzOpenChange)="isLeaveMenuOpen = $event"
+                  class="custom-submenu">
+                <ul>
+                  <li nz-menu-item routerLink="/admin/leave/applications" routerLinkActive="ant-menu-item-selected">
+                    <i nz-icon nzType="appstore"></i>
+                    <span>Apps & Balance</span>
+                  </li>
+                  <li nz-menu-item routerLink="/admin/leave/attendance" routerLinkActive="ant-menu-item-selected">
+                    <i nz-icon nzType="schedule"></i>
+                    <span>Attendance</span>
+                  </li>
+                </ul>
               </li>
 
               <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
-              <li nz-menu-item routerLink="/admin/document-templates"
-                  *ngIf="can('doc_templates')"
+              <li nz-menu-item routerLink="/admin/reports" routerLinkActive="ant-menu-item-selected"
                   (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="file-text"></i>
-                <span *ngIf="!isCollapsed()">Document Templates</span>
-              </li>
-              <li nz-menu-item routerLink="/admin/reports"
-                  *ngIf="can('reports')"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="audit"></i>
+                <i nz-icon nzType="bar-chart"></i>
                 <span *ngIf="!isCollapsed()">Reports</span>
               </li>
-              <li nz-menu-item routerLink="/admin/statutory-reports"
-                  *ngIf="can('reports')"
+
+              <li nz-menu-item routerLink="/admin/labour-reports" routerLinkActive="ant-menu-item-selected"
                   (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="file-done"></i>
-                <span *ngIf="!isCollapsed()">Statutory Reports</span>
+                <i nz-icon nzType="file-text"></i>
+                <span *ngIf="!isCollapsed()">Labour Reports</span>
               </li>
+
+
+
               <li nz-menu-item routerLink="/admin/pending-registrations"
                   *ngIf="can('registrations')"
                   (click)="closeDrawerOnMobile()">
@@ -358,6 +361,66 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       width: 24px;
     }
 
+    :host ::ng-deep .custom-submenu.ant-menu-submenu {
+      margin: 0 12px !important;
+      border-radius: 12px !important;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-submenu-title {
+      height: 44px !important;
+      line-height: 44px !important;
+      margin: 0 !important;
+      border-radius: 12px !important;
+      color: rgba(255,255,255,0.65) !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px;
+      padding: 0 14px !important;
+      transition: all 0.2s ease;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-submenu-title > i {
+      font-size: 22px;
+      width: 22px;
+      color: rgba(255,255,255,0.55);
+      margin-right: 0 !important;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-submenu-title:hover {
+      background: rgba(255,255,255,0.1) !important;
+      color: #ffffff !important;
+    }
+    :host ::ng-deep .custom-submenu.ant-menu-submenu-open > .ant-menu-submenu-title {
+      color: #ffffff !important;
+      background: rgba(255,255,255,0.06) !important;
+    }
+    :host ::ng-deep .custom-submenu.ant-menu-submenu-open > .ant-menu-submenu-title > i {
+      color: #4f8cff !important;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-item {
+      margin: 2px 8px !important;
+      padding-left: 42px !important;
+      height: 38px !important;
+      line-height: 38px !important;
+      border-radius: 8px !important;
+      font-size: 13px;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-item > i {
+      font-size: 16px;
+      width: 16px;
+      margin-right: 8px !important;
+    }
+    :host ::ng-deep .custom-submenu .ant-menu-item-selected {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.12)) !important;
+      box-shadow: inset 3px 0 0 #4f8cff;
+    }
+    :host ::ng-deep .ant-layout-sider-collapsed .custom-submenu .ant-menu-submenu-title {
+      justify-content: center !important;
+      padding: 0 !important;
+    }
+    :host ::ng-deep .ant-layout-sider-collapsed .custom-submenu .ant-menu-submenu-title span[nz-icon] {
+      font-size: 24px;
+    }
+
+
+
     .side-nav-separator {
       display: flex;
       justify-content: center;
@@ -543,6 +606,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
 })
 export class AdminLayoutComponent implements OnInit {
   isCollapsed = signal(false);
+  isLeaveMenuOpen = false;
+
   currentUserName: string = '';
 
   constructor(

@@ -21,6 +21,7 @@ public class LeaveBalanceDTO {
     private Integer year;
     private Integer entitled;
     private Integer taken;
+    private Integer encashed;
     private Integer balance;
 
     public static LeaveBalanceDTO fromEntity(LeaveBalance lb) {
@@ -34,6 +35,7 @@ public class LeaveBalanceDTO {
             .year(lb.getYear())
             .entitled(lb.getEntitled())
             .taken(lb.getTaken())
+            .encashed(lb.getEncashed())
             .balance(lb.getBalance())
             .build();
     }

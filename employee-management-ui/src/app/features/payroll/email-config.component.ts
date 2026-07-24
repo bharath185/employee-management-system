@@ -12,7 +12,6 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { PayrollService } from '../../core/services/payroll.service';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { EmailConfig } from '../../core/models/payroll.models';
 
 @Component({
@@ -21,14 +20,13 @@ import { EmailConfig } from '../../core/models/payroll.models';
   imports: [
     CommonModule, FormsModule, NzButtonModule, NzIconModule, NzInputModule,
     NzInputNumberModule, NzCardModule, NzSpinModule, NzSwitchModule, NzDividerModule,
-    RouterLink, RouterLinkActive,
-    PageHeaderComponent
+    RouterLink, RouterLinkActive
   ],
   template: `
     <div class="ec-container">
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
-          <i nz-icon nzType="play-circle"></i><span>Process</span>
+          <i nz-icon nzType="upload"></i><span>Upload</span>
         </a>
 
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
@@ -38,7 +36,6 @@ import { EmailConfig } from '../../core/models/payroll.models';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <app-page-header icon="mail" title="Mail Configuration" subtitle="Configure SMTP settings for payroll email delivery"></app-page-header>
 
       <!-- ===== CONFIG FORM CARD ===== -->
       <nz-card class="ec-form-card" nzSize="small">
@@ -106,34 +103,34 @@ import { EmailConfig } from '../../core/models/payroll.models';
   styles: [`
     .pp-sub-nav {
       display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
+      gap: 2px;
+      margin-bottom: 12px;
+      background: #f0f4ff;
+      border-radius: 10px;
       padding: 4px;
-      border: 1px solid rgba(232,234,237,0.6);
+      border: 1px solid #e0e7ff;
     }
     .pp-nav-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
+      padding: 6px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       color: #6c757d;
       text-decoration: none;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
-    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active {
-      background: #2563eb;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
     }
-    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item.active i { color: #1f3d6e; }
     .ec-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 12px 16px;

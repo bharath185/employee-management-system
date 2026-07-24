@@ -245,36 +245,38 @@ public class PayrollService {
                     salary.setWorkerType("Permanent");
                     salaryRepository.save(salary);
 
-                    // Create Payslip snapshot
+                    // Create or update Payslip snapshot (avoid duplicates per employee+month+year)
                     BigDecimal totalDeductions = pf.add(esi).add(pt).add(hi);
-                    Payslip payslip = Payslip.builder()
-                        .employee(employee)
-                        .wageMonth(month)
-                        .wageYear(year)
-                        .basic(basic)
-                        .hra(hra)
-                        .fixedPersonalAllowance(fpa)
-                        .otherAllowance(oa)
-                        .bonus(BigDecimal.ZERO)
-                        .appraisalAmount(BigDecimal.ZERO)
-                        .lateSittingAmount(BigDecimal.ZERO)
-                        .grossSalary(grossWages)
-                        .pfDeduction(pf)
-                        .esiDeduction(esi)
-                        .ptDeduction(pt)
-                        .healthInsurance(hi)
-                        .overtimeWages(overtime)
-                        .totalDeductions(totalDeductions)
-                        .netPay(actualWages)
-                        .presentDays(effWorkdays)
-                        .absentDays(0)
-                        .leaveDays(lop)
-                        .totalWorkingDays(workingDays)
-                        .lopDays(lop)
-                        .effectiveWorkdays(effWorkdays)
-                        .status("GENERATED")
-                        .generatedAt(LocalDateTime.now())
-                        .build();
+                    Payslip payslip = payslipRepository
+                        .findByEmployeeIdAndWageYearAndWageMonth(employee.getId(), year, month)
+                        .orElseGet(() -> Payslip.builder()
+                            .employee(employee)
+                            .wageMonth(month)
+                            .wageYear(year)
+                            .build());
+                    payslip.setBasic(basic);
+                    payslip.setHra(hra);
+                    payslip.setFixedPersonalAllowance(fpa);
+                    payslip.setOtherAllowance(oa);
+                    payslip.setBonus(BigDecimal.ZERO);
+                    payslip.setAppraisalAmount(BigDecimal.ZERO);
+                    payslip.setLateSittingAmount(BigDecimal.ZERO);
+                    payslip.setGrossSalary(grossWages);
+                    payslip.setPfDeduction(pf);
+                    payslip.setEsiDeduction(esi);
+                    payslip.setPtDeduction(pt);
+                    payslip.setHealthInsurance(hi);
+                    payslip.setOvertimeWages(overtime);
+                    payslip.setTotalDeductions(totalDeductions);
+                    payslip.setNetPay(actualWages);
+                    payslip.setPresentDays(effWorkdays);
+                    payslip.setAbsentDays(0);
+                    payslip.setLeaveDays(lop);
+                    payslip.setTotalWorkingDays(workingDays);
+                    payslip.setLopDays(lop);
+                    payslip.setEffectiveWorkdays(effWorkdays);
+                    payslip.setStatus("GENERATED");
+                    payslip.setGeneratedAt(LocalDateTime.now());
                     payslipRepository.save(payslip);
                     successCount++;
 

@@ -161,21 +161,46 @@ export const routes: Routes = [
       },
       {
         path: 'leave',
-        loadComponent: () => import('./features/leave/leave-management.component')
-          .then(m => m.LeaveManagementComponent),
-        title: 'Leave Management'
+        redirectTo: 'leave/applications',
+        pathMatch: 'full'
       },
       {
-        path: 'attendance',
+        path: 'leave/applications',
+        loadComponent: () => import('./features/leave/leave-management.component')
+          .then(m => m.LeaveManagementComponent),
+        title: 'Leave & Attendance'
+      },
+      {
+        path: 'leave/holidays',
+        redirectTo: 'leave/applications',
+        pathMatch: 'full'
+      },
+      {
+        path: 'leave/comp-offs',
+        redirectTo: 'leave/applications',
+        pathMatch: 'full'
+      },
+      {
+        path: 'leave/encashments',
+        redirectTo: 'leave/applications',
+        pathMatch: 'full'
+      },
+      {
+        path: 'leave/attendance',
         loadComponent: () => import('./features/attendance/attendance.component')
           .then(m => m.AttendanceComponent),
         title: 'Attendance'
       },
       {
-        path: 'statutory-reports',
-        loadComponent: () => import('./features/statutory-reports/statutory-reports.component')
-          .then(m => m.StatutoryReportsComponent),
-        title: 'Statutory Reports'
+        path: 'attendance',
+        redirectTo: 'leave/attendance',
+        pathMatch: 'full'
+      },
+      {
+        path: 'labour-reports',
+        loadComponent: () => import('./features/labour-reports/labour-reports.component')
+          .then(m => m.LabourReportsComponent),
+        title: 'Labour Reports'
       },
       {
         path: 'pending-registrations',
@@ -226,6 +251,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/my-leave/my-leave.component')
           .then(m => m.MyLeaveComponent),
         title: 'My Leave'
+      },
+      {
+        path: 'comp-offs',
+        loadComponent: () => import('./features/leave/my-comp-offs.component')
+          .then(m => m.MyCompOffsComponent),
+        title: 'My Comp-Offs'
+      },
+      {
+        path: 'encashments',
+        loadComponent: () => import('./features/leave/my-encashments.component')
+          .then(m => m.MyEncashmentsComponent),
+        title: 'My Encashments'
       },
       {
         path: 'payroll',

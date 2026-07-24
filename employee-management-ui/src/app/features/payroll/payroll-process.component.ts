@@ -11,7 +11,6 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzUploadModule } from 'ng-zorro-antd/upload';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { PayrollService } from '../../core/services/payroll.service';
 import { saveAs } from 'file-saver';
 
@@ -20,8 +19,7 @@ import { saveAs } from 'file-saver';
   standalone: true,
   imports: [
     CommonModule, FormsModule, RouterLink, RouterLinkActive, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzUploadModule,
-    PageHeaderComponent
+    NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzUploadModule
   ],
   template: `
     <div class="pp-container">
@@ -30,7 +28,6 @@ import { saveAs } from 'file-saver';
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
           <i nz-icon nzType="upload"></i><span>Upload</span>
         </a>
-
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -38,15 +35,6 @@ import { saveAs } from 'file-saver';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-
-      <app-page-header icon="upload" title="Upload Salary Statement" subtitle="Upload monthly salary statement Excel to generate payslips">
-        <button nz-button (click)="downloadSample()" nz-tooltip="Download a blank sample template with demo data">
-          <i nz-icon nzType="download"></i> Download Sample
-        </button>
-        <button nz-button (click)="downloadStatement()" nz-tooltip="Download Salary Statement for selected period">
-          <i nz-icon nzType="file-excel"></i> Download Statement
-        </button>
-      </app-page-header>
 
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pp-controls-card" nzSize="small">
@@ -64,6 +52,12 @@ import { saveAs } from 'file-saver';
             <button nz-button class="btn-primary-gradient" (click)="fileInput.click()" [disabled]="uploading">
               <i nz-icon nzType="upload"></i>
               {{ uploading ? 'Uploading...' : 'Upload Excel' }}
+            </button>
+            <button nz-button nzType="default" (click)="downloadSample()" nz-tooltip="Download a blank sample template">
+              <i nz-icon nzType="download"></i> Sample
+            </button>
+            <button nz-button nzType="default" (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
+              <i nz-icon nzType="file-excel"></i> Statement
             </button>
           </div>
         </div>
@@ -122,34 +116,34 @@ import { saveAs } from 'file-saver';
     }
     .pp-sub-nav {
       display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
+      gap: 2px;
+      margin-bottom: 12px;
+      background: #f0f4ff;
+      border-radius: 10px;
       padding: 4px;
-      border: 1px solid rgba(232,234,237,0.6);
+      border: 1px solid #e0e7ff;
     }
     .pp-nav-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
+      padding: 6px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       color: #6c757d;
       text-decoration: none;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
-    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active {
-      background: #2563eb;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
     }
-    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item.active i { color: #1f3d6e; }
     .pp-controls-card, .pp-status-card {
       border-radius: 10px !important;
       border: 1px solid #e8eaed !important;

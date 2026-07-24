@@ -46,6 +46,10 @@ export class PayrollService {
     return this.http.get(`${this.apiUrl}/payslips/${id}/html`, { responseType: 'text' });
   }
 
+  getPayslipPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/payslips/${id}/pdf`, { responseType: 'blob' });
+  }
+
   getEmployeePayslips(employeeId: number): Observable<APIResponse<Payslip[]>> {
     return this.http.get<APIResponse<Payslip[]>>(`${this.apiUrl}/payslips/employee/${employeeId}`);
   }

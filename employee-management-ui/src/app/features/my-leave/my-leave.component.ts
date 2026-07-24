@@ -63,6 +63,10 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                     <span class="num-value taken">{{ b.taken }}</span>
                     <span class="num-label">Taken</span>
                   </div>
+                  <div class="num-item" *ngIf="b.encashed > 0">
+                    <span class="num-value encashed">{{ b.encashed }}</span>
+                    <span class="num-label">Encashed</span>
+                  </div>
                   <div class="num-item">
                     <span class="num-value remaining">{{ b.balance }}</span>
                     <span class="num-label">Remaining</span>
@@ -251,6 +255,7 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
     .num-item { text-align: center; min-width: 56px; }
     .num-value { display: block; font-size: 22px; font-weight: 700; color: #1a1a2e; font-family: 'Inter', sans-serif; }
     .num-value.taken { color: #f59e0b; }
+    .num-value.encashed { color: #8b5cf6; }
     .num-value.remaining { color: #10b981; }
     .num-label { font-size: 10px; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
     :host ::ng-deep .empty-balance { background: transparent !important; text-align: center; padding: 24px; }

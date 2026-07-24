@@ -146,6 +146,7 @@ export interface LeaveBalance {
   year: number;
   entitled: number;
   taken: number;
+  encashed: number;
   balance: number;
 }
 
@@ -164,4 +165,48 @@ export interface LeaveApplication {
   appliedDate: string;
   approvedBy?: string;
   approvedDate?: string;
+}
+
+export interface Holiday {
+  id: number;
+  name: string;
+  date: string;
+  year: number;
+  isOptional: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CompOff {
+  id: number;
+  employeeId: number;
+  employeeCode?: string;
+  employeeName?: string;
+  earnedDate: string;
+  expiryDate: string;
+  status: string;
+  availedDate?: string;
+  remarks?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LeaveEncashment {
+  id: number;
+  employeeId: number;
+  employee?: any;
+  employeeCode?: string;
+  employeeName?: string;
+  leaveTypeId: number;
+  leaveType?: any;
+  leaveTypeName?: string;
+  encashedDays: number;
+  encashmentAmount: number;
+  month: number;
+  year: number;
+  status: string;
+  approvedBy?: string;
+  approvedDate?: string;
+  remarks?: string;
+  createdAt?: string;
 }

@@ -30,6 +30,7 @@ public class LeaveService {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final LeaveApplicationRepository leaveApplicationRepository;
     private final EmployeeRepository employeeRepository;
+    private final LeaveExcelService leaveExcelService;
 
     public List<LeaveType> getLeaveTypes() {
         return leaveTypeRepository.findByIsActiveTrue();
@@ -93,7 +94,7 @@ public class LeaveService {
             .orElseThrow(() -> new ResourceNotFoundException("Leave balance not found"));
         if (dto.getEntitled() != null) balance.setEntitled(dto.getEntitled());
         if (dto.getTaken() != null) balance.setTaken(dto.getTaken());
-        balance.setBalance(balance.getEntitled() - balance.getTaken());
+        balance.computeBalance();
         leaveBalanceRepository.save(balance);
         return LeaveBalanceDTO.fromEntity(balance);
     }
@@ -183,6 +184,14 @@ public class LeaveService {
         balance.computeBalance();
         leaveBalanceRepository.save(balance);
 
+        leaveExcelService.updateAvailed(
+            app.getEmployee().getEmployeeCode(),
+            app.getLeaveType().getName(),
+            app.getDays(),
+            app.getFromDate().getMonthValue(),
+            app.getFromDate().getYear()
+        );
+
         app.setStatus("APPROVED");
         app.setApprovedBy(approvedBy);
         app.setApprovedDate(LocalDateTime.now());
@@ -223,6 +232,14 @@ public class LeaveService {
                 balance.setTaken(Math.max(0, balance.getTaken() - app.getDays()));
                 balance.computeBalance();
                 leaveBalanceRepository.save(balance);
+
+                leaveExcelService.restoreAvailed(
+                    app.getEmployee().getEmployeeCode(),
+                    app.getLeaveType().getName(),
+                    app.getDays(),
+                    app.getFromDate().getMonthValue(),
+                    app.getFromDate().getYear()
+                );
             }
         }
 
@@ -244,5 +261,36 @@ public class LeaveService {
         return leaveApplicationRepository.findByDateRange(from, to).stream()
             .map(LeaveApplicationDTO::fromEntity)
             .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateBalanceByEmployee(String employeeCode, String leaveTypeName, Integer year, Integer entitled, Integer taken) {
+        Employee employee = employeeRepository.findByEmployeeCode(employeeCode)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + employeeCode));
+        LeaveType leaveType = leaveTypeRepository.findByName(leaveTypeName)
+            .orElseThrow(() -> new ResourceNotFoundException("Leave type not found: " + leaveTypeName));
+        LeaveBalance balance = leaveBalanceRepository
+            .findByEmployeeIdAndLeaveTypeIdAndYear(employee.getId(), leaveType.getId(), year)
+            .orElseGet(() -> {
+                LeaveBalance newBal = LeaveBalance.builder()
+                    .employee(employee)
+                    .leaveType(leaveType)
+                    .year(year)
+                    .entitled(0)
+                    .taken(0)
+                    .balance(0)
+                    .build();
+                return leaveBalanceRepository.save(newBal);
+            });
+        balance.setEntitled(entitled);
+        balance.setTaken(taken);
+        balance.computeBalance();
+        leaveBalanceRepository.save(balance);
+    }
+
+    @Transactional
+    public void clearAllLeaveBalances() {
+        log.warn("Clearing ALL leave balance records from DB");
+        leaveBalanceRepository.deleteAll();
     }
 }

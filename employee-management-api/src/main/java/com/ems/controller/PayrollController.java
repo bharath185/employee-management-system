@@ -14,9 +14,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.NumberFormat;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
@@ -30,6 +32,7 @@ public class PayrollController {
     private final EmailConfigService emailConfigService;
     private final PayrollExportService payrollExportService;
     private final EmployeeRepository employeeRepository;
+    private final CompanyService companyService;
 
     // ==================== PAYROLL UPLOAD (Excel) ====================
 
@@ -93,6 +96,15 @@ public class PayrollController {
             .body(html);
     }
 
+    @GetMapping("/payslips/{id}/pdf")
+    public ResponseEntity<byte[]> getPayslipPdf(@PathVariable Long id) {
+        byte[] pdf = payslipService.generatePayslipPdf(id);
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header("Content-Disposition", "attachment; filename=payslip_" + id + ".pdf")
+            .body(pdf);
+    }
+
     @GetMapping("/payslips/employee/{employeeId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR') or #employeeId == authentication.principal.employeeId")
     public ResponseEntity<APIResponse<List<PayslipDTO>>> getEmployeePayslips(@PathVariable Long employeeId) {
@@ -125,12 +137,52 @@ public class PayrollController {
 
                 // Generate HTML payslip
                 String html = payslipService.getPayslipHtml(dto.getId());
+                // Generate PDF payslip for attachment
+                byte[] pdf = payslipService.generatePayslipPdf(dto.getId());
                 String monthName = Month.of(dto.getWageMonth()).name();
                 monthName = monthName.charAt(0) + monthName.substring(1).toLowerCase();
                 String subject = "Payslip - " + monthName + " " + dto.getWageYear();
+                String pdfName = "Payslip_" + dto.getEmployeeCode() + "_" + monthName + "_" + dto.getWageYear() + ".pdf";
 
-                // Send email
-                emailConfigService.sendEmail(emp.getEmail(), subject, html);
+                // Professional email body
+                String emailBody = String.format("""
+                    <!DOCTYPE html>
+                    <html><head><meta charset="UTF-8">
+                    <style>
+                      body{font-family:'Segoe UI',Arial,sans-serif;background:#f5f7fa;padding:20px;}
+                      .container{max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+                      .header{background:#1a3a6b;padding:20px;text-align:center;}
+                      .header h1{color:#fff;margin:0;font-size:18px;}
+                      .body{padding:24px;}
+                      .body p{color:#333;font-size:14px;line-height:1.6;margin:0 0 12px;}
+                      .btn{display:inline-block;background:#1a3a6b;color:#fff;padding:10px 24px;border-radius:4px;text-decoration:none;font-size:14px;margin:8px 0;}
+                      .footer{border-top:1px solid #e0e0e0;padding:16px 24px;text-align:center;font-size:12px;color:#888;}
+                      .highlight{font-weight:700;color:#1a3a6b;}
+                    </style></head><body>
+                    <div class="container">
+                      <div class="header"><h1>Payslip - %s %s</h1></div>
+                      <div class="body">
+                        <p>Dear <span class="highlight">%s</span>,</p>
+                        <p>Your payslip for the month of <strong>%s %s</strong> has been generated.</p>
+                        <p style="text-align:center;font-size:24px;font-weight:700;color:#1a3a6b;">INR %s</p>
+                        <p style="text-align:center;">Net Pay</p>
+                        <p>The PDF payslip is attached for your reference. Please review the details and reach out to HR if you have any questions.</p>
+                      </div>
+                      <div class="footer">
+                        <p>This is an auto-generated email from %s. Please do not reply.</p>
+                      </div>
+                    </div>
+                    </body></html>
+                    """,
+                    monthName, dto.getWageYear(),
+                    dto.getEmployeeName(),
+                    monthName, dto.getWageYear(),
+                    NumberFormat.getNumberInstance(Locale.US).format(dto.getNetPay()),
+                    companyService.getCompany().getCompanyName()
+                );
+
+                // Send email with PDF attachment
+                emailConfigService.sendEmailWithAttachment(emp.getEmail(), subject, emailBody, pdf, pdfName);
 
                 // Mark payslip as sent
                 payslipService.markAsSent(dto.getId());

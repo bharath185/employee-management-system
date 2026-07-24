@@ -12,7 +12,8 @@ import java.util.Optional;
 @Repository
 public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, Long> {
 
-    List<LeaveBalance> findByEmployeeIdAndYear(Long employeeId, Integer year);
+    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.leaveType WHERE lb.employee.id = :employeeId AND lb.year = :year")
+    List<LeaveBalance> findByEmployeeIdAndYear(@Param("employeeId") Long employeeId, @Param("year") Integer year);
 
     Optional<LeaveBalance> findByEmployeeIdAndLeaveTypeIdAndYear(Long employeeId, Long leaveTypeId, Integer year);
 

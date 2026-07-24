@@ -13,7 +13,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { PayrollService } from '../../core/services/payroll.service';
 import { Payslip } from '../../core/models/payroll.models';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { environment } from '../../../environments/environment';
 import { saveAs } from 'file-saver';
 
 @Component({
@@ -22,14 +22,13 @@ import { saveAs } from 'file-saver';
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzPopconfirmModule,
-    RouterLink, RouterLinkActive,
-    PageHeaderComponent
+    RouterLink, RouterLinkActive
   ],
   template: `
     <div class="pl-container">
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
-          <i nz-icon nzType="play-circle"></i><span>Process</span>
+          <i nz-icon nzType="upload"></i><span>Upload</span>
         </a>
 
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
@@ -39,21 +38,6 @@ import { saveAs } from 'file-saver';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
-      <app-page-header icon="file-text" title="Payslips" subtitle="View and manage employee payslips">
-        <button nz-button (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
-          <i nz-icon nzType="file-excel"></i> Statement
-        </button>
-        <button nz-button (click)="downloadBankFile()" nz-tooltip="Download Bank File">
-          <i nz-icon nzType="bank"></i> Bank File
-        </button>
-        <button nz-button (click)="downloadReport()" nz-tooltip="Download Payroll Report">
-          <i nz-icon nzType="bar-chart"></i> Report
-        </button>
-        <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
-          <i nz-icon nzType="mail"></i> Send All
-        </button>
-      </app-page-header>
-
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pl-controls-card" nzSize="small">
         <div class="pl-controls">
@@ -64,6 +48,20 @@ import { saveAs } from 'file-saver';
             <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="loadData()" nzPlaceHolder="Month" class="filter-select" style="width:140px">
               <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
             </nz-select>
+          </div>
+          <div class="pp-actions">
+            <button nz-button nzType="default" (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
+              <i nz-icon nzType="file-excel"></i> Statement
+            </button>
+            <button nz-button nzType="default" (click)="downloadBankFile()" nz-tooltip="Download Bank File">
+              <i nz-icon nzType="bank"></i> Bank File
+            </button>
+            <button nz-button nzType="default" (click)="downloadReport()" nz-tooltip="Download Payroll Report">
+              <i nz-icon nzType="bar-chart"></i> Report
+            </button>
+            <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
+              <i nz-icon nzType="mail"></i> Send All
+            </button>
           </div>
         </div>
       </nz-card>
@@ -140,6 +138,10 @@ import { saveAs } from 'file-saver';
                   (click)="viewPayslip(p.id)" nz-tooltip="View Payslip">
                   <i nz-icon nzType="eye"></i>
                 </button>
+                <button nz-button nzType="link" nzSize="small" class="action-btn action-download"
+                  (click)="downloadPayslip(p)" nz-tooltip="Download Payslip">
+                  <i nz-icon nzType="download"></i>
+                </button>
                 <button nz-button nzType="link" nzSize="small" class="action-btn action-mail"
                   (click)="sendEmail(p)" nz-tooltip="Send Email" [disabled]="p.status === 'SENT'">
                   <i nz-icon nzType="mail"></i>
@@ -157,34 +159,34 @@ import { saveAs } from 'file-saver';
   styles: [`
     .pp-sub-nav {
       display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
+      gap: 2px;
+      margin-bottom: 12px;
+      background: #f0f4ff;
+      border-radius: 10px;
       padding: 4px;
-      border: 1px solid rgba(232,234,237,0.6);
+      border: 1px solid #e0e7ff;
     }
     .pp-nav-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
+      padding: 6px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       color: #6c757d;
       text-decoration: none;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
-    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
+    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active {
-      background: #2563eb;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
     }
-    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item.active i { color: #1f3d6e; }
     .pl-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 12px 16px;
@@ -216,6 +218,10 @@ import { saveAs } from 'file-saver';
       display: flex;
       gap: 10px;
       align-items: center;
+    }
+    .pp-actions {
+      display: flex;
+      gap: 8px;
     }
     .filter-select {
       width: 170px;
@@ -410,6 +416,13 @@ import { saveAs } from 'file-saver';
       color: #3a0ca3 !important;
       transform: scale(1.15);
     }
+    .action-download {
+      color: #059669 !important;
+    }
+    .action-download:hover {
+      color: #047857 !important;
+      transform: scale(1.15);
+    }
     .empty-cell {
       text-align: center !important;
       padding: 28px !important;
@@ -516,12 +529,32 @@ export class PayslipListComponent implements OnInit {
       next: (html) => {
         const win = window.open('', '_blank');
         if (win) {
-          win.document.write(html);
+          // Replace relative logo URL with the full backend URL so it resolves correctly
+          // when the HTML is opened in a new browser window
+          const fullLogoUrl = `${environment.apiUrl}/company/logo`;
+          const processedHtml = html.replace(/\/api\/v1\/company\/logo/g, fullLogoUrl);
+          win.document.write(processedHtml);
           win.document.title = `Payslip #${id}`;
           win.document.close();
         }
       },
       error: () => this.msg.error('Failed to load payslip')
+    });
+  }
+
+  downloadPayslip(p: Payslip): void {
+    this.payrollService.getPayslipPdf(p.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Payslip_${p.employeeCode}_${this.selectedYear}_${this.selectedMonth}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.msg.error('Failed to download payslip')
     });
   }
 

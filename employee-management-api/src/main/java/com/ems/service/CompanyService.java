@@ -11,7 +11,9 @@ import com.ems.repository.CompanyDocumentRepository;
 import com.ems.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,23 +35,26 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyDocumentRepository companyDocumentRepository;
 
+    @Lazy
+    @Autowired
+    private CompanyService self;
+
     @Value("${app.company.upload-dir:uploads/company}")
     private String uploadDir;
 
     /**
-     * Returns the singleton company record. Creates a default one if none exists.
+     * Returns the singleton company record, creating a default only if none exists.
      */
-    @Transactional
     public Company getCompany() {
-        return companyRepository.findById(1L)
-            .orElseGet(() -> {
-                Company defaultCompany = Company.builder()
-                    .companyName("My Company")
-                    .build();
-                Company saved = companyRepository.save(defaultCompany);
-                log.info("Default company record created with id=1");
-                return saved;
-            });
+        return companyRepository.findFirstByOrderByIdAsc().orElseGet(self::createDefault);
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public Company createDefault() {
+        Company defaultCompany = Company.builder()
+            .companyName("My Company")
+            .build();
+        return companyRepository.save(defaultCompany);
     }
 
     /**
@@ -64,7 +69,8 @@ public class CompanyService {
      */
     @Transactional
     public CompanyDTO updateCompany(CompanyDTO companyDTO, MultipartFile logo, String username) {
-        Company company = getCompany();
+        Company company = companyRepository.findFirstByOrderByIdAsc()
+            .orElseGet(() -> companyRepository.save(Company.builder().companyName("My Company").build()));
 
         // Update fields from DTO
         if (companyDTO.getCompanyName() != null) {

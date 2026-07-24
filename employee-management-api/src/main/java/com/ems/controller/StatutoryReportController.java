@@ -67,8 +67,10 @@ public class StatutoryReportController {
 
     @GetMapping("/leave-register/excel")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<byte[]> getLeaveRegisterExcel(@RequestParam Integer year) {
-        byte[] excel = statutoryReportService.generateLeaveRegisterExcel(year);
+    public ResponseEntity<byte[]> getLeaveRegisterExcel(
+            @RequestParam Integer year,
+            @RequestParam(required = false) String employeeIds) {
+        byte[] excel = statutoryReportService.generateLeaveRegisterExcel(year, employeeIds);
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=leave_register_" + year + ".xlsx")
             .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

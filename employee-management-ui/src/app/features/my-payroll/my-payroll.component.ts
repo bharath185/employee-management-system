@@ -10,6 +10,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { PayrollService } from '../../core/services/payroll.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Payslip } from '../../core/models/payroll.models';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-my-payroll',
@@ -315,7 +316,11 @@ export class MyPayrollComponent implements OnInit {
       next: (html) => {
         const win = window.open('', '_blank');
         if (win) {
-          win.document.write(html);
+          // Replace relative logo URL with the full backend URL so it resolves correctly
+          // when the HTML is opened in a new browser window
+          const fullLogoUrl = `${environment.apiUrl}/company/logo`;
+          const processedHtml = html.replace(/\/api\/v1\/company\/logo/g, fullLogoUrl);
+          win.document.write(processedHtml);
           win.document.title = `Payslip #${id}`;
           win.document.close();
         }
