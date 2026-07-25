@@ -1,7 +1,7 @@
 package com.ems.controller;
 
 import com.ems.dto.APIResponse;
-import com.ems.model.CompOff;
+import com.ems.dto.CompOffDTO;
 import com.ems.security.CustomUserDetails;
 import com.ems.service.CompOffService;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +21,12 @@ public class CompOffController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<List<CompOff>>> getCompOffs(@RequestParam(required = false) Long employeeId) {
+    public ResponseEntity<APIResponse<List<CompOffDTO>>> getCompOffs(@RequestParam(required = false) Long employeeId) {
         return ResponseEntity.ok(APIResponse.success(compOffService.getCompOffs(employeeId)));
     }
 
     @GetMapping("/my")
-    public ResponseEntity<APIResponse<List<CompOff>>> getMyCompOffs(@AuthenticationPrincipal CustomUserDetails user) {
+    public ResponseEntity<APIResponse<List<CompOffDTO>>> getMyCompOffs(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.ok(APIResponse.success(compOffService.getCompOffs(user.getEmployeeId())));
     }
 
@@ -43,7 +43,7 @@ public class CompOffController {
 
     @PostMapping("/earn/{employeeId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<CompOff>> earnCompOff(
+    public ResponseEntity<APIResponse<CompOffDTO>> earnCompOff(
             @PathVariable Long employeeId,
             @RequestParam String date) {
         return ResponseEntity.ok(APIResponse.success("Comp-Off earned",
@@ -52,7 +52,7 @@ public class CompOffController {
 
     @PutMapping("/{id}/avail")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<CompOff>> availCompOff(@PathVariable Long id) {
+    public ResponseEntity<APIResponse<CompOffDTO>> availCompOff(@PathVariable Long id) {
         return ResponseEntity.ok(APIResponse.success("Comp-Off availed", compOffService.availCompOff(id)));
     }
 

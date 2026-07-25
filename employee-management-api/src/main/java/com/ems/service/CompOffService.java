@@ -1,5 +1,6 @@
 package com.ems.service;
 
+import com.ems.dto.CompOffDTO;
 import com.ems.exception.BadRequestException;
 import com.ems.model.CompOff;
 import com.ems.model.Employee;
@@ -22,11 +23,14 @@ public class CompOffService {
     private final CompOffRepository compOffRepository;
     private final EmployeeRepository employeeRepository;
 
-    public List<CompOff> getCompOffs(Long employeeId) {
+    public List<CompOffDTO> getCompOffs(Long employeeId) {
+        List<CompOff> list;
         if (employeeId != null) {
-            return compOffRepository.findByEmployeeIdOrderByEarnedDateDesc(employeeId);
+            list = compOffRepository.findByEmployeeIdOrderByEarnedDateDesc(employeeId);
+        } else {
+            list = compOffRepository.findAll();
         }
-        return compOffRepository.findAll();
+        return list.stream().map(CompOffDTO::fromEntity).toList();
     }
 
     public long getAvailableCount(Long employeeId) {
@@ -34,7 +38,7 @@ public class CompOffService {
     }
 
     @Transactional
-    public CompOff earnCompOff(Long employeeId, LocalDate earnedDate) {
+    public CompOffDTO earnCompOff(Long employeeId, LocalDate earnedDate) {
         if (compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(employeeId, earnedDate, "EARNED")) {
             throw new BadRequestException("Comp-Off already earned for this date");
         }
@@ -46,11 +50,11 @@ public class CompOffService {
             .expiryDate(earnedDate.plusMonths(3))
             .status("EARNED")
             .build();
-        return compOffRepository.save(compOff);
+        return CompOffDTO.fromEntity(compOffRepository.save(compOff));
     }
 
     @Transactional
-    public CompOff availCompOff(Long compOffId) {
+    public CompOffDTO availCompOff(Long compOffId) {
         CompOff compOff = compOffRepository.findById(compOffId)
             .orElseThrow(() -> new RuntimeException("Comp-Off not found"));
         if (!"EARNED".equals(compOff.getStatus())) {
@@ -58,15 +62,15 @@ public class CompOffService {
         }
         compOff.setStatus("AVAILED");
         compOff.setAvailedDate(LocalDate.now());
-        return compOffRepository.save(compOff);
+        return CompOffDTO.fromEntity(compOffRepository.save(compOff));
     }
 
     @Transactional
-    public CompOff expireCompOff(Long compOffId) {
+    public CompOffDTO expireCompOff(Long compOffId) {
         CompOff compOff = compOffRepository.findById(compOffId)
             .orElseThrow(() -> new RuntimeException("Comp-Off not found"));
         compOff.setStatus("EXPIRED");
-        return compOffRepository.save(compOff);
+        return CompOffDTO.fromEntity(compOffRepository.save(compOff));
     }
 
     @Transactional
