@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { NzCardModule } from 'ng-zorro-antd/card';
-import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -14,16 +13,12 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzModalService, NzModalModule } from 'ng-zorro-antd/modal';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzPaginationModule } from 'ng-zorro-antd/pagination';
-import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 
 import { MasterDataService } from '../../core/services/master-data.service';
 import { MasterDataItem } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
-import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 
 interface CategoryInfo {
   code: string;
@@ -33,755 +28,484 @@ interface CategoryInfo {
 }
 
 const MASTER_CATEGORIES: CategoryInfo[] = [
-  { code: 'GENDER', name: 'Gender', count: null, icon: 'man-woman' },
-  { code: 'PREFIX', name: 'Prefix', count: null, icon: 'user' },
-  { code: 'MARITAL_STATUS', name: 'Marital Status', count: null, icon: 'heart' },
-  { code: 'F_M_H', name: 'F/M/H', count: null, icon: 'team' },
-  { code: 'RELIGION', name: 'Religion', count: null, icon: 'bank' },
-  { code: 'SOCIAL_CATEGORY', name: 'Social Category', count: null, icon: 'group' },
-  { code: 'SOCIAL_SUBCATEGORY', name: 'Social Subcategory', count: null, icon: 'cluster' },
-  { code: 'BLOOD_GROUP', name: 'Blood Group', count: null, icon: 'drop' },
-  { code: 'EMPLOYEE_STATUS', name: 'Employee Status', count: null, icon: 'safety' },
-  { code: 'EXIT_TYPE', name: 'Exit Type', count: null, icon: 'logout' },
-  { code: 'OCCUPATION_KIN', name: 'Occupation of Kin', count: null, icon: 'tool' },
-  { code: 'QUALIFICATION', name: 'Qualification', count: null, icon: 'book' },
-  { code: 'EDUCATION_LEVEL', name: 'Education Level', count: null, icon: 'bar-chart' },
-  { code: 'DESIGNATION', name: 'Designation', count: null, icon: 'idcard' },
-  { code: 'BANK_NAME', name: 'Bank Name', count: null, icon: 'dollar' },
-  { code: 'PROCESS', name: 'Process', count: null, icon: 'setting' },
-  { code: 'RELATIONSHIP', name: 'Relationship', count: null, icon: 'team' },
-  { code: 'AGE_BRACKET', name: 'Age Bracket', count: null, icon: 'field-number' },
-  { code: 'YES_NO', name: 'Yes/No', count: null, icon: 'check-square' },
-  { code: 'LANGUAGE', name: 'Language', count: null, icon: 'translation' },
-  { code: 'DOCUMENT_TYPE', name: 'Document Type', count: null, icon: 'file-text' },
-  { code: 'OCCUPATION_SUB', name: 'Occupation Sub', count: null, icon: 'apartment' },
-  { code: 'DEPARTMENT', name: 'Department', count: null, icon: 'bank' }
+  { code: 'GENDER', name: 'Gender', count: null, icon: 'bi bi-gender-female' },
+  { code: 'PREFIX', name: 'Prefix', count: null, icon: 'bi bi-person-badge' },
+  { code: 'MARITAL_STATUS', name: 'Marital Status', count: null, icon: 'bi bi-heart-half' },
+  { code: 'F_M_H', name: 'F/M/H', count: null, icon: 'bi bi-people-fill' },
+  { code: 'RELIGION', name: 'Religion', count: null, icon: 'bi bi-building' },
+  { code: 'SOCIAL_CATEGORY', name: 'Social Category', count: null, icon: 'bi bi-grid-3x3-gap' },
+  { code: 'SOCIAL_SUBCATEGORY', name: 'Social Subcategory', count: null, icon: 'bi bi-grid' },
+  { code: 'BLOOD_GROUP', name: 'Blood Group', count: null, icon: 'bi bi-droplet-fill' },
+  { code: 'EMPLOYEE_STATUS', name: 'Employee Status', count: null, icon: 'bi bi-patch-check-fill' },
+  { code: 'EXIT_TYPE', name: 'Exit Type', count: null, icon: 'bi bi-box-arrow-right' },
+  { code: 'OCCUPATION_KIN', name: 'Occupation of Kin', count: null, icon: 'bi bi-tools' },
+  { code: 'QUALIFICATION', name: 'Qualification', count: null, icon: 'bi bi-mortarboard-fill' },
+  { code: 'EDUCATION_LEVEL', name: 'Education Level', count: null, icon: 'bi bi-journal-richtext' },
+  { code: 'DESIGNATION', name: 'Designation', count: null, icon: 'bi bi-person-workspace' },
+  { code: 'BANK_NAME', name: 'Bank Name', count: null, icon: 'bi bi-bank2' },
+  { code: 'PROCESS', name: 'Process', count: null, icon: 'bi bi-gear-wide-connected' },
+  { code: 'RELATIONSHIP', name: 'Relationship', count: null, icon: 'bi bi-person-hearts' },
+  { code: 'AGE_BRACKET', name: 'Age Bracket', count: null, icon: 'bi bi-calendar2-age' },
+  { code: 'YES_NO', name: 'Yes/No', count: null, icon: 'bi bi-toggle2-on' },
+  { code: 'LANGUAGE', name: 'Language', count: null, icon: 'bi bi-translate' },
+  { code: 'DOCUMENT_TYPE', name: 'Document Type', count: null, icon: 'bi bi-file-earmark-text' },
+  { code: 'OCCUPATION_SUB', name: 'Occupation Sub', count: null, icon: 'bi bi-diagram-3-fill' },
+  { code: 'DEPARTMENT', name: 'Department', count: null, icon: 'bi bi-hdd-stack-fill' }
 ];
 
 @Component({
   selector: 'app-masters',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    NzCardModule,
-    NzFormModule,
-    NzInputModule,
-    NzSelectModule,
-    NzButtonModule,
-    NzIconModule,
-    NzTableModule,
-    NzSpinModule,
-    NzModalModule,
-    NzSwitchModule,
-    NzTagModule,
-    NzPaginationModule,
-    NzInputNumberModule,
-    NzToolTipModule,
-    LoadingSpinnerComponent,
-    PageHeaderComponent
+    CommonModule, FormsModule,
+    NzCardModule, NzInputModule, NzSelectModule, NzButtonModule,
+    NzIconModule, NzTableModule, NzSpinModule, NzModalModule,
+    NzSwitchModule, NzTagModule, NzToolTipModule
   ],
   template: `
-    <div class="masters-page page-enter">
-      <app-page-header icon="control" title="Masters Setup"></app-page-header>
-
-      <div class="masters-layout">
-        <aside class="categories-panel">
-          <div class="categories-header">
-            <h3 class="categories-title">Categories</h3>
-            <span class="categories-total" *ngIf="loadedCount > 0">{{ loadedCount }} of {{ categories.length }}</span>
-          </div>
-
-          <div class="category-search">
-            <nz-input-group nzSuffixIcon="search">
-              <input nz-input placeholder="Search categories..." [(ngModel)]="categorySearch" (ngModelChange)="onCategorySearch()" />
-            </nz-input-group>
-          </div>
-
-          <div class="category-grid" *ngIf="filteredCategories.length > 0; else noCategoryMatch">
-            <div *ngFor="let cat of filteredCategories" class="category-card"
-              [class.active]="selectedCategory === cat.code"
-              [class.loaded]="cat.count !== null"
-              (click)="selectCategory(cat.code)">
-              <div class="category-card-left">
-                <div class="category-card-icon" [class.active-icon]="selectedCategory === cat.code">
-                  <i nz-icon [nzType]="cat.icon"></i>
-                </div>
-              </div>
-              <div class="category-card-body">
-                <span class="category-card-name">{{ cat.name }}</span>
-                <span class="category-card-count">
-                  <ng-container *ngIf="cat.count !== null; else loadingCount">
-                    {{ cat.count }} {{ cat.count === 1 ? 'item' : 'items' }}
-                  </ng-container>
-                  <ng-template #loadingCount>
-                    <i nz-icon nzType="loading"></i>
-                  </ng-template>
-                </span>
-              </div>
-              <div class="category-card-check" *ngIf="selectedCategory === cat.code">
-                <i nz-icon nzType="check-circle" nzTheme="fill"></i>
-              </div>
-            </div>
-          </div>
-
-          <ng-template #noCategoryMatch>
-            <div class="category-empty">
-              <i nz-icon nzType="search" style="font-size: 32px; color: var(--color-text-muted);"></i>
-              <p>No categories match your search</p>
-            </div>
-          </ng-template>
-        </aside>
-
-        <main class="data-panel">
-          <ng-container *ngIf="!selectedCategory">
-            <div class="empty-selection">
-              <div class="empty-selection-icon">
-                <i nz-icon nzType="appstore" nzTheme="outline"></i>
-              </div>
-              <h3>Select a Category</h3>
-              <p>Choose a master data category from the grid to view and manage its values.</p>
-            </div>
-          </ng-container>
-
-          <ng-container *ngIf="selectedCategory">
-            <app-loading-spinner [loading]="isLoading" message="Loading master data..."></app-loading-spinner>
-
-            <div class="data-card" *ngIf="!isLoading">
-              <div class="data-card-header">
-                <div class="data-card-title">
-                  <i nz-icon [nzType]="selectedCategoryIcon" nzTheme="fill" class="data-card-title-icon"></i>
-                  <span>{{ selectedCategoryName }}</span>
-                  <span class="data-card-count">{{ masterData.length }} value{{ masterData.length !== 1 ? 's' : '' }}</span>
-                </div>
-                <div class="data-card-actions">
-                  <nz-input-group nzSuffixIcon="search" class="table-search">
-                    <input nz-input placeholder="Search..." [(ngModel)]="tableSearch" />
-                  </nz-input-group>
-                  <button nz-button nzType="primary" (click)="openAddModal()">
-                    <i nz-icon nzType="plus"></i> Add Value
-                  </button>
-                </div>
-              </div>
-
-              <nz-table #dataTable [nzData]="filteredTableData" [nzFrontPagination]="true" [nzPageSize]="10"
-                [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 25, 50]" nzShowQuickJumper nzSize="small">
-                <thead>
-                  <tr>
-                    <th nzWidth="120px">Code</th>
-                    <th>Display Value</th>
-                    <th nzWidth="100px">Sort Order</th>
-                    <th nzWidth="100px">Status</th>
-                    <th nzWidth="80px">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let item of dataTable.data" class="table-row">
-                    <td><span class="code-chip">{{ item.code }}</span></td>
-                    <td>
-                      <div class="editable-cell">
-                        <span *ngIf="editId !== item.id" (dblclick)="startEdit(item)" class="editable-value"
-                          [title]="'Double-click to edit'">
-                          {{ item.value }}
-                        </span>
-                        <span *ngIf="editId === item.id" class="edit-inline-wrapper">
-                          <input nz-input [(ngModel)]="editValue" (blur)="saveEdit(item)"
-                            (keyup.enter)="saveEdit(item)" (keyup.escape)="cancelEdit()" class="inline-edit-input"
-                            #editInput autofocus />
-                          <button nz-button nzType="link" nzSize="small" (click)="saveEdit(item)" class="edit-action-btn">
-                            <i nz-icon nzType="check"></i>
-                          </button>
-                          <button nz-button nzType="link" nzSize="small" (click)="cancelEdit()" class="edit-action-btn">
-                            <i nz-icon nzType="close"></i>
-                          </button>
-                        </span>
-                      </div>
-                    </td>
-                    <td><span class="sort-order-badge">{{ item.sortOrder }}</span></td>
-                    <td>
-                      <nz-switch [ngModel]="item.active" (ngModelChange)="toggleActive(item)"
-                        [nzCheckedChildren]="activeChecked" [nzUnCheckedChildren]="activeUnchecked">
-                      </nz-switch>
-                      <ng-template #activeChecked>
-                        <i nz-icon nzType="check"></i>
-                      </ng-template>
-                      <ng-template #activeUnchecked>
-                        <i nz-icon nzType="close"></i>
-                      </ng-template>
-                    </td>
-                    <td>
-                      <button nz-button nzType="default" nzDanger nzSize="small" (click)="deleteItem(item)"
-                        nz-tooltip="Delete" class="btn-delete">
-                        <i nz-icon nzType="delete"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="filteredTableData.length === 0">
-                    <td colspan="5">
-                      <div class="table-empty">
-                        <i nz-icon nzType="inbox" style="font-size: 32px; color: var(--color-text-muted);"></i>
-                        <p *ngIf="tableSearch">No values match your search</p>
-                        <p *ngIf="!tableSearch">No values found for this category</p>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </nz-table>
-            </div>
-          </ng-container>
-        </main>
+    <div class="ms-container">
+      <div class="ms-sub-nav">
+        <span class="ms-nav-title"><i nz-icon nzType="control"></i> Masters Setup</span>
+        <span class="ms-nav-badge" *ngIf="loadedCount > 0">{{ loadedCount }}/{{ categories.length }}</span>
       </div>
 
-      <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
-        (nzOnCancel)="closeAddModal()" nzWidth="520px" [nzMaskClosable]="false" class="master-add-modal">
-        <ng-template nzModalContent>
-          <div class="add-modal-body">
-            <div class="add-field">
-              <label class="add-label">Code <span class="required">*</span></label>
-              <input [(ngModel)]="addCode" placeholder="Enter code (uppercase)" name="addCode"
-                class="add-modal-input" style="text-transform:uppercase;" />
+      <div class="ms-layout">
+        <!-- Categories Panel -->
+        <nz-card class="ms-cats-card" nzSize="small">
+          <div class="ms-cats-header">
+            <nz-input-group nzSuffixIcon="search" class="ms-search">
+              <input nz-input placeholder="Search..." [(ngModel)]="categorySearch" />
+            </nz-input-group>
+          </div>
+          <div class="ms-cats-list">
+            <div *ngFor="let cat of filteredCategories" class="ms-cat"
+              [class.active]="selectedCategory === cat.code"
+              (click)="selectCategory(cat.code)">
+              <div class="ms-cat-icon" [class.active-icon]="selectedCategory === cat.code">
+                <i [ngClass]="cat.icon"></i>
+              </div>
+              <div class="ms-cat-body">
+                <span class="ms-cat-name">{{ cat.name }}</span>
+                <span class="ms-cat-count">
+                  <ng-container *ngIf="cat.count !== null; else loadingCnt">{{ cat.count }}</ng-container>
+                  <ng-template #loadingCnt><i nz-icon nzType="loading"></i></ng-template>
+                </span>
+              </div>
+              <i *ngIf="selectedCategory === cat.code" nz-icon nzType="check-circle" nzTheme="fill" class="ms-cat-check"></i>
             </div>
-            <div class="add-field">
-              <label class="add-label">Display Value <span class="required">*</span></label>
-              <input [(ngModel)]="addValue" placeholder="Enter display value" name="addValue"
-                class="add-modal-input" />
-            </div>
-            <div class="add-field">
-              <label class="add-label">Sort Order</label>
-              <input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto" name="addSortOrder"
-                class="add-modal-input" />
+            <div *ngIf="filteredCategories.length === 0" class="ms-empty">
+              <span>No matches</span>
             </div>
           </div>
-        </ng-template>
-        <ng-template nzModalFooter>
-          <button nz-button nzType="default" (click)="closeAddModal()">Cancel</button>
-          <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
-            <i nz-icon nzType="plus"></i> Add
-          </button>
-        </ng-template>
-      </nz-modal>
+        </nz-card>
+
+        <!-- Data Panel -->
+        <div class="ms-data-panel">
+          <nz-card class="ms-data-card" nzSize="small" *ngIf="selectedCategory">
+            <div class="ms-data-header">
+              <div class="ms-data-title">
+                <i [ngClass]="selectedCategoryIcon"></i>
+                <span>{{ selectedCategoryName }}</span>
+                <span class="ms-data-count">{{ masterData.length }} values</span>
+              </div>
+              <div class="ms-data-actions">
+                <nz-input-group nzSuffixIcon="search" class="ms-search-sm">
+                  <input nz-input placeholder="Search..." [(ngModel)]="tableSearch" />
+                </nz-input-group>
+                <button nz-button class="btn-primary-gradient" (click)="openAddModal()">
+                  <i nz-icon nzType="plus"></i> Add
+                </button>
+              </div>
+            </div>
+
+            <nz-table #dataTable [nzData]="filteredTableData" [nzFrontPagination]="true" [nzPageSize]="20"
+              [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50]"
+              nzBordered nzSize="small" nzShowPagination nzFrontPagination class="theme-table">
+              <thead>
+                <tr>
+                  <th class="th-code">Code</th>
+                  <th class="th-value">Display Value</th>
+                  <th class="th-sort">Sort</th>
+                  <th class="th-status">Status</th>
+                  <th class="th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of dataTable.data">
+                  <td class="td-center"><span class="code-chip">{{ item.code }}</span></td>
+                  <td>
+                    <div class="editable-cell">
+                      <span *ngIf="editId !== item.id" (dblclick)="startEdit(item)" class="editable-value"
+                        [title]="'Double-click to edit'">{{ item.value }}</span>
+                      <span *ngIf="editId === item.id" class="edit-inline-wrapper">
+                        <input nz-input [(ngModel)]="editValue" (blur)="saveEdit(item)"
+                          (keyup.enter)="saveEdit(item)" (keyup.escape)="cancelEdit()" class="inline-edit-input" autofocus />
+                        <button nz-button nzType="link" nzSize="small" (click)="saveEdit(item)" class="edit-btn"><i nz-icon nzType="check"></i></button>
+                        <button nz-button nzType="link" nzSize="small" (click)="cancelEdit()" class="edit-btn"><i nz-icon nzType="close"></i></button>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="td-center"><span class="sort-badge">{{ item.sortOrder }}</span></td>
+                  <td class="td-center">
+                    <nz-switch [ngModel]="item.active" (ngModelChange)="toggleActive(item)" class="ms-switch"></nz-switch>
+                  </td>
+                  <td class="td-actions">
+                    <button nz-button nzType="link" nzSize="small" class="action-btn action-delete" (click)="deleteItem(item)" nz-tooltip="Delete">
+                      <i nz-icon nzType="delete"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredTableData.length === 0">
+                  <td colspan="5" class="empty-cell">No values found</td>
+                </tr>
+              </tbody>
+            </nz-table>
+          </nz-card>
+
+          <!-- Empty state -->
+          <nz-card class="ms-data-card" nzSize="small" *ngIf="!selectedCategory">
+            <div class="ms-empty-state">
+              <i nz-icon nzType="appstore" nzTheme="outline" class="ms-empty-icon"></i>
+              <span class="ms-empty-title">Select a Category</span>
+              <span class="ms-empty-desc">Choose a master data category from the left panel</span>
+            </div>
+          </nz-card>
+        </div>
+      </div>
     </div>
+
+    <!-- Add Modal -->
+    <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName"
+      (nzOnCancel)="closeAddModal()" nzWidth="420px" [nzMaskClosable]="false">
+      <ng-template nzModalContent>
+        <div class="add-modal-body">
+          <div class="add-field">
+            <label>Code <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="addCode" placeholder="UPPERCASE" style="text-transform:uppercase;" />
+          </div>
+          <div class="add-field">
+            <label>Display Value <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="addValue" placeholder="Enter value" />
+          </div>
+          <div class="add-field">
+            <label>Sort Order</label>
+            <input nz-input type="number" [(ngModel)]="addSortOrder" min="1" placeholder="Auto" />
+          </div>
+        </div>
+      </ng-template>
+      <ng-template nzModalFooter>
+        <button nz-button (click)="closeAddModal()">Cancel</button>
+        <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
+          <i nz-icon nzType="plus"></i> Add
+        </button>
+      </ng-template>
+    </nz-modal>
   `,
   styles: [`
-    /* ── Page Enter Animation ── */
-    @keyframes page-enter {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .masters-page.page-enter {
-      animation: page-enter 0.35s ease-out;
-    }
-
-    /* ── Scrollbar Styling ── */
-    .masters-page ::-webkit-scrollbar { width: 6px; height: 6px; }
-    .masters-page ::-webkit-scrollbar-track { background: transparent; }
-    .masters-page ::-webkit-scrollbar-thumb { background: rgba(31,61,110,0.2); border-radius: 3px; }
-    .masters-page ::-webkit-scrollbar-thumb:hover { background: rgba(31,61,110,0.35); }
-
-    .masters-page {
-      width: 100%;
-      padding: 12px;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .masters-layout {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 12px;
-      flex: 1;
-      min-height: 0;
-    }
-
-    @media (max-width: 968px) {
-      .masters-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .categories-panel {
-      background: var(--color-card);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border-light);
-      box-shadow: var(--shadow-md);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    .categories-header {
+    :host { display: block; scroll-behavior: smooth; }
+    .ms-sub-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 12px 6px;
+      gap: 2px;
+      margin-bottom: 8px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      border: 1px solid #e0e7ff;
     }
-
-    .categories-title {
-      font-size: 15px;
+    .ms-nav-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
       font-weight: 700;
       color: #1f3d6e;
-      margin: 0;
     }
-
-    .categories-total {
-      font-size: 12px;
-      color: var(--color-text-muted);
-      background: var(--color-bg-alt);
-      padding: 2px 10px;
-      border-radius: var(--radius-pill);
+    .ms-nav-title i { font-size: 16px; }
+    .ms-nav-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6c757d;
+      background: #fff;
+      padding: 1px 8px;
+      border-radius: 10px;
+      border: 1px solid #e0e7ff;
     }
-
-    .category-search {
-      padding: 6px 12px;
+    .ms-container {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 8px 12px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      height: calc(100vh - 48px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
     }
-
-    .category-search nz-input-group {
-      border-radius: var(--radius-md);
+    .ms-container::-webkit-scrollbar { width: 6px; }
+    .ms-container::-webkit-scrollbar-track { background: transparent; }
+    .ms-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+    .ms-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 8px;
+      align-items: start;
     }
+    @media (max-width: 900px) { .ms-layout { grid-template-columns: 1fr; } }
 
-    .category-grid {
-      flex: 1;
-      padding: 6px 8px 16px;
+    /* Categories Card */
+    .ms-cats-card {
+      border-radius: 8px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+    }
+    :host ::ng-deep .ms-cats-card .ant-card-body { padding: 8px !important; }
+    .ms-cats-header { margin-bottom: 6px; }
+    .ms-search { border-radius: 6px !important; }
+    :host ::ng-deep .ms-search .ant-input { height: 30px !important; font-size: 12px !important; }
+    :host ::ng-deep .ms-search .ant-input-group-addon { height: 30px !important; font-size: 12px !important; }
+    .ms-cats-list {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 3px;
+      max-height: calc(100vh - 180px);
       overflow-y: auto;
-      min-height: 0;
+      scroll-behavior: smooth;
     }
-
-    .category-card {
+    .ms-cats-list::-webkit-scrollbar { width: 4px; }
+    .ms-cats-list::-webkit-scrollbar-track { background: transparent; }
+    .ms-cats-list::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 2px; }
+    .ms-cat {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 5px 10px;
-      border-radius: var(--radius-md);
-      border: 1.5px solid var(--color-border-light);
-      background: var(--color-card);
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       position: relative;
-      min-height: 34px;
     }
-
-    .category-card:hover {
-      border-color: rgba(31,61,110,0.15);
-      box-shadow: 0 2px 8px rgba(31, 61, 110, 0.08);
-      transform: translateX(2px);
-    }
-
-    .category-card.active {
-      border-color: #1f3d6e;
-      background: rgba(31,61,110,0.06);
-      box-shadow: 0 2px 8px rgba(31, 61, 110, 0.12);
-    }
-
-    .category-card.active::before {
+    .ms-cat:hover { background: rgba(31,61,110,0.04); border-color: #e8eaed; }
+    .ms-cat.active { background: rgba(31,61,110,0.08); border-color: #1f3d6e; }
+    .ms-cat.active::before {
       content: '';
       position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
+      left: 0; top: 4px; bottom: 4px;
       width: 3px;
       background: #1f3d6e;
       border-radius: 0 2px 2px 0;
     }
-
-    .category-card-left {
+    .ms-cat-icon {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      background: #f0f4ff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      color: #6c757d;
       flex-shrink: 0;
+      transition: all 0.15s ease;
     }
-
-    .category-card-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: var(--radius-md);
-      background: var(--color-bg-alt);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--color-text-secondary);
-      font-size: 13px;
-      transition: all 0.2s ease;
-    }
-
-    .category-card-icon.active-icon {
-      background: #1f3d6e;
-      color: #ffffff;
-    }
-
-    .category-card-body {
+    .ms-cat-icon.active-icon { background: #1f3d6e; color: #fff; }
+    .ms-cat-body {
       flex: 1;
       display: flex;
-      flex-direction: column;
-      gap: 1px;
+      align-items: center;
+      justify-content: space-between;
       min-width: 0;
     }
-
-    .category-card-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--color-text-primary);
+    .ms-cat-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
-    .category-card.active .category-card-name {
-      color: #1f3d6e;
-    }
-
-    .category-card-count {
-      font-size: 11px;
-      color: var(--color-text-muted);
-      font-weight: 500;
-    }
-
-    .category-card-check {
+    .ms-cat.active .ms-cat-name { color: #1f3d6e; font-weight: 600; }
+    .ms-cat-count {
+      font-size: 10px;
+      color: #9ca3af;
+      font-weight: 600;
       flex-shrink: 0;
-      color: #1f3d6e;
-      font-size: 14px;
     }
-
-    .category-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding: 24px 12px;
+    .ms-cat-check { color: #1f3d6e; font-size: 12px; flex-shrink: 0; }
+    .ms-empty {
       text-align: center;
+      padding: 16px;
+      font-size: 11px;
+      color: #9ca3af;
     }
 
-    .category-empty p {
-      font-size: 13px;
-      color: var(--color-text-muted);
-      margin: 0;
+    /* Data Panel */
+    .ms-data-panel { display: flex; flex-direction: column; }
+    .ms-data-card {
+      border-radius: 8px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
     }
-
-    .data-panel {
-      min-height: 0;
+    :host ::ng-deep .ms-data-card .ant-card-body { padding: 0 !important; }
+    .ms-data-header {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8eaed;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ms-data-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f3d6e;
+    }
+    .ms-data-title i { font-size: 15px; color: #1f3d6e; }
+    .ms-data-count {
+      font-size: 10px;
+      font-weight: 500;
+      color: #9ca3af;
+      background: #f0f4ff;
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+    .ms-data-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ms-search-sm { width: 160px; border-radius: 6px !important; }
+    :host ::ng-deep .ms-search-sm .ant-input { height: 28px !important; font-size: 11px !important; }
+    :host ::ng-deep .ms-search-sm .ant-input-group-addon { height: 28px !important; }
+
+    .btn-primary-gradient {
+      height: 28px !important;
+      padding: 0 12px !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      color: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.25) !important;
+    }
+    .btn-primary-gradient:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 3px 10px rgba(67,97,238,0.35) !important;
     }
 
-    .empty-selection {
+    /* Table */
+    :host ::ng-deep .theme-table {
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    :host ::ng-deep .theme-table .ant-table { font-size: 12px; border-radius: 0 !important; }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th {
+      background: #f8f9fc !important;
+      color: #1f3d6e !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      padding: 6px 8px !important;
+      border-bottom: 2px solid #1f3d6e !important;
+      white-space: nowrap;
+    }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) {
+      border-right: 1px solid #e8ecf1;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
+      padding: 5px 8px !important;
+      border-bottom: 1px solid #f0f2f5 !important;
+      font-size: 11px;
+      color: #374151;
+      vertical-align: middle;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
+      background: rgba(31,61,110,0.03) !important;
+    }
+    .th-code { width: 15% !important; text-align: center !important; }
+    .th-value { width: 40% !important; text-align: left !important; }
+    .th-sort { width: 10% !important; text-align: center !important; }
+    .th-status { width: 15% !important; text-align: center !important; }
+    .th-actions { width: 12% !important; text-align: center !important; }
+    .td-center { text-align: center !important; }
+    .td-actions { text-align: center !important; }
+
+    .code-chip {
+      display: inline-block;
+      background: #f0f4ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: #1f3d6e;
+      font-weight: 600;
+    }
+    .editable-cell { min-height: 22px; display: flex; align-items: center; }
+    .editable-value {
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .editable-value:hover { background: rgba(31,61,110,0.06); border-color: #e0e7ff; }
+    .edit-inline-wrapper { display: inline-flex; align-items: center; gap: 3px; width: 100%; }
+    :host ::ng-deep .inline-edit-input {
+      border-radius: 4px !important;
+      border-color: #1f3d6e !important;
+      box-shadow: 0 0 0 2px rgba(31,61,110,0.06) !important;
+      height: 26px !important;
+      font-size: 11px !important;
+    }
+    .edit-btn { padding: 0 3px !important; height: 20px !important; font-size: 12px !important; }
+    .sort-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 8px;
+      background: #f0f4ff;
+      color: #6c757d;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: 'Courier New', monospace;
+    }
+    :host ::ng-deep .ms-switch.ant-switch-checked { background-color: #1f3d6e !important; }
+    .action-btn { padding: 0 3px !important; font-size: 13px !important; }
+    .action-delete { color: #ef4444 !important; }
+    .action-delete:hover { color: #dc2626 !important; transform: scale(1.15); }
+    .empty-cell { text-align: center !important; padding: 20px !important; color: #9ca3af !important; font-size: 12px; font-style: italic; }
+
+    /* Pagination */
+    :host ::ng-deep .ant-pagination { margin: 8px 12px !important; font-size: 12px !important; }
+    :host ::ng-deep .ant-pagination-item { min-width: 28px !important; height: 28px !important; line-height: 28px !important; }
+    :host ::ng-deep .ant-pagination-item a { font-size: 12px !important; }
+
+    /* Empty state */
+    .ms-empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 60px 24px;
-      text-align: center;
-      background: var(--color-card);
-      border-radius: var(--radius-lg);
-      border: 1px dashed var(--color-border);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .empty-selection-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: var(--radius-full);
-      background: linear-gradient(135deg, rgba(31,61,110,0.06), var(--color-bg-alt));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
-    }
-
-    .empty-selection-icon i {
-      font-size: 28px;
-      color: rgba(31,61,110,0.3);
-    }
-
-    .empty-selection h3 {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--color-text-primary);
-      margin: 0 0 6px;
-    }
-
-    .empty-selection p {
-      font-size: 14px;
-      color: var(--color-text-secondary);
-      margin: 0;
-      max-width: 320px;
-    }
-
-    .data-card {
-      background: var(--color-card);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border-light);
-      box-shadow: var(--shadow-md);
-      overflow: hidden;
-      flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .data-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--color-border-light);
-      flex-wrap: wrap;
       gap: 8px;
     }
+    .ms-empty-icon { font-size: 36px; color: #d0d5dd; }
+    .ms-empty-title { font-size: 14px; font-weight: 700; color: #374151; }
+    .ms-empty-desc { font-size: 12px; color: #9ca3af; }
 
-    .data-card-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #1f3d6e;
-    }
-
-    .data-card-title-icon {
-      font-size: 18px;
-      color: #1f3d6e;
-    }
-
-    .data-card-count {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--color-text-secondary);
-      background: var(--color-bg);
-      padding: 2px 10px;
-      border-radius: var(--radius-pill);
-    }
-
-    .data-card-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .table-search {
-      width: 180px;
-    }
-
-    .table-search nz-input-group {
-      border-radius: var(--radius-md);
-    }
-
-    @media (max-width: 768px) {
-      .data-card-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .data-card-actions {
-        flex-direction: column;
-      }
-      .table-search {
-        width: 100%;
-      }
-      .data-card-actions button {
-        width: 100%;
-      }
-    }
-
-    nz-table {
-      --ant-table-header-bg: var(--color-bg-alt);
-    }
-
-    nz-table ::ng-deep .ant-table-thead > tr > th {
-      background: #f8f9fc;
-      color: #1f3d6e;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 8px 12px;
-      border-bottom: 2px solid #1f3d6e;
-    }
-
-    nz-table ::ng-deep .ant-table-tbody > tr > td {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--color-border-light);
-      font-size: 13px;
-      vertical-align: middle;
-    }
-
-    nz-table ::ng-deep .ant-table-tbody > tr:hover > td {
-      background: rgba(31,61,110,0.06) !important;
-    }
-
-    .table-row {
-      transition: background 0.15s ease;
-    }
-
-    .code-chip {
-      display: inline-block;
-      background: var(--color-bg-dark);
-      padding: 2px 8px;
-      border-radius: var(--radius-sm);
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: #1f3d6e;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-    }
-
-    .editable-cell {
-      min-height: 26px;
-      display: flex;
-      align-items: center;
-    }
-
-    .editable-value {
-      padding: 3px 8px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: background 0.15s ease;
-      border: 1.5px solid transparent;
-      display: inline-block;
-      max-width: 100%;
-    }
-
-    .editable-value:hover {
-      background: rgba(31,61,110,0.06);
-      border-color: rgba(31,61,110,0.15);
-    }
-
-    .edit-inline-wrapper {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      width: 100%;
-      max-width: 320px;
-    }
-
-    .inline-edit-input {
-      flex: 1;
-      border-radius: var(--radius-sm) !important;
-      border-color: #1f3d6e !important;
-      box-shadow: 0 0 0 3px rgba(31,61,110,0.06) !important;
-    }
-
-    .edit-action-btn {
-      padding: 0 4px !important;
-      height: 22px !important;
-      line-height: 22px !important;
-      min-width: 22px !important;
-    }
-
-    .sort-order-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: var(--radius-pill);
-      background: var(--color-bg-alt);
-      color: var(--color-text-secondary);
-      font-size: 12px;
-      font-weight: 600;
-      font-family: var(--font-mono);
-    }
-
-    .btn-delete {
-      border-radius: var(--radius-sm);
-      transition: all 0.15s ease;
-    }
-
-    .btn-delete:hover {
-      background: var(--color-danger-light) !important;
-      border-color: var(--color-danger) !important;
-      color: var(--color-danger) !important;
-    }
-
-    .table-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding: 24px;
-      text-align: center;
-    }
-
-    .table-empty p {
-      font-size: 13px;
-      color: var(--color-text-muted);
-      margin: 0;
-    }
-
-    .add-form {
-      padding: 8px 0;
-    }
-
-    .add-form nz-form-item {
-      margin-bottom: 12px;
-    }
-
-    .add-form nz-form-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .add-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 8px 0; }
-    .add-field { display: flex; flex-direction: column; gap: 4px; }
-    .add-label { font-size: 13px; font-weight: 600; color: #333; }
-    .add-label .required { color: #ff4d4f; }
-
-    .add-modal-input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1.5px solid #d9d9d9;
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      box-sizing: border-box;
-      background: #fff;
-      color: #333;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .add-modal-input:focus {
-      border-color: #1f3d6e;
-      box-shadow: 0 0 0 3px rgba(31,61,110,0.12);
-    }
-
-    @media (max-width: 768px) {
-      .masters-page {
-        padding: 8px;
-      }
-    }
-
-    ::ng-deep .ant-input-number {
-      width: 100%;
-      border-radius: var(--radius-md);
-    }
-
-    ::ng-deep .ant-input-number-focused {
-      box-shadow: 0 0 0 3px rgba(31,61,110,0.06) !important;
-      border-color: #1f3d6e !important;
-    }
-
-    /* ── Modal Title ── */
-    ::ng-deep .master-add-modal .ant-modal-title {
-      color: #1f3d6e !important;
-      font-weight: 700;
-    }
-
-    /* ── Switch Active Color ── */
-    ::ng-deep .ant-switch-checked {
-      background-color: #1f3d6e !important;
-    }
-
-    /* ── Primary Button Gradient ── */
-    button[nz-button][nzType="primary"] {
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
-      border: none !important;
-      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
-      transition: all 0.2s ease !important;
-    }
-    button[nz-button][nzType="primary"]:hover {
-      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
-      transform: translateY(-1px);
-    }
-    button[nz-button][nzType="primary"]:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
-    }
+    /* Modal */
+    .add-modal-body { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+    .add-field { display: flex; flex-direction: column; gap: 3px; }
+    .add-field label { font-size: 11px; font-weight: 600; color: #374151; }
+    .required { color: #ef4444; }
+    :host ::ng-deep .add-field .ant-input { height: 30px !important; font-size: 12px !important; border-radius: 6px !important; }
   `]
 })
 export class MastersComponent implements OnInit {
@@ -824,15 +548,14 @@ export class MastersComponent implements OnInit {
 
   get selectedCategoryIcon(): string {
     const cat = this.categories.find(c => c.code === this.selectedCategory);
-    return cat ? cat.icon : 'appstore';
+    return cat ? cat.icon : 'bi bi-appstore';
   }
 
   get filteredCategories(): CategoryInfo[] {
     if (!this.categorySearch) return this.categories;
     const q = this.categorySearch.toLowerCase();
     return this.categories.filter(c =>
-      c.name.toLowerCase().includes(q) ||
-      c.code.toLowerCase().includes(q)
+      c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
     );
   }
 
@@ -849,14 +572,9 @@ export class MastersComponent implements OnInit {
   private loadCategoryCounts(): void {
     this.categories.forEach(cat => {
       this.masterDataService.getByCategory(cat.code).subscribe({
-        next: (data) => {
-          cat.count = data.length;
-        }
+        next: (data) => { cat.count = data.length; }
       });
     });
-  }
-
-  onCategorySearch(): void {
   }
 
   selectCategory(category: string): void {
@@ -900,14 +618,12 @@ export class MastersComponent implements OnInit {
 
   submitAddForm(): void {
     if (!this.addCode || !this.addValue) return;
-
     const payload = {
       category: this.selectedCategory,
       code: this.addCode.toUpperCase().trim(),
       value: this.addValue.trim(),
       sortOrder: this.addSortOrder || this.masterData.length + 1
     };
-
     this.isSaving = true;
     this.http.post(`${environment.apiUrl}/masters`, payload).subscribe({
       next: (response: any) => {
@@ -946,21 +662,19 @@ export class MastersComponent implements OnInit {
       this.cancelEdit();
       return;
     }
-
     this.http.put(`${environment.apiUrl}/masters/${item.id}`, {
-      ...item,
-      value: this.editValue
+      ...item, value: this.editValue
     }).subscribe({
       next: (response: any) => {
         if (response.success) {
-          this.notification.success('Success', 'Value updated successfully');
+          this.notification.success('Success', 'Value updated');
           this.masterDataService.refreshCategory(this.selectedCategory);
           this.loadCategoryData();
         }
         this.cancelEdit();
       },
       error: (err) => {
-        this.notification.error('Error', err.error?.message || 'Error updating value');
+        this.notification.error('Error', err.error?.message || 'Error updating');
         this.cancelEdit();
       }
     });
@@ -973,8 +687,7 @@ export class MastersComponent implements OnInit {
 
   toggleActive(item: MasterDataItem): void {
     this.http.put(`${environment.apiUrl}/masters/${item.id}`, {
-      ...item,
-      active: !item.active
+      ...item, active: !item.active
     }).subscribe({
       next: (response: any) => {
         if (response.success) {
@@ -982,32 +695,27 @@ export class MastersComponent implements OnInit {
           this.loadCategoryData();
         }
       },
-      error: () => {
-        this.notification.error('Error', 'Error toggling status');
-      }
+      error: () => { this.notification.error('Error', 'Error toggling status'); }
     });
   }
 
   deleteItem(item: MasterDataItem): void {
     this.modal.confirm({
-      nzTitle: 'Delete Master Value',
-      nzContent: `Are you sure you want to delete "${item.value}" (${item.code})?`,
+      nzTitle: 'Delete Value',
+      nzContent: `Delete "${item.value}" (${item.code})?`,
       nzOkText: 'Delete',
       nzOkDanger: true,
-      nzCancelText: 'Cancel',
       nzOnOk: () => {
         this.http.delete(`${environment.apiUrl}/masters/${item.id}`).subscribe({
           next: (response: any) => {
             if (response.success) {
-              this.notification.success('Success', 'Value deleted successfully');
+              this.notification.success('Success', 'Value deleted');
               this.masterDataService.refreshCategory(this.selectedCategory);
               this.loadCategoryData();
               this.loadCategoryCounts();
             }
           },
-          error: (err) => {
-            this.notification.error('Error', err.error?.message || 'Error deleting value');
-          }
+          error: (err) => { this.notification.error('Error', err.error?.message || 'Error deleting'); }
         });
       }
     });

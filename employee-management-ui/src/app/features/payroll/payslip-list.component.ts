@@ -80,11 +80,6 @@ import { saveAs } from 'file-saver';
           </div>
           <div class="stats-divider"></div>
           <div class="stats-item">
-            <span class="stats-label">Total Deductions</span>
-            <span class="stats-value stats-currency stats-negative">&#8377;{{ (stats.totalDeductions || 0) | number:'1.2-2' }}</span>
-          </div>
-          <div class="stats-divider"></div>
-          <div class="stats-item">
             <span class="stats-label">Total Net Pay</span>
             <span class="stats-value stats-currency stats-net">&#8377;{{ (stats.totalNet || 0) | number:'1.2-2' }}</span>
           </div>
@@ -96,38 +91,41 @@ import { saveAs } from 'file-saver';
         <nz-table #payslipTable
           [nzData]="payslips"
           [nzLoading]="loading"
-          [nzPageSize]="50"
-          [nzScroll]="{ x: '1200px' }"
+          [nzPageSize]="20"
+          [nzPageSizeOptions]="[10, 20, 50]"
+          [nzShowSizeChanger]="true"
           nzBordered nzSize="small"
+          nzShowPagination
+          nzFrontPagination
           class="theme-table">
           <thead>
             <tr>
               <th class="th-sno">#</th>
               <th class="th-code">Code</th>
-              <th>Name</th>
+              <th class="th-name">Name</th>
               <th class="th-num">Basic</th>
               <th class="th-num">Gross</th>
               <th class="th-num">PF</th>
               <th class="th-num">ESI</th>
               <th class="th-num">PT</th>
               <th class="th-num">Net Pay</th>
-              <th class="th-num">Present</th>
-              <th class="th-num">Leaves</th>
-              <th>Status</th>
+              <th class="th-present">Pres</th>
+              <th class="th-present">Leave</th>
+              <th class="th-status">Status</th>
               <th class="th-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let p of payslipTable.data; let i = index">
               <td class="td-center">{{ i + 1 }}</td>
-              <td><span class="emp-code-text">{{ p.employeeCode }}</span></td>
+              <td class="td-center"><span class="emp-code-text">{{ p.employeeCode }}</span></td>
               <td class="td-name">{{ p.employeeName }}</td>
-              <td class="td-right">{{ p.basic | number:'1.2-2' }}</td>
-              <td class="td-right"><span class="gross-amount">{{ p.grossSalary | number:'1.2-2' }}</span></td>
-              <td class="td-right">{{ p.pfDeduction | number:'1.2-2' }}</td>
-              <td class="td-right">{{ p.esiDeduction | number:'1.2-2' }}</td>
-              <td class="td-right">{{ p.ptDeduction | number:'1.2-2' }}</td>
-              <td class="td-right"><span class="net-amount">{{ p.netPay | number:'1.2-2' }}</span></td>
+              <td class="td-right">{{ p.basic | number:'1.0-0' }}</td>
+              <td class="td-right"><span class="gross-amount">{{ p.grossSalary | number:'1.0-0' }}</span></td>
+              <td class="td-right">{{ p.pfDeduction | number:'1.0-0' }}</td>
+              <td class="td-right">{{ p.esiDeduction | number:'1.0-0' }}</td>
+              <td class="td-right">{{ p.ptDeduction | number:'1.0-0' }}</td>
+              <td class="td-right"><span class="net-amount">{{ p.netPay | number:'1.0-0' }}</span></td>
               <td class="td-center">{{ p.presentDays }}</td>
               <td class="td-center">{{ p.leaveDays }}</td>
               <td class="td-center">
@@ -157,21 +155,22 @@ import { saveAs } from 'file-saver';
     </div>
   `,
   styles: [`
+    :host { display: block; scroll-behavior: smooth; }
     .pp-sub-nav {
       display: flex;
       gap: 2px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       background: #f0f4ff;
-      border-radius: 10px;
-      padding: 4px;
+      border-radius: 8px;
+      padding: 3px;
       border: 1px solid #e0e7ff;
     }
     .pp-nav-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 8px;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
       color: #6c757d;
@@ -179,58 +178,69 @@ import { saveAs } from 'file-saver';
       transition: all 0.2s ease;
       white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item i { font-size: 14px; width: 14px; display: inline-flex; align-items: center; justify-content: center; }
     .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active {
       background: #ffffff;
       color: #1f3d6e;
-      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
+      box-shadow: 0 1px 4px rgba(31,61,110,0.1);
     }
     .pp-nav-item.active i { color: #1f3d6e; }
     .pl-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 12px 16px;
+      padding: 8px 12px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
+      height: calc(100vh - 48px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
     }
+    .pl-container::-webkit-scrollbar { width: 6px; }
+    .pl-container::-webkit-scrollbar-track { background: transparent; }
+    .pl-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+    .pl-container::-webkit-scrollbar-thumb:hover { background: #98a2b3; }
     .pl-controls-card, .pl-stats-card, .pl-table-card {
-      border-radius: 10px !important;
+      border-radius: 8px !important;
       border: 1px solid #e8eaed !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-      margin-bottom: 14px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+      margin-bottom: 8px;
       width: 100% !important;
     }
     :host ::ng-deep .pl-controls-card .ant-card-body {
-      padding: 14px 16px !important;
+      padding: 8px 12px !important;
     }
     :host ::ng-deep .pl-stats-card .ant-card-body {
-      padding: 14px 16px !important;
+      padding: 8px 12px !important;
     }
     :host ::ng-deep .pl-table-card .ant-card-body {
-      padding: 14px 16px !important;
+      padding: 0 !important;
     }
     .pl-controls {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
     }
     .pl-filters {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
     }
     .pp-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .filter-select {
-      width: 170px;
+      width: 120px;
     }
     :host ::ng-deep .filter-select .ant-select-selector {
-      border-radius: 8px !important;
+      border-radius: 6px !important;
       border: 1px solid #e2e5ea !important;
-      height: 34px !important;
-      padding: 0 8px !important;
+      height: 30px !important;
+      padding: 0 6px !important;
       box-shadow: none !important;
       transition: all 0.2s ease !important;
     }
@@ -242,95 +252,99 @@ import { saveAs } from 'file-saver';
       box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
     }
     :host ::ng-deep .filter-select .ant-select-selection-item {
-      font-size: 13px !important;
-      line-height: 32px !important;
+      font-size: 12px !important;
+      line-height: 28px !important;
     }
     .btn-primary-gradient {
-      height: 34px !important;
-      padding: 0 20px !important;
-      font-size: 13px !important;
+      height: 30px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
       font-weight: 600 !important;
       border: none !important;
-      border-radius: 8px !important;
+      border-radius: 6px !important;
       background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
       color: #fff !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 6px !important;
+      gap: 4px !important;
       transition: all 0.2s ease !important;
       letter-spacing: 0.3px !important;
-      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.25) !important;
     }
     .btn-primary-gradient:hover {
       transform: translateY(-1px) !important;
-      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+      box-shadow: 0 3px 10px rgba(67,97,238,0.35) !important;
     }
-    .btn-primary-gradient:active {
-      transform: translateY(0) !important;
+    .btn-primary-gradient:active { transform: translateY(0) !important; }
+    :host ::ng-deep .pl-controls-card .ant-btn,
+    :host ::ng-deep .pl-controls-card button:not(.btn-primary-gradient) {
+      height: 30px !important;
+      padding: 0 10px !important;
+      font-size: 12px !important;
+      border-radius: 6px !important;
     }
     .stats-bar {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
     }
     .stats-item {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
     }
     .stats-label {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 600;
       color: #6c757d;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
     .stats-value {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       color: #374151;
     }
-    .stats-currency {
-      font-family: 'Courier New', monospace;
-    }
-    .stats-negative {
-      color: #ef4444;
-    }
-    .stats-net {
-      color: #059669;
-    }
+    .stats-currency { font-family: 'Courier New', monospace; }
+    .stats-net { color: #059669; }
     .stats-divider {
       width: 1px;
-      height: 28px;
+      height: 24px;
       background: #e2e5ea;
     }
     :host ::ng-deep .theme-table {
       width: 100% !important;
+      table-layout: fixed !important;
     }
     :host ::ng-deep .theme-table .ant-table {
-      font-size: 13px;
+      font-size: 12px;
       border-radius: 0 !important;
     }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th {
       background: #f8f9fc !important;
       color: #1f3d6e !important;
-      font-size: 11px !important;
+      font-size: 10px !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
       letter-spacing: 0.5px !important;
-      padding: 10px 10px !important;
+      padding: 6px 6px !important;
       border-bottom: 2px solid #1f3d6e !important;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) {
       border-right: 1px solid #e8ecf1;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
-      padding: 8px 10px !important;
+      padding: 4px 6px !important;
       border-bottom: 1px solid #f0f2f5 !important;
-      font-size: 12px;
+      font-size: 11px;
       color: #374151;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
       background: rgba(31,61,110,0.03) !important;
@@ -341,120 +355,73 @@ import { saveAs } from 'file-saver';
     :host ::ng-deep .theme-table .ant-table-placeholder {
       display: none !important;
     }
-    .th-sno {
-      width: 38px !important;
-      text-align: center !important;
-    }
-    .th-code {
-      width: 85px !important;
-      text-align: center !important;
-    }
-    .th-num {
-      width: 80px !important;
-      text-align: right !important;
-    }
-    .th-actions {
-      width: 80px !important;
-      text-align: center !important;
-    }
-    .td-center {
-      text-align: center !important;
-    }
+    .th-sno { width: 3% !important; text-align: center !important; }
+    .th-code { width: 7% !important; text-align: center !important; }
+    .th-name { width: 15% !important; text-align: left !important; }
+    .th-num { width: 9% !important; text-align: right !important; }
+    .th-present { width: 5% !important; text-align: center !important; }
+    .th-status { width: 9% !important; text-align: center !important; }
+    .th-actions { width: 11% !important; text-align: center !important; }
+    .td-center { text-align: center !important; }
     .td-right {
       text-align: right !important;
       font-family: 'Courier New', monospace;
-      font-size: 12px;
+      font-size: 11px;
     }
     .td-name {
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 140px;
     }
-    .td-actions {
-      text-align: center !important;
-      white-space: nowrap;
-    }
+    .td-actions { text-align: center !important; white-space: nowrap; }
     .emp-code-text {
       font-weight: 600;
       color: #1f3d6e;
       letter-spacing: 0.3px;
-      font-size: 12px;
+      font-size: 11px;
     }
-    .gross-amount {
-      font-weight: 700;
-      color: #374151;
-    }
-    .net-amount {
-      font-weight: 700;
-      color: #059669;
-    }
+    .gross-amount { font-weight: 700; color: #374151; }
+    .net-amount { font-weight: 700; color: #059669; }
     .status-tag {
-      font-size: 10px !important;
+      font-size: 9px !important;
       font-weight: 600 !important;
-      padding: 0 6px !important;
-      line-height: 18px !important;
+      padding: 0 5px !important;
+      line-height: 16px !important;
       border-radius: 3px !important;
     }
     .action-btn {
-      padding: 0 4px !important;
-      font-size: 15px !important;
+      padding: 0 3px !important;
+      font-size: 14px !important;
       transition: all 0.2s ease !important;
     }
-    .action-view {
-      color: #1f3d6e !important;
-    }
-    .action-view:hover {
-      color: #16213e !important;
-      transform: scale(1.15);
-    }
-    .action-mail {
-      color: #4361ee !important;
-    }
-    .action-mail:hover {
-      color: #3a0ca3 !important;
-      transform: scale(1.15);
-    }
-    .action-download {
-      color: #059669 !important;
-    }
-    .action-download:hover {
-      color: #047857 !important;
-      transform: scale(1.15);
-    }
+    .action-view { color: #1f3d6e !important; }
+    .action-view:hover { color: #16213e !important; transform: scale(1.15); }
+    .action-mail { color: #4361ee !important; }
+    .action-mail:hover { color: #3a0ca3 !important; transform: scale(1.15); }
+    .action-download { color: #059669 !important; }
+    .action-download:hover { color: #047857 !important; transform: scale(1.15); }
     .empty-cell {
       text-align: center !important;
-      padding: 28px !important;
+      padding: 20px !important;
       color: #9ca3af !important;
-      font-size: 13px;
+      font-size: 12px;
       font-style: italic;
     }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-track {
-      background: #f1f3f5;
-      border-radius: 3px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb {
-      background: #c4c9d4;
-      border-radius: 10px;
-    }
-    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb:hover {
-      background: #a0a8b7;
-    }
+    :host ::ng-deep .ant-table-body::-webkit-scrollbar { width: 5px; height: 5px; }
+    :host ::ng-deep .ant-table-body::-webkit-scrollbar-track { background: #f1f3f5; border-radius: 3px; }
+    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb { background: #c4c9d4; border-radius: 10px; }
+    :host ::ng-deep .ant-table-body::-webkit-scrollbar-thumb:hover { background: #a0a8b7; }
     :host ::ng-deep .ant-select-dropdown {
-      border-radius: 8px !important;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important;
+      border-radius: 6px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important;
       border: 1px solid #e8eaed !important;
-      padding: 4px !important;
+      padding: 3px !important;
     }
     :host ::ng-deep .ant-select-item-option {
-      border-radius: 6px !important;
-      padding: 6px 12px !important;
-      font-size: 13px !important;
+      border-radius: 4px !important;
+      padding: 4px 10px !important;
+      font-size: 12px !important;
     }
     :host ::ng-deep .ant-select-item-option-active {
       background: rgba(31,61,110,0.06) !important;
@@ -463,6 +430,22 @@ import { saveAs } from 'file-saver';
       background: rgba(31,61,110,0.1) !important;
       color: #1f3d6e !important;
       font-weight: 600 !important;
+    }
+    :host ::ng-deep .ant-pagination {
+      margin: 8px 12px !important;
+      font-size: 12px !important;
+    }
+    :host ::ng-deep .ant-pagination-item {
+      min-width: 28px !important;
+      height: 28px !important;
+      line-height: 28px !important;
+    }
+    :host ::ng-deep .ant-pagination-item a {
+      font-size: 12px !important;
+    }
+    :host ::ng-deep .ant-pagination-options .ant-select-selector {
+      height: 28px !important;
+      font-size: 12px !important;
     }
   `]
 })

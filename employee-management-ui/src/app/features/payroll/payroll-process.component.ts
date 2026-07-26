@@ -56,9 +56,6 @@ import { saveAs } from 'file-saver';
             <button nz-button nzType="default" (click)="downloadSample()" nz-tooltip="Download a blank sample template">
               <i nz-icon nzType="download"></i> Sample
             </button>
-            <button nz-button nzType="default" (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
-              <i nz-icon nzType="file-excel"></i> Statement
-            </button>
           </div>
         </div>
       </nz-card>

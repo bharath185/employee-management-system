@@ -37,6 +37,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     CommonModule,
     FormsModule,
     RouterLink,
+    NzCardModule,
     NzButtonModule,
     NzIconModule,
     NzTagModule,
@@ -54,29 +55,25 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     LoadingSpinnerComponent
   ],
   template: `
-    <div class="view-container">
-      <div class="view-header">
-        <div class="view-header-left">
-          <div class="view-brand">
-            <div class="view-icon"><i nz-icon nzType="user"></i></div>
-            <span class="view-logo">EMPLOYEE DETAILS</span>
-          </div>
-          <span class="view-breadcrumb" *ngIf="employee">
-            <a routerLink="/admin/dashboard">Dashboard</a> / <a routerLink="/admin/employees">Staff Master</a> / <span class="view-current">{{ employee.employeeCode }}</span>
-          </span>
-        </div>
-        <div class="view-header-actions" *ngIf="employee">
-          <span class="view-status-badge" [class.stat-live]="employee.employeeStatus === 'LIVE'" [class.stat-other]="employee.employeeStatus !== 'LIVE'">
-            <span class="view-stat-dot"></span>
-            {{ employee.employeeStatus | titleCase }}
-          </span>
-          <button nz-button nzType="primary" class="view-edit-btn" [routerLink]="['/admin/employees', employee.id, 'edit']">
-            <i nz-icon nzType="edit"></i> Edit
-          </button>
-        </div>
+    <div class="pl-container">
+      <div class="pp-sub-nav">
+        <a class="pp-nav-item" routerLink="/admin/employees">
+          <i class="bi bi-arrow-left"></i><span>Back</span>
+        </a>
+        <span class="pp-nav-item active">
+          <i class="bi bi-person-badge"></i><span>Employee Details</span>
+        </span>
+        <span class="pp-spacer"></span>
+        <span class="view-status-badge" *ngIf="employee" [class.stat-live]="employee.employeeStatus === 'LIVE'" [class.stat-other]="employee.employeeStatus !== 'LIVE'">
+          <span class="view-stat-dot"></span>
+          {{ employee.employeeStatus }}
+        </span>
+        <button nz-button class="btn-primary-gradient" *ngIf="employee" [routerLink]="['/admin/employees', employee.id, 'edit']">
+          <i class="bi bi-pencil"></i> Edit
+        </button>
       </div>
 
-      <div class="view-profile-card" *ngIf="employee">
+      <nz-card class="pl-profile-card" nzSize="small" *ngIf="employee">
         <div class="view-profile-inner">
           <div class="view-avatar-section">
             <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)">
@@ -88,17 +85,17 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
             <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName }} {{ employee.surname }}</h1>
             <div class="view-code">{{ employee.employeeCode }}</div>
             <div class="view-meta">
-              <span class="view-meta-item"><i nz-icon nzType="tool"></i> {{ employee.designation | titleCase }}</span>
-              <span class="view-meta-item"><i nz-icon nzType="mail"></i> {{ employee.email }}</span>
-              <span class="view-meta-item"><i nz-icon nzType="phone"></i> {{ employee.mobile }}</span>
+              <span class="view-meta-item"><i class="bi bi-briefcase"></i> {{ employee.designation }}</span>
+              <span class="view-meta-item"><i class="bi bi-envelope"></i> {{ employee.email }}</span>
+              <span class="view-meta-item"><i class="bi bi-telephone"></i> {{ employee.mobile }}</span>
             </div>
           </div>
         </div>
-      </div>
+      </nz-card>
 
       <app-loading-spinner [loading]="isLoading" message="Loading employee details..."></app-loading-spinner>
 
-      <div *ngIf="!isLoading && employee" class="detail-tabs-wrapper">
+      <div *ngIf="!isLoading && employee" class="pl-table-card-wrap">
         <nz-tabset class="detail-tabs">
           <nz-tab nzTitle="Personal Info">
             <div class="tab-content">
@@ -141,9 +138,9 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
                 <nz-descriptions-item nzTitle="Languages Known">
                   <div *ngFor="let lang of employee.languages" style="margin-bottom:4px">
                     <strong>{{ lang.language }}</strong>:
-                    <span *ngIf="lang.canRead" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Read</span>
-                    <span *ngIf="lang.canWrite" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Write</span>
-                    <span *ngIf="lang.canSpeak" style="color:#10b981;margin-right:6px"><i nz-icon nzType="check-circle"></i> Speak</span>
+                    <span *ngIf="lang.canRead" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Read</span>
+                    <span *ngIf="lang.canWrite" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Write</span>
+                    <span *ngIf="lang.canSpeak" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Speak</span>
                     <span *ngIf="!lang.canRead && !lang.canWrite && !lang.canSpeak" style="color:#9ca3af">Not specified</span>
                   </div>
                 </nz-descriptions-item>
@@ -169,9 +166,8 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
           <nz-tab nzTitle="Assets">
             <div class="tab-content">
               <div class="assets-grid">
-                <div class="asset-card" *ngFor="let asset of assetFields"
-                     [class.owned]="getAssetValue(asset.key) === 'YES'">
-                  <i nz-icon [nzType]="getAssetValue(asset.key) === 'YES' ? 'check-circle' : 'close-circle'" class="asset-icon"></i>
+                <div class="asset-card" *ngFor="let asset of assetFields" [class.owned]="getAssetValue(asset.key) === 'YES'">
+                  <i [class]="getAssetValue(asset.key) === 'YES' ? 'bi bi-check-circle-fill asset-icon owned' : 'bi bi-x-circle-fill asset-icon not-owned'"></i>
                   <span class="asset-label">{{ asset.label }}</span>
                   <span class="asset-status">{{ getAssetValue(asset.key) === 'YES' ? 'Owned' : 'Not Owned' }}</span>
                 </div>
@@ -253,14 +249,12 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
                 <nz-descriptions-item nzTitle="Organization">{{ employee.organizationName || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Period">{{ employee.periodOfEmployment || '-' }}</nz-descriptions-item>
               </nz-descriptions>
-
               <nz-descriptions nzTitle="Reference 1" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Name">{{ employee.ref1Name || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Relationship">{{ employee.ref1Relationship || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Address">{{ employee.ref1Address || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Mobile">{{ employee.ref1Mobile || '-' }}</nz-descriptions-item>
               </nz-descriptions>
-
               <nz-descriptions nzTitle="Reference 2" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Name">{{ employee.ref2Name || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Relationship">{{ employee.ref2Relationship || '-' }}</nz-descriptions-item>
@@ -280,21 +274,18 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
             </div>
           </nz-tab>
 
-          <!-- Documents Tab -->
           <nz-tab nzTitle="Documents">
             <div class="tab-content">
               <div class="documents-tab-header">
                 <h3 class="documents-tab-title">Generate Documents</h3>
-                <button nz-button nzType="primary" (click)="showGenerateModal()">
-                  <i nz-icon nzType="file-text"></i> Generate Document
+                <button nz-button class="btn-primary-gradient" (click)="showGenerateModal()">
+                  <i class="bi bi-file-earmark-text"></i> Generate Document
                 </button>
               </div>
-
               <nz-divider></nz-divider>
-
               <h4 class="doc-history-title">Recent Downloads</h4>
               <nz-table #historyTable [nzData]="downloadHistory" [nzFrontPagination]="true" [nzPageSize]="5"
-                nzSize="small" [nzNoResult]="noHistory" class="history-table">
+                nzSize="small" [nzNoResult]="noHistory" class="theme-table">
                 <thead>
                   <tr>
                     <th>Template</th>
@@ -314,7 +305,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
               </nz-table>
               <ng-template #noHistory>
                 <div class="no-history">
-                  <i nz-icon nzType="inbox"></i>
+                  <i class="bi bi-inbox"></i>
                   <p>No documents downloaded yet</p>
                 </div>
               </ng-template>
@@ -324,7 +315,6 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
       </div>
     </div>
 
-    <!-- Generate Document Modal -->
     <nz-modal [(nzVisible)]="isGenerateModalVisible" nzTitle="Generate Document"
       (nzOnCancel)="closeGenerateModal()" nzWidth="700px" [nzFooter]="null">
       <ng-template nzModalContent>
@@ -336,7 +326,6 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
               <nz-option *ngFor="let t of templateTypes" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
             </nz-select>
           </div>
-
           <div class="form-group" *ngIf="availableTemplates.length > 0">
             <label class="form-label">Select Template</label>
             <nz-select [(ngModel)]="selectedTemplateId" nzPlaceHolder="Choose template"
@@ -344,21 +333,19 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
               <nz-option *ngFor="let tpl of availableTemplates" [nzValue]="tpl.id" [nzLabel]="tpl.templateName"></nz-option>
             </nz-select>
           </div>
-
           <div class="preview-section" *ngIf="previewHtml">
             <label class="form-label">Preview</label>
             <div class="preview-frame">
               <iframe [srcdoc]="previewHtml" class="preview-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
             </div>
             <div class="preview-actions">
-              <button nz-button nzType="primary" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">
-                <i nz-icon nzType="download"></i> Download PDF
+              <button nz-button class="btn-primary-gradient" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">
+                <i class="bi bi-download"></i> Download PDF
               </button>
             </div>
           </div>
-
           <div class="preview-empty" *ngIf="!previewHtml && selectedTemplateId">
-            <i nz-icon nzType="loading" class="loading-icon"></i>
+            <i class="bi bi-hourglass-split loading-icon"></i>
             <p>Generating preview...</p>
           </div>
         </div>
@@ -366,202 +353,172 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     </nz-modal>
   `,
   styles: [`
-    :host { display: block; height: 100%; }
-    .view-container { width: 100%; padding: 0 16px; height: 100%; display: flex; flex-direction: column; box-sizing: border-box; }
+    :host { display: block; scroll-behavior: smooth; }
+    .pl-container {
+      padding: 8px 12px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      height: calc(100vh - 48px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    .pl-container::-webkit-scrollbar { width: 6px; }
+    .pl-container::-webkit-scrollbar-track { background: transparent; }
+    .pl-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+    .pl-container::-webkit-scrollbar-thumb:hover { background: #98a2b3; }
 
-    .view-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;padding:14px 20px;background:linear-gradient(135deg,#1f3d6e,#16213e);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
-    .view-header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-    .view-brand{display:flex;align-items:center;gap:8px}
-    .view-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:16px}
-    .view-logo{font-size:17px;font-weight:800;color:#fff;letter-spacing:1.5px}
-    .view-breadcrumb{font-size:12px;color:rgba(255,255,255,.65);font-weight:500;padding:2px 10px;background:rgba(255,255,255,.1);border-radius:12px}
-    .view-breadcrumb a{color:rgba(255,255,255,.8);text-decoration:none}
-    .view-breadcrumb a:hover{color:#fff;text-decoration:underline}
-    .view-current{color:rgba(255,255,255,.5)}
-    .view-header-actions{display:flex;align-items:center;gap:8px}
-    .view-status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600}
-    .view-status-badge.stat-live{background:#ecfdf5;color:#059669}
-    .view-status-badge.stat-other{background:#f8fafc;color:#6c757d}
-    .view-stat-dot{width:8px;height:8px;border-radius:50%}
-    .stat-live .view-stat-dot{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.5)}
-    .stat-other .view-stat-dot{background:#adb5bd}
-    .view-edit-btn{height:30px;font-size:12px;border-radius:6px;padding:0 14px;font-weight:600}
+    .pp-sub-nav {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 8px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      padding: 3px;
+      border: 1px solid #e0e7ff;
+      align-items: center;
+    }
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .pp-nav-item i { font-size: 14px; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
+    .pp-nav-item.active {
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 1px 4px rgba(31,61,110,0.1);
+    }
+    .pp-spacer { flex: 1; }
 
-    .view-profile-card{background:#fff;border:1px solid #e8eaed;border-radius:10px;margin-bottom:16px;padding:20px 24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
-    .view-profile-inner{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-    .view-avatar-section{flex-shrink:0}
-    .view-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4361ee,#3a0ca3);display:flex;align-items:center;justify-content:center}
-    .view-avatar-initials{font-size:26px;font-weight:700;color:#fff}
-    .view-avatar-img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #eef2ff}
-    .view-profile-info{flex:1;min-width:200px}
-    .view-name{font-size:22px;font-weight:700;color:#1a1a2e;margin:0 0 2px;letter-spacing:-.3px}
-    .view-code{font-size:13px;color:#6c757d;margin-bottom:8px;font-family:'Cascadia Code','Consolas',monospace}
-    .view-meta{display:flex;flex-wrap:wrap;gap:14px}
-    .view-meta-item{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6c757d}
-    .view-meta-item i{font-size:15px;color:#4361ee}
+    .btn-primary-gradient {
+      height: 30px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      color: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.25) !important;
+    }
+    .btn-primary-gradient:hover { transform: translateY(-1px) !important; box-shadow: 0 3px 10px rgba(67,97,238,0.35) !important; }
 
-    :host ::ng-deep .detail-tabs-wrapper {
-      background: #ffffff !important;
-      border: 1px solid #e8eaed !important;
+    .view-status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    }
+    .view-status-badge.stat-live { background: #ecfdf5; color: #059669; }
+    .view-status-badge.stat-other { background: #f8fafc; color: #6c757d; }
+    .view-stat-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .stat-live .view-stat-dot { background: #10b981; box-shadow: 0 0 4px rgba(16,185,129,0.4); }
+    .stat-other .view-stat-dot { background: #adb5bd; }
+
+    .pl-profile-card {
       border-radius: 8px !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+      margin-bottom: 8px;
+      width: 100% !important;
+    }
+    :host ::ng-deep .pl-profile-card .ant-card-body { padding: 12px 16px !important; }
+    .view-profile-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .view-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #4361ee, #3a0ca3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .view-avatar-initials { font-size: 20px; font-weight: 700; color: #fff; }
+    .view-avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 3px solid #eef2ff; flex-shrink: 0; }
+    .view-profile-info { flex: 1; min-width: 200px; }
+    .view-name { font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 2px; letter-spacing: -0.2px; }
+    .view-code { font-size: 12px; color: #6c757d; margin-bottom: 6px; font-family: 'Courier New', monospace; }
+    .view-meta { display: flex; flex-wrap: wrap; gap: 12px; }
+    .view-meta-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #6c757d; }
+    .view-meta-item i { font-size: 13px; color: #4361ee; }
+
+    .pl-table-card-wrap {
+      background: #ffffff;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       min-height: 0;
     }
-    :host ::ng-deep .detail-tabs.ant-tabs {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    :host ::ng-deep .detail-tabs.ant-tabs > .ant-tabs-nav {
-      flex-shrink: 0;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-content-holder {
-      overflow: hidden;
-      flex: 1;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-content {
-      height: 100%;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-tabpane {
-      height: 100%;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-nav {
-      background: #f8fafc !important;
-      border-bottom: 1px solid #e8eaed !important;
-      padding: 0 16px;
-      margin-bottom: 0;
-    }
+
+    :host ::ng-deep .detail-tabs.ant-tabs { display: flex; flex-direction: column; height: 100%; }
+    :host ::ng-deep .detail-tabs.ant-tabs > .ant-tabs-nav { flex-shrink: 0; background: #f8f9fc !important; border-bottom: 1px solid #e8eaed !important; padding: 0 12px; margin-bottom: 0; }
+    :host ::ng-deep .detail-tabs .ant-tabs-content-holder { overflow: hidden; flex: 1; }
+    :host ::ng-deep .detail-tabs .ant-tabs-content { height: 100%; }
+    :host ::ng-deep .detail-tabs .ant-tabs-tabpane { height: 100%; }
     :host ::ng-deep .detail-tabs .ant-tabs-tab {
       color: #6c757d !important;
-      font-size: 13px;
-      padding: 12px 16px;
+      font-size: 12px;
+      padding: 8px 12px;
       transition: color 0.2s ease;
     }
-    :host ::ng-deep .detail-tabs .ant-tabs-tab:hover {
-      color: #1a1a2e !important;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-tab.ant-tabs-tab-active {
-      color: #2563eb !important;
-      font-weight: 600;
-    }
-    :host ::ng-deep .detail-tabs .ant-tabs-ink-bar {
-      background: #2563eb !important;
-      height: 3px !important;
-      border-radius: 2px;
-    }
-    .tab-content { padding: 24px; height: 100%; overflow-y: auto; box-sizing: border-box; }
-    :host ::ng-deep .tab-descriptions {
-      margin-bottom: 20px;
-    }
-    :host ::ng-deep .tab-descriptions:last-child { margin-bottom: 0; }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-title {
-      color: #2563eb !important;
-      font-weight: 600;
-      font-size: 15px;
-    }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-view {
-      border: 1px solid #e8eaed !important;
-      border-radius: 8px !important;
-      overflow: hidden;
-    }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-item-label {
-      background: #f8fafc !important;
-      color: #6c757d !important;
-      font-weight: 500;
-      font-size: 13px;
-      border-bottom: 1px solid #e8eaed !important;
-    }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-item-content {
-      background: #ffffff !important;
-      color: #1a1a2e !important;
-      border-bottom: 1px solid #e8eaed !important;
-    }
+    :host ::ng-deep .detail-tabs .ant-tabs-tab:hover { color: #1a1a2e !important; }
+    :host ::ng-deep .detail-tabs .ant-tabs-tab.ant-tabs-tab-active { color: #2563eb !important; font-weight: 600; }
+    :host ::ng-deep .detail-tabs .ant-tabs-ink-bar { background: #2563eb !important; height: 3px !important; border-radius: 2px; }
+    .tab-content { padding: 12px 16px; height: 100%; overflow-y: auto; box-sizing: border-box; }
 
-    .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .asset-card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 20px 16px; background: #ffffff; border-radius: 8px; border: 1px solid #e8eaed; transition: all 0.25s ease; }
+    :host ::ng-deep .tab-descriptions { margin-bottom: 16px; }
+    :host ::ng-deep .tab-descriptions:last-child { margin-bottom: 0; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-title { color: #1f3d6e !important; font-weight: 600; font-size: 13px; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-view { border: 1px solid #e8eaed !important; border-radius: 6px !important; overflow: hidden; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-label { background: #f8fafc !important; color: #6c757d !important; font-weight: 500; font-size: 11px; border-bottom: 1px solid #e8eaed !important; padding: 6px 10px !important; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-content { background: #ffffff !important; color: #1a1a2e !important; font-size: 12px; border-bottom: 1px solid #e8eaed !important; padding: 6px 10px !important; }
+
+    .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .asset-card {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 16px 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e8eaed;
+      transition: all 0.25s ease;
+    }
     .asset-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); background: #f8fafc; }
     .asset-card.owned { border-color: #a7f3d0; background: #ecfdf5; }
-    .asset-icon { font-size: 32px; }
-    .asset-card.owned .asset-icon { color: #10b981; }
-    .asset-card:not(.owned) .asset-icon { color: #fca5a5; }
-    .asset-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
-    .asset-status { font-size: 11px; font-weight: 500; color: #6c757d; text-transform: uppercase; letter-spacing: 0.3px; }
+    .asset-icon { font-size: 28px; }
+    .asset-icon.owned { color: #10b981; }
+    .asset-icon.not-owned { color: #fca5a5; }
+    .asset-label { font-size: 12px; font-weight: 600; color: #1a1a2e; }
+    .asset-status { font-size: 10px; font-weight: 500; color: #6c757d; text-transform: uppercase; letter-spacing: 0.3px; }
 
-    /* Documents Tab */
-    .documents-tab-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .documents-tab-title { font-size: 18px; font-weight: 600; color: #2563eb; margin: 0; }
-    .doc-history-title { font-size: 14px; font-weight: 600; color: #1a1a2e; margin: 0 0 12px; }
-    :host ::ng-deep .history-table .ant-table {
-      background: transparent !important;
-      color: #1a1a2e !important;
-    }
-    :host ::ng-deep .history-table .ant-table-thead > tr > th {
-      background: #f8fafc !important;
-      border-bottom: 1px solid #e8eaed !important;
-      color: #6c757d !important;
-      font-weight: 600;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    :host ::ng-deep .history-table .ant-table-tbody > tr > td {
-      border-bottom: 1px solid #e8eaed !important;
-      color: #1a1a2e !important;
-      background: transparent !important;
-    }
-    :host ::ng-deep .history-table .ant-table-tbody > tr:hover > td {
-      background: #f1f5f9 !important;
-    }
+    :host ::ng-deep .theme-table { width: 100% !important; table-layout: fixed !important; }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th { background: #f8f9fc !important; color: #1f3d6e !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; padding: 6px 6px !important; border-bottom: 2px solid #1f3d6e !important; }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr > td { padding: 4px 6px !important; border-bottom: 1px solid #f0f2f5 !important; font-size: 11px; }
+
+    .documents-tab-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .documents-tab-title { font-size: 14px; font-weight: 600; color: #1f3d6e; margin: 0; }
+    .doc-history-title { font-size: 13px; font-weight: 600; color: #1a1a2e; margin: 0 0 10px; }
     .no-history { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; }
-    .no-history i { font-size: 32px; color: #d1d5db; }
-    .no-history p { font-size: 13px; color: #6c757d; margin: 0; }
+    .no-history i { font-size: 28px; color: #d1d5db; }
+    .no-history p { font-size: 12px; color: #6c757d; margin: 0; }
 
-    /* Generate Modal */
-    :host ::ng-deep .ant-modal-content {
-      background: #ffffff !important;
-      border: 1px solid #e8eaed !important;
-      border-radius: 16px !important;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-    }
-    :host ::ng-deep .ant-modal-header {
-      background: #ffffff !important;
-      border-bottom: 1px solid #e8eaed !important;
-      border-radius: 16px 16px 0 0 !important;
-    }
-    :host ::ng-deep .ant-modal-title {
-      color: #1a1a2e !important;
-      font-weight: 600;
-    }
-    :host ::ng-deep .ant-modal-close {
-      color: #6c757d !important;
-    }
-    :host ::ng-deep .ant-modal-close:hover {
-      color: #2563eb !important;
-    }
-    .gen-modal-body { display: flex; flex-direction: column; gap: 20px; padding: 8px 0; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 13px; font-weight: 600; color: #1a1a2e; }
-    .preview-section { display: flex; flex-direction: column; gap: 12px; }
-    .preview-frame { border: 1px solid #e8eaed; border-radius: 12px; overflow: hidden; }
-    .preview-iframe { width: 100%; height: 400px; border: none; }
+    :host ::ng-deep .ant-modal-content { background: #ffffff !important; border: 1px solid #e8eaed !important; border-radius: 10px !important; }
+    .gen-modal-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 12px; font-weight: 600; color: #1a1a2e; }
+    .preview-section { display: flex; flex-direction: column; gap: 10px; }
+    .preview-frame { border: 1px solid #e8eaed; border-radius: 8px; overflow: hidden; }
+    .preview-iframe { width: 100%; height: 350px; border: none; }
     .preview-actions { display: flex; gap: 8px; }
-    .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px; }
-    .loading-icon { font-size: 32px; color: #2563eb; }
-    .preview-empty p { font-size: 13px; color: #6c757d; margin: 0; }
+    .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px; }
+    .loading-icon { font-size: 28px; color: #4361ee; }
+    .preview-empty p { font-size: 12px; color: #6c757d; margin: 0; }
 
-    @media (max-width: 768px) {
-      .profile-main { flex-direction: column; align-items: center; text-align: center; margin-top: 40px; }
-      .profile-meta { justify-content: center; }
-      .profile-actions { align-self: center; }
-      .assets-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .assets-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 768px) { .assets-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .assets-grid { grid-template-columns: 1fr; } }
   `]
 })
 export class StaffMasterViewComponent implements OnInit {

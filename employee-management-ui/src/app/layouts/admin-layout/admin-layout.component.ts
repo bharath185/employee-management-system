@@ -221,12 +221,9 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     :host ::ng-deep .sidenav {
       background: transparent !important;
       border-right: none !important;
-      transition: all 0.2s ease;
-      box-shadow: 2px 0 30px rgba(0,0,0,0.15);
-      margin-bottom: 8px;
-      border-radius: 16px;
+      transition: all 0.25s ease;
+      box-shadow: 2px 0 20px rgba(0,0,0,0.1);
     }
-    :host ::ng-deep .sidenav.ant-layout-sider-collapsed { border-radius: 16px; }
     :host ::ng-deep .sidenav.ant-layout-sider-dark { background: transparent !important; }
     :host ::ng-deep .ant-layout-sider-zero-width-trigger { display: none; }
 
@@ -234,31 +231,20 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       height: 100%;
       display: flex;
       flex-direction: column;
-      background: linear-gradient(160deg, rgba(31, 61, 110, 0.88), rgba(15, 30, 60, 0.95));
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: linear-gradient(180deg, #1f3d6e 0%, #162a50 50%, #0f1e3c 100%);
       position: relative;
-      margin: 3px;
-      border-radius: 16px;
+      margin: 8px 6px 8px 0;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-    }
-    .sidenav-inner::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 15% 15%, rgba(37, 99, 235, 0.12), transparent 55%),
-                  radial-gradient(ellipse at 85% 85%, rgba(99, 102, 241, 0.08), transparent 50%);
-      pointer-events: none;
     }
 
     .sidenav-header {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px 12px;
-      height: 80px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 16px 12px;
+      height: 64px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
       position: relative;
       z-index: 1;
       flex-shrink: 0;
@@ -269,26 +255,25 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       justify-content: center;
     }
     .sidenav-logo {
-      width: 150px;
+      width: 140px;
       height: auto;
       object-fit: contain;
       transition: all 0.2s ease;
       flex-shrink: 0;
     }
-    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logo { width: 44px; }
-    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-header { padding: 22px 0; }
-    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logo-wrapper { justify-content: center; }
+    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-logo { width: 40px; }
+    :host ::ng-deep .ant-layout-sider-collapsed .sidenav-header { padding: 16px 0; }
 
     .side-nav-scroll {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 8px 0;
+      padding: 6px 0;
       position: relative;
       z-index: 1;
     }
     .side-nav-scroll::-webkit-scrollbar { width: 3px; }
-    .side-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+    .side-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
     .side-nav-menu {
       border-right: none;
@@ -296,130 +281,121 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     }
     :host ::ng-deep .side-nav-menu.ant-menu { background: transparent !important; }
 
-    /* Menu items - expanded state */
     :host ::ng-deep .ant-menu-item {
-      height: 44px !important;
-      line-height: 44px !important;
-      margin: 3px 12px !important;
-      border-radius: 12px !important;
-      color: rgba(255,255,255,0.65) !important;
+      height: 38px !important;
+      line-height: 38px !important;
+      margin: 2px 8px !important;
+      border-radius: 8px !important;
+      color: rgba(255,255,255,0.55) !important;
       display: flex !important;
       align-items: center !important;
-      gap: 12px;
-      padding: 0 14px !important;
+      gap: 10px;
+      padding: 0 12px !important;
       position: relative;
       z-index: 1;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
     :host ::ng-deep .ant-menu-item > i {
-      font-size: 22px;
-      width: 22px;
-      color: rgba(255,255,255,0.55);
+      font-size: 18px;
+      width: 18px;
+      color: rgba(255,255,255,0.4);
       margin-right: 0 !important;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       flex-shrink: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
     :host ::ng-deep .ant-menu-item > span {
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
       font-weight: 500;
       white-space: nowrap;
     }
     :host ::ng-deep .ant-menu-item:hover {
-      background: rgba(255,255,255,0.1) !important;
+      background: rgba(255,255,255,0.08) !important;
       color: #ffffff !important;
-      backdrop-filter: blur(4px);
     }
     :host ::ng-deep .ant-menu-item:hover > i {
-      color: #ffffff !important;
+      color: rgba(255,255,255,0.85) !important;
     }
     :host ::ng-deep .ant-menu-item-selected {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.12)) !important;
+      background: rgba(67, 97, 238, 0.25) !important;
       color: #ffffff !important;
       font-weight: 600;
-      box-shadow: inset 3px 0 0 #4f8cff, 0 2px 12px rgba(37, 99, 235, 0.2);
-      backdrop-filter: blur(4px);
+      box-shadow: inset 3px 0 0 #4361ee;
     }
     :host ::ng-deep .ant-menu-item-selected > i {
-      color: #4f8cff !important;
+      color: #4361ee !important;
     }
 
-    /* Menu items - collapsed state (icons only) */
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item {
-      height: 48px !important;
-      line-height: 48px !important;
+      height: 42px !important;
+      line-height: 42px !important;
       justify-content: center !important;
       padding: 0 !important;
-      margin: 4px auto !important;
-      width: 48px !important;
+      margin: 3px auto !important;
+      width: 42px !important;
     }
     :host ::ng-deep .ant-layout-sider-collapsed .ant-menu-item i {
-      font-size: 24px;
-      width: 24px;
+      font-size: 20px;
+      width: 20px;
     }
 
     :host ::ng-deep .custom-submenu.ant-menu-submenu {
-      margin: 0 12px !important;
-      border-radius: 12px !important;
+      margin: 2px 8px !important;
+      border-radius: 8px !important;
     }
     :host ::ng-deep .custom-submenu .ant-menu-submenu-title {
-      height: 44px !important;
-      line-height: 44px !important;
+      height: 38px !important;
+      line-height: 38px !important;
       margin: 0 !important;
-      border-radius: 12px !important;
-      color: rgba(255,255,255,0.65) !important;
+      border-radius: 8px !important;
+      color: rgba(255,255,255,0.55) !important;
       display: flex !important;
       align-items: center !important;
-      gap: 12px;
-      padding: 0 14px !important;
-      transition: all 0.2s ease;
+      gap: 10px;
+      padding: 0 12px !important;
+      transition: all 0.15s ease;
     }
     :host ::ng-deep .custom-submenu .ant-menu-submenu-title > i {
-      font-size: 22px;
-      width: 22px;
-      color: rgba(255,255,255,0.55);
+      font-size: 18px;
+      width: 18px;
+      color: rgba(255,255,255,0.4);
       margin-right: 0 !important;
     }
     :host ::ng-deep .custom-submenu .ant-menu-submenu-title:hover {
-      background: rgba(255,255,255,0.1) !important;
+      background: rgba(255,255,255,0.08) !important;
       color: #ffffff !important;
     }
     :host ::ng-deep .custom-submenu.ant-menu-submenu-open > .ant-menu-submenu-title {
       color: #ffffff !important;
-      background: rgba(255,255,255,0.06) !important;
+      background: rgba(255,255,255,0.04) !important;
     }
     :host ::ng-deep .custom-submenu.ant-menu-submenu-open > .ant-menu-submenu-title > i {
-      color: #4f8cff !important;
+      color: #4361ee !important;
     }
     :host ::ng-deep .custom-submenu .ant-menu-item {
-      margin: 2px 8px !important;
-      padding-left: 42px !important;
-      height: 38px !important;
-      line-height: 38px !important;
-      border-radius: 8px !important;
-      font-size: 13px;
+      margin: 1px 6px !important;
+      padding-left: 38px !important;
+      height: 34px !important;
+      line-height: 34px !important;
+      border-radius: 6px !important;
+      font-size: 12px;
     }
     :host ::ng-deep .custom-submenu .ant-menu-item > i {
-      font-size: 16px;
-      width: 16px;
+      font-size: 14px;
+      width: 14px;
       margin-right: 8px !important;
     }
     :host ::ng-deep .custom-submenu .ant-menu-item-selected {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3), rgba(37, 99, 235, 0.12)) !important;
-      box-shadow: inset 3px 0 0 #4f8cff;
+      background: rgba(67, 97, 238, 0.25) !important;
+      box-shadow: inset 3px 0 0 #4361ee;
     }
     :host ::ng-deep .ant-layout-sider-collapsed .custom-submenu .ant-menu-submenu-title {
       justify-content: center !important;
       padding: 0 !important;
     }
-    :host ::ng-deep .ant-layout-sider-collapsed .custom-submenu .ant-menu-submenu-title span[nz-icon] {
-      font-size: 24px;
-    }
-
-
 
     .side-nav-separator {
       display: flex;
@@ -433,56 +409,53 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       display: block;
       width: 100%;
       height: 1px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 2px;
+      background: rgba(255,255,255,0.05);
     }
 
-    /* User section */
     .sidenav-user-section {
       flex-shrink: 0;
       position: relative;
       z-index: 1;
-      padding-bottom: 12px;
+      padding-bottom: 8px;
     }
     .sidenav-footer-divider {
       height: 1px;
-      background: linear-gradient(to right, transparent, rgba(255,255,255,0.08), transparent);
+      background: rgba(255,255,255,0.06);
       margin: 0 12px;
     }
     .sidenav-user-card {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      margin: 6px 10px 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.07);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.06);
+      gap: 8px;
+      padding: 8px 10px;
+      margin: 6px 8px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.04);
     }
     .sidenav-user-avatar {
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      background: #2563eb;
+      background: #4361ee;
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       flex-shrink: 0;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
-    .sidenav-user-avatar:hover { box-shadow: 0 0 16px rgba(37,99,235,0.4); }
+    .sidenav-user-avatar:hover { box-shadow: 0 0 12px rgba(67,97,238,0.4); }
     .sidenav-user-info {
       display: flex;
       flex-direction: column;
       min-width: 0;
     }
     .sidenav-user-name {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #fff;
       white-space: nowrap;
@@ -491,68 +464,64 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       line-height: 1.3;
     }
     .sidenav-user-role {
-      font-size: 11px;
-      color: rgba(255,255,255,0.45);
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
       line-height: 1.3;
     }
     .sidenav-user-avatar-wrap {
       display: flex;
       justify-content: center;
-      padding: 10px 0;
+      padding: 8px 0;
     }
 
     /* Header */
     .header-toolbar {
-      background: rgba(255,255,255,0.85) !important;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(232, 234, 237, 0.6);
+      background: #fff !important;
+      border-bottom: 1px solid #e8eaed;
       color: #1a1a2e !important;
       position: sticky;
       top: 0;
       z-index: 1000;
-      height: 56px;
+      height: 44px;
       display: flex;
       align-items: center;
-      padding: 0 20px;
+      padding: 0 12px;
       margin: 8px 8px 0;
-      border-radius: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .menu-button {
-      margin-right: 8px;
+      margin-right: 6px;
       color: #6c757d !important;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      transition: all 0.2s ease;
+      border-radius: 6px;
+      transition: all 0.15s ease;
     }
-    .menu-button:hover { color: #2563eb !important; background: #eff6ff; }
+    .menu-button:hover { color: #1f3d6e !important; background: #f0f4ff; }
     .header-icon-btn {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: flex !important;
       align-items: center;
       justify-content: center;
-      border-radius: 50% !important;
+      border-radius: 6px !important;
       padding: 0 !important;
       color: #6c757d !important;
-      transition: all 0.2s ease;
-      margin-right: 4px;
+      transition: all 0.15s ease;
     }
-    .header-icon-btn:hover { color: #dc3545 !important; background: rgba(220,53,69,0.08) !important; }
-    .header-logout-icon { font-size: 18px; }
+    .header-icon-btn:hover { color: #dc3545 !important; background: rgba(220,53,69,0.06) !important; }
+    .header-logout-icon { font-size: 16px; }
     .toolbar-spacer { flex: 1 1 auto; }
 
     /* Main content */
     .main-content {
-      padding: 12px;
-      height: calc(100vh - 64px);
+      padding: 8px;
+      height: calc(100vh - 52px);
       position: relative;
-      animation: pageEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
       overflow: hidden;
       box-sizing: border-box;
     }
@@ -566,34 +535,33 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
     :host ::ng-deep .profile-user-item.ant-menu-item:hover { background: transparent !important; }
     :host ::ng-deep .admin-dropdown-menu {
       background: #fff !important;
-      border: 1px solid rgba(232,234,237,0.8) !important;
-      border-radius: 12px !important;
-      padding: 6px;
-      min-width: 200px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      padding: 4px;
+      min-width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
     }
     :host ::ng-deep .admin-dropdown-menu .ant-menu-item {
-      color: #1a1a2e !important; border-radius: 8px !important; margin: 2px 0 !important;
-      height: 40px !important; line-height: 40px !important; font-size: 13px;
+      color: #374151 !important; border-radius: 6px !important; margin: 1px 0 !important;
+      height: 36px !important; line-height: 36px !important; font-size: 12px;
     }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover { background: #eff6ff !important; color: #2563eb !important; }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-item i { color: #6c757d !important; font-size: 16px; }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover i { color: #2563eb !important; }
-    :host ::ng-deep .admin-dropdown-menu .ant-menu-divider { background: #e8eaed !important; margin: 4px 12px !important; }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover { background: #f0f4ff !important; color: #1f3d6e !important; }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-item i { color: #6c757d !important; font-size: 14px; }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-item:hover i { color: #1f3d6e !important; }
+    :host ::ng-deep .admin-dropdown-menu .ant-menu-divider { background: #e8eaed !important; margin: 4px 8px !important; }
     .profile-user-details { display: flex; flex-direction: column; line-height: 1.3; }
-    .profile-user-name { font-weight: 600; font-size: 13px; }
-    .profile-user-role { font-size: 11px; color: rgba(0,0,0,0.4); }
+    .profile-user-name { font-weight: 600; font-size: 12px; }
+    .profile-user-role { font-size: 10px; color: rgba(0,0,0,0.35); }
     .profile-logout-item:hover i { color: #dc3545 !important; }
     .profile-logout-item:hover { background: rgba(220,53,69,0.06) !important; color: #dc3545 !important; }
     .admin-dropdown-avatar {
       display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border-radius: 50%;
-      background: #2563eb; color: #fff;
-      font-size: 14px; font-weight: 700; flex-shrink: 0;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #4361ee; color: #fff;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
     }
     :host ::ng-deep .ant-layout-sider-trigger {
-      background: rgba(31,61,110,0.95) !important;
-      backdrop-filter: blur(8px);
+      background: #162a50 !important;
     }
     :host ::ng-deep .sidenav::-webkit-scrollbar { display: none; }
     :host ::ng-deep .sidenav { scrollbar-width: none; -ms-overflow-style: none; }

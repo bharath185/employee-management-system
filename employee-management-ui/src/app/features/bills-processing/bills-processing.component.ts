@@ -13,10 +13,10 @@ import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzUploadModule } from 'ng-zorro-antd/upload';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { BillService } from '../../core/services/bill.service';
 import { Bill } from '../../core/models/bill.model';
 
@@ -28,98 +28,110 @@ import { Bill } from '../../core/models/bill.model';
     NzTableModule, NzButtonModule, NzIconModule, NzSelectModule,
     NzDatePickerModule, NzInputModule, NzInputNumberModule,
     NzModalModule, NzTagModule, NzPopconfirmModule, NzSpinModule,
-    NzToolTipModule,
-    NzUploadModule,
-    PageHeaderComponent
+    NzToolTipModule, NzCardModule,
+    NzUploadModule
   ],
   template: `
-    <div class="bills-container page-enter">
-      <app-page-header icon="audit" title="Bills Processing" subtitle="Upload and track vendor bills, vouchers and utility payments">
-        <button nz-button nzType="primary" (click)="showUploadModal()">
-          <i nz-icon nzType="upload"></i> Upload Bill
-        </button>
-      </app-page-header>
-
-      <div class="bills-toolbar">
-        <div class="filter-group">
-          <label>Month</label>
-          <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="loadBills()" style="width:140px">
-            <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-          </nz-select>
-          <label>Year</label>
-          <nz-select [(ngModel)]="selectedYear" (ngModelChange)="loadBills()" style="width:110px">
-            <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-          </nz-select>
+    <div class="bp-container">
+      <div class="bp-sub-nav">
+        <span class="bp-nav-title"><i nz-icon nzType="audit"></i> Vendor Bills</span>
+        <div class="bp-nav-actions">
+          <button nz-button class="btn-primary-gradient" (click)="showUploadModal()">
+            <i nz-icon nzType="upload"></i> Upload Bill
+          </button>
         </div>
       </div>
 
-      <nz-spin [nzSpinning]="loading">
-        <nz-table #billTable [nzData]="bills" nzSize="small" [nzShowPagination]="false" nzBordered>
+      <!-- Controls -->
+      <nz-card class="bp-controls-card" nzSize="small">
+        <div class="bp-controls">
+          <div class="bp-filters">
+            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="loadBills()" nzPlaceHolder="Month" class="filter-select" style="width:120px">
+              <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="loadBills()" nzPlaceHolder="Year" class="filter-select" style="width:100px">
+              <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+            </nz-select>
+          </div>
+          <div class="bp-stats" *ngIf="bills.length > 0">
+            <span class="bp-stat-item">Total: <strong>{{ bills.length }}</strong></span>
+            <span class="bp-stat-divider"></span>
+            <span class="bp-stat-item">Amount: <strong class="gross-amount">{{ totalAmount | number:'1.0-0' }}</strong></span>
+          </div>
+        </div>
+      </nz-card>
+
+      <!-- Table -->
+      <nz-card class="bp-table-card" nzSize="small">
+        <nz-table #billTable
+          [nzData]="bills"
+          [nzLoading]="loading"
+          [nzPageSize]="20"
+          [nzPageSizeOptions]="[10, 20, 50]"
+          [nzShowSizeChanger]="true"
+          nzBordered nzSize="small"
+          nzShowPagination
+          nzFrontPagination
+          class="theme-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Vendor Name</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Bill Date</th>
-              <th>Due Date</th>
-              <th>Status</th>
-              <th>Document</th>
-              <th>Actions</th>
+              <th class="th-sno">#</th>
+              <th class="th-vendor">Vendor</th>
+              <th class="th-type">Type</th>
+              <th class="th-num">Amount</th>
+              <th class="th-date">Bill Date</th>
+              <th class="th-date">Due Date</th>
+              <th class="th-status">Status</th>
+              <th class="th-doc">Doc</th>
+              <th class="th-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let bill of billTable.data; let i = index">
-              <td>{{ i + 1 }}</td>
-              <td>{{ bill.vendorName }}</td>
-              <td><nz-tag>{{ bill.billType }}</nz-tag></td>
-              <td class="text-right">{{ bill.amount | number:'1.2-2' }}</td>
-              <td>{{ bill.billDate | date:'dd/MM/yyyy' }}</td>
-              <td>{{ bill.dueDate ? (bill.dueDate | date:'dd/MM/yyyy') : '-' }}</td>
-              <td>
-                <nz-tag [nzColor]="bill.isProcessed ? 'green' : 'orange'">
+              <td class="td-center">{{ i + 1 }}</td>
+              <td class="td-vendor">{{ bill.vendorName }}</td>
+              <td class="td-center"><nz-tag class="status-tag">{{ bill.billType }}</nz-tag></td>
+              <td class="td-right"><span class="gross-amount">{{ bill.amount | number:'1.0-0' }}</span></td>
+              <td class="td-center">{{ bill.billDate | date:'dd/MM/yy' }}</td>
+              <td class="td-center">{{ bill.dueDate ? (bill.dueDate | date:'dd/MM/yy') : '-' }}</td>
+              <td class="td-center">
+                <nz-tag [nzColor]="bill.isProcessed ? 'green' : 'orange'" class="status-tag">
                   {{ bill.isProcessed ? 'Processed' : 'Pending' }}
                 </nz-tag>
               </td>
-              <td>
+              <td class="td-center">
                 <ng-container *ngIf="bill.fileName; else noFile">
-                  <button nz-button nzSize="small" nzType="link" (click)="previewFile(bill)">
-                    <i nz-icon nzType="eye"></i> Preview
+                  <button nz-button nzSize="small" nzType="link" class="action-btn action-view" (click)="previewFile(bill)">
+                    <i nz-icon nzType="eye"></i>
                   </button>
                 </ng-container>
-                <ng-template #noFile><span class="text-muted">No file</span></ng-template>
+                <ng-template #noFile><span class="text-muted">-</span></ng-template>
               </td>
-              <td>
-                <button nz-button nzSize="small" nzType="text"
-                        [nzTooltipTitle]="bill.isProcessed ? 'Mark Pending' : 'Mark Processed'"
-                        nz-tooltip (click)="toggleStatus(bill)">
-                  <i nz-icon [nzType]="bill.isProcessed ? 'close-circle' : 'check-circle'"
-                     [style.color]="bill.isProcessed ? '#faad14' : '#52c41a'"></i>
+              <td class="td-actions">
+                <button nz-button nzType="link" nzSize="small" class="action-btn action-view"
+                  [nzTooltipTitle]="bill.isProcessed ? 'Mark Pending' : 'Mark Processed'"
+                  nz-tooltip (click)="toggleStatus(bill)">
+                  <i nz-icon [nzType]="bill.isProcessed ? 'close-circle' : 'check-circle'"></i>
                 </button>
-                <button nz-button nzSize="small" nzType="text" nz-tooltip="Edit" (click)="editBill(bill)">
-                  <i nz-icon nzType="edit" style="color:#1890ff"></i>
+                <button nz-button nzType="link" nzSize="small" class="action-btn action-mail" nz-tooltip="Edit" (click)="editBill(bill)">
+                  <i nz-icon nzType="edit"></i>
                 </button>
-                <button nz-button nzSize="small" nzType="text" nz-tooltip="Download"
-                        *ngIf="bill.fileName" (click)="downloadFile(bill)">
-                  <i nz-icon nzType="download" style="color:#52c41a"></i>
+                <button nz-button nzType="link" nzSize="small" class="action-btn action-download" nz-tooltip="Download"
+                  *ngIf="bill.fileName" (click)="downloadFile(bill)">
+                  <i nz-icon nzType="download"></i>
                 </button>
-                <button nz-button nzSize="small" nzType="text" nz-tooltip="Delete"
-                        nz-popconfirm nzPopconfirmTitle="Delete this bill?" (nzOnConfirm)="deleteBill(bill)">
-                  <i nz-icon nzType="delete" style="color:#ff4d4f"></i>
+                <button nz-button nzType="link" nzSize="small" class="action-btn action-delete" nz-tooltip="Delete"
+                  nz-popconfirm nzPopconfirmTitle="Delete this bill?" (nzOnConfirm)="deleteBill(bill)">
+                  <i nz-icon nzType="delete"></i>
                 </button>
               </td>
             </tr>
+            <tr *ngIf="bills.length === 0 && !loading">
+              <td colspan="9" class="empty-cell">No bills found for the selected period</td>
+            </tr>
           </tbody>
         </nz-table>
-
-        <div class="empty-state" *ngIf="!loading && bills.length === 0">
-          <i nz-icon nzType="file-text" nzTheme="outline" style="font-size:48px;color:#d9d9d9"></i>
-          <p>No bills found for {{ selectedMonth }}/{{ selectedYear }}</p>
-          <button nz-button nzType="primary" (click)="showUploadModal()">
-            <i nz-icon nzType="upload"></i> Upload First Bill
-          </button>
-        </div>
-      </nz-spin>
+      </nz-card>
     </div>
 
     <!-- Upload / Edit Modal -->
@@ -213,32 +225,271 @@ import { Bill } from '../../core/models/bill.model';
     </nz-modal>
   `,
   styles: [`
-    .bills-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
-    .bills-toolbar {
-      background: #fff; border-radius: 12px; padding: 16px 20px;
-      margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      display: flex; align-items: center;
+    :host { display: block; scroll-behavior: smooth; }
+    .bp-sub-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2px;
+      margin-bottom: 8px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      border: 1px solid #e0e7ff;
     }
-    .filter-group { display: flex; align-items: center; gap: 8px; }
-    .filter-group label { font-weight: 500; font-size: 13px; color: #555; white-space: nowrap; }
-    :host ::ng-deep .ant-table-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    :host ::ng-deep .ant-table { border-radius: 12px; overflow: hidden; }
-    .text-right { text-align: right; font-weight: 600; }
-    .text-muted { color: #999; font-size: 12px; }
-    .empty-state { text-align: center; padding: 60px 20px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .empty-state p { color: #999; margin: 12px 0 16px; }
-    .modal-form { display: flex; flex-direction: column; gap: 12px; }
+    .bp-nav-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f3d6e;
+    }
+    .bp-nav-title i { font-size: 16px; }
+    .bp-nav-actions { display: flex; gap: 6px; }
+    .bp-container {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 8px 12px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      height: calc(100vh - 48px);
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    .bp-container::-webkit-scrollbar { width: 6px; }
+    .bp-container::-webkit-scrollbar-track { background: transparent; }
+    .bp-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
+    .bp-container::-webkit-scrollbar-thumb:hover { background: #98a2b3; }
+    .bp-controls-card, .bp-table-card {
+      border-radius: 8px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
+      margin-bottom: 8px;
+      width: 100% !important;
+    }
+    :host ::ng-deep .bp-controls-card .ant-card-body {
+      padding: 8px 12px !important;
+    }
+    :host ::ng-deep .bp-table-card .ant-card-body {
+      padding: 0 !important;
+    }
+    .bp-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .bp-filters {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .bp-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bp-stat-item {
+      font-size: 11px;
+      color: #6c757d;
+    }
+    .bp-stat-item strong {
+      color: #374151;
+      font-weight: 700;
+    }
+    .bp-stat-divider {
+      width: 1px;
+      height: 16px;
+      background: #e2e5ea;
+    }
+    :host ::ng-deep .filter-select .ant-select-selector {
+      border-radius: 6px !important;
+      border: 1px solid #e2e5ea !important;
+      height: 30px !important;
+      padding: 0 6px !important;
+      box-shadow: none !important;
+      transition: all 0.2s ease !important;
+    }
+    :host ::ng-deep .filter-select .ant-select-selector:hover {
+      border-color: #1f3d6e !important;
+    }
+    :host ::ng-deep .filter-select.ant-select-focused .ant-select-selector {
+      border-color: #1f3d6e !important;
+      box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
+    }
+    :host ::ng-deep .filter-select .ant-select-selection-item {
+      font-size: 12px !important;
+      line-height: 28px !important;
+    }
+    .btn-primary-gradient {
+      height: 30px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      color: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      transition: all 0.2s ease !important;
+      letter-spacing: 0.3px !important;
+      box-shadow: 0 2px 6px rgba(67,97,238,0.25) !important;
+    }
+    .btn-primary-gradient:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 3px 10px rgba(67,97,238,0.35) !important;
+    }
+    .btn-primary-gradient:active { transform: translateY(0) !important; }
+
+    /* Table */
+    :host ::ng-deep .theme-table {
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+    :host ::ng-deep .theme-table .ant-table {
+      font-size: 12px;
+      border-radius: 0 !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th {
+      background: #f8f9fc !important;
+      color: #1f3d6e !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      padding: 6px 6px !important;
+      border-bottom: 2px solid #1f3d6e !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) {
+      border-right: 1px solid #e8ecf1;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
+      padding: 4px 6px !important;
+      border-bottom: 1px solid #f0f2f5 !important;
+      font-size: 11px;
+      color: #374151;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
+      background: rgba(31,61,110,0.03) !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr:last-child > td {
+      border-bottom: none;
+    }
+    :host ::ng-deep .theme-table .ant-table-placeholder {
+      display: none !important;
+    }
+    :host ::ng-deep .bp-table-card .ant-table-body {
+      scroll-behavior: smooth;
+    }
+    :host ::ng-deep .bp-table-card .ant-table-body::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    :host ::ng-deep .bp-table-card .ant-table-body::-webkit-scrollbar-track {
+      background: #f1f3f5;
+      border-radius: 3px;
+    }
+    :host ::ng-deep .bp-table-card .ant-table-body::-webkit-scrollbar-thumb {
+      background: #c4c9d4;
+      border-radius: 10px;
+    }
+    :host ::ng-deep .bp-table-card .ant-table-body::-webkit-scrollbar-thumb:hover {
+      background: #a0a8b7;
+    }
+    .th-sno { width: 3% !important; text-align: center !important; }
+    .th-vendor { width: 20% !important; text-align: left !important; }
+    .th-type { width: 11% !important; text-align: center !important; }
+    .th-num { width: 11% !important; text-align: right !important; }
+    .th-date { width: 9% !important; text-align: center !important; }
+    .th-status { width: 10% !important; text-align: center !important; }
+    .th-doc { width: 5% !important; text-align: center !important; }
+    .th-actions { width: 13% !important; text-align: center !important; }
+    .td-center { text-align: center !important; }
+    .td-right {
+      text-align: right !important;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+    }
+    .td-vendor {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .td-actions { text-align: center !important; white-space: nowrap; }
+    .gross-amount { font-weight: 700; color: #374151; }
+    .status-tag {
+      font-size: 9px !important;
+      font-weight: 600 !important;
+      padding: 0 5px !important;
+      line-height: 16px !important;
+      border-radius: 3px !important;
+    }
+    .action-btn {
+      padding: 0 3px !important;
+      font-size: 14px !important;
+      transition: all 0.2s ease !important;
+    }
+    .action-view { color: #1f3d6e !important; }
+    .action-view:hover { color: #16213e !important; transform: scale(1.15); }
+    .action-mail { color: #4361ee !important; }
+    .action-mail:hover { color: #3a0ca3 !important; transform: scale(1.15); }
+    .action-download { color: #059669 !important; }
+    .action-download:hover { color: #047857 !important; transform: scale(1.15); }
+    .action-delete { color: #ef4444 !important; }
+    .action-delete:hover { color: #dc2626 !important; transform: scale(1.15); }
+    .text-muted { color: #9ca3af; font-size: 11px; }
+    .empty-cell {
+      text-align: center !important;
+      padding: 20px !important;
+      color: #9ca3af !important;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Pagination */
+    :host ::ng-deep .ant-pagination {
+      margin: 8px 12px !important;
+      font-size: 12px !important;
+    }
+    :host ::ng-deep .ant-pagination-item {
+      min-width: 28px !important;
+      height: 28px !important;
+      line-height: 28px !important;
+    }
+    :host ::ng-deep .ant-pagination-item a { font-size: 12px !important; }
+    :host ::ng-deep .ant-pagination-options .ant-select-selector {
+      height: 28px !important;
+      font-size: 12px !important;
+    }
+
+    /* Modal form */
+    .modal-form { display: flex; flex-direction: column; gap: 10px; }
     .form-row { display: flex; gap: 12px; }
     .form-row .form-group { flex: 1; }
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
-    .form-group label { font-weight: 500; font-size: 13px; color: #555; }
-    .required { color: #ff4d4f; }
-    .hint { font-size: 11px; color: #999; }
+    .form-group { display: flex; flex-direction: column; gap: 3px; }
+    .form-group label {
+      font-weight: 600;
+      font-size: 11px;
+      color: #374151;
+    }
+    .required { color: #ef4444; }
+    .hint { font-size: 10px; color: #9ca3af; }
+
+    /* Preview */
     .preview-container { display: flex; flex-direction: column; align-items: center; }
-    .preview-unsupported { text-align: center; padding: 40px; color: #999; }
+    .preview-unsupported { text-align: center; padding: 40px; color: #9ca3af; }
     .preview-unsupported p { margin: 12px 0 16px; }
-    .page-enter { animation: pageFadeIn 0.3s ease; }
-    @keyframes pageFadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   `]
 })
 export class BillsProcessingComponent implements OnInit {
@@ -262,6 +513,10 @@ export class BillsProcessingComponent implements OnInit {
   isPreviewVisible = false;
   previewBill: Bill | null = null;
   pdfSafeUrl: SafeResourceUrl | null = null;
+
+  get totalAmount(): number {
+    return this.bills.reduce((sum, b) => sum + (b.amount || 0), 0);
+  }
 
   constructor(
     private billService: BillService,
