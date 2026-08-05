@@ -17,10 +17,12 @@ export interface EmployeeAttendance {
   employeeName: string;
   gender: string;
   department: string;
+  processAssigned: string;
   designation: string;
   doj: string;
   vintage: number;
   days: string[];
+  lockedDays?: boolean[];
   totalPresent: number;
   totalLeave: number;
   totalML: number;

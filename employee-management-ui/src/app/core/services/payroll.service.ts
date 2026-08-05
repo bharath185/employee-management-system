@@ -54,8 +54,9 @@ export class PayrollService {
     return this.http.get<APIResponse<Payslip[]>>(`${this.apiUrl}/payslips/employee/${employeeId}`);
   }
 
-  sendPayslipsByEmail(year: number, month: number): Observable<APIResponse<any>> {
-    return this.http.post<APIResponse<any>>(`${this.apiUrl}/send-payslips/${year}/${month}`, {});
+  sendPayslipsByEmail(year: number, month: number, payslipIds?: number[]): Observable<APIResponse<any>> {
+    const body = payslipIds && payslipIds.length > 0 ? payslipIds : [];
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/send-payslips/${year}/${month}`, body);
   }
 
   // ===================== Email Config =====================

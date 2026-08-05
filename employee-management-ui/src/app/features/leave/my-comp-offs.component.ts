@@ -28,7 +28,6 @@ import { CompOff } from '../../core/models/payroll.models';
             <tr>
               <th>#</th>
               <th>Earned Date</th>
-              <th>Expiry Date</th>
               <th>Status</th>
               <th>Availed Date</th>
             </tr>
@@ -37,12 +36,11 @@ import { CompOff } from '../../core/models/payroll.models';
             <tr *ngFor="let c of t.data; let i = index">
               <td>{{ i + 1 }}</td>
               <td>{{ c.earnedDate }}</td>
-              <td>{{ c.expiryDate }}</td>
               <td><nz-tag [nzColor]="tagColor(c.status)">{{ c.status }}</nz-tag></td>
               <td>{{ c.availedDate || '—' }}</td>
             </tr>
             <tr *ngIf="compOffs.length === 0 && !loading">
-              <td colspan="5" class="empty-cell">No comp-offs found</td>
+              <td colspan="4" class="empty-cell">No comp-offs found</td>
             </tr>
           </tbody>
         </nz-table>
@@ -79,7 +77,6 @@ export class MyCompOffsComponent implements OnInit {
     switch (s) {
       case 'EARNED': return 'blue';
       case 'AVAILED': return 'green';
-      case 'EXPIRED': return 'red';
       default: return 'default';
     }
   }

@@ -183,7 +183,6 @@ export interface CompOff {
   employeeCode?: string;
   employeeName?: string;
   earnedDate: string;
-  expiryDate: string;
   status: string;
   availedDate?: string;
   remarks?: string;

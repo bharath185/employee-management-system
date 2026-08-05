@@ -249,8 +249,25 @@ public class DataSeeder implements CommandLineRunner {
                 .isCarryForward(false)
                 .isActive(true)
                 .build());
-            log.info("Leave types seeded: CL(12), PL(15), SL(12)");
+            leaveTypeRepository.save(LeaveType.builder()
+                .name("CO")
+                .description("Compensatory Off")
+                .annualEntitlement(0)
+                .isCarryForward(false)
+                .isActive(true)
+                .build());
+            log.info("Leave types seeded: CL(12), PL(15), SL(12), CO(0)");
         } else {
+            if (leaveTypeRepository.findByName("CO").isEmpty()) {
+                leaveTypeRepository.save(LeaveType.builder()
+                    .name("CO")
+                    .description("Compensatory Off")
+                    .annualEntitlement(0)
+                    .isCarryForward(false)
+                    .isActive(true)
+                    .build());
+                log.info("CO leave type added (existing database migration)");
+            }
             log.debug("Leave types already exist, skipping seed");
         }
     }
@@ -459,19 +476,21 @@ public class DataSeeder implements CommandLineRunner {
         int currentYear = LocalDate.now().getYear();
         if (leaveBalanceRepository.findByYear(currentYear).isEmpty()) {
             employeeRepository.findAll().forEach(emp -> {
-                leaveTypeRepository.findByIsActiveTrue().forEach(lt -> {
-                    if (leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
-                            emp.getId(), lt.getId(), currentYear).isEmpty()) {
-                        leaveBalanceRepository.save(LeaveBalance.builder()
-                            .employee(emp)
-                            .leaveType(lt)
-                            .year(currentYear)
-                            .entitled(lt.getAnnualEntitlement())
-                            .taken(0)
-                            .balance(lt.getAnnualEntitlement())
-                            .build());
-                    }
-                });
+                leaveTypeRepository.findByIsActiveTrue().stream()
+                    .filter(lt -> !"CO".equals(lt.getName()))
+                    .forEach(lt -> {
+                        if (leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                                emp.getId(), lt.getId(), currentYear).isEmpty()) {
+                            leaveBalanceRepository.save(LeaveBalance.builder()
+                                .employee(emp)
+                                .leaveType(lt)
+                                .year(currentYear)
+                                .entitled(lt.getAnnualEntitlement())
+                                .taken(0)
+                                .balance(lt.getAnnualEntitlement())
+                                .build());
+                        }
+                    });
             });
             log.info("Leave balances seeded for year {}", currentYear);
         } else {

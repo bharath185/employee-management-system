@@ -60,7 +60,7 @@ public class EmployeeService {
     public Page<EmployeeDTO> getAllEmployees(int page, int size, String sort,
             String search, String employeeCode, String firstName,
             String surname, String gender, String employeeStatus,
-            String designation, String religion, String socialCategory) {
+            String designation, String religion, String socialCategory, String processAssigned) {
 
         Sort sorting = Sort.by(sort.contains("desc") ?
             Sort.Direction.DESC : Sort.Direction.ASC,
@@ -96,6 +96,9 @@ public class EmployeeService {
         }
         if (socialCategory != null && !socialCategory.isEmpty()) {
             spec = spec.and(EmployeeSpecification.hasSocialCategory(socialCategory));
+        }
+        if (processAssigned != null && !processAssigned.isEmpty()) {
+            spec = spec.and(EmployeeSpecification.hasProcessAssigned(processAssigned));
         }
 
         return employeeRepository.findAll(spec, pageable)

@@ -35,6 +35,10 @@ public class AttendanceRecord {
     @Column(name = "status", length = 2, nullable = false)
     private String status;
 
+    @Column(name = "locked", nullable = false)
+    @Builder.Default
+    private Boolean locked = false;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

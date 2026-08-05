@@ -43,10 +43,10 @@ public class Bill {
     @Column(name = "due_date")
     private LocalDate dueDate;
 
-    @Column(nullable = false)
+    @Column(name = "`month`", nullable = false)
     private int month;
 
-    @Column(nullable = false)
+    @Column(name = "`year`", nullable = false)
     private int year;
 
     @Column(length = 20, nullable = false)

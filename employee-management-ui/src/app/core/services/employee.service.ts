@@ -26,6 +26,7 @@ export class EmployeeService {
     designation?: string;
     religion?: string;
     socialCategory?: string;
+    processAssigned?: string;
   } = {}): Observable<APIResponse<PagedResponse<Employee>>> {
     let httpParams = new HttpParams()
       .set('page', (params.page ?? 0).toString())
@@ -34,7 +35,7 @@ export class EmployeeService {
 
     const filterParams = [
       'search', 'employeeCode', 'firstName', 'surname',
-      'gender', 'employeeStatus', 'designation', 'religion', 'socialCategory'
+      'gender', 'employeeStatus', 'designation', 'religion', 'socialCategory', 'processAssigned'
     ];
 
     filterParams.forEach(key => {
@@ -97,6 +98,10 @@ export class EmployeeService {
 
   downloadSampleExcel(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/sample-excel`, { responseType: 'blob' });
+  }
+
+  getProcessOptions(): Observable<APIResponse<string[]>> {
+    return this.http.get<APIResponse<string[]>>(`${environment.apiUrl}/attendance/processes`);
   }
 
   importFromExcel(file: File): Observable<APIResponse<{ totalRows: number; successful: number; failed: number; errors: any[] }>> {

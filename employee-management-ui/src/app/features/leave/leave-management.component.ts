@@ -18,6 +18,8 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { LeaveService } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
+import { HolidayService } from '../../core/services/holiday.service';
+import { CompOffService } from '../../core/services/comp-off.service';
 import { HolidayListComponent } from './holiday-list.component';
 import { CompOffTrackingComponent } from './comp-off-tracking.component';
 import { EncashmentComponent } from './encashment.component';
@@ -40,7 +42,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
         <nz-tab nzTitle="Applications">
           <div class="leave-card">
             <div class="tab-filters">
-              <nz-select [(ngModel)]="statusFilter" (ngModelChange)="loadApplications()" nzPlaceHolder="Filter by status" class="filter-select">
+              <nz-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()" nzPlaceHolder="Filter by status" class="filter-select">
                 <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
                 <nz-option nzValue="PENDING" nzLabel="Pending"></nz-option>
                 <nz-option nzValue="APPROVED" nzLabel="Approved"></nz-option>
@@ -51,14 +53,23 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               </button>
             </div>
 
-            <nz-table #appTable [nzData]="applications" [nzLoading]="loadingApps" class="theme-table" nzSize="small">
+            <nz-table #appTable [nzData]="applications" [nzLoading]="loadingApps" class="theme-table" nzSize="small"
+              [nzFrontPagination]="false"
+              [nzShowPagination]="appTotal > appSize"
+              [nzPageIndex]="appPage + 1"
+              [nzPageSize]="appSize"
+              [nzTotal]="appTotal"
+              (nzPageIndexChange)="onAppPageChange($event)"
+              (nzPageSizeChange)="onAppPageSizeChange($event)"
+              [nzHideOnSinglePage]="true">
               <thead>
                 <tr>
                   <th>Employee</th>
                   <th>Leave Type</th>
-                  <th>From</th>
-                  <th>To</th>
-                  <th>Days</th>
+                   <th>From</th>
+                   <th>To</th>
+                   <th>Return</th>
+                   <th>Days</th>
                   <th>Reason</th>
                   <th>Status</th>
                   <th class="th-actions">Actions</th>
@@ -70,6 +81,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                   <td>{{ app.leaveTypeName }}</td>
                   <td>{{ app.fromDate }}</td>
                   <td>{{ app.toDate }}</td>
+                  <td class="td-center return-cell">{{ returnDay(app.toDate) }}<span *ngIf="returnBadge(app.toDate)" class="ret-badge holiday-badge" style="margin-left:3px;font-size:9px">{{ returnBadge(app.toDate) }}</span></td>
                   <td class="td-center"><span class="days-badge">{{ app.days }}</span></td>
                   <td><span class="reason-text">{{ app.reason }}</span></td>
                   <td>
@@ -90,7 +102,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                   </td>
                 </tr>
                 <tr *ngIf="applications.length === 0 && !loadingApps">
-                  <td colspan="8" class="empty-cell">No leave applications found</td>
+                  <td colspan="9" class="empty-cell">No leave applications found</td>
                 </tr>
               </tbody>
             </nz-table>
@@ -197,23 +209,32 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
           <div class="modal-body">
             <div class="form-row">
               <label>Employee</label>
-              <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" nzPlaceHolder="Select Employee" class="theme-select">
+              <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" (ngModelChange)="onEmployeeChanged()" nzPlaceHolder="Select Employee" class="theme-select">
                 <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
               </nz-select>
             </div>
             <div class="form-row">
               <label>Leave Type</label>
               <nz-select [(ngModel)]="applyForm.leaveTypeId" name="leaveTypeId" nzPlaceHolder="Select Leave Type" class="theme-select">
-                <nz-option *ngFor="let lt of leaveTypes" [nzValue]="lt.id" [nzLabel]="lt.name"></nz-option>
+                <ng-container *ngFor="let lt of leaveTypes">
+                  <nz-option *ngIf="lt.name !== 'SL' && (lt.name !== 'CO' || compOffAvailable > 0)" [nzValue]="lt.id" [nzLabel]="lt.name === 'CO' ? 'CO - Comp Off' : lt.name"></nz-option>
+                </ng-container>
               </nz-select>
             </div>
             <div class="form-row">
               <label>From Date</label>
-              <nz-date-picker [(ngModel)]="applyForm.fromDate" name="fromDate" class="theme-datepicker"></nz-date-picker>
+              <nz-date-picker [(ngModel)]="applyForm.fromDate" name="fromDate" (ngModelChange)="computeLeaveDays()" class="theme-datepicker"></nz-date-picker>
             </div>
             <div class="form-row">
               <label>To Date</label>
-              <nz-date-picker [(ngModel)]="applyForm.toDate" name="toDate" class="theme-datepicker"></nz-date-picker>
+              <nz-date-picker [(ngModel)]="applyForm.toDate" name="toDate" (ngModelChange)="computeLeaveDays()" class="theme-datepicker"></nz-date-picker>
+            </div>
+            <div class="form-row" *ngIf="leaveDays > 0">
+              <label></label>
+              <div class="leave-days-info">
+                <span class="days-count">{{ leaveDays }} day{{ leaveDays > 1 ? 's' : '' }}</span>
+                <span class="return-on">Return on: <strong>{{ returnOnLabel }}</strong><span *ngIf="showReturnBadge" class="ret-badge holiday-badge">{{ returnBadgeText }}</span></span>
+              </div>
             </div>
             <div class="form-row">
               <label>Reason</label>
@@ -449,6 +470,12 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
     .td-center {
       text-align: center !important;
     }
+    .return-cell {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      white-space: nowrap;
+    }
     .th-actions {
       text-align: center !important;
       width: 100px;
@@ -663,6 +690,44 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       letter-spacing: 0.4px;
     }
 
+    .leave-days-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .leave-days-info .days-count {
+      font-weight: 700;
+      color: #166534;
+    }
+    .leave-days-info .return-on {
+      color: #4b5563;
+    }
+    .leave-days-info .return-on strong {
+      color: #1e40af;
+    }
+    .ret-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .holiday-badge {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a;
+    }
+
     /* Theme form controls */
     .theme-select,
     .theme-datepicker,
@@ -851,6 +916,11 @@ export class LeaveManagementComponent implements OnInit {
   editBalanceVisible = false;
   savingBalance = false;
   statusFilter = '';
+  appPage = 0;
+  appSize = 12;
+  appTotal = 0;
+  holidayDates: Set<string> = new Set();
+  compOffAvailable = 0;
   balanceYear = new Date().getFullYear();
   balanceEmployeeId: number | null = null;
   years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -860,10 +930,16 @@ export class LeaveManagementComponent implements OnInit {
   applyForm: any = {
     employeeId: null, leaveTypeId: null, fromDate: null, toDate: null, reason: ''
   };
+  leaveDays = 0;
+  returnOnLabel = '';
+  showReturnBadge = false;
+  returnBadgeText = '';
 
   constructor(
     private leaveService: LeaveService,
     private employeeService: EmployeeService,
+    private holidayService: HolidayService,
+    private compOffService: CompOffService,
     public authService: AuthService,
     private msg: NzMessageService
   ) {}
@@ -873,6 +949,18 @@ export class LeaveManagementComponent implements OnInit {
     this.loadEmployees();
     this.loadApplications();
     this.loadBalances();
+    this.loadHolidays();
+  }
+
+  loadHolidays(): void {
+    this.holidayService.getHolidays(new Date().getFullYear()).subscribe({
+      next: (res) => {
+        this.holidayDates = new Set((res.data || []).map(h => {
+          if (typeof h.date === 'string') return h.date.slice(0, 10);
+          return h.date;
+        }));
+      }
+    });
   }
 
   loadLeaveTypes(): void {
@@ -889,15 +977,51 @@ export class LeaveManagementComponent implements OnInit {
     });
   }
 
-  loadApplications(): void {
+  onStatusFilterChange(): void {
+    this.appPage = 0;
+    this.loadApplications();
+  }
+
+   loadApplications(): void {
     this.loadingApps = true;
-    this.leaveService.getApplications({ status: this.statusFilter || undefined }).subscribe({
+    this.leaveService.getApplications({ status: this.statusFilter || undefined, page: this.appPage, size: this.appSize }).subscribe({
       next: (res) => {
-        this.applications = res.data?.content || [];
+        const raw = res.data?.content || [];
+        this.applications = [...raw].sort((a: any, b: any) => {
+          return new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime();
+        });
+        this.appTotal = res.data?.totalElements || 0;
         this.loadingApps = false;
       },
       error: () => { this.loadingApps = false; }
     });
+  }
+
+  onAppPageChange(index: number): void {
+    this.appPage = index - 1;
+    this.loadApplications();
+  }
+
+  onAppPageSizeChange(size: number): void {
+    this.appSize = size;
+    this.appPage = 0;
+    this.loadApplications();
+  }
+
+  returnDay(toDate: string): string {
+    const d = new Date(toDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  }
+
+  returnBadge(toDate: string): string {
+    const d = new Date(toDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() === 0) return 'Sunday';
+    const retStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return this.holidayDates.has(retStr) ? 'Holiday' : '';
   }
 
   loadBalances(): void {
@@ -913,24 +1037,69 @@ export class LeaveManagementComponent implements OnInit {
 
   showApplyModal(): void {
     this.applyForm = { employeeId: null, leaveTypeId: null, fromDate: null, toDate: null, reason: '' };
+    this.leaveDays = 0;
+    this.returnOnLabel = '';
+    this.showReturnBadge = false;
+    this.returnBadgeText = '';
+    this.compOffAvailable = 0;
     this.applyModalVisible = true;
+  }
+
+  onEmployeeChanged(): void {
+    this.compOffAvailable = 0;
+    const eid = this.applyForm.employeeId;
+    if (!eid) return;
+    this.compOffService.getAvailableCount(eid).subscribe({
+      next: (res) => { this.compOffAvailable = (res as any)?.data ?? 0; }
+    });
+  }
+
+  computeLeaveDays(): void {
+    const fd = this.applyForm.fromDate;
+    const td = this.applyForm.toDate;
+    if (!fd || !td) { this.leaveDays = 0; this.returnOnLabel = ''; this.showReturnBadge = false; return; }
+    const from = new Date(fd); from.setHours(0, 0, 0, 0);
+    const to = new Date(td); to.setHours(0, 0, 0, 0);
+    const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+    this.leaveDays = diff >= 0 ? diff + 1 : 0;
+    const ret = new Date(to);
+    ret.setDate(ret.getDate() + 1);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const retStr = `${ret.getFullYear()}-${String(ret.getMonth() + 1).padStart(2, '0')}-${String(ret.getDate()).padStart(2, '0')}`;
+    const isSun = ret.getDay() === 0;
+    const isHoliday = this.holidayDates.has(retStr);
+    this.showReturnBadge = isSun || isHoliday;
+    this.returnBadgeText = isSun ? 'Sunday' : isHoliday ? 'Holiday' : '';
+    this.returnOnLabel = `${days[ret.getDay()]}, ${ret.getDate()} ${months[ret.getMonth()]} ${ret.getFullYear()}`;
   }
 
   applyLeave(): void {
     this.savingApp = true;
+    const fd = this.applyForm.fromDate;
+    const td = this.applyForm.toDate;
+    const fmt = (d: Date) => {
+      const m = d.getMonth() + 1;
+      const day = d.getDate();
+      return `${d.getFullYear()}-${m < 10 ? '0' + m : m}-${day < 10 ? '0' + day : day}`;
+    };
+    if (this.applyForm.leaveTypeId === -1) {
+      return;
+    }
+
     this.leaveService.applyLeave(this.applyForm).subscribe({
-      next: () => {
-        this.msg.success('Leave applied');
-        this.applyModalVisible = false;
-        this.loadApplications();
-        this.loadBalances();
-        this.savingApp = false;
-      },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to apply leave');
-        this.savingApp = false;
-      }
-    });
+        next: () => {
+          this.msg.success('Leave applied');
+          this.applyModalVisible = false;
+          this.loadApplications();
+          this.loadBalances();
+          this.savingApp = false;
+        },
+        error: (err) => {
+          this.msg.error(err.error?.message || 'Failed to apply leave');
+          this.savingApp = false;
+        }
+      });
   }
 
   approve(id: number): void {

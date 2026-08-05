@@ -360,21 +360,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const names = hasData ? months.map(([m]) => monthNames[m - 1] || '') : ['No Data'];
     const grossData = hasData ? months.map(([, d]) => Math.round(d.gross)) : [0];
     const netData = hasData ? months.map(([, d]) => Math.round(d.net)) : [0];
-    const dedData = hasData ? months.map(([, d]) => Math.round(d.deductions)) : [0];
     this.payrollChartOptions = {
       tooltip: { trigger: 'axis', formatter: (params: any) => {
         let s = `<strong>${params[0].axisValue}</strong><br/>`;
         params.forEach((p: any) => { s += `${p.marker} ${p.seriesName}: ₹${Number(p.value).toLocaleString()}<br/>`; });
         return s;
       }},
-      legend: { data: ['Gross', 'Net', 'Deductions'], bottom: 0, textStyle: { color: '#6c757d', fontSize: 9 }, itemWidth: 10, itemHeight: 8, selectedMode: false },
+      legend: { data: ['Gross', 'Net'], bottom: 0, textStyle: { color: '#6c757d', fontSize: 9 }, itemWidth: 10, itemHeight: 8, selectedMode: false },
       grid: { left: '8%', right: '4%', bottom: '18%', top: '6%', containLabel: true },
       xAxis: { type: 'category', data: names, axisLabel: { color: '#6c757d', fontSize: 9 }, axisLine: { lineStyle: { color: '#e8eaed' } }, axisTick: { show: false } },
       yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f0f2f5' } }, axisLabel: { color: '#6c757d', fontSize: 8, formatter: '₹{value}' } },
       series: [
         { name: 'Gross', type: 'bar', barWidth: '22%', barGap: '10%', data: grossData, itemStyle: { color: hasData ? '#4361ee' : '#e8eaed', borderRadius: [3, 3, 0, 0] } },
-        { name: 'Net', type: 'bar', barWidth: '22%', data: netData, itemStyle: { color: hasData ? '#10b981' : '#e8eaed', borderRadius: [3, 3, 0, 0] } },
-        { name: 'Deductions', type: 'bar', barWidth: '22%', data: dedData, itemStyle: { color: hasData ? '#f59e0b' : '#e8eaed', borderRadius: [3, 3, 0, 0] } }
+        { name: 'Net', type: 'bar', barWidth: '22%', data: netData, itemStyle: { color: hasData ? '#10b981' : '#e8eaed', borderRadius: [3, 3, 0, 0] } }
       ]
     };
   }

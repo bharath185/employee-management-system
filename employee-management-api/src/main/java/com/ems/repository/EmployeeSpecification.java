@@ -63,10 +63,14 @@ public class EmployeeSpecification {
         return (root, query, cb) -> cb.equal(root.get("socialCategory"), category);
     }
 
+    public static Specification<Employee> hasProcessAssigned(String process) {
+        return (root, query, cb) -> cb.equal(root.get("processAssigned"), process);
+    }
+
     public static Specification<Employee> withFilters(String search,
             String employeeCode, String firstName, String surname,
             String gender, String employeeStatus, String designation,
-            String religion, String socialCategory) {
+            String religion, String socialCategory, String processAssigned) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -107,6 +111,9 @@ public class EmployeeSpecification {
             }
             if (socialCategory != null && !socialCategory.isEmpty()) {
                 predicates.add(cb.equal(root.get("socialCategory"), socialCategory));
+            }
+            if (processAssigned != null && !processAssigned.isEmpty()) {
+                predicates.add(cb.equal(root.get("processAssigned"), processAssigned));
             }
 
             predicates.add(cb.equal(root.get("isDeleted"), false));

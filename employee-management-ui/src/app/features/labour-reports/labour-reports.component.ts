@@ -12,7 +12,6 @@ import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { StatutoryReportService } from '../../core/services/statutory-report.service';
 import { LabourReportService } from '../../core/services/labour-report.service';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeeService } from '../../core/services/employee.service';
 
@@ -20,251 +19,293 @@ import { EmployeeService } from '../../core/services/employee.service';
   selector: 'app-labour-reports',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, NzTabsModule, NzCardModule, NzButtonModule, 
-    NzSelectModule, NzIconModule, NzSpinModule, NzTableModule, NzTagModule, PageHeaderComponent
+    CommonModule, FormsModule, NzTabsModule, NzCardModule, NzButtonModule,
+    NzSelectModule, NzIconModule, NzSpinModule, NzTableModule, NzTagModule
   ],
   template: `
-    <div class="labour-reports-container page-enter">
-      <app-page-header icon="file-text" title="Labour Reports"></app-page-header>
-      
-      <nz-tabset nzType="card" class="labour-tabs" [nzAnimated]="false">
-        <!-- Register of Employment -->
+    <div class="lr-container">
+      <div class="pp-sub-nav">
+        <span class="pp-nav-item active">
+          <i nz-icon nzType="file-text"></i><span>Labour Reports</span>
+        </span>
+      </div>
+
+      <nz-tabset nzType="card" class="lr-tabs" [nzAnimated]="false">
+
+        <!-- Tab 1: Worker Details -->
         <nz-tab nzTitle="Register of Employment">
-          <div class="report-tab-content">
-            <div class="sr-card">
-              <div class="sr-card-header">
-                <i nz-icon nzType="user" class="sr-card-icon"></i>
-                <span class="sr-card-title">Individual Worker Details</span>
-              </div>
-              <p class="sr-card-desc">Show employee-wise wage summary for a given month.</p>
-              <div class="sr-controls">
-                <nz-select [(ngModel)]="selectedYear" class="sr-select" nzPlaceHolder="Year">
+          <nz-card class="lr-controls-card" nzSize="small">
+            <div class="lr-filters">
+              <div class="filter-item">
+                <label>Year</label>
+                <nz-select [(ngModel)]="selectedYear" class="filter-select" style="width:110px">
                   <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
                 </nz-select>
-                <nz-select [(ngModel)]="selectedMonth" class="sr-select" nzPlaceHolder="Month">
+              </div>
+              <div class="filter-item">
+                <label>Month</label>
+                <nz-select [(ngModel)]="selectedMonth" class="filter-select" style="width:130px">
                   <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
                 </nz-select>
-                <button nz-button class="sr-btn-primary" [nzLoading]="loading1" (click)="openReport('worker-details')">
-                  <i nz-icon nzType="file-text"></i> Preview
-                </button>
-                <button nz-button class="sr-btn-excel" [nzLoading]="excelLoading1" (click)="downloadExcel('worker-details')">
-                  <i nz-icon nzType="download"></i> Excel
-                </button>
               </div>
+              <button nz-button nzType="primary" (click)="openReport('worker-details')" [nzLoading]="loading1">
+                <i nz-icon nzType="eye"></i> Preview
+              </button>
+              <button nz-button nzType="default" (click)="downloadExcel('worker-details')" [nzLoading]="excelLoading1">
+                <i nz-icon nzType="download"></i> Export
+              </button>
             </div>
-          </div>
+          </nz-card>
         </nz-tab>
 
-        <!-- Wage Register -->
+        <!-- Tab 2: Wage Register -->
         <nz-tab nzTitle="Wage Register">
-          <div class="report-tab-content">
-            <div class="sr-card">
-              <div class="sr-card-header">
-                <i nz-icon nzType="dollar" class="sr-card-icon"></i>
-                <span class="sr-card-title">Wages Register</span>
-              </div>
-              <p class="sr-card-desc">Detailed salary breakdown with PF, ESI, PT deductions.</p>
-              <div class="sr-controls">
-                <nz-select [(ngModel)]="selectedYear2" class="sr-select" nzPlaceHolder="Year">
+          <nz-card class="lr-controls-card" nzSize="small">
+            <div class="lr-filters">
+              <div class="filter-item">
+                <label>Year</label>
+                <nz-select [(ngModel)]="selectedYear2" class="filter-select" style="width:110px">
                   <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
                 </nz-select>
-                <nz-select [(ngModel)]="selectedMonth2" class="sr-select" nzPlaceHolder="Month">
+              </div>
+              <div class="filter-item">
+                <label>Month</label>
+                <nz-select [(ngModel)]="selectedMonth2" class="filter-select" style="width:130px">
                   <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
                 </nz-select>
-                <button nz-button class="sr-btn-primary" [nzLoading]="loading2" (click)="openReport('wages-register')">
-                  <i nz-icon nzType="file-text"></i> Preview
-                </button>
-                <button nz-button class="sr-btn-excel" [nzLoading]="excelLoading2" (click)="downloadExcel('wages-register')">
-                  <i nz-icon nzType="download"></i> Excel
-                </button>
               </div>
+              <button nz-button nzType="primary" (click)="openReport('wages-register')" [nzLoading]="loading2">
+                <i nz-icon nzType="eye"></i> Preview
+              </button>
+              <button nz-button nzType="default" (click)="downloadExcel('wages-register')" [nzLoading]="excelLoading2">
+                <i nz-icon nzType="download"></i> Export
+              </button>
             </div>
-          </div>
+          </nz-card>
         </nz-tab>
-        
-        <!-- Leave Register -->
+
+        <!-- Tab 3: Leave Register -->
         <nz-tab nzTitle="Leave Register">
-          <div class="report-tab-content">
-            <div class="sr-card">
-              <div class="sr-card-header">
-                <i nz-icon nzType="calendar" class="sr-card-icon"></i>
-                <span class="sr-card-title">Form XXV - Register of Leave</span>
-              </div>
-              <p class="sr-card-desc">AP Shops &amp; Establishments leave register format.</p>
-              <div class="sr-controls">
-                <nz-select [(ngModel)]="selectedYear3" class="sr-select" nzPlaceHolder="Year">
+          <nz-card class="lr-controls-card" nzSize="small">
+            <div class="lr-filters">
+              <div class="filter-item">
+                <label>Year</label>
+                <nz-select [(ngModel)]="selectedYear3" class="filter-select" style="width:110px">
                   <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
                 </nz-select>
-                <nz-select [(ngModel)]="selectedEmployees3" class="sr-select-emp" nzPlaceHolder="All Employees" nzMode="multiple" [nzMaxTagCount]="2" [nzMaxTagPlaceholder]="tagPlaceholder">
+              </div>
+              <div class="filter-item" style="flex:2">
+                <label>Employees</label>
+                <nz-select [(ngModel)]="selectedEmployees3" class="filter-select" nzMode="multiple" [nzMaxTagCount]="2">
                   <nz-option *ngFor="let e of employeeList" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.fullName"></nz-option>
                 </nz-select>
-                <ng-template #tagPlaceholder>more</ng-template>
-                <button nz-button class="sr-btn-primary" [nzLoading]="loading3" (click)="openReport('leave-register')">
-                  <i nz-icon nzType="file-text"></i> Preview
-                </button>
-                <button nz-button class="sr-btn-excel" [nzLoading]="excelLoading3" (click)="downloadExcel('leave-register')">
-                  <i nz-icon nzType="download"></i> Excel
+              </div>
+              <button nz-button nzType="primary" (click)="openReport('leave-register')" [nzLoading]="loading3">
+                <i nz-icon nzType="eye"></i> Preview
+              </button>
+              <button nz-button nzType="default" (click)="downloadExcel('leave-register')" [nzLoading]="excelLoading3">
+                <i nz-icon nzType="download"></i> Export
+              </button>
+            </div>
+          </nz-card>
+        </nz-tab>
+
+        <!-- Tab 4: Bonus Register -->
+        <nz-tab nzTitle="Bonus Register">
+          <div class="lr-tab-content">
+            <nz-card class="lr-controls-card" nzSize="small">
+              <div class="lr-filters">
+                <div class="filter-item">
+                  <label>Year</label>
+                  <nz-select [(ngModel)]="bonusYear" class="filter-select" style="width:110px">
+                    <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+                  </nz-select>
+                </div>
+                <div class="filter-item">
+                  <label>Month</label>
+                  <nz-select [(ngModel)]="bonusMonth" class="filter-select" style="width:130px">
+                    <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+                  </nz-select>
+                </div>
+                <button nz-button nzType="primary" (click)="loadBonusRegister()" [nzLoading]="bonusLoading">
+                  <i nz-icon nzType="search"></i> Load
                 </button>
               </div>
-            </div>
+            </nz-card>
+            <nz-card class="lr-table-card" nzSize="small">
+              <nz-table #bonusTbl [nzData]="bonusData" [nzLoading]="bonusLoading" nzSize="small" [nzPageSize]="20" [nzShowPagination]="bonusData.length > 20">
+                <thead>
+                  <tr>
+                    <th>Emp Code</th><th>Name</th><th>Designation</th>
+                    <th class="th-right">Basic</th><th class="th-right">HRA</th>
+                    <th class="th-right">Other Allow</th><th class="th-right">Personal Allow</th>
+                    <th class="th-right">Gross</th><th class="th-right">Deductions</th>
+                    <th class="th-right">Net Pay</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of bonusTbl.data">
+                    <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
+                    <td>{{ r.employeeName }}</td>
+                    <td>{{ r.designation }}</td>
+                    <td class="td-right">{{ r.basic }}</td><td class="td-right">{{ r.hra }}</td>
+                    <td class="td-right">{{ r.otherAllowance }}</td><td class="td-right">{{ r.personalAllowance }}</td>
+                    <td class="td-right"><b>{{ r.grossSalary }}</b></td>
+                    <td class="td-right">{{ r.totalDeductions }}</td>
+                    <td class="td-right"><b>{{ r.netPay }}</b></td>
+                  </tr>
+                </tbody>
+              </nz-table>
+              <p class="empty-tbl" *ngIf="bonusData.length === 0 && !bonusLoading">No data for this period</p>
+            </nz-card>
           </div>
         </nz-tab>
 
-        <!-- Bonus Register -->
-        <nz-tab nzTitle="Bonus Register">
-          <div class="report-tab-content">
-            <div class="tb-filters">
-              <nz-select [(ngModel)]="bonusYear" class="sr-select" nzPlaceHolder="Year">
-                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
-              </nz-select>
-              <nz-select [(ngModel)]="bonusMonth" class="sr-select" nzPlaceHolder="Month">
-                <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-              </nz-select>
-              <button nz-button class="sr-btn-primary" [nzLoading]="bonusLoading" (click)="loadBonusRegister()">
-                <i nz-icon nzType="search"></i> Load
-              </button>
-            </div>
-            <nz-table #bonusTbl [nzData]="bonusData" [nzLoading]="bonusLoading" class="theme-table" nzSize="small" [nzPageSize]="20">
-              <thead>
-                <tr>
-                  <th>Emp Code</th><th>Name</th><th>Designation</th>
-                  <th class="td-right">Basic</th><th class="td-right">HRA</th>
-                  <th class="td-right">Other Allow</th><th class="td-right">Personal Allow</th>
-                  <th class="td-right">Gross</th><th class="td-right">Deductions</th>
-                  <th class="td-right">Net Pay</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let r of bonusTbl.data">
-                  <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
-                  <td>{{ r.employeeName }}</td>
-                  <td>{{ r.designation }}</td>
-                  <td class="td-right">{{ r.basic }}</td>
-                  <td class="td-right">{{ r.hra }}</td>
-                  <td class="td-right">{{ r.otherAllowance }}</td>
-                  <td class="td-right">{{ r.personalAllowance }}</td>
-                  <td class="td-right"><strong>{{ r.grossSalary }}</strong></td>
-                  <td class="td-right">{{ r.totalDeductions }}</td>
-                  <td class="td-right"><strong>{{ r.netPay }}</strong></td>
-                </tr>
-                <tr *ngIf="bonusData.length === 0 && !bonusLoading">
-                  <td colspan="10" class="empty-cell">No data for this period</td>
-                </tr>
-              </tbody>
-            </nz-table>
-          </div>
-        </nz-tab>
-
-        <!-- Over Time Register -->
+        <!-- Tab 5: Over Time Register -->
         <nz-tab nzTitle="Over Time Register">
-          <div class="report-tab-content">
-            <div class="tb-filters">
-              <nz-select [(ngModel)]="otYear" class="sr-select" nzPlaceHolder="Year">
-                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
-              </nz-select>
-              <nz-select [(ngModel)]="otMonth" class="sr-select" nzPlaceHolder="Month">
-                <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-              </nz-select>
-              <button nz-button class="sr-btn-primary" [nzLoading]="otLoading" (click)="loadOvertimeRegister()">
-                <i nz-icon nzType="search"></i> Load
-              </button>
-            </div>
-            <nz-table #otTbl [nzData]="otData" [nzLoading]="otLoading" class="theme-table" nzSize="small" [nzPageSize]="20">
-              <thead>
-                <tr>
-                  <th>Emp Code</th><th>Name</th><th>Designation</th><th>Department</th>
-                  <th class="td-right">OT Hours</th><th class="td-right">OT Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let r of otTbl.data">
-                  <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
-                  <td>{{ r.employeeName }}</td>
-                  <td>{{ r.designation }}</td>
-                  <td>{{ r.department }}</td>
-                  <td class="td-right">{{ r.overtimeHours }}</td>
-                  <td class="td-right">{{ r.overtimeAmount }}</td>
-                </tr>
-                <tr *ngIf="otData.length === 0 && !otLoading">
-                  <td colspan="6" class="empty-cell">No data for this period</td>
-                </tr>
-              </tbody>
-            </nz-table>
+          <div class="lr-tab-content">
+            <nz-card class="lr-controls-card" nzSize="small">
+              <div class="lr-filters">
+                <div class="filter-item">
+                  <label>Year</label>
+                  <nz-select [(ngModel)]="otYear" class="filter-select" style="width:110px">
+                    <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+                  </nz-select>
+                </div>
+                <div class="filter-item">
+                  <label>Month</label>
+                  <nz-select [(ngModel)]="otMonth" class="filter-select" style="width:130px">
+                    <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+                  </nz-select>
+                </div>
+                <button nz-button nzType="primary" (click)="loadOvertimeRegister()" [nzLoading]="otLoading">
+                  <i nz-icon nzType="search"></i> Load
+                </button>
+              </div>
+            </nz-card>
+            <nz-card class="lr-table-card" nzSize="small">
+              <nz-table #otTbl [nzData]="otData" [nzLoading]="otLoading" nzSize="small" [nzPageSize]="20" [nzShowPagination]="otData.length > 20">
+                <thead>
+                  <tr>
+                    <th>Emp Code</th><th>Name</th><th>Designation</th><th>Department</th>
+                    <th class="th-right">OT Hours</th><th class="th-right">OT Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of otTbl.data">
+                    <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
+                    <td>{{ r.employeeName }}</td>
+                    <td>{{ r.designation }}</td>
+                    <td>{{ r.department }}</td>
+                    <td class="td-right">{{ r.overtimeHours }}</td>
+                    <td class="td-right">{{ r.overtimeAmount }}</td>
+                  </tr>
+                </tbody>
+              </nz-table>
+              <p class="empty-tbl" *ngIf="otData.length === 0 && !otLoading">No data for this period</p>
+            </nz-card>
           </div>
         </nz-tab>
 
-        <!-- Compensatory Off Register -->
-        <nz-tab nzTitle="Compensatory Off Register">
-          <div class="report-tab-content">
-            <div class="tb-filters">
-              <nz-select [(ngModel)]="compOffYear" class="sr-select" nzPlaceHolder="Year">
-                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
-              </nz-select>
-              <button nz-button class="sr-btn-primary" [nzLoading]="compOffLoading" (click)="loadCompOffRegister()">
-                <i nz-icon nzType="search"></i> Load
-              </button>
-            </div>
-            <nz-table #compOffTbl [nzData]="compOffData" [nzLoading]="compOffLoading" class="theme-table" nzSize="small" [nzPageSize]="20">
-              <thead>
-                <tr>
-                  <th>Emp Code</th><th>Name</th><th>Earned Date</th>
-                  <th>Expiry Date</th><th>Status</th><th>Availed Date</th><th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let r of compOffTbl.data">
-                  <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
-                  <td>{{ r.employeeName }}</td>
-                  <td>{{ r.earnedDate }}</td>
-                  <td>{{ r.expiryDate }}</td>
-                  <td><nz-tag [nzColor]="r.status === 'EARNED' ? 'blue' : r.status === 'AVAILED' ? 'green' : 'orange'">{{ r.status }}</nz-tag></td>
-                  <td>{{ r.availedDate }}</td>
-                  <td>{{ r.remarks }}</td>
-                </tr>
-                <tr *ngIf="compOffData.length === 0 && !compOffLoading">
-                  <td colspan="7" class="empty-cell">No comp-off records found</td>
-                </tr>
-              </tbody>
-            </nz-table>
+        <!-- Tab 6: Compensatory Off Register -->
+        <nz-tab nzTitle="Comp Off Register">
+          <div class="lr-tab-content">
+            <nz-card class="lr-controls-card" nzSize="small">
+              <div class="lr-filters">
+                <div class="filter-item">
+                  <label>Year</label>
+                  <nz-select [(ngModel)]="compOffYear" class="filter-select" style="width:110px">
+                    <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+                  </nz-select>
+                </div>
+                <button nz-button nzType="primary" (click)="loadCompOffRegister()" [nzLoading]="compOffLoading">
+                  <i nz-icon nzType="search"></i> Load
+                </button>
+              </div>
+            </nz-card>
+            <nz-card class="lr-table-card" nzSize="small">
+              <nz-table #compOffTbl [nzData]="compOffData" [nzLoading]="compOffLoading" nzSize="small" [nzPageSize]="20" [nzShowPagination]="compOffData.length > 20">
+                <thead>
+                  <tr>
+                    <th>Emp Code</th><th>Name</th><th>Earned Date</th>
+                    <th>Status</th><th>Availed Date</th><th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of compOffTbl.data">
+                    <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
+                    <td>{{ r.employeeName }}</td>
+                    <td>{{ r.earnedDate }}</td>
+                    <td><nz-tag [nzColor]="r.status === 'EARNED' ? 'blue' : 'green'">{{ r.status }}</nz-tag></td>
+                    <td>{{ r.availedDate || '—' }}</td>
+                    <td>{{ r.remarks || '—' }}</td>
+                  </tr>
+                </tbody>
+              </nz-table>
+              <p class="empty-tbl" *ngIf="compOffData.length === 0 && !compOffLoading">No comp-off records found</p>
+            </nz-card>
           </div>
         </nz-tab>
+
       </nz-tabset>
     </div>
   `,
   styles: [`
-    .labour-reports-container { padding: 16px; }
-    .report-tab-content { padding: 8px 0; }
-    .tb-filters { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
-    .page-enter { animation: fadeSlideUp .35s ease-out; }
-    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .lr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 0 16px 16px; }
+    .pp-sub-nav {
+      display: flex; gap: 2px; margin-bottom: 8px; background: #f0f4ff;
+      border-radius: 10px; padding: 4px; border: 1px solid #e0e7ff;
+    }
+    .pp-nav-item {
+      display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 500; color: #6c757d; cursor: default;
+    }
+    .pp-nav-item.active { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); }
+    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item i { font-size: 14px; }
 
-    .sr-card { background: #fff; border: 1px solid #e8eaed; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); max-width: 500px;}
-    .sr-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .sr-card-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1f3d6e, #2a4a8a); border-radius: 6px; color: #fff; font-size: 14px; flex-shrink: 0; }
-    .sr-card-title { font-size: 15px; font-weight: 700; color: #1f3d6e; letter-spacing: .2px; }
-    .sr-card-desc { font-size: 13px; color: #777; margin: 0 0 14px; line-height: 1.5; }
-    .sr-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .sr-select { width: 110px; }
-    .sr-select-emp { min-width: 200px; flex: 1; }
-    .sr-select ::ng-deep .ant-select-selector, .sr-select-emp ::ng-deep .ant-select-selector { height: 32px !important; border-radius: 6px !important; border: 1px solid #d0d5dd !important; }
-    .sr-btn-primary { height: 32px; padding: 0 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 6px; background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; display: inline-flex; align-items: center; gap: 5px; }
-    .sr-btn-excel { height: 32px; padding: 0 14px; font-size: 12px; font-weight: 600; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; color: #555; display: inline-flex; align-items: center; gap: 5px; }
+    .lr-tabs { margin-top: 0; }
+    :host ::ng-deep .lr-tabs > .ant-tabs-nav { margin-bottom: 8px; }
+    :host ::ng-deep .lr-tabs > .ant-tabs-nav .ant-tabs-tab { border-radius: 8px 8px 0 0 !important; font-size: 13px; padding: 8px 16px !important; }
 
-    :host ::ng-deep .theme-table { width: 100% !important; }
-    :host ::ng-deep .theme-table .ant-table { font-size: 13px; }
-    :host ::ng-deep .theme-table .ant-table-thead > tr > th {
+    .lr-controls-card {
+      background: #fff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      margin-bottom: 12px;
+    }
+    :host ::ng-deep .lr-controls-card .ant-card-body { padding: 12px 20px; }
+    .lr-filters { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .filter-item { display: flex; flex-direction: column; gap: 4px; }
+    .filter-item label { font-size: 11px; color: #6c757d; font-weight: 500; text-transform: uppercase; letter-spacing: .3px; }
+    .filter-select { min-width: 110px; }
+    :host ::ng-deep .filter-select .ant-select-selector { border-radius: 8px !important; border: 1px solid #e2e5ea !important; height: 34px !important; }
+    :host ::ng-deep .lr-filters button { border-radius: 8px; height: 34px; font-size: 13px; font-weight: 600; }
+
+    .lr-tab-content { padding-top: 4px; }
+    .lr-table-card {
+      background: #fff !important;
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+      overflow: hidden;
+    }
+    :host ::ng-deep .lr-table-card .ant-card-body { padding: 16px; }
+
+    :host ::ng-deep .lr-table-card .ant-table { font-size: 13px; }
+    :host ::ng-deep .lr-table-card .ant-table-thead > tr > th {
       background: #f8f9fc !important; color: #1f3d6e !important; font-size: 11px !important;
-      font-weight: 700 !important; padding: 8px 10px !important;
-      border-bottom: 2px solid #1f3d6e !important; white-space: nowrap;
+      font-weight: 700 !important; padding: 10px 12px !important; border-bottom: 2px solid #e8eaed !important;
     }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
-      padding: 7px 10px !important; border-bottom: 1px solid #f0f2f5 !important;
-      font-size: 12px; color: #374151;
+    :host ::ng-deep .lr-table-card .ant-table-tbody > tr > td {
+      padding: 8px 12px !important; border-bottom: 1px solid #f0f2f5 !important; color: #374151;
     }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td { background: rgba(31,61,110,0.03) !important; }
+    :host ::ng-deep .lr-table-card .ant-table-tbody > tr:hover > td { background: rgba(31, 61, 110, 0.03) !important; }
+    .th-right { text-align: right !important; }
     .td-right { text-align: right !important; }
     .emp-cell { font-weight: 600; color: #1f3d6e; }
-    .empty-cell { text-align: center !important; padding: 24px !important; color: #9ca3af !important; font-style: italic; }
+    .empty-tbl { text-align: center; color: #9ca3af; padding: 16px; }
   `]
 })
 export class LabourReportsComponent implements OnInit {
@@ -346,7 +387,7 @@ export class LabourReportsComponent implements OnInit {
     setter(true);
     const done = () => setter(false);
 
-    let obs, filename: string;
+    let obs: any, filename: string;
     if (type === 'worker-details') {
       obs = this.reportService.downloadIndividualWorkerDetailsExcel(this.selectedYear, this.selectedMonth);
       filename = `Individual_Worker_Details_${this.selectedYear}_${this.selectedMonth}.xlsx`;
@@ -359,7 +400,7 @@ export class LabourReportsComponent implements OnInit {
     }
 
     obs.subscribe({
-      next: (blob) => {
+      next: (blob: Blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = filename;

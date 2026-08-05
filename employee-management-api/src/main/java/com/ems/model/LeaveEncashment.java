@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "leave_encashments", indexes = {
     @Index(name = "idx_encashment_employee", columnList = "employee_id"),
-    @Index(name = "idx_encashment_period", columnList = "year,month"),
+    @Index(name = "idx_encashment_period", columnList = "`year`,`month`"),
     @Index(name = "idx_encashment_status", columnList = "status")
 })
 @Data
@@ -43,10 +43,10 @@ public class LeaveEncashment {
     @Column(name = "encashment_amount", precision = 12, scale = 2, nullable = false)
     private BigDecimal encashmentAmount;
 
-    @Column(name = "month", nullable = false)
+    @Column(name = "`month`", nullable = false)
     private Integer month;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "`year`", nullable = false)
     private Integer year;
 
     @Column(name = "status", length = 20, nullable = false)

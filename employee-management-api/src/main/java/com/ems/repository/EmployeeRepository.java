@@ -29,9 +29,14 @@ public interface EmployeeRepository
     @Query("SELECT DISTINCT e.department FROM Employee e WHERE e.department IS NOT NULL AND e.department <> '' AND e.isDeleted = false ORDER BY e.department")
     List<String> findDistinctDepartments();
 
-    List<Employee> findByDepartmentAndIsDeletedFalse(String department, org.springframework.data.domain.Pageable pageable);
+    @Query("SELECT DISTINCT e.processAssigned FROM Employee e WHERE e.processAssigned IS NOT NULL AND e.processAssigned <> '' AND e.isDeleted = false ORDER BY e.processAssigned")
+    List<String> findDistinctProcesses();
 
+    List<Employee> findByDepartmentAndIsDeletedFalse(String department, org.springframework.data.domain.Pageable pageable);
     long countByDepartmentAndIsDeletedFalse(String department);
+
+    List<Employee> findByProcessAssignedAndIsDeletedFalse(String processAssigned, org.springframework.data.domain.Pageable pageable);
+    long countByProcessAssignedAndIsDeletedFalse(String processAssigned);
 
     @Query(value = "SELECT COUNT(*) FROM employees", nativeQuery = true)
     long countIncludingDeleted();

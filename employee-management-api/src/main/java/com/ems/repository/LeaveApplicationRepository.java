@@ -16,7 +16,7 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
 
     List<LeaveApplication> findByEmployeeIdAndStatus(Long employeeId, String status);
 
-    @Query("SELECT la FROM LeaveApplication la WHERE la.employee.id = :employeeId AND YEAR(la.fromDate) = :year ORDER BY la.fromDate DESC")
+    @Query("SELECT la FROM LeaveApplication la WHERE la.employee.id = :employeeId AND YEAR(la.fromDate) = :year ORDER BY la.appliedDate DESC")
     List<LeaveApplication> findByEmployeeIdAndYear(@Param("employeeId") Long employeeId, @Param("year") Integer year);
 
     @Query("SELECT la FROM LeaveApplication la WHERE YEAR(la.fromDate) = :year AND MONTH(la.fromDate) = :month ORDER BY la.employee.employeeCode, la.fromDate")
@@ -28,7 +28,14 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
     @Query("SELECT la FROM LeaveApplication la WHERE la.employee.employeeCode = :empCode ORDER BY la.fromDate DESC")
     List<LeaveApplication> findByEmployeeCode(@Param("empCode") String empCode);
 
-    Page<LeaveApplication> findByStatus(String status, Pageable pageable);
+    @Query("SELECT la FROM LeaveApplication la WHERE (:status IS NULL OR la.status = :status) ORDER BY la.appliedDate DESC")
+    Page<LeaveApplication> findByStatusOrdered(@Param("status") String status, Pageable pageable);
+
+    @Query("SELECT la FROM LeaveApplication la ORDER BY la.appliedDate DESC")
+    Page<LeaveApplication> findAllOrdered(Pageable pageable);
+
+    @Query("SELECT COUNT(la) > 0 FROM LeaveApplication la WHERE la.employee.id = :employeeId AND la.status IN ('PENDING','APPROVED') AND la.fromDate <= :toDate AND la.toDate >= :fromDate")
+    boolean existsOverlapping(@Param("employeeId") Long employeeId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
     @Query("SELECT la FROM LeaveApplication la WHERE la.fromDate >= :from AND la.toDate <= :to ORDER BY la.employee.employeeCode, la.fromDate")
     List<LeaveApplication> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);

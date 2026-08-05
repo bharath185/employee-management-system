@@ -13,16 +13,20 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyAttendance(fromDate: string, toDate: string, page = 0, size = 50, department = ''): Observable<APIResponse<MonthlyAttendance>> {
+  getMonthlyAttendance(fromDate: string, toDate: string, page = 0, size = 50, process = ''): Observable<APIResponse<MonthlyAttendance>> {
     let params = new HttpParams()
       .set('fromDate', fromDate)
       .set('toDate', toDate)
       .set('page', page.toString())
       .set('size', size.toString());
-    if (department) {
-      params = params.set('department', department);
+    if (process) {
+      params = params.set('process', process);
     }
     return this.http.get<APIResponse<MonthlyAttendance>>(`${this.apiUrl}/monthly`, { params });
+  }
+
+  getProcesses(): Observable<APIResponse<string[]>> {
+    return this.http.get<APIResponse<string[]>>(`${this.apiUrl}/processes`);
   }
 
   getDepartments(): Observable<APIResponse<string[]>> {

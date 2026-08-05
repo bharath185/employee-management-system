@@ -39,10 +39,10 @@ import { saveAs } from 'file-saver';
             <i nz-icon nzType="right"></i>
           </button>
           <span class="nav-sep"></span>
-          <nz-select [(ngModel)]="selectedDepartment" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless
-            class="dept-select" nzPlaceHolder="All Departments">
-            <nz-option nzValue="" nzLabel="All Departments"></nz-option>
-            <nz-option *ngFor="let d of departmentList" [nzValue]="d" [nzLabel]="d"></nz-option>
+          <nz-select [(ngModel)]="selectedProcess" (ngModelChange)="onFilterChange()" nzSize="small" nzBorderless
+            class="dept-select" nzPlaceHolder="All Processes">
+            <nz-option nzValue="" nzLabel="All Processes"></nz-option>
+            <nz-option *ngFor="let p of processList" [nzValue]="p" [nzLabel]="p"></nz-option>
           </nz-select>
         </div>
         <div class="toolbar-actions">
@@ -156,6 +156,7 @@ import { saveAs } from 'file-saver';
                     <div class="pop-body">
                       <div class="pop-row"><span class="pop-lbl">Gender</span><span class="pop-val">{{ emp.gender || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Department</span><span class="pop-val">{{ emp.department || '-' }}</span></div>
+                      <div class="pop-row"><span class="pop-lbl">Process</span><span class="pop-val">{{ emp.processAssigned || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Designation</span><span class="pop-val">{{ emp.designation || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">DOJ</span><span class="pop-val">{{ emp.doj || '-' }}</span></div>
                       <div class="pop-row"><span class="pop-lbl">Vintage</span><span class="pop-val">{{ emp.vintage }} months</span></div>
@@ -164,12 +165,18 @@ import { saveAs } from 'file-saver';
                 </ng-template>
               </td>
               <td *ngFor="let s of emp.days; let di = index" class="td-day" [class.weekend]="isSunDay(di)">
-                <span *ngIf="!isEditMode && s" class="day-status" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
+                <span *ngIf="!isEditMode && s" class="day-status" [class.locked-cell]="emp.lockedDays?.[di]" [class]="'status-' + s.toLowerCase()">{{ s }}</span>
                 <span *ngIf="!isEditMode && !s" class="day-empty">·</span>
-                <span *ngIf="isEditMode"
+                <span *ngIf="isEditMode && !emp.lockedDays?.[di]"
                   (click)="cycleStatus(emp, di)"
                   class="day-status clickable"
                   [class]="'status-' + ((emp.days[di] || '').toLowerCase() || 'blank')">
+                  {{ emp.days[di] || '—' }}
+                </span>
+                <span *ngIf="isEditMode && emp.lockedDays?.[di]"
+                  class="day-status locked-clickable"
+                  [class]="'status-' + ((emp.days[di] || '').toLowerCase() || 'blank')"
+                  nz-tooltip="Leave-synced — not editable">
                   {{ emp.days[di] || '—' }}
                 </span>
               </td>
@@ -281,6 +288,8 @@ import { saveAs } from 'file-saver';
     .status-wo { background:linear-gradient(135deg,#8c8c8c,#a6a6a6); }
     .status-r { background:linear-gradient(135deg,#cf1322,#f5222d); }
     .status-co { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
+    .locked-cell { border: 1px dashed rgba(0,0,0,.2); border-radius: 4px; }
+    .locked-clickable { cursor: not-allowed; opacity: .85; border: 1px dashed rgba(0,0,0,.2); border-radius: 4px; }
     .day-empty { color:#e8e8e8; font-size:14px; }
     .td-sum { text-align:center !important; font-size:12px; padding:4px 2px !important; }
     .td-sum-total { border-left:1px solid #e8eaed; }
@@ -322,8 +331,8 @@ export class AttendanceComponent implements OnInit {
   isEditMode = false;
   changedRecords: Set<string> = new Set();
   scrollX = '';
-  selectedDepartment = '';
-  departmentList: string[] = [];
+  selectedProcess = '';
+  processList: string[] = [];
   rangeDays = 30;
 
   legendItems = [
@@ -348,8 +357,8 @@ export class AttendanceComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.attendanceService.getDepartments().subscribe(res => {
-      this.departmentList = res.data || [];
+    this.attendanceService.getProcesses().subscribe(res => {
+      this.processList = res.data || [];
     });
     this.loadData();
   }
@@ -383,7 +392,7 @@ export class AttendanceComponent implements OnInit {
     this.loading = true;
     const from = this.formatDate(this.fromDate);
     const to = this.formatDate(this.toDate);
-    this.attendanceService.getMonthlyAttendance(from, to, this.page, this.size, this.selectedDepartment).subscribe({
+    this.attendanceService.getMonthlyAttendance(from, to, this.page, this.size, this.selectedProcess).subscribe({
       next: (res) => {
         this.data = res.data;
         const cols = 2 + (this.data?.dayColumns?.length || 30) + 4;
@@ -406,6 +415,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   cycleStatus(emp: EmployeeAttendance, dayIdx: number): void {
+    if (emp.lockedDays?.[dayIdx]) return;
     const order = ['', 'P', 'A', 'L', 'ML', 'H', 'WO', 'R', 'CO'];
     const cur = emp.days[dayIdx] || '';
     const nextIdx = (order.indexOf(cur) + 1) % order.length;

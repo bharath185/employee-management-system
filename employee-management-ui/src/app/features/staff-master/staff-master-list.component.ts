@@ -69,9 +69,13 @@ import * as XLSX from 'xlsx';
               <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
               <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt" [nzLabel]="opt"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="loadEmployees()" nzPlaceHolder="Designation" class="filter-select" style="width:150px">
+             <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="loadEmployees()" nzPlaceHolder="Designation" class="filter-select" style="width:150px">
               <nz-option nzValue="" nzLabel="All Designations"></nz-option>
               <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="filterProcess" (ngModelChange)="loadEmployees()" nzPlaceHolder="Process" class="filter-select" style="width:150px">
+              <nz-option nzValue="" nzLabel="All Processes"></nz-option>
+              <nz-option *ngFor="let p of processOptions" [nzValue]="p" [nzLabel]="p"></nz-option>
             </nz-select>
             <button nz-button class="clear-btn" *ngIf="hasActiveFilters" (click)="clearFilters()">
               <i class="bi bi-x-circle"></i> Clear
@@ -467,9 +471,11 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   searchTerm = '';
   filterStatus = '';
   filterDesignation = '';
+  filterProcess = '';
 
   statusOptions: string[] = [];
   designationOptions: { value: string; label: string }[] = [];
+  processOptions: string[] = [];
 
   private searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
@@ -517,6 +523,9 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     this.masterDataService.getByCategory('DESIGNATION').subscribe(data => {
       this.designationOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
+    this.employeeService.getProcessOptions().subscribe(data => {
+      this.processOptions = data.data || [];
+    });
     this.searchSubscription = this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged()
@@ -531,7 +540,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   }
 
   get hasActiveFilters(): boolean {
-    return !!this.searchTerm || !!this.filterStatus || !!this.filterDesignation;
+    return !!this.searchTerm || !!this.filterStatus || !!this.filterDesignation || !!this.filterProcess;
   }
 
   loadEmployees(): void {
@@ -544,6 +553,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     if (this.searchTerm) params.search = this.searchTerm;
     if (this.filterStatus) params.employeeStatus = this.filterStatus;
     if (this.filterDesignation) params.designation = this.filterDesignation;
+    if (this.filterProcess) params.processAssigned = this.filterProcess;
 
     this.employeeService.getEmployees(params).subscribe({
       next: (response) => {
@@ -574,6 +584,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     this.searchTerm = '';
     this.filterStatus = '';
     this.filterDesignation = '';
+    this.filterProcess = '';
     this.pageIndex = 0;
     this.loadEmployees();
   }

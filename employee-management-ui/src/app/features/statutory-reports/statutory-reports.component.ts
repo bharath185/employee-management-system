@@ -17,12 +17,15 @@ import { EmployeeService } from '../../core/services/employee.service';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzCardModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzSpinModule,
-    PageHeaderComponent
+    NzIconModule, NzSpinModule
   ],
   template: `
-    <div class="sr-container page-enter">
-      <app-page-header icon="file-text" title="Reports"></app-page-header>
+    <div class="sr-container">
+      <div class="pp-sub-nav">
+        <span class="pp-nav-item active">
+          <i nz-icon nzType="file-text"></i><span>Reports</span>
+        </span>
+      </div>
 
       <!-- Access Denied -->
       <div *ngIf="!authService.canAccessReports()" class="sr-denied">
@@ -119,7 +122,18 @@ import { EmployeeService } from '../../core/services/employee.service';
     ::-webkit-scrollbar-thumb:hover { background: #a0a8b4; }
 
     /* ─── Container ─── */
-    .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 100%; max-width: 100%; padding: 12px 16px; box-sizing: border-box; }
+    .sr-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 0 16px 16px; }
+    .pp-sub-nav {
+      display: flex; gap: 2px; margin-bottom: 8px; background: #f0f4ff;
+      border-radius: 10px; padding: 4px; border: 1px solid #e0e7ff;
+    }
+    .pp-nav-item {
+      display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 500; color: #6c757d; cursor: default;
+    }
+    .pp-nav-item.active { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); }
+    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item i { font-size: 14px; }
 
     /* ─── Access Denied ─── */
     .sr-denied { text-align: center; padding: 60px 16px; }

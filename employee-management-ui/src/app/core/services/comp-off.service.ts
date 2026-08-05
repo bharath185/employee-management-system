@@ -21,6 +21,10 @@ export class CompOffService {
     return this.http.get<APIResponse<CompOff[]>>(`${this.apiUrl}/my`);
   }
 
+  getAvailableCount(employeeId: number): Observable<APIResponse<number>> {
+    return this.http.get<APIResponse<number>>(`${this.apiUrl}/available/${employeeId}`);
+  }
+
   getMyAvailableCount(): Observable<APIResponse<number>> {
     return this.http.get<APIResponse<number>>(`${this.apiUrl}/available/my`);
   }
@@ -30,7 +34,17 @@ export class CompOffService {
     return this.http.post<APIResponse<CompOff>>(`${this.apiUrl}/earn/${employeeId}`, null, { params });
   }
 
-  availCompOff(id: number): Observable<APIResponse<CompOff>> {
-    return this.http.put<APIResponse<CompOff>>(`${this.apiUrl}/${id}/avail`, {});
+  exportExcel(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export`, { responseType: 'blob' });
+  }
+
+  importExcel(file: File): Observable<APIResponse<{ imported: number; errors: any[] }>> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<APIResponse<{ imported: number; errors: any[] }>>(`${this.apiUrl}/import`, fd);
+  }
+
+  downloadSample(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/sample`, { responseType: 'blob' });
   }
 }

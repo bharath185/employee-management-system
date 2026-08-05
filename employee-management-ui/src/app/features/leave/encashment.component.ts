@@ -14,6 +14,7 @@ import { EncashmentService } from '../../core/services/encashment.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { LeaveService } from '../../core/services/leave.service';
 import { LeaveEncashment, LeaveType, LeaveBalance } from '../../core/models/payroll.models';
+import { saveAs } from 'file-saver';
 
 
 @Component({
@@ -35,6 +36,16 @@ import { LeaveEncashment, LeaveType, LeaveBalance } from '../../core/models/payr
           <button nz-button (click)="showCreateModal()">
             <i nz-icon nzType="plus"></i> New Encashment
           </button>
+          <button nz-button nzType="default" nzSize="small" (click)="exportExcel()" [nzLoading]="exporting">
+            <i nz-icon nzType="download"></i> Export
+          </button>
+          <button nz-button nzType="default" nzSize="small" (click)="importFile.click()" [nzLoading]="importing">
+            <i nz-icon nzType="upload"></i> Import
+          </button>
+          <button nz-button nzType="default" nzSize="small" (click)="downloadSample()">
+            <i nz-icon nzType="file"></i> Sample
+          </button>
+          <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
         </div>
 
         <nz-table #t [nzData]="encashments" [nzLoading]="loading" class="theme-table" nzSize="small">
@@ -215,6 +226,8 @@ export class EncashmentComponent implements OnInit {
   availableBalance: number | null = null;
   loading = false;
   saving = false;
+  exporting = false;
+  importing = false;
   modalVisible = false;
   employeeFilter: number | null = null;
 
@@ -353,5 +366,39 @@ export class EncashmentComponent implements OnInit {
       case 'PENDING': return 'orange';
       default: return 'default';
     }
+  }
+
+  exportExcel(): void {
+    this.exporting = true;
+    this.encashmentService.exportExcel().subscribe({
+      next: (blob) => { saveAs(blob, 'Encashments.xlsx'); this.exporting = false; },
+      error: () => { this.msg.error('Export failed'); this.exporting = false; }
+    });
+  }
+
+  importExcel(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    this.importing = true;
+    this.encashmentService.importExcel(input.files[0]).subscribe({
+      next: (res) => {
+        this.msg.success(`Imported ${res.data?.imported || 0} records`);
+        this.importing = false;
+        input.value = '';
+        this.loadEncashments();
+      },
+      error: (err) => {
+        this.msg.error(err.error?.message || 'Import failed');
+        this.importing = false;
+        input.value = '';
+      }
+    });
+  }
+
+  downloadSample(): void {
+    this.encashmentService.downloadSample().subscribe({
+      next: (blob) => saveAs(blob, 'Encashment_Sample.xlsx'),
+      error: () => this.msg.error('Download failed')
+    });
   }
 }

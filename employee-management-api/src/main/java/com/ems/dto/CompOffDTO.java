@@ -20,7 +20,6 @@ public class CompOffDTO {
     private String employeeCode;
     private String employeeName;
     private LocalDate earnedDate;
-    private LocalDate expiryDate;
     private String status;
     private LocalDate availedDate;
     private String remarks;
@@ -33,7 +32,6 @@ public class CompOffDTO {
             .employeeCode(co.getEmployee().getEmployeeCode())
             .employeeName(co.getEmployee().getFullName())
             .earnedDate(co.getEarnedDate())
-            .expiryDate(co.getExpiryDate())
             .status(co.getStatus())
             .availedDate(co.getAvailedDate())
             .remarks(co.getRemarks())

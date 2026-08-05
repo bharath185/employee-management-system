@@ -29,9 +29,16 @@ public class AttendanceController {
             @RequestParam String toDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String process,
             @RequestParam(required = false) String department) {
+        String filter = process != null && !process.isBlank() ? process : department;
         return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(
-            LocalDate.parse(fromDate), LocalDate.parse(toDate), page, size, department)));
+            LocalDate.parse(fromDate), LocalDate.parse(toDate), page, size, filter)));
+    }
+
+    @GetMapping("/processes")
+    public ResponseEntity<APIResponse<List<String>>> getProcesses() {
+        return ResponseEntity.ok(APIResponse.success(attendanceService.getProcesses()));
     }
 
     @GetMapping("/departments")

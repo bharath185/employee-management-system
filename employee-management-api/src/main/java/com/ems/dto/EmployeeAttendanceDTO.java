@@ -18,10 +18,12 @@ public class EmployeeAttendanceDTO {
     private String employeeName;
     private String gender;
     private String department;
+    private String processAssigned;
     private String designation;
     private String doj;
     private long vintage;
     private List<String> days;
+    private List<Boolean> lockedDays;
     private int totalPresent;
     private int totalLeave;
     private int totalML;

@@ -35,9 +35,6 @@ public class CompOff {
     @Column(name = "earned_date", nullable = false)
     private LocalDate earnedDate;
 
-    @Column(name = "expiry_date", nullable = false)
-    private LocalDate expiryDate;
-
     @Column(name = "status", length = 20, nullable = false)
     @Builder.Default
     private String status = "EARNED";

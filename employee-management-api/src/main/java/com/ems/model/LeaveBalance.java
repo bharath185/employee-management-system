@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "leave_balances", indexes = {
     @Index(name = "idx_leave_balance_employee", columnList = "employee_id"),
-    @Index(name = "idx_leave_balance_year", columnList = "year")
+    @Index(name = "idx_leave_balance_year", columnList = "`year`")
 }, uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"employee_id", "leave_type_id", "year"})
+    @UniqueConstraint(columnNames = {"employee_id", "leave_type_id", "`year`"})
 })
 @Data
 @Builder
@@ -31,7 +31,7 @@ public class LeaveBalance {
     @JoinColumn(name = "leave_type_id", nullable = false)
     private LeaveType leaveType;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "`year`", nullable = false)
     private Integer year;
 
     @Column(name = "entitled", nullable = false)

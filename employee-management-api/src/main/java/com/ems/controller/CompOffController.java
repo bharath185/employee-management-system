@@ -5,12 +5,16 @@ import com.ems.dto.CompOffDTO;
 import com.ems.security.CustomUserDetails;
 import com.ems.service.CompOffService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/leave/comp-offs")
@@ -50,16 +54,29 @@ public class CompOffController {
             compOffService.earnCompOff(employeeId, java.time.LocalDate.parse(date))));
     }
 
-    @PutMapping("/{id}/avail")
+    @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<CompOffDTO>> availCompOff(@PathVariable Long id) {
-        return ResponseEntity.ok(APIResponse.success("Comp-Off availed", compOffService.availCompOff(id)));
+    public ResponseEntity<byte[]> exportExcel() {
+        byte[] data = compOffService.exportExcel();
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=CompOffs.xlsx")
+            .body(data);
     }
 
-    @PutMapping("/expire-overdue")
+    @PostMapping("/import")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<String>> expireOverdue() {
-        int count = compOffService.expireOverdue();
-        return ResponseEntity.ok(APIResponse.success(count + " Comp-Offs expired", null));
+    public ResponseEntity<APIResponse<Map<String, Object>>> importExcel(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(APIResponse.success("Import completed", compOffService.importExcel(file)));
+    }
+
+    @GetMapping("/sample")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> downloadSample() {
+        byte[] data = compOffService.generateSampleExcel();
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=CompOff_Sample.xlsx")
+            .body(data);
     }
 }

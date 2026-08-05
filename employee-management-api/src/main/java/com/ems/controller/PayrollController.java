@@ -17,9 +17,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.text.NumberFormat;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -116,8 +119,15 @@ public class PayrollController {
     @PostMapping("/send-payslips/{year}/{month}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<Map<String, Object>>> sendPayslipsByEmail(
-            @PathVariable Integer year, @PathVariable Integer month) {
+            @PathVariable Integer year,
+            @PathVariable Integer month,
+            @RequestBody(required = false) List<Long> payslipIds) {
         List<PayslipDTO> payslips = payslipService.getPayslips(year, month);
+        boolean hasSelection = payslipIds != null && !payslipIds.isEmpty();
+        if (hasSelection) {
+            Set<Long> idSet = new HashSet<>(payslipIds);
+            payslips = payslips.stream().filter(p -> idSet.contains(p.getId())).collect(Collectors.toList());
+        }
         int total = payslips.size();
         int sent = 0;
         int failed = 0;

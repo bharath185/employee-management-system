@@ -11,6 +11,8 @@ public interface LeaveEncashmentRepository extends JpaRepository<LeaveEncashment
 
     List<LeaveEncashment> findByEmployeeIdOrderByCreatedAtDesc(Long employeeId);
 
+    List<LeaveEncashment> findAllByOrderByCreatedAtDesc();
+
     List<LeaveEncashment> findByYearAndMonth(Integer year, Integer month);
 
     List<LeaveEncashment> findByStatus(String status);

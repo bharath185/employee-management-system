@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CompOffRepository extends JpaRepository<CompOff, Long> {
@@ -14,9 +15,13 @@ public interface CompOffRepository extends JpaRepository<CompOff, Long> {
 
     List<CompOff> findByEmployeeIdAndStatusOrderByEarnedDateDesc(Long employeeId, String status);
 
-    List<CompOff> findByStatusAndExpiryDateBefore(String status, LocalDate date);
+    Optional<CompOff> findFirstByEmployeeIdAndStatusOrderByEarnedDateAsc(Long employeeId, String status);
+
+    Optional<CompOff> findFirstByEmployeeIdAndStatusOrderByAvailedDateDesc(Long employeeId, String status);
 
     long countByEmployeeIdAndStatus(Long employeeId, String status);
 
     boolean existsByEmployeeIdAndEarnedDateAndStatus(Long employeeId, LocalDate earnedDate, String status);
+
+    List<CompOff> findAllByOrderByEarnedDateDesc();
 }

@@ -32,4 +32,18 @@ export class EncashmentService {
   rejectEncashment(id: number): Observable<APIResponse<LeaveEncashment>> {
     return this.http.put<APIResponse<LeaveEncashment>>(`${this.apiUrl}/${id}/reject`, {});
   }
+
+  exportExcel(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/export`, { responseType: 'blob' });
+  }
+
+  importExcel(file: File): Observable<APIResponse<{ imported: number; errors: any[] }>> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<APIResponse<{ imported: number; errors: any[] }>>(`${this.apiUrl}/import`, fd);
+  }
+
+  downloadSample(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/sample`, { responseType: 'blob' });
+  }
 }

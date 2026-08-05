@@ -42,6 +42,7 @@ public class EmployeeController {
             @RequestParam(required = false) String designation,
             @RequestParam(required = false) String religion,
             @RequestParam(required = false) String socialCategory,
+            @RequestParam(required = false) String processAssigned,
             @AuthenticationPrincipal CustomUserDetails currentUser) {
 
         // EMPLOYEE role can only see their own profile
@@ -58,7 +59,7 @@ public class EmployeeController {
 
         Page<EmployeeDTO> employeePage = employeeService.getAllEmployees(
             page, size, sort, search, employeeCode, firstName,
-            surname, gender, employeeStatus, designation, religion, socialCategory);
+            surname, gender, employeeStatus, designation, religion, socialCategory, processAssigned);
 
         PagedResponse<EmployeeDTO> response = PagedResponse.<EmployeeDTO>builder()
             .content(employeePage.getContent())

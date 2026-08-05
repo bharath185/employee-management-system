@@ -69,7 +69,6 @@ public class LabourReportService {
             row.put("employeeCode", e.getEmployeeCode());
             row.put("employeeName", e.getFullName());
             row.put("earnedDate", co.getEarnedDate().toString());
-            row.put("expiryDate", co.getExpiryDate().toString());
             row.put("status", co.getStatus());
             row.put("availedDate", co.getAvailedDate() != null ? co.getAvailedDate().toString() : "-");
             row.put("remarks", co.getRemarks() != null ? co.getRemarks() : "-");

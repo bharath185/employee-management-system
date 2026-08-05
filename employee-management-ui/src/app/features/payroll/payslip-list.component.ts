@@ -59,8 +59,12 @@ import { saveAs } from 'file-saver';
             <button nz-button nzType="default" (click)="downloadReport()" nz-tooltip="Download Payroll Report">
               <i nz-icon nzType="bar-chart"></i> Report
             </button>
-            <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
+             <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
               <i nz-icon nzType="mail"></i> Send All
+            </button>
+            <button nz-button class="btn-primary-gradient" (click)="sendSelected()"
+              [disabled]="selectedIds.size === 0" [nzLoading]="sending">
+              <i nz-icon nzType="send"></i> Send Selected ({{ selectedIds.size }})
             </button>
           </div>
         </div>
@@ -98,8 +102,11 @@ import { saveAs } from 'file-saver';
           nzShowPagination
           nzFrontPagination
           class="theme-table">
-          <thead>
+           <thead>
             <tr>
+              <th class="th-cb">
+                <label class="cb-label"><input type="checkbox" [checked]="allChecked" (change)="toggleSelectAll()" class="cb-all"/></label>
+              </th>
               <th class="th-sno">#</th>
               <th class="th-code">Code</th>
               <th class="th-name">Name</th>
@@ -117,6 +124,9 @@ import { saveAs } from 'file-saver';
           </thead>
           <tbody>
             <tr *ngFor="let p of payslipTable.data; let i = index">
+              <td class="td-center">
+                <input type="checkbox" [checked]="selectedIds.has(p.id)" (change)="toggleOne(p.id)" class="cb-row"/>
+              </td>
               <td class="td-center">{{ i + 1 }}</td>
               <td class="td-center"><span class="emp-code-text">{{ p.employeeCode }}</span></td>
               <td class="td-name">{{ p.employeeName }}</td>
@@ -147,7 +157,7 @@ import { saveAs } from 'file-saver';
               </td>
             </tr>
             <tr *ngIf="payslips.length === 0 && !loading">
-              <td colspan="13" class="empty-cell">No payslips found for the selected period</td>
+              <td colspan="14" class="empty-cell">No payslips found for the selected period</td>
             </tr>
           </tbody>
         </nz-table>
@@ -356,6 +366,10 @@ import { saveAs } from 'file-saver';
       display: none !important;
     }
     .th-sno { width: 3% !important; text-align: center !important; }
+    .th-cb { width: 3% !important; text-align: center !important; padding: 8px 6px !important; }
+    .cb-label { cursor: pointer; display: block; }
+    .cb-all { width: 14px; height: 14px; cursor: pointer; accent-color: #1a3a6b; }
+    .cb-row { width: 14px; height: 14px; cursor: pointer; accent-color: #1a3a6b; }
     .th-code { width: 7% !important; text-align: center !important; }
     .th-name { width: 15% !important; text-align: left !important; }
     .th-num { width: 9% !important; text-align: right !important; }
@@ -456,6 +470,7 @@ export class PayslipListComponent implements OnInit {
   selectedMonth: number;
   payslips: Payslip[] = [];
   stats: any = null;
+  selectedIds: Set<number> = new Set();
 
   yearList: number[] = [];
   monthList = [
@@ -495,6 +510,7 @@ export class PayslipListComponent implements OnInit {
 
   loadData(): void {
     this.loading = true;
+    this.selectedIds.clear();
     this.payrollService.getPayslips(this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
         this.payslips = res.data || [];
@@ -551,6 +567,32 @@ export class PayslipListComponent implements OnInit {
         }
       },
       error: (err) => this.msg.error(err.error?.message || 'Failed to send email')
+    });
+  }
+
+  get allChecked(): boolean {
+    return this.payslips.length > 0 && this.selectedIds.size === this.payslips.length;
+  }
+
+  toggleSelectAll(): void {
+    if (this.allChecked) { this.selectedIds.clear(); }
+    else { this.payslips.forEach(p => this.selectedIds.add(p.id)); }
+  }
+
+  toggleOne(id: number): void {
+    if (this.selectedIds.has(id)) { this.selectedIds.delete(id); }
+    else { this.selectedIds.add(id); }
+  }
+
+  sendSelected(): void {
+    if (this.selectedIds.size === 0) return;
+    this.sending = true;
+    this.payrollService.sendPayslipsByEmail(this.selectedYear, this.selectedMonth, Array.from(this.selectedIds)).subscribe({
+      next: (res) => {
+        if (res.success) { this.msg.success(`Sent ${res.data?.sent || 0} payslip(s)`); this.loadData(); }
+        this.sending = false;
+      },
+      error: (err) => { this.msg.error(err.error?.message || 'Failed to send payslips'); this.sending = false; }
     });
   }
 

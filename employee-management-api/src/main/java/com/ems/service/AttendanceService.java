@@ -39,15 +39,19 @@ public class AttendanceService {
     private final HolidayRepository holidayRepository;
     private final CompOffRepository compOffRepository;
 
-    public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String department) {
-        return buildGrid(fromDate, toDate, page, size, department);
+    public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String process) {
+        return buildGrid(fromDate, toDate, page, size, process);
+    }
+
+    public List<String> getProcesses() {
+        return employeeRepository.findDistinctProcesses();
     }
 
     public List<String> getDepartments() {
         return employeeRepository.findDistinctDepartments();
     }
 
-    private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String department) {
+    private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String process) {
         int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
         List<DayColumnDTO> dayColumns = new ArrayList<>();
@@ -61,12 +65,12 @@ public class AttendanceService {
                 .build());
         }
 
-        boolean hasDeptFilter = department != null && !department.trim().isEmpty();
+        boolean hasProcessFilter = process != null && !process.trim().isEmpty();
         int totalEmployees;
         List<Employee> employees;
-        if (hasDeptFilter) {
-            totalEmployees = (int) employeeRepository.countByDepartmentAndIsDeletedFalse(department.trim());
-            employees = employeeRepository.findByDepartmentAndIsDeletedFalse(department.trim(), PageRequest.of(page, size));
+        if (hasProcessFilter) {
+            totalEmployees = (int) employeeRepository.countByProcessAssignedAndIsDeletedFalse(process.trim());
+            employees = employeeRepository.findByProcessAssignedAndIsDeletedFalse(process.trim(), PageRequest.of(page, size));
         } else {
             totalEmployees = (int) employeeRepository.count();
             employees = employeeRepository.findAll(PageRequest.of(page, size)).getContent();
@@ -80,11 +84,16 @@ public class AttendanceService {
         int[] resignCounts = new int[numDays];
 
         Map<Long, Map<Integer, String>> recordMap = new HashMap<>();
+        Map<Long, Map<Integer, Boolean>> lockedMap = new HashMap<>();
         for (AttendanceRecord r : allRecords) {
             int dayIndex = (int) ChronoUnit.DAYS.between(monthStart, r.getAttendanceDate());
             if (dayIndex < 0 || dayIndex >= numDays) continue;
             recordMap.computeIfAbsent(r.getEmployee().getId(), k -> new HashMap<>())
                 .put(dayIndex, r.getStatus());
+            if (Boolean.TRUE.equals(r.getLocked())) {
+                lockedMap.computeIfAbsent(r.getEmployee().getId(), k -> new HashMap<>())
+                    .put(dayIndex, true);
+            }
             switch (r.getStatus()) {
                 case "P" -> presentCounts[dayIndex]++;
                 case "L" -> leaveCounts[dayIndex]++;
@@ -107,11 +116,14 @@ public class AttendanceService {
 
         for (Employee emp : employees) {
             Map<Integer, String> empDayMap = recordMap.getOrDefault(emp.getId(), new HashMap<>());
+            Map<Integer, Boolean> empLockMap = lockedMap.getOrDefault(emp.getId(), new HashMap<>());
             List<String> days = new ArrayList<>();
+            List<Boolean> lockedDays = new ArrayList<>();
             int p = 0, l = 0, ml = 0, r = 0;
             for (int i = 0; i < numDays; i++) {
                 String status = empDayMap.getOrDefault(i, "");
                 days.add(status);
+                lockedDays.add(empLockMap.getOrDefault(i, false));
                 switch (status) {
                     case "P" -> p++;
                     case "L" -> l++;
@@ -128,10 +140,12 @@ public class AttendanceService {
                 .employeeName(emp.getFullName())
                 .gender(emp.getGender())
                 .department(emp.getDepartment() != null ? emp.getDepartment() : "")
+                .processAssigned(emp.getProcessAssigned() != null ? emp.getProcessAssigned() : "")
                 .designation(emp.getDesignation())
                 .doj(emp.getDoj() != null ? emp.getDoj().format(dateFormatter) : "")
                 .vintage(vintage)
                 .days(days)
+                .lockedDays(lockedDays)
                 .totalPresent(p)
                 .totalLeave(l)
                 .totalML(ml)
@@ -160,6 +174,7 @@ public class AttendanceService {
 
     @Transactional
     public void bulkUpsert(List<AttendanceDTO> records) {
+        List<String> blocked = new ArrayList<>();
         List<CompOff> earnedCompOffs = new ArrayList<>();
         for (AttendanceDTO dto : records) {
             if (dto.getStatus() == null || dto.getStatus().isBlank()) continue;
@@ -171,6 +186,13 @@ public class AttendanceService {
                     .employee(employee)
                     .attendanceDate(dto.getDate())
                     .build());
+
+            if (record.getId() != null && Boolean.TRUE.equals(record.getLocked())
+                && !dto.getStatus().equals(record.getStatus())) {
+                blocked.add(employee.getEmployeeCode() + " on " + dto.getDate());
+                continue;
+            }
+
             record.setStatus(dto.getStatus());
             record.setEmployee(employee);
             attendanceRepository.save(record);
@@ -180,7 +202,6 @@ public class AttendanceService {
                     CompOff co = CompOff.builder()
                         .employee(employee)
                         .earnedDate(dto.getDate())
-                        .expiryDate(dto.getDate().plusMonths(3))
                         .status("EARNED")
                         .remarks("Auto-earned: Worked on holiday/week-off")
                         .build();
@@ -190,6 +211,9 @@ public class AttendanceService {
         }
         if (!earnedCompOffs.isEmpty()) {
             log.info("Auto-earned {} Comp-Off(s) for working on holidays/week-offs", earnedCompOffs.size());
+        }
+        if (!blocked.isEmpty()) {
+            log.warn("Blocked override of {} leave-synced attendance record(s): {}", blocked.size(), blocked);
         }
         log.info("Attendance bulk upsert: {} records", records.size());
     }
@@ -332,8 +356,15 @@ public class AttendanceService {
                     if (!Set.of("P", "A", "L", "ML", "H", "WO", "R", "CO").contains(status)) continue;
 
                     LocalDate date = monthStart.plusDays(d);
-                    AttendanceRecord record = attendanceRepository
-                        .findByEmployeeIdAndAttendanceDate(emp.getId(), date)
+                    Optional<AttendanceRecord> existingOpt = attendanceRepository
+                        .findByEmployeeIdAndAttendanceDate(emp.getId(), date);
+                    if (existingOpt.isPresent() && Boolean.TRUE.equals(existingOpt.get().getLocked())
+                        && !status.equals(existingOpt.get().getStatus())) {
+                        errors.add(Map.of("row", String.valueOf(i + 1),
+                            "message", "Cannot override leave-synced attendance: " + empCode + " on " + date));
+                        continue;
+                    }
+                    AttendanceRecord record = existingOpt
                         .orElseGet(() -> AttendanceRecord.builder()
                             .employee(emp)
                             .attendanceDate(date)
@@ -348,7 +379,6 @@ public class AttendanceService {
                             CompOff co = CompOff.builder()
                                 .employee(emp)
                                 .earnedDate(date)
-                                .expiryDate(date.plusMonths(3))
                                 .status("EARNED")
                                 .remarks("Auto-earned: Worked on holiday/week-off")
                                 .build();

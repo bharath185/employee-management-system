@@ -19,6 +19,8 @@ import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 import { NzSkeletonModule } from 'ng-zorro-antd/skeleton';
 import { LeaveService } from '../../core/services/leave.service';
 import { AuthService } from '../../core/services/auth.service';
+import { HolidayService } from '../../core/services/holiday.service';
+import { CompOffService } from '../../core/services/comp-off.service';
 import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/payroll.models';
 
 @Component({
@@ -92,7 +94,9 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                     nzPlaceHolder="Select leave type"
                     [nzLoading]="loadingTypes"
                     required>
-                    <nz-option *ngFor="let t of leaveTypes" [nzValue]="t.id" [nzLabel]="t.name"></nz-option>
+                    <ng-container *ngFor="let t of leaveTypes">
+                      <nz-option *ngIf="t.name !== 'SL' && (t.name !== 'CO' || compOffAvailable > 0)" [nzValue]="t.id" [nzLabel]="t.name === 'CO' ? 'CO - Comp Off' : t.name"></nz-option>
+                    </ng-container>
                   </nz-select>
                 </div>
                 <div class="form-group">
@@ -117,6 +121,9 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                   <label>Days</label>
                   <div class="days-display">{{ days > 0 ? days : '—' }}</div>
                 </div>
+              </div>
+              <div class="return-on-info" *ngIf="returnOnLabel">
+                <i nz-icon nzType="right-circle"></i> Return on: <strong>{{ returnOnLabel }}</strong><span *ngIf="showReturnBadge" class="ret-badge holiday-badge">{{ returnBadgeText }}</span>
               </div>
               <div class="form-row">
                 <div class="form-group reason-group">
@@ -152,6 +159,7 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                 <th>Leave Type</th>
                 <th>From</th>
                 <th>To</th>
+                <th>Return</th>
                 <th>Days</th>
                 <th>Reason</th>
                 <th>Status</th>
@@ -164,6 +172,7 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                 <td><strong>{{ app.leaveTypeName }}</strong></td>
                 <td>{{ app.fromDate }}</td>
                 <td>{{ app.toDate }}</td>
+                <td class="return-cell">{{ returnDay(app.toDate) }}<span *ngIf="returnBadge(app.toDate)" class="ret-badge holiday-badge" style="margin-left:3px;font-size:9px">{{ returnBadge(app.toDate) }}</span></td>
                 <td>{{ app.days }}</td>
                 <td class="reason-cell">{{ app.reason || '—' }}</td>
                 <td>
@@ -181,7 +190,7 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
                 </td>
               </tr>
               <tr *ngIf="applications.length === 0">
-                <td colspan="8" class="text-center text-muted">No leave applications found</td>
+                <td colspan="9" class="text-center text-muted">No leave applications found</td>
               </tr>
             </tbody>
           </nz-table>
@@ -313,6 +322,32 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
       padding: 8px 0; line-height: 32px;
       font-family: 'Inter', sans-serif;
     }
+    .return-on-info {
+      font-size: 12px;
+      color: #6b7280;
+      padding: 6px 10px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      margin-top: 1px;
+    }
+    .return-on-info i { color: #16a34a; margin-right: 4px; font-size: 13px; }
+    .return-on-info strong { color: #1e40af; }
+    .ret-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .holiday-badge {
+      background: #fffbeb;
+      color: #d97706;
+      border: 1px solid #fde68a;
+    }
     .reason-group { grid-column: 1 / -1; }
     .form-actions { text-align: right; margin-top: 8px; }
     .form-actions button[nz-button][nzType="primary"] {
@@ -393,6 +428,7 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
     .reason-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .text-center { text-align: center; }
     .text-muted { color: #adb5bd; }
+    .return-cell { font-size: 12px; font-weight: 600; color: #6b7280; white-space: nowrap; }
   `]
 })
 export class MyLeaveComponent implements OnInit, OnDestroy {
@@ -405,6 +441,11 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
   submitting = false;
   cancellingId: number | null = null;
   days = 0;
+  returnOnLabel = '';
+  showReturnBadge = false;
+  returnBadgeText = '';
+  holidayDates: Set<string> = new Set();
+  compOffAvailable = 0;
   fromDate: Date | null = null;
   toDate: Date | null = null;
 
@@ -418,6 +459,8 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
   constructor(
     private leaveService: LeaveService,
     private authService: AuthService,
+    private holidayService: HolidayService,
+    private compOffService: CompOffService,
     private msg: NzMessageService
   ) {}
 
@@ -447,6 +490,22 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
     }
   }
 
+  returnDay(toDate: string): string {
+    const d = new Date(toDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  }
+
+  returnBadge(toDate: string): string {
+    const d = new Date(toDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    if (d.getDay() === 0) return 'Sunday';
+    const retStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return this.holidayDates.has(retStr) ? 'Holiday' : '';
+  }
+
   ngOnInit(): void {
     const user = this.authService.getCurrentUser();
     if (!user?.id) { this.loading = false; return; }
@@ -461,13 +520,26 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
     this.loadingHistory = true;
     this.leaveService.getMyApplications().pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
-        if (res.success) this.applications = (res.data || []).sort((a, b) =>
-          new Date(b.appliedDate!).getTime() - new Date(a.appliedDate!).getTime()
-        );
+        if (res.success) this.applications = (res.data || []).sort((a, b) => {
+          return new Date(b.appliedDate!).getTime() - new Date(a.appliedDate!).getTime();
+        });
         this.loadingHistory = false;
         this.loading = false;
       },
       error: () => { this.loadingHistory = false; this.loading = false; }
+    });
+
+    this.holidayService.getHolidays(new Date().getFullYear()).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.holidayDates = new Set((res.data || []).map(h => {
+          if (typeof h.date === 'string') return h.date.slice(0, 10);
+          return h.date;
+        }));
+      }
+    });
+
+    this.compOffService.getMyAvailableCount().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => { this.compOffAvailable = (res as any)?.data ?? 0; }
     });
   }
 
@@ -480,16 +552,26 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
   }
 
   calcDays(): void {
-    if (!this.fromDate || !this.toDate) { this.days = 0; return; }
+    if (!this.fromDate || !this.toDate) { this.days = 0; this.returnOnLabel = ''; this.showReturnBadge = false; return; }
     const from = new Date(this.fromDate);
     const to = new Date(this.toDate);
     const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
     this.days = diff >= 0 ? diff + 1 : 0;
+    const ret = new Date(to);
+    ret.setDate(ret.getDate() + 1);
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const retStr = `${ret.getFullYear()}-${String(ret.getMonth() + 1).padStart(2, '0')}-${String(ret.getDate()).padStart(2, '0')}`;
+    const isSun = ret.getDay() === 0;
+    const isHoliday = this.holidayDates.has(retStr);
+    this.showReturnBadge = isSun || isHoliday;
+    this.returnBadgeText = isSun ? 'Sunday' : isHoliday ? 'Holiday' : '';
+    this.returnOnLabel = `${days[ret.getDay()]}, ${ret.getDate()} ${months[ret.getMonth()]} ${ret.getFullYear()}`;
   }
 
   submitLeave(): void {
     const user = this.authService.getCurrentUser();
-    if (!user?.id || !this.newApplication.leaveTypeId || !this.fromDate || !this.toDate || this.days <= 0) return;
+    if (!user?.id || this.newApplication.leaveTypeId == null || !this.fromDate || !this.toDate || this.days <= 0) return;
 
     this.submitting = true;
     const fmt = (d: Date) => {
@@ -554,10 +636,13 @@ export class MyLeaveComponent implements OnInit, OnDestroy {
     });
     this.leaveService.getMyApplications().pipe(takeUntil(this.destroy$)).subscribe({
       next: (res) => {
-        if (res.success) this.applications = (res.data || []).sort((a, b) =>
-          new Date(b.appliedDate!).getTime() - new Date(a.appliedDate!).getTime()
-        );
+        if (res.success) this.applications = (res.data || []).sort((a, b) => {
+          return new Date(b.appliedDate!).getTime() - new Date(a.appliedDate!).getTime();
+        });
       }
+    });
+    this.compOffService.getMyAvailableCount().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => { this.compOffAvailable = (res as any)?.data ?? 0; }
     });
   }
 
