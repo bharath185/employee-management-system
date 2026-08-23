@@ -66,6 +66,9 @@ public class SalaryMasterSnapshot {
     @Column(name = "pt_deduction", precision = 12, scale = 2)
     private BigDecimal ptDeduction;
 
+    @Column(name = "health_insurance", precision = 12, scale = 2)
+    private BigDecimal healthInsurance;
+
     @Column(name = "overtime_wages", precision = 12, scale = 2)
     private BigDecimal overtimeWages;
 

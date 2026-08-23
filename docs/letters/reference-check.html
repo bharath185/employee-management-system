@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reference Check Call Record — {{company_name}}</title>
+<style>
+  :root {
+    --color-primary: #1a3a5c;
+    --color-primary-dark: #0f2740;
+    --color-accent: #2b7fc1;
+    --color-text: #1e293b;
+    --color-muted: #475569;
+    --color-border: #cbd5e1;
+    --color-label: #e8f0f8;
+    --color-white: #ffffff;
+    --font: Calibri, 'Segoe UI', Arial, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: var(--font);
+    color: var(--color-text);
+    font-size: 10pt;
+    line-height: 1.35;
+    background: #fff;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    height: 297mm;
+    padding: 12mm 14mm;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    box-sizing: border-box;
+  }
+
+  .header { margin-bottom: 8px; }
+  .header-bar {
+    height: 3px;
+    background: var(--color-accent);
+    margin-bottom: 8px;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .header-logo img {
+    height: 48px;
+    width: auto;
+    max-width: 200px;
+    object-fit: contain;
+    display: block;
+  }
+  .header-logo img[src=""] { display: none; }
+  .header-right { text-align: right; max-width: 62%; }
+  .header-company {
+    font-weight: 700;
+    font-size: 10pt;
+    color: var(--color-primary-dark);
+    margin-bottom: 2px;
+  }
+  .header-meta {
+    font-size: 7.5pt;
+    color: var(--color-muted);
+    line-height: 1.4;
+  }
+
+  .doc-kicker {
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .form-title {
+    text-align: center;
+    font-size: 13pt;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .form-title::after {
+    content: '';
+    display: block;
+    width: 52px;
+    height: 2px;
+    background: var(--color-accent);
+    margin: 4px auto 0;
+  }
+
+  table.form {
+    width: 100%;
+    border-collapse: collapse;
+    flex: 1 1 auto;
+  }
+  table.form td {
+    border: 1px solid #94a3b8;
+    padding: 5px 8px;
+    vertical-align: middle;
+    font-size: 9.5pt;
+  }
+  table.form td.label {
+    width: 22%;
+    background: var(--color-label);
+    font-weight: 600;
+    color: var(--color-primary-dark);
+    white-space: nowrap;
+  }
+  table.form td.value { color: #0f172a; }
+  table.form tr.section-head td {
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 8px;
+  }
+  table.form td.note {
+    font-size: 8pt;
+    color: var(--color-muted);
+    font-weight: 400;
+    white-space: normal;
+  }
+  table.form td.write { height: 38px; vertical-align: top; }
+  table.form td.write-lg { height: 52px; vertical-align: top; }
+  table.form td.sig { height: 48px; vertical-align: top; }
+
+  .footer {
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--color-primary);
+    text-align: center;
+    font-size: 7.5pt;
+    color: var(--color-muted);
+    line-height: 1.4;
+  }
+
+  @media print {
+    @page { size: A4 portrait; margin: 0; }
+    html, body { background: #fff; }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      height: 297mm;
+      padding: 12mm 14mm;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    table.form tr.section-head td,
+    table.form td.label {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="header">
+    <div class="header-bar"></div>
+    <div class="header-inner">
+      <div class="header-logo">
+        <img src="{{company_logo}}" alt="">
+      </div>
+      <div class="header-right">
+        <div class="header-company">{{company_name}}</div>
+        <div class="header-meta">
+          <div><strong>HR &amp; Compliance</strong> · Reference Verification</div>
+          <div>Private &amp; Confidential — Internal use only</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="doc-kicker">Human Resources</div>
+  <h1 class="form-title">Reference Check Call Record</h1>
+
+  <table class="form">
+    <tr class="section-head">
+      <td colspan="4">Call &amp; Employee Particulars</td>
+    </tr>
+    <tr>
+      <td class="label">Date Called</td>
+      <td class="value">{{current_date}}</td>
+      <td class="label">Time Called</td>
+      <td class="value">{{current_time}}</td>
+    </tr>
+    <tr>
+      <td class="label">Employee Name</td>
+      <td class="value">{{employee_name}}</td>
+      <td class="label">Employee Code</td>
+      <td class="value">{{employee_code}}</td>
+    </tr>
+    <tr>
+      <td class="label">Designation</td>
+      <td class="value">{{designation}}</td>
+      <td class="label">Date of Joining</td>
+      <td class="value">{{doj}}</td>
+    </tr>
+
+    <tr class="section-head">
+      <td colspan="4">Reference 1</td>
+    </tr>
+    <tr>
+      <td class="label">Reference Name</td>
+      <td class="value">{{ref1_name}}</td>
+      <td class="label">Number Called On</td>
+      <td class="value">{{ref1_mobile}}</td>
+    </tr>
+    <tr>
+      <td class="label">Relationship</td>
+      <td class="value">{{ref1_relationship}}</td>
+      <td class="label">Known Employee Since</td>
+      <td class="value">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label">Address</td>
+      <td class="value" colspan="3">{{ref1_address}}</td>
+    </tr>
+    <tr>
+      <td class="label note">Behaviour / Nature<br>Reliability · Trustworthiness · Teamwork</td>
+      <td class="value write-lg" colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label note">Aware of any loans taken by the person and not paid?</td>
+      <td class="value write" colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label">Is the person employable?</td>
+      <td class="value" colspan="3">&nbsp;</td>
+    </tr>
+
+    <tr class="section-head">
+      <td colspan="4">Reference 2</td>
+    </tr>
+    <tr>
+      <td class="label">Reference Name</td>
+      <td class="value">{{ref2_name}}</td>
+      <td class="label">Number Called On</td>
+      <td class="value">{{ref2_mobile}}</td>
+    </tr>
+    <tr>
+      <td class="label">Relationship</td>
+      <td class="value">{{ref2_relationship}}</td>
+      <td class="label">Known Employee Since</td>
+      <td class="value">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label">Address</td>
+      <td class="value" colspan="3">{{ref2_address}}</td>
+    </tr>
+    <tr>
+      <td class="label note">Behaviour / Nature<br>Reliability · Trustworthiness · Teamwork</td>
+      <td class="value write-lg" colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label note">Aware of any loans taken by the person and not paid?</td>
+      <td class="value write" colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label">Is the person employable?</td>
+      <td class="value" colspan="3">&nbsp;</td>
+    </tr>
+
+    <tr class="section-head">
+      <td colspan="4">Verification Officer</td>
+    </tr>
+    <tr>
+      <td class="label note">Calling Done By<br>Name · Emp. Code · Designation</td>
+      <td class="value write" colspan="3">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="label">Signature</td>
+      <td class="value sig" colspan="3">&nbsp;</td>
+    </tr>
+  </table>
+
+  <div class="footer">
+    {{company_name}} &nbsp;|&nbsp; Transforming Business Support Services<br>
+    This document is for internal HR use only and is strictly confidential.
+  </div>
+</div>
+</body>
+</html>

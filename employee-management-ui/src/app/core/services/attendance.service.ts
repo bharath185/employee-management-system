@@ -13,7 +13,7 @@ export class AttendanceService {
 
   constructor(private http: HttpClient) {}
 
-  getMonthlyAttendance(fromDate: string, toDate: string, page = 0, size = 50, process = ''): Observable<APIResponse<MonthlyAttendance>> {
+  getMonthlyAttendance(fromDate: string, toDate: string, page = 0, size = 20, process = '', search = ''): Observable<APIResponse<MonthlyAttendance>> {
     let params = new HttpParams()
       .set('fromDate', fromDate)
       .set('toDate', toDate)
@@ -21,6 +21,9 @@ export class AttendanceService {
       .set('size', size.toString());
     if (process) {
       params = params.set('process', process);
+    }
+    if (search) {
+      params = params.set('search', search);
     }
     return this.http.get<APIResponse<MonthlyAttendance>>(`${this.apiUrl}/monthly`, { params });
   }
@@ -48,5 +51,9 @@ export class AttendanceService {
     formData.append('fromDate', fromDate);
     formData.append('toDate', toDate);
     return this.http.post<APIResponse<any>>(`${this.apiUrl}/import`, formData);
+  }
+
+  seedMonthlyAttendance(year: number, month: number): Observable<APIResponse<any>> {
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/seed-month?year=${year}&month=${month}`, {});
   }
 }

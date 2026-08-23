@@ -187,7 +187,14 @@ public class BillService {
             .orElseThrow(() -> new ResourceNotFoundException("Bill not found"));
         if (bill.getFilePath() == null) throw new ResourceNotFoundException("No file attached to this bill");
         Path filePath = Paths.get(bill.getFilePath());
+        if (!Files.exists(filePath) && filePath.getFileName() != null) {
+            Path fallback = Paths.get(uploadDir).toAbsolutePath().normalize()
+                .resolve(filePath.getFileName().toString());
+            if (Files.exists(fallback)) {
+                filePath = fallback;
+            }
+        }
         if (!Files.exists(filePath)) throw new ResourceNotFoundException("File not found on disk");
-        return new FileSystemResource(filePath);
+        return new FileSystemResource(filePath.toAbsolutePath().normalize());
     }
 }

@@ -99,29 +99,25 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
           <nz-tab nzTitle="Personal Info">
             <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode" (languagesChange)="onLanguagesChange($event)"></app-personal-info-tab>
           </nz-tab>
-          <nz-tab nzTitle="Demographics">
-            <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
+          <nz-tab nzTitle="Employment">
+            <app-employment-tab [form]="employeeForm"></app-employment-tab>
           </nz-tab>
-          <nz-tab nzTitle="Assets">
-            <app-assets-tab [form]="employeeForm"></app-assets-tab>
-          </nz-tab>
-          <nz-tab nzTitle="Identity">
+          <nz-tab nzTitle="Bank & Identity">
+            <app-bank-tab [form]="employeeForm"></app-bank-tab>
             <app-identity-tab [form]="employeeForm"></app-identity-tab>
           </nz-tab>
           <nz-tab nzTitle="Education">
             <app-education-tab [form]="employeeForm"></app-education-tab>
           </nz-tab>
-          <nz-tab nzTitle="Bank">
-            <app-bank-tab [form]="employeeForm"></app-bank-tab>
-          </nz-tab>
-          <nz-tab nzTitle="Employment">
-            <app-employment-tab [form]="employeeForm"></app-employment-tab>
-          </nz-tab>
-          <nz-tab nzTitle="Family">
+          <nz-tab nzTitle="Family & Kin">
             <app-family-tab [form]="employeeForm"></app-family-tab>
           </nz-tab>
           <nz-tab nzTitle="Experience & Ref.">
             <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
+          </nz-tab>
+          <nz-tab nzTitle="Demographics & Assets">
+            <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
+            <app-assets-tab [form]="employeeForm"></app-assets-tab>
           </nz-tab>
           <nz-tab nzTitle="Exit & Docs">
             <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
@@ -280,7 +276,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     return !this.employeeForm.dirty;
   }
 
-  readonly totalTabs = 11;
+  readonly totalTabs = 9;
 
   get completedTabs(): number {
     let count = 0;
@@ -300,16 +296,23 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   }
 
   private readonly tabControlMap: string[][] = [
-    ['firstName', 'surname', 'gender', 'dob', 'email', 'mobile', 'employeeCode', 'prefix', 'maritalStatus', 'fatherHusbandName', 'fMH', 'occupationKin', 'occupationKinSub', 'rationCard', 'doj', 'highestQualification', 'levelOfEducation', 'yearOfPassing', 'percentageMarks', 'presentAddress', 'permanentAddress', 'closeRelativeName', 'closeRelativeMobile'],
-    ['religion', 'socialCategory', 'socialSubcategory'],
-    ['hasTv', 'hasFridge', 'hasLaptop', 'hasWifi', 'has2wheeler', 'has4wheeler'],
-    ['bloodGroup', 'aadharNumber', 'panNumber'],
-    ['sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
-    ['bankName', 'accountNumber', 'ifscCode', 'branch'],
-    ['employeeStatus', 'processAssigned', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation', 'designation'],
-    ['fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'spouseName', 'spousePhone'],
+    // 0: Personal Info
+    ['firstName', 'surname', 'gender', 'dob', 'email', 'mobile', 'prefix', 'maritalStatus', 'bloodGroup', 'presentAddress', 'permanentAddress', 'closeRelativeName', 'closeRelativeMobile'],
+    // 1: Employment
+    ['employeeCode', 'userRole', 'employeeStatus', 'processAssigned', 'department', 'designation', 'doj', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation'],
+    // 2: Bank & Identity
+    ['bankName', 'accountNumber', 'ifscCode', 'branch', 'aadharNumber', 'panNumber', 'rationCard'],
+    // 3: Education
+    ['highestQualification', 'levelOfEducation', 'yearOfPassing', 'percentageMarks', 'sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
+    // 4: Family & Kin
+    ['fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'spouseName', 'spousePhone', 'fatherHusbandName', 'fMH', 'occupationKin', 'occupationKinSub'],
+    // 5: Experience & Ref.
     ['pastExperience', 'organizationName', 'periodOfEmployment', 'ref1Name', 'ref1Relationship', 'ref1Address', 'ref1Mobile', 'ref2Name', 'ref2Relationship', 'ref2Address', 'ref2Mobile'],
+    // 6: Demographics & Assets
+    ['religion', 'socialCategory', 'socialSubcategory', 'hasTv', 'hasFridge', 'hasLaptop', 'hasWifi', 'has2wheeler', 'has4wheeler'],
+    // 7: Exit & Docs
     ['doe', 'deletionMonth', 'exitType', 'exitReason'],
+    // 8: Documents
     []
   ];
 

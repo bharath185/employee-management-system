@@ -107,6 +107,29 @@ import { EmployeeService } from '../../core/services/employee.service';
           </div>
         </div>
 
+        <!-- Card 4 -->
+        <div class="sr-card">
+          <div class="sr-card-header">
+            <i nz-icon nzType="check-square" class="sr-card-icon"></i>
+            <span class="sr-card-title">Monthly Attendance Register</span>
+          </div>
+          <p class="sr-card-desc">Muster roll with daily attendance (1-31) and payable days.</p>
+          <div class="sr-controls">
+            <nz-select [(ngModel)]="selectedYear4" class="sr-select" nzPlaceHolder="Year">
+              <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="selectedMonth4" class="sr-select" nzPlaceHolder="Month">
+              <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+            </nz-select>
+            <button nz-button class="sr-btn-primary" [nzLoading]="loading4" (click)="openReport('attendance-register')">
+              <i nz-icon nzType="file-text"></i> Preview
+            </button>
+            <button nz-button class="sr-btn-excel" [nzLoading]="excelLoading4" (click)="downloadExcel('attendance-register')">
+              <i nz-icon nzType="download"></i> Excel
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   `,
@@ -198,15 +221,19 @@ export class StatutoryReportsComponent implements OnInit {
   selectedYear2 = new Date().getFullYear();
   selectedMonth2 = new Date().getMonth() + 1;
   selectedYear3 = new Date().getFullYear();
+  selectedYear4 = new Date().getFullYear();
+  selectedMonth4 = new Date().getMonth() + 1;
   selectedEmployees3: number[] = [];
   employeeList: { id: number; fullName: string; employeeCode: string }[] = [];
 
   loading1 = false;
   loading2 = false;
   loading3 = false;
+  loading4 = false;
   excelLoading1 = false;
   excelLoading2 = false;
   excelLoading3 = false;
+  excelLoading4 = false;
 
   constructor(
     private reportService: StatutoryReportService,
@@ -233,11 +260,13 @@ export class StatutoryReportsComponent implements OnInit {
     let loader: string;
     if (type === 'worker-details') { this.loading1 = true; loader = '1'; }
     else if (type === 'wages-register') { this.loading2 = true; loader = '2'; }
+    else if (type === 'attendance-register') { this.loading4 = true; loader = '4'; }
     else { this.loading3 = true; loader = '3'; }
 
     const onComplete = () => {
       if (loader === '1') this.loading1 = false;
       else if (loader === '2') this.loading2 = false;
+      else if (loader === '4') this.loading4 = false;
       else this.loading3 = false;
     };
 
@@ -246,6 +275,8 @@ export class StatutoryReportsComponent implements OnInit {
       obs = this.reportService.getIndividualWorkerDetails(this.selectedYear, this.selectedMonth);
     } else if (type === 'wages-register') {
       obs = this.reportService.getWagesRegister(this.selectedYear2, this.selectedMonth2);
+    } else if (type === 'attendance-register') {
+      obs = this.reportService.getAttendanceRegister(this.selectedYear4, this.selectedMonth4);
     } else {
       obs = this.reportService.getLeaveRegister(this.selectedYear3);
     }
@@ -277,11 +308,13 @@ export class StatutoryReportsComponent implements OnInit {
     let loader: string;
     if (type === 'worker-details') { this.excelLoading1 = true; loader = '1'; }
     else if (type === 'wages-register') { this.excelLoading2 = true; loader = '2'; }
+    else if (type === 'attendance-register') { this.excelLoading4 = true; loader = '4'; }
     else { this.excelLoading3 = true; loader = '3'; }
 
     const onComplete = () => {
       if (loader === '1') this.excelLoading1 = false;
       else if (loader === '2') this.excelLoading2 = false;
+      else if (loader === '4') this.excelLoading4 = false;
       else this.excelLoading3 = false;
     };
 
@@ -293,6 +326,9 @@ export class StatutoryReportsComponent implements OnInit {
     } else if (type === 'wages-register') {
       obs = this.reportService.downloadWagesRegisterExcel(this.selectedYear2, this.selectedMonth2);
       filename = `Wages_Register_${this.selectedYear2}_${this.selectedMonth2}.xlsx`;
+    } else if (type === 'attendance-register') {
+      obs = this.reportService.downloadAttendanceRegisterExcel(this.selectedYear4, this.selectedMonth4);
+      filename = `Attendance_Register_${this.selectedYear4}_${this.selectedMonth4}.xlsx`;
     } else {
       obs = this.reportService.downloadLeaveRegisterExcel(this.selectedYear3, this.selectedEmployees3);
       filename = `Leave_Register_${this.selectedYear3}.xlsx`;

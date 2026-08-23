@@ -136,6 +136,7 @@ public final class TemplatePlaceholderResolver {
         if (company != null) {
             values.put("company_name", nullSafe(company.getCompanyName()));
             values.put("company_address", nullSafe(company.getAddress()));
+            values.put("company_office_address", nullSafe(company.getAddress()));
             values.put("company_phone", nullSafe(company.getPhone()));
             values.put("company_email", nullSafe(company.getEmail()));
             values.put("company_website", nullSafe(company.getWebsite()));
@@ -150,6 +151,7 @@ public final class TemplatePlaceholderResolver {
         } else {
             values.put("company_name", "");
             values.put("company_address", "");
+            values.put("company_office_address", "");
             values.put("company_phone", "");
             values.put("company_email", "");
             values.put("company_website", "");
@@ -164,6 +166,7 @@ public final class TemplatePlaceholderResolver {
 
         // Current date
         values.put("current_date", java.time.LocalDate.now().format(DATE_FORMATTER));
+        values.put("current_time", java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         values.put("current_year", String.valueOf(java.time.LocalDate.now().getYear()));
 
         return values;

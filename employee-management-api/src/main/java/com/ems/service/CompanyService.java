@@ -46,13 +46,16 @@ public class CompanyService {
      * Returns the singleton company record, creating a default only if none exists.
      */
     public Company getCompany() {
-        return companyRepository.findFirstByOrderByIdAsc().orElseGet(self::createDefault);
+        return companyRepository.findAll().stream().findFirst().orElseGet(self::createDefault);
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public Company createDefault() {
         Company defaultCompany = Company.builder()
-            .companyName("My Company")
+            .companyName("Parikar Business and Knowledge Services PVT LTD")
+            .address("ECO GREENS UPADYAYA NAGAR, Karakambadi Rd, Tirupati, Andhra Pradesh 517501, India\nTirupati, Andhra Pradesh, India")
+            .registrationNumber("AP-GDR-2024-01234")
+            .cinNumber("U74140KA2009PTC051963")
             .build();
         return companyRepository.save(defaultCompany);
     }
@@ -69,8 +72,7 @@ public class CompanyService {
      */
     @Transactional
     public CompanyDTO updateCompany(CompanyDTO companyDTO, MultipartFile logo, String username) {
-        Company company = companyRepository.findFirstByOrderByIdAsc()
-            .orElseGet(() -> companyRepository.save(Company.builder().companyName("My Company").build()));
+        Company company = getCompany();
 
         // Update fields from DTO
         if (companyDTO.getCompanyName() != null) {

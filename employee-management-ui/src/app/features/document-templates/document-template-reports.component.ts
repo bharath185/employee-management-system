@@ -36,13 +36,11 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     NzGridModule,
     NzStatisticModule,
     NzTagModule,
-    PageHeaderComponent,
     DateFormatPipe
   ],
   template: `
     <div class="reports-container page-enter">
-      <app-page-header icon="bar-chart" title="Download Reports"></app-page-header>
-
+      <!-- Sub Navigation -->
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/document-templates" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}">
           <i nz-icon nzType="file-text"></i><span>Templates</span>
@@ -55,27 +53,27 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
       <!-- Stats Cards -->
       <div nz-row nzGutter="12" class="stats-row" *ngIf="stats">
         <div nz-col nzXs="24" nzSm="8">
-          <nz-card class="stat-card" nzBorderless>
+          <nz-card class="stat-card" nzSize="small">
             <nz-statistic [nzValue]="stats.totalDownloadsThisFY" nzTitle="Total Downloads (This FY)"
               nzPrefixIcon="download"></nz-statistic>
           </nz-card>
         </div>
         <div nz-col nzXs="24" nzSm="8">
-          <nz-card class="stat-card" nzBorderless>
+          <nz-card class="stat-card" nzSize="small">
             <nz-statistic [nzValue]="stats.mostDownloadedTemplate" nzTitle="Most Downloaded Template"
-              [nzValueStyle]="{ 'font-size': '16px' }"></nz-statistic>
+              [nzValueStyle]="{ 'font-size': '15px', 'font-weight': '600' }"></nz-statistic>
           </nz-card>
         </div>
         <div nz-col nzXs="24" nzSm="8">
-          <nz-card class="stat-card" nzBorderless>
+          <nz-card class="stat-card" nzSize="small">
             <nz-statistic [nzValue]="stats.mostDownloadedEmployee" nzTitle="Most Downloaded Employee"
-              [nzValueStyle]="{ 'font-size': '16px' }"></nz-statistic>
+              [nzValueStyle]="{ 'font-size': '15px', 'font-weight': '600' }"></nz-statistic>
           </nz-card>
         </div>
       </div>
 
       <!-- Monthly Chart -->
-      <nz-card class="chart-card" nzTitle="Downloads Per Month (This FY)" nzBorderless *ngIf="stats?.monthlyDownloads?.length">
+      <nz-card class="chart-card" nzTitle="Downloads Per Month (This FY)" nzSize="small" *ngIf="stats?.monthlyDownloads?.length">
         <div class="chart-container">
           <div class="bar-chart">
             <div class="bar-item" *ngFor="let item of stats!.monthlyDownloads">
@@ -89,42 +87,46 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
         </div>
       </nz-card>
 
-      <!-- Filters -->
-      <nz-card class="filter-section" nzBorderless>
-        <div nz-row nzGutter="8" nzAlign="middle">
-          <div nz-col nzXs="24" nzSm="8" nzMd="6" class="filter-field">
-            <nz-select [(ngModel)]="filterFinancialYear" (ngModelChange)="loadLogs()" nzPlaceHolder="Financial Year">
+      <!-- Filters Card -->
+      <nz-card class="pp-controls-card" nzSize="small">
+        <div class="filter-controls-row">
+          <div class="filter-field select-box">
+            <nz-select [(ngModel)]="filterFinancialYear" (ngModelChange)="loadLogs()" nzPlaceHolder="Financial Year" class="filter-select">
               <nz-option nzValue="" nzLabel="All Years"></nz-option>
               <nz-option *ngFor="let yr of financialYears" [nzValue]="yr" [nzLabel]="yr"></nz-option>
             </nz-select>
           </div>
-          <div nz-col nzXs="12" nzSm="6" nzMd="4" class="filter-field">
-            <nz-select [(ngModel)]="filterTemplateId" (ngModelChange)="loadLogs()" nzPlaceHolder="Template">
+          <div class="filter-field select-box-lg">
+            <nz-select [(ngModel)]="filterTemplateId" (ngModelChange)="loadLogs()" nzPlaceHolder="All Templates" class="filter-select">
               <nz-option nzValue="" nzLabel="All Templates"></nz-option>
               <nz-option *ngFor="let tpl of templateOptions" [nzValue]="tpl.id" [nzLabel]="tpl.templateName"></nz-option>
             </nz-select>
           </div>
-          <div nz-col class="filter-actions-col">
-            <button nz-button (click)="clearFilters()" *ngIf="hasActiveFilters" class="clear-filter-btn">
+          <div class="filter-field action-box" *ngIf="hasActiveFilters">
+            <button nz-button (click)="clearFilters()" class="clear-filter-btn">
               <i nz-icon nzType="clear"></i> Clear
             </button>
           </div>
         </div>
       </nz-card>
 
-      <!-- Logs Table -->
+      <!-- Logs Table Card -->
       <div class="table-container">
         <div class="table-header">
           <div class="table-title">
-            <i nz-icon nzType="history"></i> Download Logs
+            <i nz-icon nzType="history" class="title-icon"></i>
+            <span>Download Logs</span>
             <span class="table-count">{{ totalElements }} records</span>
           </div>
         </div>
 
         <ng-template #emptyTemplate>
-          <div class="empty-state">
-            <i nz-icon nzType="inbox" class="empty-icon"></i>
-            <p>No download records found</p>
+          <div class="empty-state-content">
+            <div class="empty-icon-wrapper">
+              <i nz-icon nzType="inbox" class="empty-icon"></i>
+            </div>
+            <h3>No download records found</h3>
+            <p>Generated documents and downloads will appear here</p>
           </div>
         </ng-template>
 
@@ -137,36 +139,48 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
           (nzPageIndexChange)="onPageIndexChange($event)"
           (nzPageSizeChange)="onPageSizeChange($event)"
           nzShowSizeChanger
-          [nzPageSizeOptions]="[10, 25, 50]"
-          [nzScroll]="{ x: '600px' }"
+          [nzPageSizeOptions]="[10, 20, 50]"
+          [nzScroll]="{ x: '750px' }"
           [nzNoResult]="emptyTemplate"
-          class="logs-table"
+          class="theme-table"
           [nzLoading]="isLoading">
           <thead>
             <tr>
-              <th nz-th>Employee</th>
-              <th nz-th>Template</th>
-              <th nz-th>Format</th>
-              <th nz-th>Financial Year</th>
-              <th nz-th>Downloaded At</th>
+              <th nzWidth="60px" class="th-center">#</th>
+              <th nzWidth="240px">Employee</th>
+              <th nzWidth="220px">Template</th>
+              <th nzWidth="110px" class="th-center">Format</th>
+              <th nzWidth="140px">Financial Year</th>
+              <th nzWidth="160px">Downloaded At</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let log of dataSource">
-              <td nz-td>
-                <span class="emp-name">{{ log.employeeName || 'Employee #' + log.employeeId }}</span>
-                <span class="emp-code" *ngIf="log.employeeCode">({{ log.employeeCode }})</span>
+            <tr *ngFor="let log of dataSource; let i = index">
+              <td class="td-center row-num">{{ (pageIndex * pageSize) + i + 1 }}</td>
+              <td>
+                <div class="emp-cell">
+                  <span class="emp-avatar"><i nz-icon nzType="user"></i></span>
+                  <div class="emp-info">
+                    <span class="emp-name">{{ log.employeeName || 'Employee #' + log.employeeId }}</span>
+                    <span class="emp-code" *ngIf="log.employeeCode">{{ log.employeeCode }}</span>
+                  </div>
+                </div>
               </td>
-              <td nz-td>
-                <span class="tpl-name">{{ log.templateName || 'Template #' + log.templateId }}</span>
+              <td>
+                <div class="tpl-cell">
+                  <span class="tpl-icon"><i nz-icon nzType="file-text"></i></span>
+                  <span class="tpl-name">{{ log.templateName || 'Template #' + log.templateId }}</span>
+                </div>
               </td>
-              <td nz-td>
-                <nz-tag [nzColor]="log.format === 'pdf' ? 'red' : 'blue'">{{ (log.format || '').toUpperCase() }}</nz-tag>
+              <td class="td-center">
+                <nz-tag [nzColor]="log.format === 'pdf' ? 'magenta' : 'blue'" class="format-badge">
+                  {{ (log.format || 'PDF').toUpperCase() }}
+                </nz-tag>
               </td>
-              <td nz-td>
-                <span class="fy-text">{{ log.financialYear }}</span>
+              <td>
+                <span class="fy-badge">{{ log.financialYear }}</span>
               </td>
-              <td nz-td>
+              <td>
                 <span class="date-text">{{ log.downloadedAt | dateFormat }}</span>
               </td>
             </tr>
@@ -186,30 +200,34 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     }
     .pp-sub-nav {
       display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: rgba(255,255,255,0.7);
-      backdrop-filter: blur(8px);
-      border-radius: 12px;
+      gap: 2px;
+      margin-bottom: 12px;
+      background: #f0f4ff;
+      border-radius: 10px;
       padding: 4px;
-      border: 1px solid rgba(232,234,237,0.6);
+      border: 1px solid #e0e7ff;
     }
     .pp-nav-item {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 14px;
+      padding: 6px 14px;
       border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       color: #6c757d;
       text-decoration: none;
       transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 18px; width: 18px; display: inline-flex; align-items: center; justify-content: center; }
-    .pp-nav-item:hover { background: rgba(37,99,235,0.06); color: #2563eb; }
-    .pp-nav-item.active { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37,99,235,0.25); }
-    .pp-nav-item.active i { color: #fff; }
+    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
+    .pp-nav-item.active {
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
+    }
+    .pp-nav-item.active i { color: #1f3d6e; }
 
     /* ── Scrollbar Styling ── */
     .reports-container ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -220,44 +238,56 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     :host { display: block; height: 100%; }
     .reports-container {
       width: 100%;
-      padding: 12px;
+      padding: 12px 16px;
       height: 100%;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
     }
 
     .stats-row { margin-bottom: 12px; flex-shrink: 0; }
     .stat-card {
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border-light);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-radius: 10px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       text-align: center;
+      background: #fff;
+    }
+    :host ::ng-deep .stat-card .ant-statistic-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+    }
+    :host ::ng-deep .stat-card .ant-statistic-content {
+      color: #1f3d6e;
+      font-weight: 700;
     }
 
     .chart-card {
       margin-bottom: 12px;
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border-light);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-radius: 10px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       flex-shrink: 0;
+      background: #fff;
     }
     .chart-card .ant-card-head {
-      border-bottom: 1px solid var(--color-border-light);
-      padding: 12px 16px;
+      border-bottom: 1px solid #e8eaed;
+      padding: 10px 16px;
       min-height: auto;
     }
     .chart-card .ant-card-head-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       color: #1f3d6e;
     }
-    .chart-container { padding: 16px 0; }
+    .chart-container { padding: 12px 0 4px; }
     .bar-chart {
       display: flex;
       align-items: flex-end;
       justify-content: space-around;
-      height: 180px;
+      height: 160px;
       gap: 6px;
       padding: 0 12px;
     }
@@ -267,8 +297,8 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
       flex: 1;
       width: 100%;
       max-width: 36px;
-      background: #f0f2f5;
-      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      background: #f0f4ff;
+      border-radius: 4px 4px 0 0;
       display: flex;
       align-items: flex-end;
       position: relative;
@@ -276,32 +306,52 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     .bar-fill {
       width: 100%;
       background: linear-gradient(180deg, #4361ee, #1f3d6e);
-      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      border-radius: 4px 4px 0 0;
       transition: height 0.3s ease;
       min-height: 4px;
     }
     .bar-value { font-size: 12px; font-weight: 700; color: #1f3d6e; }
 
-    .filter-section {
-      background: #fff;
-      border-radius: var(--radius-lg);
+    .pp-controls-card {
+      border-radius: 10px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
       margin-bottom: 12px;
-      border: 1px solid var(--color-border-light);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-      flex-shrink: 0;
+      width: 100% !important;
+      background: #fff;
     }
-    .filter-section .ant-card-body { padding: 10px 14px; }
+    :host ::ng-deep .pp-controls-card .ant-card-body { padding: 10px 14px !important; }
     .filter-field { min-width: 0; }
     .filter-field .ant-select { width: 100%; }
-    .filter-field .ant-select-selector { border-radius: var(--radius-md) !important; height: 34px !important; }
-    .filter-actions-col { display: flex; align-items: center; }
-    .clear-filter-btn { font-size: 13px; height: 34px; padding: 0 14px; border-radius: var(--radius-md); }
+    :host ::ng-deep .filter-select .ant-select-selector {
+      border-radius: 8px !important;
+      border: 1px solid #e2e5ea !important;
+      height: 34px !important;
+    }
+    :host ::ng-deep .filter-select .ant-select-selector:hover {
+      border-color: #1f3d6e !important;
+    }
+    .filter-controls-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .filter-field.select-box {
+      width: 170px;
+    }
+    .filter-field.select-box-lg {
+      width: 220px;
+    }
+    .filter-field.action-box {
+      margin-left: auto;
+    }
 
     .table-container {
       background: #fff;
-      border-radius: var(--radius-lg);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      border: 1px solid var(--color-border-light);
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid #e8eaed;
       flex: 1;
       min-height: 0;
       display: flex;
@@ -313,57 +363,158 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
       align-items: center;
       justify-content: space-between;
       padding: 12px 16px;
-      border-bottom: 1px solid var(--color-border-light);
+      border-bottom: 1px solid #e8eaed;
+      background: #ffffff;
+      flex-wrap: wrap;
+      gap: 8px;
       flex-shrink: 0;
     }
     .table-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       color: #1f3d6e;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .table-title i { font-size: 18px; }
+    .table-title .title-icon { font-size: 16px; color: #4361ee; }
     .table-count {
-      font-size: 12px;
-      font-weight: 500;
-      color: #6c757d;
-      background: #f0f2f5;
-      padding: 2px 10px;
-      border-radius: var(--radius-pill);
-    }
-
-    .logs-table { width: 100%; }
-    .logs-table .ant-table-thead > tr > th {
-      background: #f8f9fc;
-      border-bottom: 2px solid #1f3d6e;
       font-size: 11px;
-      font-weight: 700;
-      color: #1f3d6e;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      padding: 8px 12px;
+      font-weight: 600;
+      color: #64748b;
+      background: #f0f4ff;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid #e0e7ff;
     }
-    .logs-table .ant-table-tbody > tr > td {
-      padding: 10px 12px;
+
+    .theme-table { width: 100%; }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th {
+      background: #f8f9fc !important;
+      border-bottom: 2px solid #1f3d6e !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #1f3d6e !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.8px !important;
+      padding: 8px 12px !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
+      padding: 10px 12px !important;
+      font-size: 13px !important;
+      border-bottom: 1px solid #f0f2f5 !important;
+      vertical-align: middle !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
+      background: rgba(31,61,110,0.04) !important;
+    }
+
+    .th-center, .td-center {
+      text-align: center !important;
+    }
+    .row-num {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .emp-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .emp-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #f0f4ff;
+      color: #4361ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border: 1px solid #e0e7ff;
+      flex-shrink: 0;
+    }
+    .emp-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .emp-name {
+      font-weight: 600;
+      color: #1e293b;
       font-size: 13px;
-      border-bottom: 1px solid #f0f2f5;
-      vertical-align: middle;
+      line-height: 1.3;
     }
-    .logs-table .ant-table-tbody > tr:hover > td { background: rgba(31,61,110,0.06) !important; }
+    .emp-code {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+    }
 
-    .emp-name { font-weight: 600; color: #1a1a2e; }
-    .emp-code { font-size: 11px; color: #888; margin-left: 4px; }
-    .tpl-name { color: #333; }
-    .fy-text { font-family: 'Cascadia Code', Consolas, monospace; font-size: 12px; color: #555; }
-    .date-text { font-size: 12px; color: #555; }
+    .tpl-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tpl-icon {
+      color: #4361ee;
+      font-size: 15px;
+    }
+    .tpl-name {
+      font-size: 13px;
+      color: #334155;
+      font-weight: 500;
+    }
 
-    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px; text-align: center; }
-    .empty-state .empty-icon { font-size: 40px; color: #d9d9d9; }
-    .empty-state p { font-size: 13px; color: #999; margin: 0; }
+    .format-badge {
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      border-radius: 6px !important;
+      padding: 1px 8px !important;
+    }
 
-    .logs-table .ant-table-pagination {
+    .fy-badge {
+      font-size: 12px;
+      color: #1f3d6e;
+      font-weight: 600;
+      background: #f0f4ff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #e0e7ff;
+    }
+
+    .date-text {
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    .empty-state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 40px 16px;
+      text-align: center;
+      color: #64748b;
+    }
+    .empty-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #f0f4ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4361ee;
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .empty-state-content h3 { font-size: 15px; font-weight: 600; color: #334155; margin: 0; }
+    .empty-state-content p { font-size: 13px; color: #64748b; margin: 0; }
+
+    .theme-table .ant-table-pagination {
       margin: 12px 16px !important;
       display: flex;
       align-items: center;
@@ -371,24 +522,9 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     }
 
     @media (max-width: 768px) {
-      .filter-field { min-width: 140px; }
+      .filter-controls-row { flex-direction: column; align-items: stretch; }
+      .filter-field.select-box, .filter-field.select-box-lg { width: 100%; }
       .reports-container { padding: 8px; }
-    }
-
-    /* ── Primary Button Gradient ── */
-    button[nz-button][nzType="primary"] {
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
-      border: none !important;
-      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
-      transition: all 0.2s ease !important;
-    }
-    button[nz-button][nzType="primary"]:hover {
-      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
-      transform: translateY(-1px);
-    }
-    button[nz-button][nzType="primary"]:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
     }
   `]
 })

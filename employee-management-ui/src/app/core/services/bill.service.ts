@@ -47,4 +47,8 @@ export class BillService {
   getFileUrl(id: number): string {
     return `${this.apiUrl}/${id}/file`;
   }
+
+  getFile(id: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${id}/file`, { responseType: 'blob' });
+  }
 }

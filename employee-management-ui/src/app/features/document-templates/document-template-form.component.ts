@@ -50,18 +50,14 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   ],
   template: `
     <div class="template-form-container page-enter">
-      <app-page-header [icon]="isEditMode ? 'edit' : 'file-text'"
-        [title]="isEditMode ? 'Edit Template' : 'New Template'">
-        <button nz-button (click)="goBack()">
-          <i nz-icon nzType="close"></i> Cancel
+      <div class="form-header-bar">
+        <button nz-button routerLink="/admin/document-templates" class="back-link-btn">
+          <i nz-icon nzType="arrow-left"></i> Back to Templates
         </button>
-        <button nz-button nzType="primary" (click)="saveTemplate()" [nzLoading]="isSaving"
-          [disabled]="!form.templateName || !form.templateType">
-          <i nz-icon nzType="save"></i> {{ isEditMode ? 'Update' : 'Create' }}
-        </button>
-      </app-page-header>
+        <span class="form-title">{{ isEditMode ? 'Edit Template' : 'New Document Template' }}</span>
+      </div>
 
-      <div nz-row nzGutter="24">
+      <div nz-row nzGutter="20">
         <div nz-col nzXs="24" nzLg="16">
           <!-- Main Form Card -->
           <nz-card class="form-card" nzBorderless>
@@ -70,13 +66,13 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
                 <div nz-col nzXs="24" nzMd="12">
                   <div class="form-group">
                     <label class="form-label">Template Name <span class="required">*</span></label>
-                    <input nz-input [(ngModel)]="form.templateName" placeholder="e.g. Offer Letter" />
+                    <input nz-input [(ngModel)]="form.templateName" placeholder="e.g. Offer Letter" class="form-input" />
                   </div>
                 </div>
                 <div nz-col nzXs="24" nzMd="12">
                   <div class="form-group">
                     <label class="form-label">Template Type <span class="required">*</span></label>
-                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Select type" style="width:100%">
+                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Select type" class="form-select" style="width:100%">
                       <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
                     </nz-select>
                   </div>
@@ -85,7 +81,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
                   <div class="form-group">
                     <label class="form-label">Description</label>
                     <textarea nz-input [(ngModel)]="form.description" placeholder="Brief description of this template"
-                      rows="2"></textarea>
+                      rows="2" class="form-textarea"></textarea>
                   </div>
                 </div>
                 <div nz-col nzSpan="24">
@@ -114,16 +110,13 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
           <!-- Actions Card -->
           <nz-card class="form-card" nzTitle="Actions" nzBorderless>
             <div class="actions-section">
-              <button nz-button nzType="primary" class="action-btn" (click)="saveTemplate()"
+              <button nz-button class="btn-primary-gradient" style="width:100%; justify-content:center;" (click)="saveTemplate()"
                 [nzLoading]="isSaving" [disabled]="!form.templateName || !form.templateType">
-                <i nz-icon nzType="save"></i> {{ isEditMode ? 'Update' : 'Create' }}
+                <i nz-icon nzType="save"></i> {{ isEditMode ? 'Update Template' : 'Create Template' }}
               </button>
-              <button nz-button nzType="default" class="action-btn" (click)="showPreview()"
+              <button nz-button nzType="default" class="preview-btn" (click)="showPreview()"
                 [disabled]="!form.content">
-                <i nz-icon nzType="eye"></i> Preview
-              </button>
-              <button nz-button nzType="default" class="action-btn" (click)="goBack()">
-                <i nz-icon nzType="close"></i> Cancel
+                <i nz-icon nzType="eye"></i> Preview Template
               </button>
             </div>
           </nz-card>
@@ -164,20 +157,123 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   `,
   styles: [`
     :host { display: block; }
-    .template-form-container { width: 100%; padding: 0 16px; box-sizing: border-box; }
+    .template-form-container { width: 100%; padding: 12px 16px; box-sizing: border-box; }
 
-    .form-card { margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--color-border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .form-card .ant-card-head { border-bottom: 1px solid var(--color-border-light); padding: 16px 20px; min-height: auto; }
-    .form-card .ant-card-head-title { font-size: 15px; font-weight: 700; color: var(--color-primary-500); }
-    .form-card .ant-card-body { padding: 20px; }
+    .form-header-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .back-link-btn {
+      height: 34px !important;
+      padding: 0 14px !important;
+      border-radius: 8px !important;
+      border: 1px solid #e2e5ea !important;
+      background: #ffffff !important;
+      color: #1f3d6e !important;
+      font-weight: 600 !important;
+      font-size: 12px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+    }
+    .back-link-btn:hover {
+      border-color: #1f3d6e !important;
+      background: #f0f4ff !important;
+    }
+    .form-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1f3d6e;
+    }
 
-    .form-group { margin-bottom: 20px; }
-    .form-label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
-    .form-label .required { color: #ff4d4f; }
+    .btn-primary-gradient {
+      height: 34px !important;
+      padding: 0 18px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      border: none !important;
+      border-radius: 8px !important;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      color: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      transition: all 0.2s ease !important;
+      letter-spacing: 0.3px !important;
+      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
+    }
+    .btn-primary-gradient:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+    }
+
+    .cancel-btn, .preview-btn {
+      height: 34px !important;
+      padding: 0 16px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      border: 1px solid #e2e5ea !important;
+      color: #475569 !important;
+      background: #f8fafc !important;
+      transition: all 0.2s ease !important;
+    }
+    .cancel-btn:hover, .preview-btn:hover {
+      background: #f1f5f9 !important;
+      color: #1e293b !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    .form-card {
+      margin-bottom: 20px;
+      border-radius: 10px !important;
+      border: 1px solid #e8eaed !important;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+      background: #fff;
+    }
+    .form-card .ant-card-head {
+      border-bottom: 1px solid #e8eaed;
+      padding: 12px 16px;
+      min-height: auto;
+    }
+    .form-card .ant-card-head-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3d6e;
+    }
+    .form-card .ant-card-body { padding: 16px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px; }
+    .form-label .required { color: #ef4444; }
 
     .active-switch { margin-left: 12px; }
 
-    .content-editor-wrapper { border: 1px solid #d9d9d9; border-radius: var(--radius-md); overflow: hidden; }
+    :host ::ng-deep .form-input,
+    :host ::ng-deep .form-select .ant-select-selector,
+    :host ::ng-deep .form-textarea {
+      border-radius: 8px !important;
+      border: 1px solid #e2e5ea !important;
+    }
+    :host ::ng-deep .form-input {
+      height: 34px !important;
+    }
+    :host ::ng-deep .form-select .ant-select-selector {
+      height: 34px !important;
+    }
+    :host ::ng-deep .form-input:hover,
+    :host ::ng-deep .form-select .ant-select-selector:hover,
+    :host ::ng-deep .form-textarea:hover {
+      border-color: #1f3d6e !important;
+    }
+
+    .content-editor-wrapper { border: 1px solid #e2e5ea; border-radius: 8px; overflow: hidden; }
     .content-editor {
       font-family: 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
       font-size: 13px !important;
@@ -192,7 +288,6 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
     .content-editor:focus { box-shadow: none !important; }
 
     .actions-section { display: flex; flex-direction: column; gap: 10px; }
-    .action-btn { width: 100%; border-radius: var(--radius-md); }
 
     .placeholder-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f0f2f5; }
     .placeholder-item:last-child { border-bottom: none; }
@@ -200,16 +295,17 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
       font-family: 'Cascadia Code', 'Consolas', monospace;
       font-size: 11px;
       background: #f0f4ff;
-      color: var(--color-primary-500);
+      color: #1f3d6e;
       padding: 2px 8px;
-      border-radius: var(--radius-sm);
+      border-radius: 6px;
       white-space: nowrap;
       flex-shrink: 0;
+      border: 1px solid #e0e7ff;
     }
-    .placeholder-desc { font-size: 12px; color: #666; }
+    .placeholder-desc { font-size: 12px; color: #64748b; }
 
     @media (max-width: 768px) {
-      .template-form-container { padding: 0; }
+      .template-form-container { padding: 12px 8px; }
     }
   `]
 })

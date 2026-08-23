@@ -50,4 +50,16 @@ export class StatutoryReportService {
       params, responseType: 'blob'
     });
   }
+
+  getAttendanceRegister(year: number, month: number): Observable<APIResponse<string>> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get<APIResponse<string>>(`${this.apiUrl}/attendance-register`, { params });
+  }
+
+  downloadAttendanceRegisterExcel(year: number, month: number): Observable<Blob> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get(`${this.apiUrl}/attendance-register/excel`, {
+      params, responseType: 'blob'
+    });
+  }
 }

@@ -63,129 +63,166 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     NzSwitchModule, NzTagModule, NzToolTipModule
   ],
   template: `
-    <div class="ms-container">
-      <div class="ms-sub-nav">
-        <span class="ms-nav-title"><i nz-icon nzType="control"></i> Masters Setup</span>
-        <span class="ms-nav-badge" *ngIf="loadedCount > 0">{{ loadedCount }}/{{ categories.length }}</span>
-      </div>
+    <div class="ms-container page-enter">
+      <!-- Top Navigation & Controls Bar -->
+      <div class="ms-top-bar">
+        <div class="top-left">
+          <div class="ms-title-group" *ngIf="!selectedCategory">
+            <span class="ms-main-title"><i nz-icon nzType="control"></i> Master Setup</span>
+            <span class="ms-sub-badge">{{ loadedCount }}/{{ categories.length }} Categories Configured</span>
+          </div>
+          <div class="ms-title-group" *ngIf="selectedCategory">
+            <button nz-button nzType="default" class="btn-back" (click)="clearSelectedCategory()">
+              <i nz-icon nzType="arrow-left"></i> All Masters
+            </button>
+            <div class="current-cat-info">
+              <i [ngClass]="selectedCategoryIcon" class="cat-header-icon"></i>
+              <span class="ms-main-title">{{ selectedCategoryName }}</span>
+              <span class="ms-sub-badge">{{ masterData.length }} Values</span>
+            </div>
+          </div>
+        </div>
 
-      <div class="ms-layout">
-        <!-- Categories Panel -->
-        <nz-card class="ms-cats-card" nzSize="small">
-          <div class="ms-cats-header">
-            <nz-input-group nzSuffixIcon="search" class="ms-search">
-              <input nz-input placeholder="Search..." [(ngModel)]="categorySearch" />
+        <div class="top-right">
+          <!-- When in Grid View: Category Search -->
+          <div *ngIf="!selectedCategory" class="search-wrapper">
+            <nz-input-group nzPrefixIcon="search" class="ms-search-input">
+              <input nz-input placeholder="Search master categories..." [(ngModel)]="categorySearch" />
             </nz-input-group>
           </div>
-          <div class="ms-cats-list">
-            <div *ngFor="let cat of filteredCategories" class="ms-cat"
-              [class.active]="selectedCategory === cat.code"
-              (click)="selectCategory(cat.code)">
-              <div class="ms-cat-icon" [class.active-icon]="selectedCategory === cat.code">
+
+          <!-- When in Table View: Category Switcher, Table Search & Add Value -->
+          <div *ngIf="selectedCategory" class="table-actions-group">
+            <nz-select [(ngModel)]="selectedCategory" (ngModelChange)="selectCategory($event)" class="cat-quick-select" nzShowSearch nzPlaceHolder="Switch Master">
+              <nz-option *ngFor="let c of categories" [nzValue]="c.code" [nzLabel]="c.name + ' (' + (c.count !== null ? c.count : '...') + ')'"></nz-option>
+            </nz-select>
+
+            <nz-input-group nzPrefixIcon="search" class="ms-table-search">
+              <input nz-input placeholder="Filter values..." [(ngModel)]="tableSearch" />
+            </nz-input-group>
+
+            <button nz-button class="btn-primary-gradient" (click)="openAddModal()">
+              <i nz-icon nzType="plus"></i> Add Value
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 1: MASTER CATEGORIES SMALL CARDS GRID -->
+      <div *ngIf="!selectedCategory" class="ms-grid-view">
+        <div class="ms-cards-grid">
+          <div *ngFor="let cat of filteredCategories" class="ms-mini-card" (click)="selectCategory(cat.code)">
+            <div class="card-top-row">
+              <div class="card-icon-box">
                 <i [ngClass]="cat.icon"></i>
               </div>
-              <div class="ms-cat-body">
-                <span class="ms-cat-name">{{ cat.name }}</span>
-                <span class="ms-cat-count">
-                  <ng-container *ngIf="cat.count !== null; else loadingCnt">{{ cat.count }}</ng-container>
-                  <ng-template #loadingCnt><i nz-icon nzType="loading"></i></ng-template>
-                </span>
-              </div>
-              <i *ngIf="selectedCategory === cat.code" nz-icon nzType="check-circle" nzTheme="fill" class="ms-cat-check"></i>
+              <span class="card-count-badge">
+                <ng-container *ngIf="cat.count !== null; else countLoading">
+                  {{ cat.count }} {{ cat.count === 1 ? 'item' : 'items' }}
+                </ng-container>
+                <ng-template #countLoading><i nz-icon nzType="loading"></i></ng-template>
+              </span>
             </div>
-            <div *ngIf="filteredCategories.length === 0" class="ms-empty">
-              <span>No matches</span>
+            
+            <div class="card-body">
+              <div class="card-name">{{ cat.name }}</div>
+              <div class="card-code">{{ cat.code }}</div>
+            </div>
+
+            <div class="card-footer">
+              <span class="card-action-hint">Manage Values</span>
+              <i nz-icon nzType="arrow-right" class="card-arrow"></i>
             </div>
           </div>
-        </nz-card>
+        </div>
 
-        <!-- Data Panel -->
-        <div class="ms-data-panel">
-          <nz-card class="ms-data-card" nzSize="small" *ngIf="selectedCategory">
-            <div class="ms-data-header">
-              <div class="ms-data-title">
-                <i [ngClass]="selectedCategoryIcon"></i>
-                <span>{{ selectedCategoryName }}</span>
-                <span class="ms-data-count">{{ masterData.length }} values</span>
-              </div>
-              <div class="ms-data-actions">
-                <nz-input-group nzSuffixIcon="search" class="ms-search-sm">
-                  <input nz-input placeholder="Search..." [(ngModel)]="tableSearch" />
-                </nz-input-group>
-                <button nz-button class="btn-primary-gradient" (click)="openAddModal()">
-                  <i nz-icon nzType="plus"></i> Add
-                </button>
-              </div>
-            </div>
+        <div *ngIf="filteredCategories.length === 0" class="ms-no-results">
+          <i nz-icon nzType="frown" class="no-res-icon"></i>
+          <span class="no-res-title">No master categories matching "{{ categorySearch }}"</span>
+          <button nz-button nzType="default" nzSize="small" (click)="categorySearch = ''">Clear Search</button>
+        </div>
+      </div>
 
-            <nz-table #dataTable [nzData]="filteredTableData" [nzFrontPagination]="true" [nzPageSize]="20"
-              [nzShowSizeChanger]="true" [nzPageSizeOptions]="[10, 20, 50]"
-              nzBordered nzSize="small" nzShowPagination nzFrontPagination class="theme-table">
-              <thead>
-                <tr>
-                  <th class="th-code">Code</th>
-                  <th class="th-value">Display Value</th>
-                  <th class="th-sort">Sort</th>
-                  <th class="th-status">Status</th>
-                  <th class="th-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of dataTable.data">
-                  <td class="td-center"><span class="code-chip">{{ item.code }}</span></td>
-                  <td>
-                    <div class="editable-cell">
-                      <span *ngIf="editId !== item.id" (dblclick)="startEdit(item)" class="editable-value"
-                        [title]="'Double-click to edit'">{{ item.value }}</span>
-                      <span *ngIf="editId === item.id" class="edit-inline-wrapper">
-                        <input nz-input [(ngModel)]="editValue" (blur)="saveEdit(item)"
-                          (keyup.enter)="saveEdit(item)" (keyup.escape)="cancelEdit()" class="inline-edit-input" autofocus />
-                        <button nz-button nzType="link" nzSize="small" (click)="saveEdit(item)" class="edit-btn"><i nz-icon nzType="check"></i></button>
-                        <button nz-button nzType="link" nzSize="small" (click)="cancelEdit()" class="edit-btn"><i nz-icon nzType="close"></i></button>
-                      </span>
-                    </div>
-                  </td>
-                  <td class="td-center"><span class="sort-badge">{{ item.sortOrder }}</span></td>
-                  <td class="td-center">
-                    <nz-switch [ngModel]="item.active" (ngModelChange)="toggleActive(item)" class="ms-switch"></nz-switch>
-                  </td>
-                  <td class="td-actions">
-                    <button nz-button nzType="link" nzSize="small" class="action-btn action-delete" (click)="deleteItem(item)" nz-tooltip="Delete">
-                      <i nz-icon nzType="delete"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="filteredTableData.length === 0">
-                  <td colspan="5" class="empty-cell">No values found</td>
-                </tr>
-              </tbody>
-            </nz-table>
-          </nz-card>
-
-          <!-- Empty state -->
-          <nz-card class="ms-data-card" nzSize="small" *ngIf="!selectedCategory">
-            <div class="ms-empty-state">
-              <i nz-icon nzType="appstore" nzTheme="outline" class="ms-empty-icon"></i>
-              <span class="ms-empty-title">Select a Category</span>
-              <span class="ms-empty-desc">Choose a master data category from the left panel</span>
-            </div>
-          </nz-card>
+      <!-- VIEW 2: SELECTED MASTER DATA TABLE VIEW -->
+      <div *ngIf="selectedCategory" class="ms-table-view">
+        <div class="table-container">
+          <nz-table 
+            #dataTable 
+            [nzData]="filteredTableData" 
+            [nzFrontPagination]="true" 
+            [nzPageSize]="10"
+            [nzShowSizeChanger]="true" 
+            [nzPageSizeOptions]="[10, 20, 50, 100]"
+            [nzLoading]="isLoading"
+            nzBordered 
+            nzSize="small" 
+            class="theme-table">
+            <thead>
+              <tr>
+                <th class="th-sno">#</th>
+                <th class="th-code">Code</th>
+                <th class="th-value">Display Value</th>
+                <th class="th-sort">Sort Order</th>
+                <th class="th-status">Status</th>
+                <th class="th-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of dataTable.data; let i = index">
+                <td class="td-center">{{ i + 1 }}</td>
+                <td class="td-center"><span class="code-chip">{{ item.code }}</span></td>
+                <td>
+                  <div class="editable-cell">
+                    <span *ngIf="editId !== item.id" (dblclick)="startEdit(item)" class="editable-value" title="Double-click to edit inline">
+                      {{ item.value }}
+                    </span>
+                    <span *ngIf="editId === item.id" class="edit-inline-wrapper">
+                      <input nz-input [(ngModel)]="editValue" (blur)="saveEdit(item)"
+                        (keyup.enter)="saveEdit(item)" (keyup.escape)="cancelEdit()" class="inline-edit-input" autofocus />
+                      <button nz-button nzType="link" nzSize="small" (click)="saveEdit(item)" class="edit-btn" nz-tooltip="Save"><i nz-icon nzType="check"></i></button>
+                      <button nz-button nzType="link" nzSize="small" (click)="cancelEdit()" class="edit-btn" nz-tooltip="Cancel"><i nz-icon nzType="close"></i></button>
+                    </span>
+                  </div>
+                </td>
+                <td class="td-center"><span class="sort-badge">{{ item.sortOrder }}</span></td>
+                <td class="td-center">
+                  <nz-switch [ngModel]="item.active" (ngModelChange)="toggleActive(item)" class="ms-switch"></nz-switch>
+                </td>
+                <td class="td-actions">
+                  <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="startEdit(item)" nz-tooltip="Edit value">
+                    <i nz-icon nzType="edit"></i>
+                  </button>
+                  <button nz-button nzType="link" nzSize="small" class="action-btn action-delete" (click)="deleteItem(item)" nz-tooltip="Delete value">
+                    <i nz-icon nzType="delete"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredTableData.length === 0 && !isLoading">
+                <td colspan="6" class="empty-cell">
+                  <div class="empty-table-msg">
+                    <i nz-icon nzType="inbox" style="font-size:24px; color:#cbd5e1; margin-bottom:6px"></i>
+                    <span>No values found for {{ selectedCategoryName }}. Click "Add Value" to create one.</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </nz-table>
         </div>
       </div>
     </div>
 
     <!-- Add Modal -->
-    <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName"
-      (nzOnCancel)="closeAddModal()" nzWidth="420px" [nzMaskClosable]="false">
+    <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
+      (nzOnCancel)="closeAddModal()" nzWidth="440px" [nzMaskClosable]="false">
       <ng-template nzModalContent>
         <div class="add-modal-body">
           <div class="add-field">
             <label>Code <span class="required">*</span></label>
-            <input nz-input [(ngModel)]="addCode" placeholder="UPPERCASE" style="text-transform:uppercase;" />
+            <input nz-input [(ngModel)]="addCode" placeholder="e.g. IT, HR, SALES (UPPERCASE)" style="text-transform:uppercase;" />
           </div>
           <div class="add-field">
             <label>Display Value <span class="required">*</span></label>
-            <input nz-input [(ngModel)]="addValue" placeholder="Enter value" />
+            <input nz-input [(ngModel)]="addValue" placeholder="e.g. Information Technology" />
           </div>
           <div class="add-field">
             <label>Sort Order</label>
@@ -196,316 +233,350 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       <ng-template nzModalFooter>
         <button nz-button (click)="closeAddModal()">Cancel</button>
         <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
-          <i nz-icon nzType="plus"></i> Add
+          <i nz-icon nzType="plus"></i> Add Value
         </button>
       </ng-template>
     </nz-modal>
   `,
   styles: [`
-    :host { display: block; scroll-behavior: smooth; }
-    .ms-sub-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 2px;
-      margin-bottom: 8px;
-      background: #f0f4ff;
-      border-radius: 8px;
-      padding: 6px 12px;
-      border: 1px solid #e0e7ff;
-    }
-    .ms-nav-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1f3d6e;
-    }
-    .ms-nav-title i { font-size: 16px; }
-    .ms-nav-badge {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6c757d;
-      background: #fff;
-      padding: 1px 8px;
-      border-radius: 10px;
-      border: 1px solid #e0e7ff;
-    }
+    :host { display: block; }
     .ms-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 8px 12px;
+      padding: 0 16px 16px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
-      height: calc(100vh - 48px);
-      overflow-y: auto;
-      scroll-behavior: smooth;
     }
-    .ms-container::-webkit-scrollbar { width: 6px; }
-    .ms-container::-webkit-scrollbar-track { background: transparent; }
-    .ms-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
-    .ms-layout {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 8px;
-      align-items: start;
-    }
-    @media (max-width: 900px) { .ms-layout { grid-template-columns: 1fr; } }
 
-    /* Categories Card */
-    .ms-cats-card {
-      border-radius: 8px !important;
-      border: 1px solid #e8eaed !important;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
-    }
-    :host ::ng-deep .ms-cats-card .ant-card-body { padding: 8px !important; }
-    .ms-cats-header { margin-bottom: 6px; }
-    .ms-search { border-radius: 6px !important; }
-    :host ::ng-deep .ms-search .ant-input { height: 30px !important; font-size: 12px !important; }
-    :host ::ng-deep .ms-search .ant-input-group-addon { height: 30px !important; font-size: 12px !important; }
-    .ms-cats-list {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      max-height: calc(100vh - 180px);
-      overflow-y: auto;
-      scroll-behavior: smooth;
-    }
-    .ms-cats-list::-webkit-scrollbar { width: 4px; }
-    .ms-cats-list::-webkit-scrollbar-track { background: transparent; }
-    .ms-cats-list::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 2px; }
-    .ms-cat {
+    /* ── Top Header & Controls Bar ── */
+    .ms-top-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      position: relative;
-    }
-    .ms-cat:hover { background: rgba(31,61,110,0.04); border-color: #e8eaed; }
-    .ms-cat.active { background: rgba(31,61,110,0.08); border-color: #1f3d6e; }
-    .ms-cat.active::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 4px; bottom: 4px;
-      width: 3px;
-      background: #1f3d6e;
-      border-radius: 0 2px 2px 0;
-    }
-    .ms-cat-icon {
-      width: 26px; height: 26px;
-      border-radius: 6px;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
       background: #f0f4ff;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px;
-      color: #6c757d;
-      flex-shrink: 0;
-      transition: all 0.15s ease;
+      border-radius: 10px;
+      padding: 6px 12px;
+      border: 1px solid #e0e7ff;
+      flex-wrap: wrap;
     }
-    .ms-cat-icon.active-icon { background: #1f3d6e; color: #fff; }
-    .ms-cat-body {
-      flex: 1;
+    .top-left {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      min-width: 0;
+      gap: 8px;
     }
-    .ms-cat-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: #374151;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .ms-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-    .ms-cat.active .ms-cat-name { color: #1f3d6e; font-weight: 600; }
-    .ms-cat-count {
-      font-size: 10px;
-      color: #9ca3af;
-      font-weight: 600;
-      flex-shrink: 0;
+    .current-cat-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .ms-cat-check { color: #1f3d6e; font-size: 12px; flex-shrink: 0; }
-    .ms-empty {
-      text-align: center;
-      padding: 16px;
+    .cat-header-icon {
+      font-size: 16px;
+      color: #2563eb;
+    }
+    .ms-main-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3d6e;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ms-main-title i { font-size: 16px; }
+    .ms-sub-badge {
       font-size: 11px;
-      color: #9ca3af;
+      font-weight: 600;
+      color: #4b5563;
+      background: #ffffff;
+      padding: 2px 9px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+    }
+    .btn-back {
+      height: 30px !important;
+      padding: 0 10px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      color: #1f3d6e !important;
     }
 
-    /* Data Panel */
-    .ms-data-panel { display: flex; flex-direction: column; }
-    .ms-data-card {
-      border-radius: 8px !important;
-      border: 1px solid #e8eaed !important;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.04) !important;
-    }
-    :host ::ng-deep .ms-data-card .ant-card-body { padding: 0 !important; }
-    .ms-data-header {
+    .top-right {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-bottom: 1px solid #e8eaed;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    .search-wrapper { width: 260px; }
+    .ms-search-input { width: 100%; }
+    :host ::ng-deep .ms-search-input .ant-input {
+      height: 30px !important;
+      font-size: 12px !important;
+      border-radius: 6px !important;
+    }
+
+    .table-actions-group {
+      display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
-    .ms-data-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #1f3d6e;
+    .cat-quick-select { width: 190px; }
+    :host ::ng-deep .cat-quick-select .ant-select-selector {
+      border-radius: 6px !important;
+      height: 30px !important;
+      font-size: 12px !important;
     }
-    .ms-data-title i { font-size: 15px; color: #1f3d6e; }
-    .ms-data-count {
-      font-size: 10px;
-      font-weight: 500;
-      color: #9ca3af;
-      background: #f0f4ff;
-      padding: 1px 6px;
-      border-radius: 8px;
+    .ms-table-search { width: 180px; }
+    :host ::ng-deep .ms-table-search .ant-input {
+      height: 30px !important;
+      font-size: 12px !important;
+      border-radius: 6px !important;
     }
-    .ms-data-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .ms-search-sm { width: 160px; border-radius: 6px !important; }
-    :host ::ng-deep .ms-search-sm .ant-input { height: 28px !important; font-size: 11px !important; }
-    :host ::ng-deep .ms-search-sm .ant-input-group-addon { height: 28px !important; }
 
     .btn-primary-gradient {
-      height: 28px !important;
-      padding: 0 12px !important;
-      font-size: 11px !important;
+      height: 30px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
       font-weight: 600 !important;
       border: none !important;
       border-radius: 6px !important;
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
       color: #fff !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 4px !important;
+      gap: 5px !important;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.25) !important;
       transition: all 0.2s ease !important;
-      box-shadow: 0 2px 6px rgba(67,97,238,0.25) !important;
     }
     .btn-primary-gradient:hover {
       transform: translateY(-1px) !important;
-      box-shadow: 0 3px 10px rgba(67,97,238,0.35) !important;
+      box-shadow: 0 4px 10px rgba(37,99,235,0.35) !important;
     }
 
-    /* Table */
-    :host ::ng-deep .theme-table {
-      width: 100% !important;
-      table-layout: fixed !important;
+    /* ── VIEW 1: CARDS GRID ── */
+    .ms-grid-view {
+      margin-top: 4px;
     }
-    :host ::ng-deep .theme-table .ant-table { font-size: 12px; border-radius: 0 !important; }
+    .ms-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    .ms-mini-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      position: relative;
+      overflow: hidden;
+      min-height: 110px;
+    }
+    .ms-mini-card:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37,99,235,0.12);
+    }
+    .ms-mini-card:hover .card-icon-box {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .ms-mini-card:hover .card-arrow {
+      transform: translateX(3px);
+      color: #2563eb;
+    }
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .card-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+    .card-count-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #3b82f6;
+      background: #eff6ff;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .card-body {
+      margin-bottom: 8px;
+    }
+    .card-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+    .card-code {
+      font-size: 10px;
+      font-weight: 500;
+      color: #9ca3af;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 0.3px;
+    }
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #f3f4f6;
+      padding-top: 6px;
+      margin-top: auto;
+    }
+    .card-action-hint {
+      font-size: 11px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+    .card-arrow {
+      font-size: 11px;
+      color: #9ca3af;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .ms-no-results {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px dashed #d1d5db;
+      gap: 10px;
+    }
+    .no-res-icon { font-size: 32px; color: #9ca3af; }
+    .no-res-title { font-size: 13px; color: #4b5563; font-weight: 500; }
+
+    /* ── VIEW 2: TABLE VIEW ── */
+    .ms-table-view {
+      margin-top: 4px;
+    }
+    .table-container {
+      background: #ffffff;
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    :host ::ng-deep .theme-table { width: 100% !important; }
+    :host ::ng-deep .theme-table .ant-table { font-size: 11.5px; }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th {
       background: #f8f9fc !important;
       color: #1f3d6e !important;
-      font-size: 10px !important;
+      font-size: 10.5px !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
-      letter-spacing: 0.5px !important;
+      letter-spacing: 0.3px !important;
       padding: 6px 8px !important;
-      border-bottom: 2px solid #1f3d6e !important;
+      border-bottom: 1px solid #cbd5e1 !important;
       white-space: nowrap;
-    }
-    :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) {
-      border-right: 1px solid #e8ecf1;
+      text-align: center !important;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
       padding: 5px 8px !important;
-      border-bottom: 1px solid #f0f2f5 !important;
-      font-size: 11px;
+      border-bottom: 1px solid #f1f5f9 !important;
+      font-size: 11.5px;
       color: #374151;
       vertical-align: middle;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
-      background: rgba(31,61,110,0.03) !important;
+      background: rgba(37,99,235,0.03) !important;
     }
-    .th-code { width: 15% !important; text-align: center !important; }
-    .th-value { width: 40% !important; text-align: left !important; }
-    .th-sort { width: 10% !important; text-align: center !important; }
-    .th-status { width: 15% !important; text-align: center !important; }
-    .th-actions { width: 12% !important; text-align: center !important; }
+
+    .th-sno { width: 40px !important; text-align: center !important; }
+    .th-code { width: 160px !important; text-align: center !important; }
+    .th-value { text-align: left !important; }
+    .th-sort { width: 110px !important; text-align: center !important; }
+    .th-status { width: 110px !important; text-align: center !important; }
+    .th-actions { width: 90px !important; text-align: center !important; }
     .td-center { text-align: center !important; }
     .td-actions { text-align: center !important; }
 
     .code-chip {
       display: inline-block;
       background: #f0f4ff;
-      padding: 1px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       font-family: 'Courier New', monospace;
-      font-size: 10px;
+      font-size: 11px;
       color: #1f3d6e;
       font-weight: 600;
+      border: 1px solid #dbeafe;
     }
-    .editable-cell { min-height: 22px; display: flex; align-items: center; }
+    .editable-cell { min-height: 24px; display: flex; align-items: center; }
     .editable-value {
       padding: 2px 6px;
       border-radius: 4px;
       cursor: pointer;
       border: 1px solid transparent;
       transition: all 0.15s ease;
+      font-weight: 500;
     }
-    .editable-value:hover { background: rgba(31,61,110,0.06); border-color: #e0e7ff; }
-    .edit-inline-wrapper { display: inline-flex; align-items: center; gap: 3px; width: 100%; }
+    .editable-value:hover { background: rgba(37,99,235,0.06); border-color: #bfdbfe; }
+    .edit-inline-wrapper { display: inline-flex; align-items: center; gap: 4px; width: 100%; }
     :host ::ng-deep .inline-edit-input {
       border-radius: 4px !important;
-      border-color: #1f3d6e !important;
-      box-shadow: 0 0 0 2px rgba(31,61,110,0.06) !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.1) !important;
       height: 26px !important;
-      font-size: 11px !important;
+      font-size: 11.5px !important;
     }
-    .edit-btn { padding: 0 3px !important; height: 20px !important; font-size: 12px !important; }
+    .edit-btn { padding: 0 3px !important; height: 22px !important; font-size: 12px !important; }
     .sort-badge {
       display: inline-block;
-      padding: 1px 6px;
-      border-radius: 8px;
-      background: #f0f4ff;
-      color: #6c757d;
-      font-size: 10px;
+      padding: 1px 7px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      color: #4b5563;
+      font-size: 11px;
       font-weight: 600;
-      font-family: 'Courier New', monospace;
     }
-    :host ::ng-deep .ms-switch.ant-switch-checked { background-color: #1f3d6e !important; }
-    .action-btn { padding: 0 3px !important; font-size: 13px !important; }
+    :host ::ng-deep .ms-switch.ant-switch-checked { background-color: #2563eb !important; }
+    .action-btn { padding: 0 4px !important; font-size: 13px !important; }
+    .action-edit { color: #2563eb !important; }
+    .action-edit:hover { color: #1d4ed8 !important; }
     .action-delete { color: #ef4444 !important; }
-    .action-delete:hover { color: #dc2626 !important; transform: scale(1.15); }
-    .empty-cell { text-align: center !important; padding: 20px !important; color: #9ca3af !important; font-size: 12px; font-style: italic; }
-
-    /* Pagination */
-    :host ::ng-deep .ant-pagination { margin: 8px 12px !important; font-size: 12px !important; }
-    :host ::ng-deep .ant-pagination-item { min-width: 28px !important; height: 28px !important; line-height: 28px !important; }
-    :host ::ng-deep .ant-pagination-item a { font-size: 12px !important; }
-
-    /* Empty state */
-    .ms-empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 24px;
-      gap: 8px;
-    }
-    .ms-empty-icon { font-size: 36px; color: #d0d5dd; }
-    .ms-empty-title { font-size: 14px; font-weight: 700; color: #374151; }
-    .ms-empty-desc { font-size: 12px; color: #9ca3af; }
+    .action-delete:hover { color: #dc2626 !important; }
+    .empty-cell { text-align: center !important; padding: 40px !important; }
+    .empty-table-msg { display: flex; flex-direction: column; align-items: center; color: #64748b; font-size: 12.5px; }
 
     /* Modal */
-    .add-modal-body { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
-    .add-field { display: flex; flex-direction: column; gap: 3px; }
-    .add-field label { font-size: 11px; font-weight: 600; color: #374151; }
+    .add-modal-body { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+    .add-field { display: flex; flex-direction: column; gap: 4px; }
+    .add-field label { font-size: 12px; font-weight: 600; color: #374151; }
     .required { color: #ef4444; }
-    :host ::ng-deep .add-field .ant-input { height: 30px !important; font-size: 12px !important; border-radius: 6px !important; }
+    :host ::ng-deep .add-field .ant-input { height: 32px !important; font-size: 12.5px !important; border-radius: 6px !important; }
   `]
 })
 export class MastersComponent implements OnInit {
@@ -567,6 +638,13 @@ export class MastersComponent implements OnInit {
       item.value.toLowerCase().includes(q) ||
       item.sortOrder.toString().includes(q)
     );
+  }
+
+  clearSelectedCategory(): void {
+    this.selectedCategory = '';
+    this.tableSearch = '';
+    this.cancelEdit();
+    this.loadCategoryCounts();
   }
 
   private loadCategoryCounts(): void {

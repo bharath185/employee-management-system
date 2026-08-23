@@ -76,4 +76,25 @@ public class StatutoryReportController {
             .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .body(excel);
     }
+
+    @GetMapping("/attendance-register")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> getAttendanceRegister(
+            @RequestParam Integer year,
+            @RequestParam Integer month) {
+        String html = statutoryReportService.generateAttendanceRegister(year, month);
+        return ResponseEntity.ok(APIResponse.success(html));
+    }
+
+    @GetMapping("/attendance-register/excel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> getAttendanceRegisterExcel(
+            @RequestParam Integer year,
+            @RequestParam Integer month) {
+        byte[] excel = statutoryReportService.generateAttendanceRegisterExcel(year, month);
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=attendance_register_" + year + "_" + month + ".xlsx")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(excel);
+    }
 }

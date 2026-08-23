@@ -116,6 +116,32 @@ export class PayrollService {
     return this.http.post<APIResponse<SalaryMasterDTO>>(`${this.apiUrl}/salary-master/init/${employeeId}`, {});
   }
 
+  initAllSalaryMaster(): Observable<APIResponse<SalaryMasterDTO[]>> {
+    return this.http.post<APIResponse<SalaryMasterDTO[]>>(`${this.apiUrl}/salary-master/init-all`, {});
+  }
+
+  exportSalaryMasterExcel(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/salary-master/export`, { responseType: 'blob' });
+  }
+
+  downloadSalaryMasterTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/salary-master/template`, { responseType: 'blob' });
+  }
+
+  importSalaryMasterExcel(file: File): Observable<APIResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/salary-master/import`, formData);
+  }
+
+  seedSampleSalaries(): Observable<APIResponse<any>> {
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/salary-master/seed-samples`, {});
+  }
+
+  syncSalaryMasterToMonth(year: number, month: number): Observable<APIResponse<any>> {
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/salary-master/sync-month?year=${year}&month=${month}`, {});
+  }
+
   getSalaryMasterHistory(employeeId: number): Observable<APIResponse<any[]>> {
     return this.http.get<APIResponse<any[]>>(`${this.apiUrl}/salary-master/history/${employeeId}`);
   }

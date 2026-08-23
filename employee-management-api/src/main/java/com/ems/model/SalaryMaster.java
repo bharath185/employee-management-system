@@ -73,6 +73,10 @@ public class SalaryMaster {
     @Builder.Default
     private BigDecimal ptDeduction = BigDecimal.ZERO;
 
+    @Column(name = "health_insurance", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal healthInsurance = BigDecimal.ZERO;
+
     @Column(name = "overtime_wages", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal overtimeWages = BigDecimal.ZERO;
@@ -107,4 +111,40 @@ public class SalaryMaster {
     @LastModifiedBy
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
+
+    public BigDecimal getGrossSalary() {
+        BigDecimal sum = BigDecimal.ZERO;
+        if (basic != null) sum = sum.add(basic);
+        if (hra != null) sum = sum.add(hra);
+        if (fixedPersonalAllowance != null) sum = sum.add(fixedPersonalAllowance);
+        if (otherAllowance != null) sum = sum.add(otherAllowance);
+        return sum;
+    }
+
+    public BigDecimal getTotalDeductions() {
+        BigDecimal sum = BigDecimal.ZERO;
+        if (pfDeduction != null) sum = sum.add(pfDeduction);
+        if (esiDeduction != null) sum = sum.add(esiDeduction);
+        if (ptDeduction != null) sum = sum.add(ptDeduction);
+        if (healthInsurance != null) sum = sum.add(healthInsurance);
+        return sum;
+    }
+
+    public BigDecimal getNetPay() {
+        BigDecimal gross = getGrossSalary();
+        BigDecimal ded = getTotalDeductions();
+        BigDecimal net = gross.subtract(ded);
+        if (bonus != null) net = net.add(bonus);
+        if (appraisalAmount != null) net = net.add(appraisalAmount);
+        if (lateSittingAmount != null) net = net.add(lateSittingAmount);
+        if (overtimeWages != null) net = net.add(overtimeWages);
+        return net.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : net;
+    }
+
+    public BigDecimal getAnnualCtc() {
+        BigDecimal monthlyGross = getGrossSalary();
+        BigDecimal monthlyPf = pfDeduction != null ? pfDeduction : BigDecimal.ZERO;
+        BigDecimal monthlyEsi = esiDeduction != null ? esiDeduction : BigDecimal.ZERO;
+        return monthlyGross.add(monthlyPf).add(monthlyEsi).multiply(BigDecimal.valueOf(12));
+    }
 }

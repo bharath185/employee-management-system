@@ -17,6 +17,7 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { MasterDataService } from '../../core/services/master-data.service';
 import { DashboardStats } from '../../core/models/api-response.model';
 import { saveAs } from 'file-saver';
+import { LabourReportsComponent } from '../labour-reports/labour-reports.component';
 
 interface StatItem {
   key: string;
@@ -29,240 +30,250 @@ interface StatItem {
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzCardModule, NzButtonModule, NzIconModule,
-    NzSelectModule, NzSpinModule, NzGridModule, NzTabsModule, NzTableModule
+    NzSelectModule, NzSpinModule, NzGridModule, NzTabsModule, NzTableModule,
+    LabourReportsComponent
   ],
   template: `
     <div class="rp-container">
       <div class="pp-sub-nav">
-        <span class="pp-nav-item active">
+        <a class="pp-nav-item" [class.active]="activeSection === 'reports'" (click)="activeSection = 'reports'">
           <i nz-icon nzType="bar-chart"></i><span>Reports</span>
-        </span>
+        </a>
+        <a class="pp-nav-item" [class.active]="activeSection === 'labour'" (click)="activeSection = 'labour'">
+          <i nz-icon nzType="file-text"></i><span>Labour Reports</span>
+        </a>
       </div>
 
-      <nz-card class="rp-controls-card" nzSize="small">
-        <div class="rp-controls">
-          <div class="rp-filters">
-            <div class="filter-item">
-              <label>Status</label>
-              <nz-select nzPlaceHolder="All Statuses" [(ngModel)]="exportFilterStatus" class="filter-select">
-                <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
-                <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
-              </nz-select>
+      <div *ngIf="activeSection === 'reports'">
+        <nz-card class="rp-controls-card" nzSize="small">
+          <div class="rp-controls">
+            <div class="rp-filters">
+              <div class="filter-item">
+                <label>Status</label>
+                <nz-select nzPlaceHolder="All Statuses" [(ngModel)]="exportFilterStatus" class="filter-select">
+                  <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
+                  <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+                </nz-select>
+              </div>
+              <div class="filter-item">
+                <label>Designation</label>
+                <nz-select nzPlaceHolder="All Designations" [(ngModel)]="exportFilterDesignation" class="filter-select">
+                  <nz-option nzValue="" nzLabel="All Designations"></nz-option>
+                  <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+                </nz-select>
+              </div>
+              <button nz-button nzType="primary" (click)="exportExcel()" [nzLoading]="isExporting">
+                <i nz-icon nzType="download"></i> Export to Excel
+              </button>
             </div>
-            <div class="filter-item">
-              <label>Designation</label>
-              <nz-select nzPlaceHolder="All Designations" [(ngModel)]="exportFilterDesignation" class="filter-select">
-                <nz-option nzValue="" nzLabel="All Designations"></nz-option>
-                <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
-              </nz-select>
-            </div>
-            <button nz-button nzType="primary" (click)="exportExcel()" [nzLoading]="isExporting">
-              <i nz-icon nzType="download"></i> Export to Excel
-            </button>
           </div>
-        </div>
-      </nz-card>
+        </nz-card>
 
-      <nz-tabset nzType="card" class="rp-tabs">
-        <nz-tab nzTitle="HR Statistics">
-          <div class="rp-content">
-            <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-              <div nz-col nzXs="24" nzMd="12" class="rp-col">
-                <nz-card class="rp-card">
-                  <div class="card-header">
-                    <div class="card-icon-circle">
-                      <i nz-icon nzType="bar-chart"></i>
-                    </div>
-                    <div class="card-header-text">
-                      <h4 class="card-title">Statistics Summary</h4>
-                      <p class="card-subtitle">Quick overview of employee metrics</p>
-                    </div>
-                  </div>
-                  <div class="card-body card-body-stats">
-                    <div class="stats-summary" *ngIf="stats">
-                      <div *ngFor="let item of statItems; let idx = index; let last = last"
-                           class="stat-row"
-                           [class.stat-row-alt]="idx % 2 === 1"
-                           [class.stat-row-last]="last">
-                        <div class="stat-left">
-                          <i nz-icon [nzType]="item.icon" class="stat-icon"></i>
-                          <span class="stat-label">{{ item.label }}</span>
-                        </div>
-                        <span class="stat-value">{{ getStatValue(item.key) }}</span>
+        <nz-tabset nzType="card" class="rp-tabs">
+          <nz-tab nzTitle="HR Statistics">
+            <div class="rp-content">
+              <div nz-row [nzGutter]="[12, 12]" class="rp-row">
+                <div nz-col nzXs="24" nzMd="12" class="rp-col">
+                  <nz-card class="rp-card">
+                    <div class="card-header">
+                      <div class="card-icon-circle">
+                        <i nz-icon nzType="bar-chart"></i>
+                      </div>
+                      <div class="card-header-text">
+                        <h4 class="card-title">Statistics Summary</h4>
+                        <p class="card-subtitle">Quick overview of employee metrics</p>
                       </div>
                     </div>
-                    <div class="stats-empty" *ngIf="!stats && !statsLoading">
-                      <button nz-button nzType="default" (click)="loadStats()">
-                        <i nz-icon nzType="reload"></i> Load Statistics
+                    <div class="card-body card-body-stats">
+                      <div class="stats-summary" *ngIf="stats">
+                        <div *ngFor="let item of statItems; let idx = index; let last = last"
+                             class="stat-row"
+                             [class.stat-row-alt]="idx % 2 === 1"
+                             [class.stat-row-last]="last">
+                          <div class="stat-left">
+                            <i nz-icon [nzType]="item.icon" class="stat-icon"></i>
+                            <span class="stat-label">{{ item.label }}</span>
+                          </div>
+                          <span class="stat-value">{{ getStatValue(item.key) }}</span>
+                        </div>
+                      </div>
+                      <div class="stats-empty" *ngIf="!stats && !statsLoading">
+                        <button nz-button nzType="default" (click)="loadStats()">
+                          <i nz-icon nzType="reload"></i> Load Statistics
+                        </button>
+                      </div>
+                      <div class="stats-spinner" *ngIf="statsLoading">
+                        <nz-spin nzSimple [nzSize]="'default'"></nz-spin>
+                      </div>
+                    </div>
+                  </nz-card>
+                </div>
+
+                <div nz-col nzXs="24" nzMd="12" class="rp-col">
+                  <nz-card class="rp-card">
+                    <div class="card-header">
+                      <div class="card-icon-circle">
+                        <i nz-icon nzType="file-text"></i>
+                      </div>
+                      <div class="card-header-text">
+                        <h4 class="card-title">Employee List Report</h4>
+                        <p class="card-subtitle">Generate a printable employee list with key fields</p>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <p class="report-desc">This report includes: Employee Code, Name, Gender, Designation, Department, Date of Joining, Status, and Contact Information.</p>
+                    </div>
+                    <div class="card-footer">
+                      <button nz-button nzType="default" (click)="exportEmployeeList()" class="action-btn">
+                        <i nz-icon nzType="file-text"></i> Generate Report
                       </button>
                     </div>
-                    <div class="stats-spinner" *ngIf="statsLoading">
-                      <nz-spin nzSimple [nzSize]="'default'"></nz-spin>
-                    </div>
-                  </div>
-                </nz-card>
+                  </nz-card>
+                </div>
               </div>
+            </div>
+          </nz-tab>
 
-              <div nz-col nzXs="24" nzMd="12" class="rp-col">
-                <nz-card class="rp-card">
-                  <div class="card-header">
-                    <div class="card-icon-circle">
-                      <i nz-icon nzType="file-text"></i>
-                    </div>
-                    <div class="card-header-text">
-                      <h4 class="card-title">Employee List Report</h4>
-                      <p class="card-subtitle">Generate a printable employee list with key fields</p>
-                    </div>
-                  </div>
-                  <div class="card-body">
-                    <p class="report-desc">This report includes: Employee Code, Name, Gender, Designation, Department, Date of Joining, Status, and Contact Information.</p>
-                  </div>
-                  <div class="card-footer">
-                    <button nz-button nzType="default" (click)="exportEmployeeList()" class="action-btn">
-                      <i nz-icon nzType="file-text"></i> Generate Report
-                    </button>
-                  </div>
-                </nz-card>
+          <nz-tab nzTitle="Absenteeism">
+            <div class="rp-content">
+              <div nz-row [nzGutter]="[12, 12]" class="rp-row">
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.absenteeism?.totalEmployees || 0 }}</div>
+                    <div class="stat-label-sm">Total Employees</div>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.absenteeism?.absentToday || 0 }}</div>
+                    <div class="stat-label-sm">Absent Today</div>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.absenteeism?.avgAbsenteeismRate || '0.0%' }}</div>
+                    <div class="stat-label-sm">Avg Absenteeism Rate</div>
+                  </nz-card>
+                </div>
               </div>
             </div>
-          </div>
-        </nz-tab>
+          </nz-tab>
 
-        <nz-tab nzTitle="Absenteeism">
-          <div class="rp-content">
-            <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.absenteeism?.totalEmployees || 0 }}</div>
-                  <div class="stat-label-sm">Total Employees</div>
-                </nz-card>
-              </div>
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.absenteeism?.absentToday || 0 }}</div>
-                  <div class="stat-label-sm">Absent Today</div>
-                </nz-card>
-              </div>
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.absenteeism?.avgAbsenteeismRate || '0.0%' }}</div>
-                  <div class="stat-label-sm">Avg Absenteeism Rate</div>
-                </nz-card>
+          <nz-tab nzTitle="Attrition">
+            <div class="rp-content">
+              <div nz-row [nzGutter]="[12, 12]" class="rp-row">
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.attrition?.totalExited || 0 }}</div>
+                    <div class="stat-label-sm">Total Exited</div>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.attrition?.exitedThisMonth || 0 }}</div>
+                    <div class="stat-label-sm">Exited This Month</div>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="8">
+                  <nz-card class="rp-card stat-card">
+                    <div class="stat-value-lg">{{ analytics?.attrition?.attritionRate || '0.0%' }}</div>
+                    <div class="stat-label-sm">Attrition Rate</div>
+                  </nz-card>
+                </div>
               </div>
             </div>
-          </div>
-        </nz-tab>
+          </nz-tab>
 
-        <nz-tab nzTitle="Attrition">
-          <div class="rp-content">
-            <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.attrition?.totalExited || 0 }}</div>
-                  <div class="stat-label-sm">Total Exited</div>
-                </nz-card>
+          <nz-tab nzTitle="Staff Demographic Data">
+            <div class="rp-content">
+              <div nz-row [nzGutter]="[12, 12]" class="rp-row">
+                <div nz-col nzXs="24" nzMd="12">
+                  <nz-card class="rp-card" nzTitle="Gender Distribution">
+                    <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.genderDistribution?.length">
+                      <thead>
+                        <tr>
+                          <th>Gender</th>
+                          <th>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of demographics?.genderDistribution">
+                          <td>{{ item.gender }}</td>
+                          <td><b>{{ item.count }}</b></td>
+                        </tr>
+                      </tbody>
+                    </nz-table>
+                    <p class="empty-tbl" *ngIf="!demographics?.genderDistribution?.length">No data</p>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="12">
+                  <nz-card class="rp-card" nzTitle="Age Bracket Distribution">
+                    <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.ageBracketDistribution?.length">
+                      <thead>
+                        <tr>
+                          <th>Age Bracket</th>
+                          <th>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of demographics?.ageBracketDistribution">
+                          <td>{{ item.bracket }}</td>
+                          <td><b>{{ item.count }}</b></td>
+                        </tr>
+                      </tbody>
+                    </nz-table>
+                    <p class="empty-tbl" *ngIf="!demographics?.ageBracketDistribution?.length">No data</p>
+                  </nz-card>
+                </div>
               </div>
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.attrition?.exitedThisMonth || 0 }}</div>
-                  <div class="stat-label-sm">Exited This Month</div>
-                </nz-card>
-              </div>
-              <div nz-col nzXs="24" nzMd="8">
-                <nz-card class="rp-card stat-card">
-                  <div class="stat-value-lg">{{ analytics?.attrition?.attritionRate || '0.0%' }}</div>
-                  <div class="stat-label-sm">Attrition Rate</div>
-                </nz-card>
+              <div nz-row [nzGutter]="[12, 12]" class="rp-row">
+                <div nz-col nzXs="24" nzMd="12">
+                  <nz-card class="rp-card" nzTitle="Designation Distribution">
+                    <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.designationDistribution?.length">
+                      <thead>
+                        <tr>
+                          <th>Designation</th>
+                          <th>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of demographics?.designationDistribution">
+                          <td>{{ item.designation }}</td>
+                          <td><b>{{ item.count }}</b></td>
+                        </tr>
+                      </tbody>
+                    </nz-table>
+                    <p class="empty-tbl" *ngIf="!demographics?.designationDistribution?.length">No data</p>
+                  </nz-card>
+                </div>
+                <div nz-col nzXs="24" nzMd="12">
+                  <nz-card class="rp-card" nzTitle="Status Distribution">
+                    <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.statusDistribution?.length">
+                      <thead>
+                        <tr>
+                          <th>Status</th>
+                          <th>Count</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of demographics?.statusDistribution">
+                          <td>{{ item.status }}</td>
+                          <td><b>{{ item.count }}</b></td>
+                        </tr>
+                      </tbody>
+                    </nz-table>
+                    <p class="empty-tbl" *ngIf="!demographics?.statusDistribution?.length">No data</p>
+                  </nz-card>
+                </div>
               </div>
             </div>
-          </div>
-        </nz-tab>
+          </nz-tab>
+        </nz-tabset>
+      </div>
 
-        <nz-tab nzTitle="Staff Demographic Data">
-          <div class="rp-content">
-            <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-              <div nz-col nzXs="24" nzMd="12">
-                <nz-card class="rp-card" nzTitle="Gender Distribution">
-                  <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.genderDistribution?.length">
-                    <thead>
-                      <tr>
-                        <th>Gender</th>
-                        <th>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of demographics?.genderDistribution">
-                        <td>{{ item.gender }}</td>
-                        <td><b>{{ item.count }}</b></td>
-                      </tr>
-                    </tbody>
-                  </nz-table>
-                  <p class="empty-tbl" *ngIf="!demographics?.genderDistribution?.length">No data</p>
-                </nz-card>
-              </div>
-              <div nz-col nzXs="24" nzMd="12">
-                <nz-card class="rp-card" nzTitle="Age Bracket Distribution">
-                  <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.ageBracketDistribution?.length">
-                    <thead>
-                      <tr>
-                        <th>Age Bracket</th>
-                        <th>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of demographics?.ageBracketDistribution">
-                        <td>{{ item.bracket }}</td>
-                        <td><b>{{ item.count }}</b></td>
-                      </tr>
-                    </tbody>
-                  </nz-table>
-                  <p class="empty-tbl" *ngIf="!demographics?.ageBracketDistribution?.length">No data</p>
-                </nz-card>
-              </div>
-            </div>
-            <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-              <div nz-col nzXs="24" nzMd="12">
-                <nz-card class="rp-card" nzTitle="Designation Distribution">
-                  <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.designationDistribution?.length">
-                    <thead>
-                      <tr>
-                        <th>Designation</th>
-                        <th>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of demographics?.designationDistribution">
-                        <td>{{ item.designation }}</td>
-                        <td><b>{{ item.count }}</b></td>
-                      </tr>
-                    </tbody>
-                  </nz-table>
-                  <p class="empty-tbl" *ngIf="!demographics?.designationDistribution?.length">No data</p>
-                </nz-card>
-              </div>
-              <div nz-col nzXs="24" nzMd="12">
-                <nz-card class="rp-card" nzTitle="Status Distribution">
-                  <nz-table nzTemplateMode nzSize="small" class="demo-table" *ngIf="demographics?.statusDistribution?.length">
-                    <thead>
-                      <tr>
-                        <th>Status</th>
-                        <th>Count</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of demographics?.statusDistribution">
-                        <td>{{ item.status }}</td>
-                        <td><b>{{ item.count }}</b></td>
-                      </tr>
-                    </tbody>
-                  </nz-table>
-                  <p class="empty-tbl" *ngIf="!demographics?.statusDistribution?.length">No data</p>
-                </nz-card>
-              </div>
-            </div>
-          </div>
-        </nz-tab>
-      </nz-tabset>
+      <div *ngIf="activeSection === 'labour'">
+        <app-labour-reports [showHeader]="false"></app-labour-reports>
+      </div>
     </div>
   `,
   styles: [`
@@ -287,9 +298,11 @@ interface StatItem {
       color: #6c757d;
       text-decoration: none;
       transition: all .15s;
-      cursor: default;
+      cursor: pointer;
     }
+    .pp-nav-item:hover { background: rgba(67, 97, 238, 0.05); color: #4361ee; }
     .pp-nav-item.active { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3); }
+    .pp-nav-item.active:hover { background: linear-gradient(135deg, #4361ee, #3a0ca3); color: #fff; }
     .pp-nav-item.active i { color: #fff; }
     .pp-nav-item i { font-size: 14px; }
 
@@ -354,6 +367,7 @@ interface StatItem {
   `]
 })
 export class ReportsComponent implements OnInit {
+  activeSection: 'reports' | 'labour' = 'reports';
 
   isExporting = false;
   statsLoading = false;

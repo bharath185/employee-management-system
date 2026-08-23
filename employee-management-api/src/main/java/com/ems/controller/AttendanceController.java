@@ -28,12 +28,13 @@ public class AttendanceController {
             @RequestParam String fromDate,
             @RequestParam String toDate,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String process,
-            @RequestParam(required = false) String department) {
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String search) {
         String filter = process != null && !process.isBlank() ? process : department;
         return ResponseEntity.ok(APIResponse.success(attendanceService.getMonthlyAttendance(
-            LocalDate.parse(fromDate), LocalDate.parse(toDate), page, size, filter)));
+            LocalDate.parse(fromDate), LocalDate.parse(toDate), page, size, filter, search)));
     }
 
     @GetMapping("/processes")
@@ -44,6 +45,15 @@ public class AttendanceController {
     @GetMapping("/departments")
     public ResponseEntity<APIResponse<List<String>>> getDepartments() {
         return ResponseEntity.ok(APIResponse.success(attendanceService.getDepartments()));
+    }
+
+    @PostMapping("/seed-month")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Map<String, Object>>> seedMonthAttendance(
+            @RequestParam int year,
+            @RequestParam int month) {
+        Map<String, Object> res = attendanceService.seedMonthlyAttendance(year, month);
+        return ResponseEntity.ok(APIResponse.success("Attendance populated successfully", res));
     }
 
     @PutMapping("/bulk")

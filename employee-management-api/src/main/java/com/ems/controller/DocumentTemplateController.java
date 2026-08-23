@@ -28,7 +28,7 @@ public class DocumentTemplateController {
     // ========== TEMPLATE CRUD ==========
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<PagedResponse<DocumentTemplateDTO>>> getAllTemplates(
             @RequestParam(required = false) String templateType,
             @RequestParam(required = false) Boolean active,
@@ -56,14 +56,14 @@ public class DocumentTemplateController {
     }
 
     @GetMapping("/types")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<List<Map<String, String>>>> getTemplateTypes() {
         List<Map<String, String>> types = documentTemplateService.getTemplateTypes();
         return ResponseEntity.ok(APIResponse.success(types));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<DocumentTemplateDTO>> getTemplateById(@PathVariable Long id) {
         DocumentTemplateDTO template = documentTemplateService.getTemplateById(id);
         return ResponseEntity.ok(APIResponse.success(template));
@@ -108,7 +108,7 @@ public class DocumentTemplateController {
 
         // EMPLOYEE role can only generate their own documents
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(employeeId)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));
@@ -134,7 +134,7 @@ public class DocumentTemplateController {
 
         // EMPLOYEE role can only preview their own documents
         if (currentUser.getAuthorities().stream()
-                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
                 && !currentUser.getEmployeeId().equals(employeeId)) {
             return ResponseEntity.status(403)
                 .body(APIResponse.error("Access denied"));
@@ -147,7 +147,7 @@ public class DocumentTemplateController {
     // ========== DOWNLOAD TRACKING ==========
 
     @GetMapping("/download-logs")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<PagedResponse<DocumentDownloadLogDTO>>> getDownloadLogs(
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long templateId,
@@ -173,14 +173,14 @@ public class DocumentTemplateController {
     }
 
     @GetMapping("/download-logs/stats")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<DownloadStatsDTO>> getDownloadStats() {
         DownloadStatsDTO stats = documentTemplateService.getDownloadStats();
         return ResponseEntity.ok(APIResponse.success(stats));
     }
 
     @GetMapping("/download-logs/employee/{employeeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<List<DocumentDownloadLogDTO>>> getEmployeeDownloadLogs(
             @PathVariable Long employeeId) {
         List<DocumentDownloadLogDTO> logs = documentTemplateService.getEmployeeDownloadLogs(employeeId);
@@ -188,7 +188,7 @@ public class DocumentTemplateController {
     }
 
     @GetMapping("/download-logs/financial-years")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<List<String>>> getFinancialYears() {
         List<String> years = documentTemplateService.getFinancialYears();
         return ResponseEntity.ok(APIResponse.success(years));

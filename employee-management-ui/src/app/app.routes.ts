@@ -84,7 +84,7 @@ export const routes: Routes = [
           .then(m => m.DocumentTemplateListComponent),
         title: 'Document Templates',
         canActivate: [roleGuard],
-        data: { role: 'ADMIN' }
+        data: { roles: ['ADMIN', 'HR'] }
       },
       {
         path: 'document-templates/new',
@@ -95,6 +95,11 @@ export const routes: Routes = [
         data: { role: 'ADMIN' }
       },
       {
+        path: 'document-templates/reports',
+        redirectTo: 'document-templates',
+        pathMatch: 'full'
+      },
+      {
         path: 'document-templates/:id/edit',
         loadComponent: () => import('./features/document-templates/document-template-form.component')
           .then(m => m.DocumentTemplateFormComponent),
@@ -103,16 +108,8 @@ export const routes: Routes = [
         data: { role: 'ADMIN' }
       },
       {
-        path: 'document-templates/reports',
-        loadComponent: () => import('./features/document-templates/document-template-reports.component')
-          .then(m => m.DocumentTemplateReportsComponent),
-        title: 'Download Reports',
-        canActivate: [roleGuard],
-        data: { role: 'ADMIN' }
-      },
-      {
         path: 'payroll',
-        redirectTo: 'payroll/process',
+        redirectTo: 'payroll/salary-master',
         pathMatch: 'full'
       },
       {

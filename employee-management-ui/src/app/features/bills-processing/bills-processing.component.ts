@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -210,17 +210,21 @@ import { Bill } from '../../core/models/bill.model';
     <nz-modal [(nzVisible)]="isPreviewVisible" [nzTitle]="previewBill?.fileName || 'Document Preview'"
               (nzOnCancel)="closePreview()" [nzFooter]="null" [nzWidth]="800">
       <ng-container *nzModalContent>
-        <div class="preview-container" *ngIf="previewBill">
-          <img *ngIf="isImageFile(previewBill)" [src]="getFileUrl(previewBill.id)" style="max-width:100%;max-height:70vh;display:block;margin:0 auto;" />
-          <iframe *ngIf="isPdfFile(previewBill)" [src]="pdfSafeUrl" style="width:100%;height:70vh;border:none;"></iframe>
-          <div *ngIf="!isImageFile(previewBill) && !isPdfFile(previewBill)" class="preview-unsupported">
-            <i nz-icon nzType="file" style="font-size:48px;color:#d9d9d9"></i>
-            <p>Preview not available for this file type.</p>
-            <button nz-button nzType="primary" (click)="downloadFile(previewBill)">
-              <i nz-icon nzType="download"></i> Download File
-            </button>
+        <nz-spin [nzSpinning]="previewLoading">
+          <div class="preview-container" *ngIf="previewBill">
+            <img *ngIf="!previewLoading && isImageFile(previewBill) && previewObjectUrl"
+                 [src]="previewObjectUrl" style="max-width:100%;max-height:70vh;display:block;margin:0 auto;" />
+            <iframe *ngIf="!previewLoading && isPdfFile(previewBill) && pdfSafeUrl"
+                    [src]="pdfSafeUrl" style="width:100%;height:70vh;border:none;"></iframe>
+            <div *ngIf="!previewLoading && !isImageFile(previewBill) && !isPdfFile(previewBill)" class="preview-unsupported">
+              <i nz-icon nzType="file" style="font-size:48px;color:#d9d9d9"></i>
+              <p>Preview not available for this file type.</p>
+              <button nz-button nzType="primary" (click)="downloadFile(previewBill)">
+                <i nz-icon nzType="download"></i> Download File
+              </button>
+            </div>
           </div>
-        </div>
+        </nz-spin>
       </ng-container>
     </nz-modal>
   `,
@@ -492,7 +496,7 @@ import { Bill } from '../../core/models/bill.model';
     .preview-unsupported p { margin: 12px 0 16px; }
   `]
 })
-export class BillsProcessingComponent implements OnInit {
+export class BillsProcessingComponent implements OnInit, OnDestroy {
   bills: Bill[] = [];
   loading = false;
   submitting = false;
@@ -512,6 +516,8 @@ export class BillsProcessingComponent implements OnInit {
 
   isPreviewVisible = false;
   previewBill: Bill | null = null;
+  previewLoading = false;
+  previewObjectUrl: string | null = null;
   pdfSafeUrl: SafeResourceUrl | null = null;
 
   get totalAmount(): number {
@@ -620,37 +626,71 @@ export class BillsProcessingComponent implements OnInit {
   }
 
   previewFile(bill: Bill): void {
+    this.revokePreviewUrl();
     this.previewBill = bill;
-    if (this.isPdfFile(bill)) {
-      this.pdfSafeUrl = this.getSanitizedUrl(bill.id);
-    }
+    this.previewLoading = true;
     this.isPreviewVisible = true;
+    this.billService.getFile(bill.id).subscribe({
+      next: (blob) => {
+        const typed = new Blob([blob], { type: this.resolveContentType(bill, blob) });
+        this.previewObjectUrl = URL.createObjectURL(typed);
+        this.pdfSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.previewObjectUrl);
+        this.previewLoading = false;
+      },
+      error: () => {
+        this.previewLoading = false;
+        this.msg.error('Failed to load bill file');
+      }
+    });
   }
 
   closePreview(): void {
     this.isPreviewVisible = false;
     this.previewBill = null;
     this.pdfSafeUrl = null;
+    this.previewLoading = false;
+    this.revokePreviewUrl();
   }
 
-  getFileUrl(id: number): string {
-    return this.billService.getFileUrl(id);
-  }
-
-  getSanitizedUrl(id: number): SafeResourceUrl {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(this.getFileUrl(id));
+  ngOnDestroy(): void {
+    this.revokePreviewUrl();
   }
 
   isImageFile(bill: Bill): boolean {
-    return bill.contentType?.startsWith('image/') || false;
+    return bill.contentType?.startsWith('image/')
+      || !!bill.fileName?.match(/\.(png|jpe?g|gif|webp|bmp)$/i);
   }
 
   isPdfFile(bill: Bill): boolean {
-    return bill.contentType === 'application/pdf' || bill.fileName?.endsWith('.pdf') || false;
+    return bill.contentType === 'application/pdf' || !!bill.fileName?.toLowerCase().endsWith('.pdf');
   }
 
   downloadFile(bill: Bill): void {
-    window.open(this.getFileUrl(bill.id), '_blank');
+    this.billService.getFile(bill.id).subscribe({
+      next: (blob) => {
+        const typed = new Blob([blob], { type: this.resolveContentType(bill, blob) });
+        const url = URL.createObjectURL(typed);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = bill.fileName || 'bill';
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: () => this.msg.error('Download failed')
+    });
+  }
+
+  private resolveContentType(bill: Bill, blob: Blob): string {
+    if (this.isPdfFile(bill)) return 'application/pdf';
+    if (this.isImageFile(bill) && bill.contentType) return bill.contentType;
+    return blob.type || 'application/octet-stream';
+  }
+
+  private revokePreviewUrl(): void {
+    if (this.previewObjectUrl) {
+      URL.revokeObjectURL(this.previewObjectUrl);
+      this.previewObjectUrl = null;
+    }
   }
 
   amountFormatter = (value: number) => value ? `₹ ${value}` : '';

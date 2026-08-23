@@ -52,4 +52,10 @@ public interface EmployeeRepository
 
     @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false")
     List<Employee> findAllLiveEmployees();
+
+    List<Employee> findByEmployeeStatusAndIsDeletedFalse(String employeeStatus, org.springframework.data.domain.Pageable pageable);
+    long countByEmployeeStatusAndIsDeletedFalse(String employeeStatus);
+
+    List<Employee> findByEmployeeStatusAndProcessAssignedAndIsDeletedFalse(String employeeStatus, String processAssigned, org.springframework.data.domain.Pageable pageable);
+    long countByEmployeeStatusAndProcessAssignedAndIsDeletedFalse(String employeeStatus, String processAssigned);
 }

@@ -13,6 +13,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { DocumentTemplateService } from '../../core/services/document-template.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { Employee } from '../../core/models/employee.model';
+import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 
 @Component({
   selector: 'app-template-preview-modal',
@@ -28,7 +29,8 @@ import { Employee } from '../../core/models/employee.model';
     NzInputModule
   ],
   template: `
-    <nz-modal [(nzVisible)]="visible" nzTitle="Template Preview" nzWidth="900px"
+    <nz-modal [(nzVisible)]="visible" nzTitle="Template Preview" nzWidth="960px"
+      [nzBodyStyle]="{ 'max-height': '82vh', overflow: 'auto' }"
       (nzOnCancel)="close()" (nzOnOk)="close()"
       [nzFooter]="null">
       <ng-template nzModalContent>
@@ -51,8 +53,10 @@ import { Employee } from '../../core/models/employee.model';
         </div>
 
         <div class="preview-content" *ngIf="!isLoadingPreview; else loadingPreview">
-          <iframe *ngIf="previewHtml" [srcdoc]="previewHtml" class="preview-iframe"
-            sandbox="allow-same-origin allow-scripts"></iframe>
+          <div class="preview-frame" *ngIf="previewHtml">
+            <iframe [srcdoc]="previewHtml" class="preview-iframe"
+              sandbox="allow-same-origin allow-scripts"></iframe>
+          </div>
           <div class="preview-empty" *ngIf="!previewHtml">
             <i nz-icon nzType="file-text" class="empty-icon"></i>
             <p>Select an employee to preview the template</p>
@@ -73,7 +77,21 @@ import { Employee } from '../../core/models/employee.model';
     .control-label { font-size: 13px; font-weight: 600; color: #333; white-space: nowrap; }
 
     .preview-content { min-height: 400px; }
-    .preview-iframe { width: 100%; height: 600px; border: 1px solid #e8ebf0; border-radius: var(--radius-md); background: #fff; }
+    .preview-frame {
+      background: #cfd5de;
+      border: 1px solid #e8ebf0;
+      border-radius: var(--radius-md);
+      overflow: auto;
+      max-height: 72vh;
+    }
+    .preview-iframe {
+      width: 226mm;
+      height: 320mm;
+      border: none;
+      display: block;
+      margin: 0 auto;
+      background: #cfd5de;
+    }
     .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 80px 16px; }
     .empty-icon { font-size: 48px; color: #d9d9d9; }
     .preview-empty p { font-size: 14px; color: #999; margin: 0; }
@@ -189,20 +207,41 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
       return;
     }
 
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      try {
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Generating PDF Document...</title></head>
+          <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#334155;">
+            <div style="text-align:center;">
+              <div style="font-size:28px;margin-bottom:12px;">📄</div>
+              <div style="font-size:16px;font-weight:600;">Preparing Document...</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;">Print / Save as PDF will open in a moment</div>
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } catch (e) {
+        console.warn('Could not write placeholder to print window', e);
+      }
+    }
+
     this.templateService.generateDocument(this.templateId, this.selectedEmployeeId, 'pdf').subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(response.data.html);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-          }
-          this.message.success('Document generated');
+        if (response.success && response.data?.html) {
+          openDocumentPrintPreview(response.data.html, printWindow);
+          this.message.success('Document ready for Print / Save as PDF');
+        } else {
+          printWindow?.close();
+          this.message.error('Error generating document');
         }
       },
       error: () => {
+        printWindow?.close();
         this.message.error('Error generating document');
       }
     });

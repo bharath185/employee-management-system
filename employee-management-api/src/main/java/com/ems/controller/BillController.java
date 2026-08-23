@@ -6,6 +6,7 @@ import com.ems.security.CustomUserDetails;
 import com.ems.service.BillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -90,12 +92,34 @@ public class BillController {
     public ResponseEntity<Resource> getBillFile(@PathVariable Long id) {
         BillDTO bill = billService.getBill(id);
         Resource resource = billService.getBillFile(id);
-        String contentType = bill.getContentType() != null ? bill.getContentType() : "application/octet-stream";
-        String disposition = contentType.startsWith("image/") || "application/pdf".equals(contentType)
+        MediaType mediaType = resolveMediaType(bill.getContentType(), bill.getFileName());
+        String dispositionType = mediaType.getType().equals("image") || MediaType.APPLICATION_PDF.equals(mediaType)
             ? "inline" : "attachment";
+        String fileName = bill.getFileName() != null ? bill.getFileName() : "bill";
+        ContentDisposition disposition = ContentDisposition.builder(dispositionType)
+            .filename(fileName, StandardCharsets.UTF_8)
+            .build();
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(contentType))
-            .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + bill.getFileName() + "\"")
+            .contentType(mediaType)
+            .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+            .header(HttpHeaders.CACHE_CONTROL, "private, max-age=0, must-revalidate")
             .body(resource);
+    }
+
+    private MediaType resolveMediaType(String contentType, String fileName) {
+        if (contentType != null && !contentType.isBlank()) {
+            try {
+                return MediaType.parseMediaType(contentType);
+            } catch (Exception ignored) {
+                // fall through to filename-based type
+            }
+        }
+        String name = fileName != null ? fileName.toLowerCase() : "";
+        if (name.endsWith(".pdf")) return MediaType.APPLICATION_PDF;
+        if (name.endsWith(".png")) return MediaType.IMAGE_PNG;
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return MediaType.IMAGE_JPEG;
+        if (name.endsWith(".gif")) return MediaType.IMAGE_GIF;
+        if (name.endsWith(".webp")) return MediaType.valueOf("image/webp");
+        return MediaType.APPLICATION_OCTET_STREAM;
     }
 }

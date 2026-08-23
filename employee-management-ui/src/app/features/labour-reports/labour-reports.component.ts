@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
@@ -10,6 +10,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzModalModule } from 'ng-zorro-antd/modal';
 import { StatutoryReportService } from '../../core/services/statutory-report.service';
 import { LabourReportService } from '../../core/services/labour-report.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -20,11 +21,12 @@ import { EmployeeService } from '../../core/services/employee.service';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTabsModule, NzCardModule, NzButtonModule,
-    NzSelectModule, NzIconModule, NzSpinModule, NzTableModule, NzTagModule
+    NzSelectModule, NzIconModule, NzSpinModule, NzTableModule, NzTagModule,
+    NzModalModule
   ],
   template: `
     <div class="lr-container">
-      <div class="pp-sub-nav">
+      <div class="pp-sub-nav" *ngIf="showHeader">
         <span class="pp-nav-item active">
           <i nz-icon nzType="file-text"></i><span>Labour Reports</span>
         </span>
@@ -85,7 +87,7 @@ import { EmployeeService } from '../../core/services/employee.service';
         </nz-tab>
 
         <!-- Tab 3: Leave Register -->
-        <nz-tab nzTitle="Leave Register">
+        <nz-tab nzTitle="Leave Register (Form XXV)">
           <nz-card class="lr-controls-card" nzSize="small">
             <div class="lr-filters">
               <div class="filter-item">
@@ -104,6 +106,32 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <i nz-icon nzType="eye"></i> Preview
               </button>
               <button nz-button nzType="default" (click)="downloadExcel('leave-register')" [nzLoading]="excelLoading3">
+                <i nz-icon nzType="download"></i> Export
+              </button>
+            </div>
+          </nz-card>
+        </nz-tab>
+
+        <!-- Tab 4: Attendance Register (Muster Roll) -->
+        <nz-tab nzTitle="Attendance Register">
+          <nz-card class="lr-controls-card" nzSize="small">
+            <div class="lr-filters">
+              <div class="filter-item">
+                <label>Year</label>
+                <nz-select [(ngModel)]="selectedYear4" class="filter-select" style="width:110px">
+                  <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+                </nz-select>
+              </div>
+              <div class="filter-item">
+                <label>Month</label>
+                <nz-select [(ngModel)]="selectedMonth4" class="filter-select" style="width:130px">
+                  <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+                </nz-select>
+              </div>
+              <button nz-button nzType="primary" (click)="openReport('attendance-register')" [nzLoading]="loading4">
+                <i nz-icon nzType="eye"></i> Preview
+              </button>
+              <button nz-button nzType="default" (click)="downloadExcel('attendance-register')" [nzLoading]="excelLoading4">
                 <i nz-icon nzType="download"></i> Export
               </button>
             </div>
@@ -248,6 +276,32 @@ import { EmployeeService } from '../../core/services/employee.service';
         </nz-tab>
 
       </nz-tabset>
+
+      <!-- Report Preview Modal -->
+      <nz-modal
+        [(nzVisible)]="previewModalVisible"
+        [nzTitle]="previewTitle"
+        [nzWidth]="'94vw'"
+        [nzFooter]="previewFooter"
+        (nzOnCancel)="closePreviewModal()"
+        [nzBodyStyle]="{ padding: '0', height: '78vh' }">
+        <ng-container *nzModalContent>
+          <iframe #previewFrame [srcdoc]="previewHtml" style="width:100%;height:100%;border:none;"></iframe>
+        </ng-container>
+      </nz-modal>
+      <ng-template #previewFooter>
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+          <button nz-button nzType="default" (click)="openInNewTab()">
+            <i nz-icon nzType="export"></i> Open in New Tab
+          </button>
+          <div>
+            <button nz-button nzType="primary" (click)="printPreview()" style="margin-right:8px">
+              <i nz-icon nzType="printer"></i> Print / Save PDF
+            </button>
+            <button nz-button nzType="default" (click)="closePreviewModal()">Close</button>
+          </div>
+        </div>
+      </ng-template>
     </div>
   `,
   styles: [`
@@ -309,6 +363,7 @@ import { EmployeeService } from '../../core/services/employee.service';
   `]
 })
 export class LabourReportsComponent implements OnInit {
+  @Input() showHeader = true;
   years: number[] = [];
   months = [
     { value: 1, label: 'January' }, { value: 2, label: 'February' },
@@ -322,6 +377,7 @@ export class LabourReportsComponent implements OnInit {
   selectedYear = new Date().getFullYear(); selectedMonth = new Date().getMonth() + 1;
   selectedYear2 = new Date().getFullYear(); selectedMonth2 = new Date().getMonth() + 1;
   selectedYear3 = new Date().getFullYear();
+  selectedYear4 = new Date().getFullYear(); selectedMonth4 = new Date().getMonth() + 1;
   selectedEmployees3: number[] = [];
   employeeList: { id: number; fullName: string; employeeCode: string }[] = [];
 
@@ -330,8 +386,8 @@ export class LabourReportsComponent implements OnInit {
   compOffYear = new Date().getFullYear();
 
   bonusData: any[] = []; otData: any[] = []; compOffData: any[] = [];
-  loading1 = false; loading2 = false; loading3 = false;
-  excelLoading1 = false; excelLoading2 = false; excelLoading3 = false;
+  loading1 = false; loading2 = false; loading3 = false; loading4 = false;
+  excelLoading1 = false; excelLoading2 = false; excelLoading3 = false; excelLoading4 = false;
   bonusLoading = false; otLoading = false; compOffLoading = false;
 
   constructor(
@@ -354,35 +410,81 @@ export class LabourReportsComponent implements OnInit {
     });
   }
 
+  previewModalVisible = false;
+  previewTitle = '';
+  previewHtml = '';
+  previewBlobUrl: string | null = null;
+
   openReport(type: string): void {
     let setter: (v: boolean) => void;
-    if (type === 'worker-details') setter = (v) => this.loading1 = v;
-    else if (type === 'wages-register') setter = (v) => this.loading2 = v;
-    else setter = (v) => this.loading3 = v;
+    let title = '';
+    if (type === 'worker-details') {
+      setter = (v) => this.loading1 = v;
+      title = `Register of Employment (${this.getMonthName(this.selectedMonth)} ${this.selectedYear})`;
+    } else if (type === 'wages-register') {
+      setter = (v) => this.loading2 = v;
+      title = `Wages Register (${this.getMonthName(this.selectedMonth2)} ${this.selectedYear2})`;
+    } else if (type === 'attendance-register') {
+      setter = (v) => this.loading4 = v;
+      title = `Attendance Register (${this.getMonthName(this.selectedMonth4)} ${this.selectedYear4})`;
+    } else {
+      setter = (v) => this.loading3 = v;
+      title = `Form XXV Leave Register (${this.selectedYear3})`;
+    }
     setter(true);
     const done = () => setter(false);
 
     let obs: any;
     if (type === 'worker-details') obs = this.reportService.getIndividualWorkerDetails(this.selectedYear, this.selectedMonth);
     else if (type === 'wages-register') obs = this.reportService.getWagesRegister(this.selectedYear2, this.selectedMonth2);
+    else if (type === 'attendance-register') obs = this.reportService.getAttendanceRegister(this.selectedYear4, this.selectedMonth4);
     else obs = this.reportService.getLeaveRegister(this.selectedYear3);
 
     obs.subscribe({
       next: (res: any) => {
-        if (!res.data) { this.msg.warning('No data available'); done(); return; }
-        const win = window.open('', '_blank');
-        if (win) { win.document.write(res.data); win.document.close(); }
-        else this.msg.error('Popup blocked');
+        if (!res.data) { this.msg.warning('No data available for selected period'); done(); return; }
+        this.previewTitle = title;
+        this.previewHtml = res.data;
+        if (this.previewBlobUrl) {
+          window.URL.revokeObjectURL(this.previewBlobUrl);
+        }
+        const blob = new Blob([res.data], { type: 'text/html;charset=utf-8' });
+        this.previewBlobUrl = window.URL.createObjectURL(blob);
+        this.previewModalVisible = true;
         done();
       },
-      error: () => { this.msg.error('Failed to load'); done(); }
+      error: () => { this.msg.error('Failed to generate report preview'); done(); }
     });
+  }
+
+  openInNewTab(): void {
+    if (this.previewBlobUrl) {
+      window.open(this.previewBlobUrl, '_blank');
+    }
+  }
+
+  printPreview(): void {
+    const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    }
+  }
+
+  closePreviewModal(): void {
+    this.previewModalVisible = false;
+  }
+
+  getMonthName(m: number): string {
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return names[m - 1] || '';
   }
 
   downloadExcel(type: string): void {
     let setter: (v: boolean) => void;
     if (type === 'worker-details') setter = (v) => this.excelLoading1 = v;
     else if (type === 'wages-register') setter = (v) => this.excelLoading2 = v;
+    else if (type === 'attendance-register') setter = (v) => this.excelLoading4 = v;
     else setter = (v) => this.excelLoading3 = v;
     setter(true);
     const done = () => setter(false);
@@ -394,6 +496,9 @@ export class LabourReportsComponent implements OnInit {
     } else if (type === 'wages-register') {
       obs = this.reportService.downloadWagesRegisterExcel(this.selectedYear2, this.selectedMonth2);
       filename = `Wages_Register_${this.selectedYear2}_${this.selectedMonth2}.xlsx`;
+    } else if (type === 'attendance-register') {
+      obs = this.reportService.downloadAttendanceRegisterExcel(this.selectedYear4, this.selectedMonth4);
+      filename = `Attendance_Register_${this.selectedYear4}_${this.selectedMonth4}.xlsx`;
     } else {
       obs = this.reportService.downloadLeaveRegisterExcel(this.selectedYear3, this.selectedEmployees3);
       filename = `Leave_Register_${this.selectedYear3}.xlsx`;

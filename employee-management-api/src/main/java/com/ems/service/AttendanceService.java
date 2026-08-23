@@ -14,7 +14,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -39,8 +44,104 @@ public class AttendanceService {
     private final HolidayRepository holidayRepository;
     private final CompOffRepository compOffRepository;
 
-    public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String process) {
-        return buildGrid(fromDate, toDate, page, size, process);
+    /**
+     * Mark live employees Present for today if not already marked.
+     * HR can update cells manually via Edit / Import.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Scheduled(cron = "0 1 0 * * *")
+    @Transactional
+    public void autoMarkTodayPresent() {
+        markAllPresentForDate(LocalDate.now());
+    }
+
+    @Transactional
+    public Map<String, Object> seedMonthlyAttendance(int year, int month) {
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+        List<Employee> liveEmployees = employeeRepository.findAllLiveEmployees();
+
+        // Load holidays in this month
+        List<Holiday> holidays = holidayRepository.findAll();
+        Set<LocalDate> holidayDates = holidays.stream()
+            .map(Holiday::getDate)
+            .filter(d -> d != null && !d.isBefore(start) && !d.isAfter(end))
+            .collect(Collectors.toSet());
+
+        // Load existing records in this month
+        List<AttendanceRecord> existing = attendanceRepository.findByYearAndMonth(year, month);
+        Set<String> existingKeys = new HashSet<>();
+        for (AttendanceRecord ar : existing) {
+            if (ar.getEmployee() != null && ar.getAttendanceDate() != null) {
+                existingKeys.add(ar.getEmployee().getId() + "_" + ar.getAttendanceDate());
+            }
+        }
+
+        List<AttendanceRecord> toSave = new ArrayList<>();
+        int daysInMonth = ym.lengthOfMonth();
+
+        for (Employee emp : liveEmployees) {
+            for (int d = 1; d <= daysInMonth; d++) {
+                LocalDate date = LocalDate.of(year, month, d);
+                String key = emp.getId() + "_" + date;
+                if (!existingKeys.contains(key)) {
+                    String status;
+                    if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                        status = "WO";
+                    } else if (holidayDates.contains(date)) {
+                        status = "H";
+                    } else {
+                        status = "P";
+                    }
+                    toSave.add(AttendanceRecord.builder()
+                        .employee(emp)
+                        .attendanceDate(date)
+                        .status(status)
+                        .build());
+                }
+            }
+        }
+
+        if (!toSave.isEmpty()) {
+            attendanceRepository.saveAll(toSave);
+        }
+
+        log.info("Seeded {} attendance records for {}/{}", toSave.size(), month, year);
+        return Map.of(
+            "year", year,
+            "month", month,
+            "seededRecords", toSave.size(),
+            "totalEmployees", liveEmployees.size(),
+            "message", "Attendance populated for " + ym.getMonth().name() + " " + year
+        );
+    }
+
+    @Transactional
+    public int markAllPresentForDate(LocalDate date) {
+        List<Employee> liveEmployees = employeeRepository.findAllLiveEmployees();
+        Set<Long> alreadyMarked = new HashSet<>(attendanceRepository.findEmployeeIdsWithAttendanceOn(date));
+
+        int count = 0;
+        for (Employee emp : liveEmployees) {
+            if (!alreadyMarked.contains(emp.getId())) {
+                AttendanceRecord record = AttendanceRecord.builder()
+                    .employee(emp)
+                    .attendanceDate(date)
+                    .status("P")
+                    .build();
+                attendanceRepository.save(record);
+                count++;
+            }
+        }
+        log.info("Auto-marked {} employees as Present for {}", count, date);
+        return count;
+    }
+
+    @Transactional
+    public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String process, String search) {
+        markAllPresentForDate(LocalDate.now());
+        return buildGrid(fromDate, toDate, page, size, process, search);
     }
 
     public List<String> getProcesses() {
@@ -51,7 +152,7 @@ public class AttendanceService {
         return employeeRepository.findDistinctDepartments();
     }
 
-    private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String process) {
+    private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String process, String search) {
         int numDays = (int) ChronoUnit.DAYS.between(monthStart, monthEnd) + 1;
 
         List<DayColumnDTO> dayColumns = new ArrayList<>();
@@ -65,16 +166,32 @@ public class AttendanceService {
                 .build());
         }
 
+        // Build dynamic specification: always LIVE + optional process + optional search
+        Specification<Employee> spec = (root, query, cb) ->
+            cb.and(cb.equal(root.get("employeeStatus"), "LIVE"), cb.equal(root.get("isDeleted"), false));
+
         boolean hasProcessFilter = process != null && !process.trim().isEmpty();
-        int totalEmployees;
-        List<Employee> employees;
         if (hasProcessFilter) {
-            totalEmployees = (int) employeeRepository.countByProcessAssignedAndIsDeletedFalse(process.trim());
-            employees = employeeRepository.findByProcessAssignedAndIsDeletedFalse(process.trim(), PageRequest.of(page, size));
-        } else {
-            totalEmployees = (int) employeeRepository.count();
-            employees = employeeRepository.findAll(PageRequest.of(page, size)).getContent();
+            String p = process.trim();
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("processAssigned"), p));
         }
+
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        if (hasSearch) {
+            String s = "%" + search.trim().toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                cb.like(cb.lower(root.get("employeeCode")), s),
+                cb.like(cb.lower(root.get("firstName")), s),
+                cb.like(cb.lower(root.get("surname")), s)
+            ));
+        }
+
+        int totalEmployees = (int) employeeRepository.count(spec);
+        List<Employee> employees = employeeRepository.findAll(spec, PageRequest.of(page, size)).getContent();
+
+        LocalDate today = LocalDate.now();
+        int todayIndex = (!today.isBefore(monthStart) && !today.isAfter(monthEnd))
+            ? (int) ChronoUnit.DAYS.between(monthStart, today) : -1;
 
         List<AttendanceRecord> allRecords = attendanceRepository.findByAttendanceDateBetween(monthStart, monthEnd);
 
@@ -122,6 +239,9 @@ public class AttendanceService {
             int p = 0, l = 0, ml = 0, r = 0;
             for (int i = 0; i < numDays; i++) {
                 String status = empDayMap.getOrDefault(i, "");
+                if ((status == null || status.isBlank()) && i == todayIndex) {
+                    status = "P";
+                }
                 days.add(status);
                 lockedDays.add(empLockMap.getOrDefault(i, false));
                 switch (status) {
@@ -223,8 +343,10 @@ public class AttendanceService {
         return date.getDayOfWeek() == DayOfWeek.SUNDAY;
     }
 
+    @Transactional
     public byte[] exportExcel(LocalDate fromDate, LocalDate toDate) {
-        MonthlyAttendanceDTO data = buildGrid(fromDate, toDate, 0, Integer.MAX_VALUE, null);
+        markAllPresentForDate(LocalDate.now());
+        MonthlyAttendanceDTO data = buildGrid(fromDate, toDate, 0, Integer.MAX_VALUE, null, null);
         int numDays = data.getDayColumns().size();
 
         try (Workbook workbook = new XSSFWorkbook()) {

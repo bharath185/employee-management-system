@@ -10,6 +10,7 @@ import { NzPopoverModule } from 'ng-zorro-antd/popover';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { AttendanceService } from '../../core/services/attendance.service';
 import { MonthlyAttendance, EmployeeAttendance, AttendanceRecord } from '../../core/models/attendance.models';
@@ -22,6 +23,7 @@ import { saveAs } from 'file-saver';
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzTagModule, NzPopoverModule, NzSpinModule, NzToolTipModule, NzDatePickerModule,
+    NzInputModule,
 
   ],
   template: `
@@ -44,6 +46,9 @@ import { saveAs } from 'file-saver';
             <nz-option nzValue="" nzLabel="All Processes"></nz-option>
             <nz-option *ngFor="let p of processList" [nzValue]="p" [nzLabel]="p"></nz-option>
           </nz-select>
+          <span class="nav-sep"></span>
+          <input nz-input placeholder="Search code / name" [(ngModel)]="searchTerm"
+            (ngModelChange)="onSearchChange()" class="search-input" nzSize="small" style="width:160px; height:28px; font-size:12px; border-radius:6px;" />
         </div>
         <div class="toolbar-actions">
           <button nz-button nzType="default" nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
@@ -107,7 +112,7 @@ import { saveAs } from 'file-saver';
           [nzData]="data?.employees || []"
           [nzLoading]="loading"
           [nzFrontPagination]="false"
-          [nzShowPagination]="!!(data && data.totalEmployees > size)"
+          [nzShowPagination]="true"
           [nzPageIndex]="page + 1"
           [nzPageSize]="size"
           [nzTotal]="(data && data.totalEmployees) || 0"
@@ -116,8 +121,9 @@ import { saveAs } from 'file-saver';
           nzBordered nzSize="small"
           [nzScroll]="{ x: scrollX }"
           [nzShowSizeChanger]="true"
-          [nzPageSizeOptions]="[10,20,50,100]"
-          [nzHideOnSinglePage]="true"
+          [nzPageSizeOptions]="[10,20,50,100,200]"
+          nzShowQuickJumper
+          [nzShowTotal]="totalTpl"
           nzTableLayout="fixed">
           <thead>
             <tr>
@@ -142,8 +148,9 @@ import { saveAs } from 'file-saver';
           <tbody>
             <tr *ngFor="let emp of attTable.data; let idx = index" class="emp-row">
               <td class="td-sno">{{ emp.serialNo }}</td>
-              <td class="td-emp" [nz-popover]="empPop" nzPopoverTrigger="hover" nzPopoverPlacement="rightTop" [nzPopoverMouseEnterDelay]="0.3">
+              <td class="td-emp" [nz-popover]="empPop" nzPopoverTrigger="click" nzPopoverPlacement="rightTop">
                 <span class="emp-code">{{ emp.employeeCode }}</span>
+                <span class="emp-name">{{ emp.employeeName }}</span>
                 <ng-template #empPop>
                   <div class="emp-popover">
                     <div class="pop-header">
@@ -188,6 +195,9 @@ import { saveAs } from 'file-saver';
           </tbody>
         </nz-table>
       </div>
+      <ng-template #totalTpl let-range="range" let-total>
+        {{ range[0] }}-{{ range[1] }} of {{ total }} employees
+      </ng-template>
     </div>
   `,
   styles: [`
@@ -258,7 +268,7 @@ import { saveAs } from 'file-saver';
     .th-month { font-weight:700; margin-right:6px; }
     .th-range { font-weight:400; opacity:.8; font-size:10px; }
     .th-sno { width:38px; min-width:38px; text-align:center !important; padding:5px 2px !important; font-size:11px; color:#555; }
-    .th-emp { width:90px; min-width:90px; text-align:center !important; padding:5px 6px !important; font-size:11px; color:#555; }
+    .th-emp { width:160px; min-width:160px; text-align:left !important; padding:5px 8px !important; font-size:12px; color:#555; }
     .th-day { width:32px; min-width:32px; text-align:center !important; padding:2px 0 !important; font-size:10px; line-height:1.3; }
     .th-sum { width:36px; min-width:36px; text-align:center !important; padding:5px 2px !important; font-size:10px; font-weight:700; letter-spacing:.5px; }
     .th-sum-p { color:#52c41a !important; }
@@ -272,9 +282,10 @@ import { saveAs } from 'file-saver';
     .emp-row { transition:background .15s; }
     .emp-row:hover { background:#f0f4ff !important; }
     .td-sno { text-align:center !important; font-size:11px; color:#999; padding:4px 2px !important; }
-    .td-emp { text-align:center !important; padding:4px 6px !important; cursor:pointer; }
-    .emp-code { font-weight:700; font-size:12px; color:#4361ee; letter-spacing:.4px; cursor:pointer; transition:color .15s; }
+    .td-emp { text-align:left !important; padding:6px 8px !important; cursor:pointer; line-height:1.4; }
+    .emp-code { display:block; font-weight:700; font-size:13px; color:#4361ee; letter-spacing:.3px; cursor:pointer; transition:color .15s; }
     .emp-code:hover { color:#3a0ca3; }
+    .emp-name { display:block; font-size:12px; color:#333; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:145px; margin-top:1px; }
     .td-day { text-align:center !important; padding:3px 1px !important; font-size:11px; }
     .day-status { display:inline-block; width:22px; height:19px; line-height:19px; border-radius:4px; font-size:10px; font-weight:700; text-align:center; color:#fff; box-shadow:0 1px 3px rgba(0,0,0,.12); transition:transform .15s,box-shadow .15s; }
     .day-status:hover { transform:scale(1.15); box-shadow:0 2px 6px rgba(0,0,0,.2); }
@@ -326,13 +337,15 @@ export class AttendanceComponent implements OnInit {
   fromDate: Date;
   toDate: Date;
   page = 0;
-  size = 50;
+  size = 10;
   data: MonthlyAttendance | null = null;
   isEditMode = false;
   changedRecords: Set<string> = new Set();
   scrollX = '';
   selectedProcess = '';
   processList: string[] = [];
+  searchTerm = '';
+  private searchDebounce: any;
   rangeDays = 30;
 
   legendItems = [
@@ -377,6 +390,14 @@ export class AttendanceComponent implements OnInit {
     this.loadData();
   }
 
+  onSearchChange(): void {
+    clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => {
+      this.page = 0;
+      this.loadData();
+    }, 400);
+  }
+
   shiftRange(delta: number): void {
     const days = this.rangeDays;
     this.fromDate = new Date(this.fromDate.getTime() + delta * days * 24 * 60 * 60 * 1000);
@@ -392,7 +413,7 @@ export class AttendanceComponent implements OnInit {
     this.loading = true;
     const from = this.formatDate(this.fromDate);
     const to = this.formatDate(this.toDate);
-    this.attendanceService.getMonthlyAttendance(from, to, this.page, this.size, this.selectedProcess).subscribe({
+    this.attendanceService.getMonthlyAttendance(from, to, this.page, this.size, this.selectedProcess, this.searchTerm).subscribe({
       next: (res) => {
         this.data = res.data;
         const cols = 2 + (this.data?.dayColumns?.length || 30) + 4;

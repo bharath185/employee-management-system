@@ -80,10 +80,16 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                 <i nz-icon nzType="bank"></i>
                 <span *ngIf="!isCollapsed()">Company Setup</span>
               </li>
+              <li nz-menu-item routerLink="/admin/document-templates"
+                  *ngIf="can('doc_templates')"
+                  (click)="closeDrawerOnMobile()">
+                <i nz-icon nzType="file-text"></i>
+                <span *ngIf="!isCollapsed()">Documents</span>
+              </li>
 
               <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
 
-              <li nz-menu-item routerLink="/admin/payroll"
+              <li nz-menu-item routerLink="/admin/payroll" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('payroll')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="money-collect"></i>
@@ -121,12 +127,6 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="bar-chart"></i>
                 <span *ngIf="!isCollapsed()">Reports</span>
-              </li>
-
-              <li nz-menu-item routerLink="/admin/labour-reports" routerLinkActive="ant-menu-item-selected"
-                  (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="file-text"></i>
-                <span *ngIf="!isCollapsed()">Labour Reports</span>
               </li>
 
 

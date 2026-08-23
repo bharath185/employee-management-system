@@ -11,18 +11,16 @@ import com.ems.model.DocumentDownloadLog;
 import com.ems.model.DocumentTemplate;
 import com.ems.model.Employee;
 import com.ems.model.Salary;
+import com.ems.model.SalaryMaster;
 import com.ems.repository.DocumentDownloadLogRepository;
 import com.ems.repository.DocumentTemplateRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.SalaryRepository;
+import com.ems.repository.SalaryMasterRepository;
 import com.ems.utils.TemplateEngine;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -31,12 +29,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -48,10 +50,8 @@ public class DocumentTemplateService {
     private final DocumentDownloadLogRepository downloadLogRepository;
     private final EmployeeRepository employeeRepository;
     private final SalaryRepository salaryRepository;
+    private final SalaryMasterRepository salaryMasterRepository;
     private final CompanyService companyService;
-
-    @Value("${app.base-url:}")
-    private String baseUrl;
 
     // ========== TEMPLATE CRUD ==========
 
@@ -160,6 +160,7 @@ public class DocumentTemplateService {
         filledContent = resolveLogoUrl(filledContent, company);
         filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
+        styledHtml = applyA4PreviewFrame(styledHtml);
 
         log.debug("Document preview generated for template: {}, employee: {}", templateId, employeeId);
         return styledHtml;
@@ -186,6 +187,7 @@ public class DocumentTemplateService {
         filledContent = resolveLogoUrl(filledContent, company);
         filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
+        styledHtml = applyA4PreviewFrame(styledHtml);
 
         // Log the download
         String financialYear = calculateFinancialYear();
@@ -308,6 +310,7 @@ public class DocumentTemplateService {
         types.add(createType("WARNING_LETTER", "Warning Letter"));
         types.add(createType("SHOW_CAUSE", "Show Cause Notice"));
         types.add(createType("NOC", "No Objection Certificate"));
+        types.add(createType("REFERENCE_CHECK", "Reference Check Call Record"));
         types.add(createType("BONUS_LETTER", "Bonus Letter"));
         types.add(createType("INCREMENT_LETTER", "Increment Letter"));
         types.add(createType("OTHER", "Other"));
@@ -341,36 +344,88 @@ public class DocumentTemplateService {
         Map<String, String> salaryValues = new HashMap<>();
 
         try {
+            BigDecimal basic = BigDecimal.ZERO;
+            BigDecimal hra = BigDecimal.ZERO;
+            BigDecimal fpa = BigDecimal.ZERO;
+            BigDecimal oa = BigDecimal.ZERO;
+            BigDecimal pf = BigDecimal.ZERO;
+            BigDecimal esi = BigDecimal.ZERO;
+            BigDecimal pt = BigDecimal.ZERO;
+            BigDecimal health = BigDecimal.ZERO;
+            boolean found = false;
+
+            // 1. First check recent monthly Salary
             List<Salary> salaries = salaryRepository.findByEmployeeId(employee.getId());
-            salaries.sort((a, b) -> {
-                int y = b.getWageYear().compareTo(a.getWageYear());
-                return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
-            });
-            if (!salaries.isEmpty()) {
+            if (salaries != null && !salaries.isEmpty()) {
+                salaries.sort((a, b) -> {
+                    int y = b.getWageYear().compareTo(a.getWageYear());
+                    return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
+                });
                 Salary s = salaries.get(0);
-                BigDecimal basic = safe(s.getBasic());
-                BigDecimal hra = safe(s.getHra());
-                BigDecimal fpa = safe(s.getFixedPersonalAllowance());
-                BigDecimal oa = safe(s.getOtherAllowance());
-                BigDecimal pf = safe(s.getPfDeduction());
-                BigDecimal esi = safe(s.getEsiDeduction());
-                BigDecimal totalMonthly = basic.add(hra).add(fpa).add(oa);
-                BigDecimal totalAnnual = totalMonthly.multiply(BigDecimal.valueOf(12));
-                BigDecimal ctcMonthly = totalMonthly.add(pf).add(esi);
+                basic = safe(s.getBasic());
+                hra = safe(s.getHra());
+                fpa = safe(s.getFixedPersonalAllowance());
+                oa = safe(s.getOtherAllowance());
+                pf = safe(s.getPfDeduction());
+                esi = safe(s.getEsiDeduction());
+                pt = safe(s.getPtDeduction());
+                health = safe(s.getHealthInsurance());
+                if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0) {
+                    found = true;
+                }
+            }
+
+            // 2. Fall back to SalaryMaster if no monthly salary or basic was 0
+            if (!found) {
+                Optional<SalaryMaster> smOpt = salaryMasterRepository.findByEmployeeId(employee.getId());
+                if (smOpt.isPresent()) {
+                    SalaryMaster sm = smOpt.get();
+                    basic = safe(sm.getBasic());
+                    hra = safe(sm.getHra());
+                    fpa = safe(sm.getFixedPersonalAllowance());
+                    oa = safe(sm.getOtherAllowance());
+                    pf = safe(sm.getPfDeduction());
+                    esi = safe(sm.getEsiDeduction());
+                    pt = safe(sm.getPtDeduction());
+                    health = safe(sm.getHealthInsurance());
+                    found = true;
+                }
+            }
+
+            if (found) {
+                BigDecimal grossMonthly = basic.add(hra).add(fpa).add(oa);
+                BigDecimal grossAnnual = grossMonthly.multiply(BigDecimal.valueOf(12));
+                BigDecimal totalDeductionsMonthly = pf.add(esi).add(pt).add(health);
+                BigDecimal netMonthly = grossMonthly.subtract(totalDeductionsMonthly);
+                if (netMonthly.compareTo(BigDecimal.ZERO) < 0) netMonthly = BigDecimal.ZERO;
+                BigDecimal netAnnual = netMonthly.multiply(BigDecimal.valueOf(12));
+                BigDecimal ctcMonthly = grossMonthly.add(pf).add(esi);
                 BigDecimal ctcAnnual = ctcMonthly.multiply(BigDecimal.valueOf(12));
 
                 salaryValues.put("basic_pay", fmt(basic));
                 salaryValues.put("basic_pay_annual", fmt(basic.multiply(BigDecimal.valueOf(12))));
                 salaryValues.put("hra_amount", fmt(hra));
                 salaryValues.put("hra_annual", fmt(hra.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("other_allowance", fmt(fpa.add(oa)));
-                salaryValues.put("other_allowance_annual", fmt(fpa.add(oa).multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("total_monthly", fmt(totalMonthly));
-                salaryValues.put("total_annual", fmt(totalAnnual));
+                salaryValues.put("fixed_personal_allowance", fmt(fpa));
+                salaryValues.put("fpa_amount", fmt(fpa));
+                salaryValues.put("other_allowance", fmt(oa));
+                salaryValues.put("other_allowance_annual", fmt(oa.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("gross_salary", fmt(grossMonthly));
+                salaryValues.put("gross_salary_annual", fmt(grossAnnual));
+                salaryValues.put("total_monthly", fmt(grossMonthly));
+                salaryValues.put("total_annual", fmt(grossAnnual));
                 salaryValues.put("pf_amount", fmt(pf));
                 salaryValues.put("pf_annual", fmt(pf.multiply(BigDecimal.valueOf(12))));
                 salaryValues.put("esic_amount", fmt(esi));
                 salaryValues.put("esic_annual", fmt(esi.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("pt_amount", fmt(pt));
+                salaryValues.put("pt_annual", fmt(pt.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("health_insurance", fmt(health));
+                salaryValues.put("health_insurance_annual", fmt(health.multiply(BigDecimal.valueOf(12))));
+                salaryValues.put("net_pay", fmt(netMonthly));
+                salaryValues.put("net_salary", fmt(netMonthly));
+                salaryValues.put("in_hand_salary", fmt(netMonthly));
+                salaryValues.put("net_pay_annual", fmt(netAnnual));
                 salaryValues.put("ctc_monthly", fmt(ctcMonthly));
                 salaryValues.put("ctc_annual", fmt(ctcAnnual));
             }
@@ -394,37 +449,115 @@ public class DocumentTemplateService {
      */
     private String resolveLogoUrl(String content, Company company) {
         if (content == null || content.isEmpty()) return content;
-        String logoUrl = "";
+        String logoSrc = "";
         if (company != null && company.getLogoPath() != null && !company.getLogoPath().isEmpty()) {
             try {
-                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
-                    .currentRequestAttributes()).getRequest();
-                String fwdProto = request.getHeader("X-Forwarded-Proto");
-                String fwdHost = request.getHeader("X-Forwarded-Host");
-                if (fwdHost != null && !fwdHost.isEmpty()) {
-                    // Behind reverse proxy (Render) — trust forwarded headers
-                    String scheme = (fwdProto != null && !fwdProto.isEmpty()) ? fwdProto : "https";
-                    logoUrl = scheme + "://" + fwdHost + "/api/v1/company/logo";
-                } else {
-                    // Direct request — use server name and port
-                    String scheme = request.getScheme();
-                    String host = request.getServerName();
-                    int port = request.getServerPort();
-                    String portPart = (port == 80 || port == 443) ? "" : ":" + port;
-                    logoUrl = scheme + "://" + host + portPart + request.getContextPath() + "/company/logo";
+                Path logoPath = companyService.getLogoFilePath();
+                byte[] bytes = Files.readAllBytes(logoPath);
+                String mime = Files.probeContentType(logoPath);
+                if (mime == null || mime.isBlank()) {
+                    String name = logoPath.getFileName().toString().toLowerCase();
+                    mime = name.endsWith(".png") ? "image/png"
+                        : name.endsWith(".gif") ? "image/gif"
+                        : name.endsWith(".webp") ? "image/webp"
+                        : "image/jpeg";
                 }
+                logoSrc = "data:" + mime + ";base64," + Base64.getEncoder().encodeToString(bytes);
             } catch (Exception e) {
-                logoUrl = baseUrl + "/api/v1/company/logo";
-                log.warn("Could not resolve logo URL from request, using baseUrl fallback: {}", logoUrl);
+                log.warn("Could not embed company logo: {}", e.getMessage());
+                logoSrc = "";
             }
         }
-        return content.replace("{{company_logo}}", logoUrl);
+        return content.replace("{{company_logo}}", logoSrc);
+    }
+
+    /**
+     * Forces the same A4 paper size in on-screen preview, print window, and PDF print.
+     */
+    private String applyA4PreviewFrame(String html) {
+        if (html == null || html.contains("id=\"ems-a4-frame\"")) {
+            return html;
+        }
+        String frame = """
+            <style id="ems-a4-frame">
+              @page {
+                size: A4 portrait;
+                margin: 12mm 15mm 12mm 15mm;
+              }
+              *, *::before, *::after {
+                box-sizing: border-box;
+              }
+              @media screen {
+                html {
+                  background: #cfd5de !important;
+                }
+                body {
+                  background: #cfd5de !important;
+                  margin: 0 !important;
+                  padding: 24px 0 32px !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  align-items: center !important;
+                  min-height: 100vh !important;
+                  box-sizing: border-box !important;
+                }
+                body > :first-child {
+                  width: 210mm !important;
+                  max-width: 210mm !important;
+                  min-height: 297mm;
+                  margin: 0 auto !important;
+                  background: #ffffff !important;
+                  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.18) !important;
+                  border-radius: 4px !important;
+                  box-sizing: border-box !important;
+                }
+              }
+              @media print {
+                @page {
+                  size: A4 portrait;
+                  margin: 12mm 15mm 12mm 15mm;
+                }
+                html, body {
+                  background: #ffffff !important;
+                  width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  display: block !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                body > :first-child {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  min-height: auto !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  border-radius: 0 !important;
+                  background: #ffffff !important;
+                }
+              }
+            </style>
+            """;
+        String lower = html.toLowerCase();
+        int idx = lower.indexOf("</head>");
+        if (idx >= 0) {
+            return html.substring(0, idx) + frame + html.substring(idx);
+        }
+        return frame + html;
     }
 
     /**
      * Wraps the filled HTML content with proper print-friendly styling.
      */
     private String wrapWithPrintStyles(String content, String title) {
+        if (content != null && (content.contains("<!DOCTYPE") || content.contains("<html"))) {
+            return content;
+        }
+        if (content != null && content.contains("joining-a4")) {
+            return wrapJoiningA4(content, title);
+        }
         return """
             <!DOCTYPE html>
             <html lang="en">
@@ -474,10 +607,12 @@ public class DocumentTemplateService {
                     }
                     .brand { display: flex; align-items: center; gap: 16px; }
                     .crest {
-                        width: 52px; height: 52px; border-radius: 50%%;
+                        height: 64px; max-width: 200px;
                         flex-shrink: 0; overflow: hidden;
                     }
-                    .crest img { width: 100%%; height: 100%%; object-fit: cover; border-radius: 50%%; }
+                    .crest img { height: 64px; width: auto; max-width: 200px; object-fit: contain; display: block; }
+                    .crest img[src=""] { display: none; }
+                    .brand-text { display: none; }
                     .brand-text .company {
                         font-size: 23px; font-weight: 700; color: var(--navy);
                         letter-spacing: .01em; line-height: 1.15;
@@ -619,10 +754,142 @@ public class DocumentTemplateService {
                 </style>
             </head>
             <body>
-                %s
+{{DOC_BODY}}
             </body>
             </html>
-            """.formatted(escapeHtml(title), content);
+            """.formatted(escapeHtml(title)).replace("{{DOC_BODY}}", content);
+    }
+
+    private String wrapJoiningA4(String content, String title) {
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>%s</title>
+                <style>
+                    @page { size: A4 portrait; margin: 8mm 10mm; }
+                    * { box-sizing: border-box; }
+                    html, body { margin: 0; padding: 0; }
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 9.5px;
+                        line-height: 1.25;
+                        color: #1e293b;
+                        background: #fff;
+                    }
+                    .joining-a4 {
+                        width: 100%%;
+                    }
+                    .join-head {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        border-bottom: 2px solid #1a3a5c;
+                        padding-bottom: 6px;
+                        margin-bottom: 6px;
+                    }
+                    .join-logo {
+                        height: 48px;
+                        width: auto;
+                        max-width: 200px;
+                        object-fit: contain;
+                        display: block;
+                    }
+                    .join-logo[src=""] { display: none; }
+                    .join-meta {
+                        text-align: right;
+                        font-size: 8px;
+                        color: #475569;
+                        line-height: 1.35;
+                        max-width: 62%%;
+                    }
+                    .join-title {
+                        text-align: center;
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: #1a3a5c;
+                        margin: 4px 0 6px;
+                        letter-spacing: .04em;
+                        text-transform: uppercase;
+                    }
+                    .join-table {
+                        width: 100%%;
+                        border-collapse: collapse;
+                    }
+                    .join-table td {
+                        border: 1px solid #64748b;
+                        padding: 2px 5px;
+                        vertical-align: top;
+                        word-wrap: break-word;
+                    }
+                    .join-table .lbl {
+                        width: 32%%;
+                        background: #f8fafc;
+                        font-weight: 600;
+                        color: #0f172a;
+                        font-size: 8px;
+                    }
+                    .join-table .ref-lbl { width: 16%%; white-space: normal; line-height: 1.35; }
+                    .join-table .val { font-size: 9px; line-height: 1.35; }
+                    .blank-line {
+                        display: inline-block;
+                        min-width: 120px;
+                        border-bottom: 1px solid #94a3b8;
+                        padding: 0 4px;
+                    }
+                    .join-note {
+                        margin: 6px 0 4px;
+                        font-size: 8.5px;
+                        line-height: 1.4;
+                    }
+                    .join-sign {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-end;
+                        margin-top: 6px;
+                    }
+                    .join-sign-line {
+                        width: 180px;
+                        border-bottom: 1px solid #334155;
+                        height: 22px;
+                        margin: 4px 0;
+                    }
+                    .join-photo {
+                        width: 70px;
+                        height: 84px;
+                        border: 1px solid #334155;
+                    }
+                    .join-photo-cap {
+                        text-align: center;
+                        font-size: 8px;
+                        margin-top: 2px;
+                    }
+                    .join-foot {
+                        text-align: center;
+                        font-size: 8px;
+                        color: #475569;
+                        margin-top: 8px;
+                        line-height: 1.35;
+                    }
+                    .join-foot-name {
+                        font-weight: 700;
+                        color: #1a3a5c;
+                        text-transform: uppercase;
+                        letter-spacing: .04em;
+                        margin-bottom: 2px;
+                    }
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    }
+                </style>
+            </head>
+            <body>
+{{DOC_BODY}}
+            </body>
+            </html>
+            """.formatted(escapeHtml(title)).replace("{{DOC_BODY}}", content);
     }
 
     private String escapeHtml(String input) {

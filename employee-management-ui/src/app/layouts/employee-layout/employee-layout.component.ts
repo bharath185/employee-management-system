@@ -59,6 +59,10 @@ import { AuthService } from '../../core/services/auth.service';
               <i nz-icon nzType="dollar"></i>
               <span *ngIf="!isCollapsed()">My Encashments</span>
             </li>
+            <li nz-menu-item routerLink="/employee/payroll" routerLinkActive="ant-menu-item-selected">
+              <i nz-icon nzType="wallet"></i>
+              <span *ngIf="!isCollapsed()">My Payroll</span>
+            </li>
           </ul>
           <div class="emp-sidenav-spacer"></div>
           <div class="emp-sidenav-user-section">
@@ -123,6 +127,10 @@ import { AuthService } from '../../core/services/auth.service';
               <li nz-menu-item routerLink="/employee/encashments">
                 <i nz-icon nzType="dollar"></i>
                 <span>My Encashments</span>
+              </li>
+              <li nz-menu-item routerLink="/employee/payroll">
+                <i nz-icon nzType="wallet"></i>
+                <span>My Payroll</span>
               </li>
               <li nz-menu-divider></li>
               <li nz-menu-item (click)="logout()">

@@ -11,7 +11,12 @@ import org.springframework.stereotype.Component;
 
 import com.ems.utils.EmployeeCodeGenerator;
 import javax.sql.DataSource;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
@@ -35,6 +40,9 @@ public class DataSeeder implements CommandLineRunner {
 
     private final DataSource dataSource;
 
+    @org.springframework.beans.factory.annotation.Value("${app.data.seed-on-startup:true}")
+    private boolean seedOnStartup;
+
     private List<String> seededEmployeeCodes = new ArrayList<>();
 
     @Override
@@ -44,10 +52,11 @@ public class DataSeeder implements CommandLineRunner {
         seedMasterData();
         seedLeaveTypes();
         seedCompany();
-        seedEmployees();
-        seedEmployeeUsers();
-        seedSalaries();
-        seedLeaveBalances();
+        if (seedOnStartup) {
+            seedEmployees();
+            seedEmployeeUsers();
+            seedLeaveBalances();
+        }
         seedDocumentTemplates();
         seedPermissions();
     }
@@ -167,7 +176,7 @@ public class DataSeeder implements CommandLineRunner {
             log.debug("Master data already exists, skipping seed");
         }
 
-        // Seed categories independently — existing databases may have been seeded before these were added
+        // Seed categories independently â€” existing databases may have been seeded before these were added
         seedCategory("PROCESS", new String[][]{
             {"PROCESS_A", "Process A"}, {"PROCESS_B", "Process B"},
             {"PROCESS_C", "Process C"}, {"PROCESS_D", "Process D"}
@@ -499,381 +508,80 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedDocumentTemplates() {
-        if (documentTemplateRepository.count() == 0) {
+        String varsCommon = "[\"employee_name\",\"employee_code\",\"prefix\",\"first_name\",\"surname\",\"designation\",\"address\",\"doj\",\"doe\",\"company_name\",\"company_address\",\"company_phone\",\"company_email\",\"company_website\",\"company_cin\",\"company_logo\",\"authorized_signatory\",\"current_date\"]";
+        String varsCtc = "[\"employee_name\",\"employee_code\",\"prefix\",\"first_name\",\"surname\",\"designation\",\"address\",\"doj\",\"company_name\",\"company_address\",\"company_phone\",\"company_email\",\"company_website\",\"company_cin\",\"company_logo\",\"authorized_signatory\",\"current_date\",\"basic_pay\",\"hra_amount\",\"other_allowance\",\"total_monthly\",\"total_annual\",\"pf_amount\",\"esic_amount\",\"ctc_monthly\",\"ctc_annual\"]";
+        String varsJoining = "[\"employee_code\",\"doj\",\"employee_name\",\"dob\",\"gender\",\"blood_group\",\"father_husband_name\",\"address\",\"permanent_address\",\"mobile\",\"email\",\"pan_number_employee\",\"aadhar_number\",\"father_name\",\"father_phone\",\"mother_name\",\"mother_phone\",\"spouse_name\",\"spouse_phone\",\"marital_status\",\"highest_qualification\",\"year_of_passing\",\"percentage_marks\",\"organization_name\",\"period_of_employment\",\"designation\",\"account_number\",\"bank_name\",\"branch\",\"ifsc_code\",\"uan_no\",\"esic_no\",\"ref1_name\",\"ref1_relationship\",\"ref1_address\",\"ref1_mobile\",\"ref2_name\",\"ref2_relationship\",\"ref2_address\",\"ref2_mobile\",\"company_name\",\"company_address\",\"company_email\",\"company_phone\",\"company_logo\",\"current_date\"]";
+
+        upsertLetter("JOINING_LETTER", "Joining Letter", "Official joining letter", "joining-letter.html", varsJoining);
+        upsertLetter("OFFER_LETTER", "Offer Letter", "Official offer letter", "offer-letter.html", varsCommon);
+        upsertLetter("EXPERIENCE_LETTER", "Experience Certificate", "Official experience letter", "experience-letter.html", varsCommon);
+        upsertLetter("RELIEVING_LETTER", "Relieving Letter", "Official relieving letter", "relieving-letter.html", varsCommon);
+        upsertLetter("APPOINTMENT_LETTER", "Appointment Letter", "Official appointment letter with terms and CTC", "appointment-letter.html", varsCtc);
+        upsertLetter("SALARY_SLIP", "Salary Slip", "Official salary slip", "salary-slip.html", varsCtc);
+        upsertLetter("CONFIRMATION_LETTER", "Confirmation Letter", "Official confirmation after probation", "confirmation-letter.html", varsCommon);
+        upsertLetter("NOC", "No Objection Certificate", "Official NOC", "noc.html", varsCommon);
+        String varsRefCheck = "[\"employee_name\",\"employee_code\",\"designation\",\"doj\",\"ref1_name\",\"ref1_relationship\",\"ref1_address\",\"ref1_mobile\",\"ref2_name\",\"ref2_relationship\",\"ref2_address\",\"ref2_mobile\",\"company_name\",\"company_address\",\"company_logo\",\"current_date\",\"current_time\"]";
+        upsertLetter("REFERENCE_CHECK", "Reference Check Call Record", "HR reference verification call record", "reference-check.html", varsRefCheck);
+        log.info("Document letter templates loaded from docs/letters");
+    }
+
+    private void upsertLetter(String type, String name, String description, String fileName, String variables) {
+        String content = loadLetterHtml(fileName);
+        DocumentTemplate existing = documentTemplateRepository.findFirstByTemplateType(type).orElse(null);
+        if (existing == null) {
             documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Joining Letter")
-                .templateType("JOINING_LETTER")
-                .description("Standard joining letter template for new employees")
-                .content(templateJoiningLetter())
-                .variables("[\"employee_name\",\"designation\",\"doj\",\"company_name\"]")
+                .templateName(name)
+                .templateType(type)
+                .description(description)
+                .content(content)
+                .variables(variables)
                 .isActive(true)
                 .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Offer Letter")
-                .templateType("OFFER_LETTER")
-                .description("Standard offer letter for selected candidates")
-                .content(templateOfferLetter())
-                .variables("[\"employee_name\",\"designation\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Experience Letter")
-                .templateType("EXPERIENCE_LETTER")
-                .description("Standard experience certificate for exiting employees")
-                .content(templateExperienceLetter())
-                .variables("[\"employee_name\",\"designation\",\"doj\",\"doe\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Relieving Letter")
-                .templateType("RELIEVING_LETTER")
-                .description("Standard relieving letter for exiting employees")
-                .content(templateRelievingLetter())
-                .variables("[\"employee_name\",\"designation\",\"doj\",\"doe\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Appointment Letter")
-                .templateType("APPOINTMENT_LETTER")
-                .description("Standard appointment letter with terms and conditions")
-                .content(templateAppointmentLetter())
-                .variables("[\"employee_name\",\"employee_code\",\"prefix\",\"first_name\",\"surname\",\"designation\",\"address\",\"doj\",\"company_name\",\"company_address\",\"company_phone\",\"company_email\",\"authorized_signatory\",\"current_date\",\"current_year\",\"basic_pay\",\"hra_amount\",\"other_allowance\",\"total_monthly\",\"total_annual\",\"pf_amount\",\"esic_amount\",\"ctc_monthly\",\"ctc_annual\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Salary Slip")
-                .templateType("SALARY_SLIP")
-                .description("Standard monthly salary slip")
-                .content(templateSalarySlip())
-                .variables("[\"employee_name\",\"employee_code\",\"designation\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("Standard Confirmation Letter")
-                .templateType("CONFIRMATION_LETTER")
-                .description("Standard confirmation letter after probation")
-                .content(templateConfirmationLetter())
-                .variables("[\"employee_name\",\"designation\",\"doj\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            documentTemplateRepository.save(DocumentTemplate.builder()
-                .templateName("No Objection Certificate")
-                .templateType("NOC")
-                .description("Standard NOC for employees")
-                .content(templateNOC())
-                .variables("[\"employee_name\",\"designation\",\"company_name\"]")
-                .isActive(true)
-                .build());
-            log.info("Document templates seeded: 8 templates");
         } else {
-            log.debug("Document templates already exist, skipping seed");
+            existing.setTemplateName(name);
+            existing.setDescription(description);
+            existing.setContent(content);
+            existing.setVariables(variables);
+            existing.setIsActive(true);
+            documentTemplateRepository.save(existing);
         }
     }
 
-    private String templateJoiningLetter() {
-        return """
-            <div class="document-header"><h1>JOINING LETTER</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>To,<br><b>{{employee_name}}</b><br>{{address}}</p>
-            <p>Dear <b>{{employee_name}}</b>,</p>
-            <p>We are pleased to have you join <b>{{company_name}}</b> as <b>{{designation}}</b>.</p>
-            <p>Your date of joining is <b>{{doj}}</b>. Please report to the HR department on your first day.</p>
-            <p>We look forward to a long and mutually beneficial association with you.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
+    private String loadLetterHtml(String fileName) {
+        String body = readLetterFile(fileName);
+        if ("joining-letter.html".equals(fileName)
+            || "appointment-letter.html".equals(fileName)
+            || "reference-check.html".equals(fileName)
+            || body.contains("<!DOCTYPE")) {
+            return body;
+        }
+        String letterhead = readLetterFile("letterhead.html");
+        return letterhead + "\n" + body;
     }
 
-    private String templateOfferLetter() {
-        return """
-            <div class="document-header"><h1>OFFER LETTER</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>To,<br><b>{{employee_name}}</b><br>{{address}}</p>
-            <p>Dear <b>{{employee_name}}</b>,</p>
-            <p>We are pleased to offer you the position of <b>{{designation}}</b> at <b>{{company_name}}</b>.</p>
-            <p>Your compensation and other terms will be communicated separately.</p>
-            <p>Please confirm your acceptance by signing a copy of this letter.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
-    }
-
-    private String templateExperienceLetter() {
-        return """
-            <div class="document-header"><h1>EXPERIENCE CERTIFICATE</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>This is to certify that <b>{{employee_name}}</b> worked with <b>{{company_name}}</b> as <b>{{designation}}</b> from <b>{{doj}}</b> to <b>{{doe}}</b>.</p>
-            <p>During this period, {{employee_name}} was found to be sincere, hardworking, and dedicated to work.</p>
-            <p>We wish {{employee_name}} all the best in future endeavors.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
-    }
-
-    private String templateRelievingLetter() {
-        return """
-            <div class="document-header"><h1>RELIEVING LETTER</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>This is to certify that <b>{{employee_name}}</b> ({{employee_code}}) who was working as <b>{{designation}}</b> at <b>{{company_name}}</b> from <b>{{doj}}</b> to <b>{{doe}}</b> is hereby relieved from duties.</p>
-            <p>{{employee_name}} has cleared all dues and obligations with the company.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
-    }
-
-    private String templateAppointmentLetter() {
-        return """
-            <div class="letterhead">
-              <div class="brand">
-                <div class="crest">{{company_logo}}</div>
-                <div class="brand-text">
-                  <div class="company">{{company_name}}</div>
-                  <div class="tagline">Growing Together, Building Trust</div>
-                </div>
-              </div>
-              <div class="letterhead-meta">
-                <div>Tirupati, Andhra Pradesh, India</div>
-                <div>{{company_email}} &middot; {{company_website}}</div>
-              </div>
-            </div>
-
-            <div class="confidential">Private &amp; Confidential</div>
-
-            <div class="doc-date">
-              <span class="label-tag">Date</span>
-              {{current_date}}
-            </div>
-
-            <div class="addressee">
-              {{prefix}} {{first_name}} {{surname}}<br>
-              {{address}}<br>
-              Tirupati
-            </div>
-
-            <p class="salutation">Dear {{prefix}} {{first_name}},</p>
-
-            <h1 class="title">Letter of Appointment</h1>
-            <div class="title-rule"></div>
-
-            <p>On behalf of {{company_name}} (hereinafter referred to as &quot;the Company&quot;), it gives me great pleasure to welcome you onboard as <strong>{{designation}}</strong>. The Company is poised for strong growth and we look forward to working with you to take the firm to the next level.</p>
-
-            <p>The following pages list down the terms and conditions of your employment with the Company as well as the breakup of your compensation package.</p>
-
-            <p>The future holds many opportunities and challenges for us, as an organization. Each one of us has an important role in shaping the Company of tomorrow. With our passion and dedication, we will together achieve our milestones and set up new ones!</p>
-
-            <p class="closing-note">Wishing you a long, successful and enriching journey with the Company.</p>
-
-            <div class="sign-block">
-              <p class="for-line">Yours sincerely,<br>For {{company_name}},</p>
-              <div class="signatory">{{authorized_signatory}}</div>
-              <div class="role">Director</div>
-            </div>
-
-            <div class="page-break"></div>
-
-            <p class="salutation">Dear {{prefix}} {{first_name}},</p>
-
-            <h2 class="doc-heading">Contractual Terms for Employment</h2>
-            <div class="doc-sub">with {{company_name}}</div>
-
-            <p>We are pleased to welcome you on board. Please find the terms and conditions of your employment with the Company:</p>
-
-            <ol class="clauses">
-              <li><strong class="clause-title">Date of Commencement:</strong> Your employment will commence from the date you join our organization by submitting your testimonials.</li>
-              <li><strong class="clause-title">Remuneration:</strong> The details of the compensation are laid out in Annexure A and will be subject to statutory and other deductions as per company policies and statutory guidelines.</li>
-              <li><strong class="clause-title">Place of Work:</strong> Your place of work will be at Tirupati. You may need to travel to other locations basis the needs of Business or the specific work handled. Expenses incurred due to such travel will be reimbursed as per Company Policy. The Company reserves the right to transfer / post / depute you to any of its offices, client locations, branches, group entities or project sites within India depending upon business requirements.</li>
-              <li><strong class="clause-title">Work Details:</strong> Your work timings may be in different shift timings, depending upon the exigencies / client requirements, to provide services to the clients of the Company. You will be explained your work in detail on assumption of duties. Your working hours, weekly offs, holidays and shift schedules shall be governed by applicable law and company policy as amended from time to time.</li>
-              <li><strong class="clause-title">Probation:</strong> You will be on probation for a period of 6 months. Upon completion of your probation period, you will be confirmed in the services of the Company subject to your work performance being found to be satisfactory during the probation period. The probation period may be extended at the discretion of the Company based on performance, conduct, attendance or business requirements.</li>
-              <li><strong class="clause-title">Proprietary Information Agreement:</strong> Your employment creates a relationship of confidence and trust between you and the Company with respect to certain information of a confidential, proprietary or trade secret nature. For the purposes of this Agreement, all such information will be referred to as &quot;Proprietary Information&quot;. You therefore agree to abide by the following terms and conditions:
-                <ol class="sub-list">
-                  <li>Proprietary Information includes, without limitation:
-                    <ol class="roman-list">
-                      <li>All software / ideas developed or licensed by or for the Company or licensed to the Company by a third party and any documentation or listing pertaining to such software, including source code, object code, audio-visual components, diagrams, flowcharts, designs, drawings, specifications, models, data, bug reports and customer information.</li>
-                      <li>Marketing and sales plans, product development plans, competitive analyses, benchmark test results, business and financial plans or forecasts, non-public financial information, agreements, and customer and employee lists of the Company, along with related know-how, purchasing, accounting, merchandising or licensing information.</li>
-                      <li>Any information which the Company has a legal obligation to treat as confidential, or which the Company treats as proprietary or designates as confidential, whether or not owned or developed by the Company.</li>
-                      <li>Any process or process-related documents.</li>
-                      <li>Customer information / data.</li>
-                      <li>At all times, both during and after your contract with the Company, you will hold Proprietary Information in confidence.</li>
-                      <li>You will not use, transfer, publish, disclose, or report Proprietary Information directly or indirectly, except such disclosure to other employees of the Company or authorized third parties as may be necessary in the ordinary course of performing your duties, or as otherwise directed by the Company.</li>
-                      <li>You shall, upon conclusion of your contract with the Company, return all Company property, including all Proprietary Information, Identity Card, documents, software, laptops, discs, diskettes, tapes, pen drives or any other form of media. As a condition of your employment, you agree to maintain confidentiality of the Company&rsquo;s Proprietary Information at all times.</li>
-                      <li>Proprietary Information shall not include information known publicly or generally employed in the trade.</li>
-                    </ol>
-                  </li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">Confidentiality:</strong>
-                <ol class="sub-list">
-                  <li>Employee shall comply with all information security, cyber security, IT usage, client confidentiality and data privacy policies of the Company.</li>
-                  <li>Any intellectual property, work product, process, software, documentation, database, design, invention, development or material created during employment in connection with Company business shall remain the sole property of the Company.</li>
-                  <li>The terms and conditions and any other discussions with regard to this agreement are absolutely confidential.</li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">Conduct:</strong> You are expected to exhibit at all times:
-                <ol class="sub-list">
-                  <li>Ethics in attitude and behaviour, maintaining professional, respectful, ethical and non-discriminatory conduct towards all employees, clients, vendors and stakeholders.</li>
-                  <li>Integrity and excellence in your work.</li>
-                  <li>Strict compliance with rules, regulations and policies in the conduct of your work and yourself.</li>
-                  <li>Respect in words and action towards your fellow employees.</li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">POSH Compliance:</strong> The Company maintains a zero-tolerance policy against sexual harassment and discrimination at the workplace and complies with applicable laws relating to prevention of sexual harassment at the workplace.</li>
-              <li><strong class="clause-title">HR Policies:</strong> Employees are expected to comply with all HR policies, code of conduct, leave rules, disciplinary procedures, information security policies and operational guidelines issued by the Company from time to time.</li>
-              <li><strong class="clause-title">Commute:</strong> Please note that you will need to make your own arrangements for commuting between your residence and office; the Company does not undertake to provide any transport or conveyance allowance in lieu thereof.</li>
-              <li><strong class="clause-title">Termination and Notice:</strong> This contract of employment can be terminated by either side by giving the applicable notice below. The Company reserves the right to initiate disciplinary action, including termination, in cases involving misconduct, fraud, breach of confidentiality, harassment, violence, insubordination, unauthorized absence or violation of Company policies, subject to applicable law. At the sole discretion of Management, servicing of the Notice Period may be substituted by remittance of &quot;Notice Pay&quot;, being the equivalent of the Net Salary as applicable.
-                <ol class="sub-list">
-                  <li>Up to one year of service &mdash; notice period of Fifteen (15) days.</li>
-                  <li>Upon or after one year of service &mdash; notice period of One (1) month.</li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">Full &amp; Final Settlement:</strong> Upon cessation of employment, full and final settlement shall be processed subject to clearance of Company assets, confidential information and dues in accordance with Company policy and applicable law.</li>
-              <li><strong class="clause-title">Unauthorized Absence:</strong> In case of continuous unauthorized absence for two weeks without information, the Company may initiate appropriate disciplinary action in accordance with Company policy and applicable law after providing reasonable opportunity to explain the absence.</li>
-              <li><strong class="clause-title">Grievance Redressal:</strong> Any grievance relating to employment may be escalated through the Company&rsquo;s grievance redressal mechanism.</li>
-              <li><strong class="clause-title">Background Verification:</strong> This employment is subject to satisfactory background verification, reference checks and verification of documents submitted by you. If any information / documents are found false, misleading or suppressed, the Company reserves the right to withdraw the offer or terminate employment. Documentation proof includes:
-                <ol class="sub-list">
-                  <li>Personal documentation proof (Identity, Address, Date of Birth etc.)</li>
-                  <li>Educational Qualification proof.</li>
-                  <li>Prior Work Experience proof.</li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">Data Collection:</strong>
-                <ol class="sub-list">
-                  <li>You hereby provide explicit consent to the Company to collect, receive, store, process, use, transfer, share and retain personal information / data &mdash; including sensitive personal details, documents and employment-related information &mdash; for lawful business and employment purposes, including but not limited to recruitment, onboarding, payroll processing, statutory compliance, background verification, insurance, client requirements, internal administration, performance management and any other legitimate employment-related purposes.</li>
-                  <li>You understand and agree that such personal information / data may be shared with authorized third parties, group companies, clients, consultants, statutory authorities, auditors, background verification agencies, payroll processors, IT service providers or other service partners on a need-to-know basis and in compliance with applicable laws.</li>
-                </ol>
-              </li>
-              <li><strong class="clause-title">Validity:</strong> Please confirm your acceptance of the above terms and conditions by signing the attached declaration and affixing your initials on each page of the copy of the contract and returning the copy to us.</li>
-            </ol>
-
-            <div class="sign-block">
-              <p class="for-line">Yours sincerely,<br>For {{company_name}},</p>
-              <div class="signatory">{{authorized_signatory}}</div>
-              <div class="role">Director</div>
-            </div>
-
-            <div class="page-footer">Page 1 of 2 &nbsp;&middot;&nbsp; Contractual Terms of Employment</div>
-
-            <div class="page-break"></div>
-
-            <div class="section-break"><span class="st">Annexure A</span></div>
-
-            <table class="ctc">
-              <caption>Breakup of Cost to Company &mdash; {{prefix}} {{first_name}} {{surname}}, {{designation}}</caption>
-              <thead>
-                <tr><th>Salary Component</th><th>Monthly (&#8377;)</th><th>Annual (&#8377;)</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Basic Pay</td><td>{{basic_pay}}</td><td>{{basic_pay_annual}}</td></tr>
-                <tr><td>HRA (30% of Basic)</td><td>{{hra_amount}}</td><td>{{hra_annual}}</td></tr>
-                <tr><td>Other Allowance</td><td>{{other_allowance}}</td><td>{{other_allowance_annual}}</td></tr>
-                <tr class="total"><td>Total</td><td>{{total_monthly}}</td><td>{{total_annual}}</td></tr>
-                <tr><td>Company Contribution &mdash; PF</td><td>{{pf_amount}}</td><td>{{pf_annual}}</td></tr>
-                <tr><td>Company Contribution &mdash; ESIC (3.25% of Gross)</td><td>{{esic_amount}}</td><td>{{esic_annual}}</td></tr>
-                <tr class="total"><td>Total CTC</td><td>{{ctc_monthly}}</td><td>{{ctc_annual}}</td></tr>
-              </tbody>
-            </table>
-
-            <ol class="notes-list">
-              <li>All entitlements (as applicable and as per the law) would apply upon your joining the Company. The entitlements are subject to company policies / procedures / guidelines that may be issued / modified from time to time. All perquisites and benefits including reimbursements are subject to applicable Income Tax provisions, including taxation on perquisite value.</li>
-              <li>These entitlements shall cease upon termination of your contract with the Company.</li>
-              <li>The salary structure has been designed in accordance with applicable labour laws and wage-related statutory provisions. Any allowance / component interpreted by competent authorities / courts as forming part of wages shall be treated accordingly for statutory compliance purposes.</li>
-            </ol>
-
-            <div class="sign-block">
-              <p class="for-line">For {{company_name}},</p>
-              <div class="signatory">{{authorized_signatory}}</div>
-              <div class="role">Director</div>
-            </div>
-
-            <div class="page-break"></div>
-
-            <div class="section-break"><span class="st">Declaration</span></div>
-
-            <div class="declaration">
-              <p>I, {{prefix}} {{first_name}} {{surname}}, have read, understood and agree with all the terms and conditions of employment with the Company as communicated vide their Appointment Letter and agree to abide by the same.</p>
-              <p>I also confirm that I have read, understood and agree to comply with the provisions and requirements of the Proprietary / Confidential Information Clause.</p>
-              <p>I hereby provide explicit consent to the Company to collect, receive, store, process, use, transfer, share and retain personal information / data &mdash; including sensitive personal details, documents and employment-related information &mdash; for lawful business and employment purposes, including but not limited to recruitment, onboarding, payroll processing, statutory compliance, background verification, insurance, client requirements, internal administration, performance management and any other legitimate employment-related purposes.</p>
-              <p>I understand and agree that such personal information / data may be shared with authorized third parties, group companies, clients, consultants, statutory authorities, auditors, background verification agencies, payroll processors, IT service providers or other service partners on a need-to-know basis and in compliance with applicable laws.</p>
-              <p>I shall commence employment with effect from: <strong>{{doj}}</strong></p>
-              <div class="sig-grid">
-                <div>
-                  <div class="sig-line"></div>
-                  <div class="sig-caption">Employee Signature</div>
-                </div>
-                <div>
-                  <div class="sig-line"></div>
-                  <div class="sig-caption">Date</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="page-footer">Page 2 of 2 &nbsp;&middot;&nbsp; Annexure A &amp; Declaration &nbsp;&middot;&nbsp; {{company_name}}</div>
-
-            <div class="company-footer">
-              {{company_name}} &nbsp;|&nbsp; CIN: {{company_cin}}<br>
-              Regd Off: {{company_address}}<br>
-              Website: {{company_website}}
-            </div>
-            """;
-    }
-
-    private String templateSalarySlip() {
-        return """
-            <div class="document-header"><h1>SALARY SLIP</h1></div>
-            <div class="document-content">
-            <table style="width:100%; border-collapse: collapse;">
-            <tr><td><b>Employee Name:</b> {{employee_name}}</td><td><b>Employee Code:</b> {{employee_code}}</td></tr>
-            <tr><td><b>Designation:</b> {{designation}}</td><td><b>Company:</b> {{company_name}}</td></tr>
-            </table>
-            <br>
-            <table style="width:100%; border-collapse: collapse; border: 1px solid #000;">
-            <tr style="background:#f0f0f0;"><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
-            <tr><td>Basic</td><td></td><td>PF</td><td></td></tr>
-            <tr><td>HRA</td><td></td><td>ESI</td><td></td></tr>
-            <tr><td>Fixed Personal Allowance</td><td></td><td>PT</td><td></td></tr>
-            <tr><td>Other Allowance</td><td></td><td></td><td></td></tr>
-            <tr><td><b>Gross</b></td><td></td><td><b>Total Deductions</b></td><td></td></tr>
-            </table>
-            <p style="text-align:right;"><b>Net Pay:</b></p>
-            <br>
-            <div class="signature-section">
-            <p style="text-align:right;"><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
-    }
-
-    private String templateConfirmationLetter() {
-        return """
-            <div class="document-header"><h1>CONFIRMATION LETTER</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>To,<br><b>{{employee_name}}</b><br>{{address}}</p>
-            <p>Dear <b>{{employee_name}}</b>,</p>
-            <p>Congratulations! We are pleased to confirm your employment at <b>{{company_name}}</b> as <b>{{designation}}</b> effective from <b>{{current_date}}</b>.</p>
-            <p>Your probation period has been successfully completed, and you are now a permanent employee of the company.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
-    }
-
-    private String templateNOC() {
-        return """
-            <div class="document-header"><h1>NO OBJECTION CERTIFICATE</h1></div>
-            <div class="document-content">
-            <p>Date: <b>{{current_date}}</b></p>
-            <p>This is to certify that <b>{{company_name}}</b> has no objection to <b>{{employee_name}}</b> ({{employee_code}}) who worked as <b>{{designation}}</b> from <b>{{doj}}</b> to <b>{{doe}}</b> pursuing any other employment or educational opportunities.</p>
-            <p>This certificate is issued upon the request of the employee.</p>
-            <div class="signature-section">
-            <p>Yours sincerely,</p>
-            <p><br><br><b>{{authorized_signatory}}</b><br>{{company_name}}</p>
-            </div></div>""";
+    private String readLetterFile(String fileName) {
+        Path[] candidates = new Path[] {
+            Paths.get("docs", "letters", fileName),
+            Paths.get("..", "docs", "letters", fileName),
+            Paths.get("H:", "PARIKAR", "docs", "letters", fileName)
+        };
+        for (Path path : candidates) {
+            try {
+                if (Files.exists(path)) {
+                    return Files.readString(path, StandardCharsets.UTF_8);
+                }
+            } catch (Exception ignored) {
+                // try next location
+            }
+        }
+        try (InputStream in = getClass().getResourceAsStream("/letters/" + fileName)) {
+            if (in != null) {
+                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            log.warn("Could not read classpath letter {}: {}", fileName, e.getMessage());
+        }
+        throw new IllegalStateException("Letter template not found: " + fileName);
     }
 
     @Transactional
@@ -885,7 +593,7 @@ public class DataSeeder implements CommandLineRunner {
             {"staff_master", "1,1,1,1", "1,0,1,0", "1,0,0,0"},
             {"company", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
             {"masters", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
-            {"doc_templates", "1,1,1,1", "0,0,0,0", "0,0,0,0"},
+            {"doc_templates", "1,1,1,1", "1,1,0,0", "0,0,0,0"},
             {"payroll", "1,1,1,1", "1,1,1,0", "0,0,0,0"},
             {"bills", "1,1,1,1", "1,1,1,0", "0,0,0,0"},
             {"leave", "1,1,1,1", "1,1,1,0", "1,1,0,0"},

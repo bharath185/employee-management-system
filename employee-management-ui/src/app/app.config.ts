@@ -28,7 +28,8 @@ import {
   ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
   InboxOutline, CheckOutline, StopOutline, SafetyOutline,
   WalletOutline, FileDoneOutline, ArrowLeftOutline, SendOutline,
-  ScheduleOutline, LineChartOutline, ThunderboltOutline
+  ScheduleOutline, LineChartOutline, ThunderboltOutline,
+  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline
 } from '@ant-design/icons-angular/icons';
 
 registerLocaleData(en);
@@ -48,7 +49,8 @@ const icons = [
   ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
   InboxOutline, CheckOutline, StopOutline, SafetyOutline,
   WalletOutline, FileDoneOutline, ArrowLeftOutline, SendOutline,
-  ScheduleOutline, LineChartOutline, ThunderboltOutline
+  ScheduleOutline, LineChartOutline, ThunderboltOutline,
+  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline
 ];
 
 export const appConfig: ApplicationConfig = {

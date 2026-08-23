@@ -29,6 +29,7 @@ import { environment } from '../../../environments/environment';
 import { DocumentTemplateService } from '../../core/services/document-template.service';
 import { DownloadTrackingService } from '../../core/services/download-tracking.service';
 import { DocumentTemplate, DownloadLog } from '../../core/models/document-template.model';
+import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 
 @Component({
   selector: 'app-staff-master-view',
@@ -68,6 +69,9 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
           <span class="view-stat-dot"></span>
           {{ employee.employeeStatus }}
         </span>
+        <button nz-button nzType="default" *ngIf="employee" (click)="showGenerateModal()" style="margin-right:8px">
+          <i class="bi bi-file-earmark-text"></i> Generate
+        </button>
         <button nz-button class="btn-primary-gradient" *ngIf="employee" [routerLink]="['/admin/employees', employee.id, 'edit']">
           <i class="bi bi-pencil"></i> Edit
         </button>
@@ -97,74 +101,193 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
 
       <div *ngIf="!isLoading && employee" class="pl-table-card-wrap">
         <nz-tabset class="detail-tabs">
+
+          <!-- 1. PERSONAL INFO TAB -->
           <nz-tab nzTitle="Personal Info">
             <div class="tab-content">
-              <nz-descriptions nzTitle="Basic Information" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Employee Code">{{ employee.employeeCode }}</nz-descriptions-item>
+              <nz-descriptions nzTitle="Personal Details" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Prefix">{{ employee.prefix || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="First Name">{{ employee.firstName }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Surname">{{ employee.surname }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Gender">{{ employee.gender | titleCase }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Marital Status">{{ employee.maritalStatus | titleCase }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Blood Group">
+                  <span class="blood-badge" *ngIf="employee.bloodGroup">{{ employee.bloodGroup }}</span>
+                  <span *ngIf="!employee.bloodGroup">-</span>
+                </nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Date of Birth">{{ employee.dob | dateFormat }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Age">{{ employee.age }} yrs</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Age">{{ employee.age ? employee.age + ' yrs' : '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Age Bracket">{{ employee.ageBracket || '-' }}</nz-descriptions-item>
               </nz-descriptions>
 
-              <nz-descriptions nzTitle="Family & Kin" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Father/Husband Name">{{ employee.fatherHusbandName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="F/M/H">{{ employee.fMH || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Occupation of Kin">{{ employee.occupationKin || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Occupation Sub-Category">{{ employee.occupationKinSub || '-' }}</nz-descriptions-item>
+              <nz-descriptions nzTitle="Contact Information" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Mobile Number">{{ employee.mobile || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Email Address">{{ employee.email || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Emergency / Close Relative">{{ employee.closeRelativeName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Relative Mobile">{{ employee.closeRelativeMobile || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Residential Addresses" nzBordered [nzColumn]="{ xxl: 1, xl: 1, lg: 1, md: 1, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Present Address">{{ employee.presentAddress || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Permanent Address">{{ employee.permanentAddress || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Languages Known" nzBordered [nzColumn]="{ xxl: 1, xl: 1, lg: 1, md: 1, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="(employee.languages && employee.languages.length > 0) || employee.languagesCanSpeak">
+                <nz-descriptions-item nzTitle="Languages">
+                  <div *ngIf="employee.languages && employee.languages.length > 0">
+                    <div *ngFor="let lang of employee.languages" style="margin-bottom:6px">
+                      <strong style="color:#1f3d6e">{{ lang.language }}</strong>:
+                      <span *ngIf="lang.canRead" style="color:#10b981;margin-left:8px;margin-right:8px"><i class="bi bi-check-circle-fill"></i> Read</span>
+                      <span *ngIf="lang.canWrite" style="color:#10b981;margin-right:8px"><i class="bi bi-check-circle-fill"></i> Write</span>
+                      <span *ngIf="lang.canSpeak" style="color:#10b981;margin-right:8px"><i class="bi bi-check-circle-fill"></i> Speak</span>
+                    </div>
+                  </div>
+                  <div *ngIf="(!employee.languages || employee.languages.length === 0) && employee.languagesCanSpeak">
+                    <span>{{ employee.languagesCanSpeak }}</span>
+                  </div>
+                </nz-descriptions-item>
+              </nz-descriptions>
+            </div>
+          </nz-tab>
+
+          <!-- 2. EMPLOYMENT TAB -->
+          <nz-tab nzTitle="Employment">
+            <div class="tab-content">
+              <nz-descriptions nzTitle="Work & Role Information" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Employee Code">
+                  <span class="emp-code-badge">{{ employee.employeeCode }}</span>
+                </nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Designation">{{ employee.designation | titleCase }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Department">{{ employee.department || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Process Assigned">{{ employee.processAssigned || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Employment Status">
+                  <nz-tag [nzColor]="employee.employeeStatus === 'LIVE' ? 'green' : 'default'">{{ employee.employeeStatus }}</nz-tag>
+                </nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Date of Joining (DOJ)">{{ employee.doj | dateFormat }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="System Role">
+                  <span class="role-tag" [class.role-admin]="employee.userRole === 'ADMIN'" [class.role-hr]="employee.userRole === 'HR'">
+                    {{ employee.userRole || 'EMPLOYEE' }}
+                  </span>
+                </nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Statutory & Compliance" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="PF Number">{{ employee.pfNo || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="UAN Number">{{ employee.uanNo || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="UAN Activation">{{ employee.uanActivation || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="ESIC Number">{{ employee.esicNo || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Aadhaar Seeding">{{ employee.aadharSeeding || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Exit & Separation Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Date of Exit (DOE)">{{ employee.doe | dateFormat }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Deletion Month">{{ employee.deletionMonth || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Exit Type">{{ employee.exitType | titleCase }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Exit Reason">{{ employee.exitReason || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+            </div>
+          </nz-tab>
+
+          <!-- 3. BANK & IDENTITY TAB -->
+          <nz-tab nzTitle="Bank & Identity">
+            <div class="tab-content">
+              <nz-descriptions nzTitle="Bank Account Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Bank Name">{{ employee.bankName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Account Number">{{ employee.accountNumber || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="IFSC Code">{{ employee.ifscCode || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Branch">{{ employee.branch || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Identity Documents" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Aadhaar Number">{{ employee.aadharNumber || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="PAN Number">{{ employee.panNumber || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Ration Card">{{ employee.rationCard || '-' }}</nz-descriptions-item>
               </nz-descriptions>
 
-              <nz-descriptions nzTitle="Education" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+              <nz-descriptions nzTitle="Verification & Audit" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Aadhaar Verification">{{ employee.aadhaarVerification || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="PAN Verification">{{ employee.panVerification || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="OSV (Original Seen & Verified)">{{ employee.osv || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Remarks">{{ employee.remarks || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+            </div>
+          </nz-tab>
+
+          <!-- 4. EDUCATION TAB -->
+          <nz-tab nzTitle="Education">
+            <div class="tab-content">
+              <nz-descriptions nzTitle="Educational Qualification Summary" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Highest Qualification">{{ employee.highestQualification || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Level of Education">{{ employee.levelOfEducation || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Year of Passing">{{ employee.yearOfPassing || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="% of Marks">{{ employee.percentageMarks != null ? employee.percentageMarks + '%' : '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Date of Joining">{{ employee.doj | dateFormat }}</nz-descriptions-item>
               </nz-descriptions>
 
-              <nz-descriptions nzTitle="Contact" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Email">{{ employee.email }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Mobile">{{ employee.mobile }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Close Relative">{{ employee.closeRelativeName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Relative Mobile">{{ employee.closeRelativeMobile || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-
-              <nz-descriptions nzTitle="Languages" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="employee.languages && employee.languages.length > 0">
-                <nz-descriptions-item nzTitle="Languages Known">
-                  <div *ngFor="let lang of employee.languages" style="margin-bottom:4px">
-                    <strong>{{ lang.language }}</strong>:
-                    <span *ngIf="lang.canRead" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Read</span>
-                    <span *ngIf="lang.canWrite" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Write</span>
-                    <span *ngIf="lang.canSpeak" style="color:#10b981;margin-right:6px"><i class="bi bi-check-circle-fill"></i> Speak</span>
-                    <span *ngIf="!lang.canRead && !lang.canWrite && !lang.canSpeak" style="color:#9ca3af">Not specified</span>
-                  </div>
-                </nz-descriptions-item>
-              </nz-descriptions>
-
-              <nz-descriptions nzTitle="Addresses" nzBordered [nzColumn]="{ xxl: 1, xl: 1, lg: 1, md: 1, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Present Address">{{ employee.presentAddress || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Permanent Address">{{ employee.permanentAddress || '-' }}</nz-descriptions-item>
+              <nz-descriptions nzTitle="Qualifications by Level" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="SSC / Std X">{{ employee.sscStatus || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Intermediate / 10+2">{{ employee.intermediateStatus || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Bachelor's Degree">{{ employee.bachelorsDegree || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Master's Degree">{{ employee.mastersDegree || '-' }}</nz-descriptions-item>
               </nz-descriptions>
             </div>
           </nz-tab>
 
-          <nz-tab nzTitle="Demographics">
+          <!-- 5. FAMILY & KIN TAB -->
+          <nz-tab nzTitle="Family & Kin">
             <div class="tab-content">
-              <nz-descriptions nzTitle="Demographics" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+              <nz-descriptions nzTitle="Immediate Family Members" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Father's Name">{{ employee.fatherName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Father's Phone">{{ employee.fatherPhone || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Mother's Name">{{ employee.motherName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Mother's Phone">{{ employee.motherPhone || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Spouse's Name">{{ employee.spouseName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Spouse's Phone">{{ employee.spousePhone || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Kin & Household Information" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Father/Husband Name">{{ employee.fatherHusbandName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Relation (F/M/H)">{{ employee.fMH || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Occupation of Kin">{{ employee.occupationKin || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Occupation Sub-Category">{{ employee.occupationKinSub || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+            </div>
+          </nz-tab>
+
+          <!-- 6. EXPERIENCE & REFERENCES TAB -->
+          <nz-tab nzTitle="Experience & Ref.">
+            <div class="tab-content">
+              <nz-descriptions nzTitle="Past Work Experience" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Has Experience">{{ employee.pastExperience || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Organization Name">{{ employee.organizationName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Period of Employment" [nzSpan]="2">{{ employee.periodOfEmployment || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Reference 1" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Name">{{ employee.ref1Name || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Relationship">{{ employee.ref1Relationship || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Mobile">{{ employee.ref1Mobile || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Address">{{ employee.ref1Address || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Reference 2" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
+                <nz-descriptions-item nzTitle="Name">{{ employee.ref2Name || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Relationship">{{ employee.ref2Relationship || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Mobile">{{ employee.ref2Mobile || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Address">{{ employee.ref2Address || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+            </div>
+          </nz-tab>
+
+          <!-- 7. DEMOGRAPHICS & ASSETS TAB -->
+          <nz-tab nzTitle="Demographics & Assets">
+            <div class="tab-content">
+              <nz-descriptions nzTitle="Social Demographics" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Religion">{{ employee.religion || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Social Category">{{ employee.socialCategory || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Social Subcategory">{{ employee.socialSubcategory || '-' }}</nz-descriptions-item>
               </nz-descriptions>
-            </div>
-          </nz-tab>
 
-          <nz-tab nzTitle="Assets">
-            <div class="tab-content">
+              <nz-divider nzText="Household Assets Owned" nzOrientation="left"></nz-divider>
               <div class="assets-grid">
                 <div class="asset-card" *ngFor="let asset of assetFields" [class.owned]="getAssetValue(asset.key) === 'YES'">
                   <i [class]="getAssetValue(asset.key) === 'YES' ? 'bi bi-check-circle-fill asset-icon owned' : 'bi bi-x-circle-fill asset-icon not-owned'"></i>
@@ -175,105 +298,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
             </div>
           </nz-tab>
 
-          <nz-tab nzTitle="Identity">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Identity Documents" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Blood Group">{{ employee.bloodGroup || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Aadhar Number">{{ employee.aadharNumber || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="PAN Number">{{ employee.panNumber || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Education">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Education Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="SSC / Std X">{{ employee.sscStatus || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Intermediate">{{ employee.intermediateStatus || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Bachelor's Degree">{{ employee.bachelorsDegree || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Master's Degree">{{ employee.mastersDegree || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Aadhaar Verification">{{ employee.aadhaarVerification || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="PAN Verification">{{ employee.panVerification || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="OSV">{{ employee.osv || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Remarks">{{ employee.remarks || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Bank">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Bank Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Bank Name">{{ employee.bankName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Account Number">{{ employee.accountNumber || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="IFSC Code">{{ employee.ifscCode || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Branch">{{ employee.branch || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Employment">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Employment Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Employee Status">{{ employee.employeeStatus | titleCase }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Process Assigned">{{ employee.processAssigned || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Department">{{ employee.department || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="ESIC No.">{{ employee.esicNo || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Aadhar Seeding">{{ employee.aadharSeeding || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="UAN No.">{{ employee.uanNo || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="PF No.">{{ employee.pfNo || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="UAN Activation">{{ employee.uanActivation || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Languages">{{ employee.languagesCanSpeak || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Designation">{{ employee.designation | titleCase }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Date of Exit">{{ employee.doe | dateFormat }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Family">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Family Members" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Father's Name">{{ employee.fatherName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Father's Phone">{{ employee.fatherPhone || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Mother's Name">{{ employee.motherName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Mother's Phone">{{ employee.motherPhone || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Spouse's Name">{{ employee.spouseName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Spouse's Phone">{{ employee.spousePhone || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Experience & Ref.">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Past Experience" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Has Experience">{{ employee.pastExperience || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Organization">{{ employee.organizationName || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Period">{{ employee.periodOfEmployment || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-              <nz-descriptions nzTitle="Reference 1" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Name">{{ employee.ref1Name || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Relationship">{{ employee.ref1Relationship || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Address">{{ employee.ref1Address || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Mobile">{{ employee.ref1Mobile || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-              <nz-descriptions nzTitle="Reference 2" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Name">{{ employee.ref2Name || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Relationship">{{ employee.ref2Relationship || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Address">{{ employee.ref2Address || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Mobile">{{ employee.ref2Mobile || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
-          <nz-tab nzTitle="Exit & Docs">
-            <div class="tab-content">
-              <nz-descriptions nzTitle="Exit Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
-                <nz-descriptions-item nzTitle="Deletion Month">{{ employee.deletionMonth || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Exit Type">{{ employee.exitType | titleCase }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Exit Reason">{{ employee.exitReason || '-' }}</nz-descriptions-item>
-              </nz-descriptions>
-            </div>
-          </nz-tab>
-
+          <!-- 8. DOCUMENTS TAB -->
           <nz-tab nzTitle="Documents">
             <div class="tab-content">
               <div class="documents-tab-header">
@@ -316,7 +341,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     </div>
 
     <nz-modal [(nzVisible)]="isGenerateModalVisible" nzTitle="Generate Document"
-      (nzOnCancel)="closeGenerateModal()" nzWidth="700px" [nzFooter]="null">
+      (nzOnCancel)="closeGenerateModal()" nzWidth="960px" [nzFooter]="null">
       <ng-template nzModalContent>
         <div class="gen-modal-body">
           <div class="form-group">
@@ -336,7 +361,8 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
           <div class="preview-section" *ngIf="previewHtml">
             <label class="form-label">Preview</label>
             <div class="preview-frame">
-              <iframe [srcdoc]="previewHtml" class="preview-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
+              <iframe [srcdoc]="previewHtml" class="preview-iframe"
+                sandbox="allow-same-origin allow-scripts"></iframe>
             </div>
             <div class="preview-actions">
               <button nz-button class="btn-primary-gradient" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">
@@ -459,7 +485,8 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
 
     :host ::ng-deep .detail-tabs.ant-tabs { display: flex; flex-direction: column; height: 100%; }
     :host ::ng-deep .detail-tabs.ant-tabs > .ant-tabs-nav { flex-shrink: 0; background: #f8f9fc !important; border-bottom: 1px solid #e8eaed !important; padding: 0 12px; margin-bottom: 0; }
-    :host ::ng-deep .detail-tabs .ant-tabs-content-holder { overflow: hidden; flex: 1; }
+    :host ::ng-deep .detail-tabs > .ant-tabs-nav .ant-tabs-nav-list { flex-wrap: wrap; }
+    :host ::ng-deep .detail-tabs .ant-tabs-content-holder { overflow: auto; flex: 1; }
     :host ::ng-deep .detail-tabs .ant-tabs-content { height: 100%; }
     :host ::ng-deep .detail-tabs .ant-tabs-tabpane { height: 100%; }
     :host ::ng-deep .detail-tabs .ant-tabs-tab {
@@ -473,12 +500,68 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     :host ::ng-deep .detail-tabs .ant-tabs-ink-bar { background: #2563eb !important; height: 3px !important; border-radius: 2px; }
     .tab-content { padding: 12px 16px; height: 100%; overflow-y: auto; box-sizing: border-box; }
 
-    :host ::ng-deep .tab-descriptions { margin-bottom: 16px; }
+    :host ::ng-deep .tab-descriptions { margin-bottom: 18px; }
     :host ::ng-deep .tab-descriptions:last-child { margin-bottom: 0; }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-title { color: #1f3d6e !important; font-weight: 600; font-size: 13px; }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-view { border: 1px solid #e8eaed !important; border-radius: 6px !important; overflow: hidden; }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-item-label { background: #f8fafc !important; color: #6c757d !important; font-weight: 500; font-size: 11px; border-bottom: 1px solid #e8eaed !important; padding: 6px 10px !important; }
-    :host ::ng-deep .tab-descriptions .ant-descriptions-item-content { background: #ffffff !important; color: #1a1a2e !important; font-size: 12px; border-bottom: 1px solid #e8eaed !important; padding: 6px 10px !important; }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-title {
+      color: #1f3d6e !important;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-view {
+      border: 1px solid #e8eaed !important;
+      border-radius: 8px !important;
+      overflow: hidden;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-label {
+      background: #f8fafc !important;
+      color: #475569 !important;
+      font-weight: 600;
+      font-size: 12px;
+      border-bottom: 1px solid #e8eaed !important;
+      padding: 9px 14px !important;
+      width: 170px;
+    }
+    :host ::ng-deep .tab-descriptions .ant-descriptions-item-content {
+      background: #ffffff !important;
+      color: #1e293b !important;
+      font-size: 13px;
+      font-weight: 500;
+      border-bottom: 1px solid #e8eaed !important;
+      padding: 9px 14px !important;
+    }
+
+    .emp-code-badge {
+      font-weight: 700;
+      color: #1f3d6e;
+      font-size: 12px;
+      background: #f0f4ff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #e0e7ff;
+      display: inline-block;
+    }
+
+    .blood-badge {
+      font-weight: 700;
+      color: #e11d48;
+      background: #fff1f2;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #ffe4e6;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    .role-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .role-admin { background: #eef2ff; color: #4361ee; border: 1px solid #e0e7ff; }
+    .role-hr { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
 
     .assets-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .asset-card {
@@ -510,8 +593,21 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
     .form-group { display: flex; flex-direction: column; gap: 4px; }
     .form-label { font-size: 12px; font-weight: 600; color: #1a1a2e; }
     .preview-section { display: flex; flex-direction: column; gap: 10px; }
-    .preview-frame { border: 1px solid #e8eaed; border-radius: 8px; overflow: hidden; }
-    .preview-iframe { width: 100%; height: 350px; border: none; }
+    .preview-frame {
+      border: 1px solid #e8eaed;
+      border-radius: 8px;
+      overflow: auto;
+      background: #cfd5de;
+      max-height: 78vh;
+    }
+    .preview-iframe {
+      width: 226mm;
+      height: 320mm;
+      border: none;
+      display: block;
+      margin: 0 auto;
+      background: #cfd5de;
+    }
     .preview-actions { display: flex; gap: 8px; }
     .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px; }
     .loading-icon { font-size: 28px; color: #4361ee; }
@@ -680,25 +776,46 @@ export class StaffMasterViewComponent implements OnInit {
   downloadDocument(format: string): void {
     if (!this.selectedTemplateId || !this.employeeId) return;
 
+    // Open print window synchronously on user click so browsers don't block the popup
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      try {
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Generating PDF Document...</title></head>
+          <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#334155;">
+            <div style="text-align:center;">
+              <div style="font-size:28px;margin-bottom:12px;">📄</div>
+              <div style="font-size:16px;font-weight:600;">Preparing Document...</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;">Print / Save as PDF will open in a moment</div>
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } catch (e) {
+        console.warn('Could not write placeholder to print window', e);
+      }
+    }
+
     this.isDownloading = true;
     this.templateService.generateDocument(this.selectedTemplateId, this.employeeId, format).subscribe({
       next: (response) => {
         this.isDownloading = false;
-        if (response.success && response.data) {
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(response.data.html);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-          }
-          this.message.success('Document generated successfully');
-          this.closeGenerateModal();
+        if (response.success && response.data?.html) {
+          openDocumentPrintPreview(response.data.html, printWindow);
+          this.message.success('Document ready for Print / Save as PDF');
           this.loadDownloadHistory();
+        } else {
+          printWindow?.close();
+          this.message.error('Error generating document');
         }
       },
       error: () => {
         this.isDownloading = false;
+        printWindow?.close();
         this.message.error('Error generating document');
       }
     });

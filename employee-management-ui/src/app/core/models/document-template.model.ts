@@ -128,6 +128,7 @@ export const TEMPLATE_PLACEHOLDERS = {
   ],
   system: [
     { key: '{{current_date}}', desc: 'Current Date' },
+    { key: '{{current_time}}', desc: 'Current Time' },
     { key: '{{current_year}}', desc: 'Current Year' }
   ]
 };

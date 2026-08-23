@@ -65,3 +65,13 @@ awesome-claude-code-subagents/
 SUMMARY.md
 UI_DESIGN_SYSTEM.md
 BACKEND_REVIEW.md
+
+# Scratch & local logs
+*.err
+*.backup
+scratch/
+.opencode/
+docs/*.sql
+*.cmd
+gen_*.ps1
+gen_*.py

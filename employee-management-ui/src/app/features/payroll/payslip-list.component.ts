@@ -27,10 +27,12 @@ import { saveAs } from 'file-saver';
   template: `
     <div class="pl-container">
       <div class="pp-sub-nav">
-        <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
-          <i nz-icon nzType="upload"></i><span>Upload</span>
+        <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
+          <i nz-icon nzType="bank"></i><span>Salary Master</span>
         </a>
-
+        <a class="pp-nav-item" routerLink="/admin/payroll/process" routerLinkActive="active">
+          <i nz-icon nzType="play-circle"></i><span>Process</span>
+        </a>
         <a class="pp-nav-item" routerLink="/admin/payroll/payslips" routerLinkActive="active">
           <i nz-icon nzType="file-text"></i><span>Payslips</span>
         </a>
@@ -95,7 +97,7 @@ import { saveAs } from 'file-saver';
         <nz-table #payslipTable
           [nzData]="payslips"
           [nzLoading]="loading"
-          [nzPageSize]="20"
+          [nzPageSize]="10"
           [nzPageSizeOptions]="[10, 20, 50]"
           [nzShowSizeChanger]="true"
           nzBordered nzSize="small"

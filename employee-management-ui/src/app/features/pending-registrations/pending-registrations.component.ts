@@ -18,7 +18,6 @@ import * as QRCode from 'qrcode';
 
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { PendingRegistration } from '../../core/models/pending-registration.model';
-import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -28,13 +27,10 @@ import { environment } from '../../../environments/environment';
     CommonModule, FormsModule, RouterModule,
     NzTableModule, NzButtonModule, NzIconModule, NzModalModule,
     NzTagModule, NzCardModule, NzDescriptionsModule, NzBadgeModule,
-    NzSpinModule, NzInputModule, NzSelectModule,
-    PageHeaderComponent
+    NzSpinModule, NzInputModule, NzSelectModule
   ],
   template: `
     <div class="pending-page page-enter">
-      <app-page-header icon="audit" title="Pending Registrations"></app-page-header>
-
       <div class="pending-content">
         <div class="stats-row">
           <nz-card class="stat-card" [nzBordered]="false">
@@ -57,13 +53,20 @@ import { environment } from '../../../environments/environment';
           </nz-card>
         </div>
 
-        <div class="filter-row">
-          <nz-select [(ngModel)]="statusFilter" (ngModelChange)="loadData()" nzPlaceHolder="Filter by status" style="width:200px">
-            <nz-option nzValue="" nzLabel="All"></nz-option>
-            <nz-option nzValue="PENDING" nzLabel="Pending"></nz-option>
-            <nz-option nzValue="APPROVED" nzLabel="Approved"></nz-option>
-            <nz-option nzValue="REJECTED" nzLabel="Rejected"></nz-option>
-          </nz-select>
+        <!-- ===== SUB NAV (MATCHING PAYROLL UI) ===== -->
+        <div class="pp-sub-nav">
+          <a class="pp-nav-item" [class.active]="statusFilter === 'PENDING'" (click)="statusFilter = 'PENDING'; loadData()">
+            <i nz-icon nzType="clock-circle"></i><span>Pending</span>
+          </a>
+          <a class="pp-nav-item" [class.active]="statusFilter === 'APPROVED'" (click)="statusFilter = 'APPROVED'; loadData()">
+            <i nz-icon nzType="check-circle"></i><span>Approved</span>
+          </a>
+          <a class="pp-nav-item" [class.active]="statusFilter === 'REJECTED'" (click)="statusFilter = 'REJECTED'; loadData()">
+            <i nz-icon nzType="close-circle"></i><span>Rejected</span>
+          </a>
+          <a class="pp-nav-item" [class.active]="statusFilter === ''" (click)="statusFilter = ''; loadData()">
+            <i nz-icon nzType="appstore"></i><span>All</span>
+          </a>
         </div>
 
         <nz-table #pendingTable [nzData]="registrations" [nzLoading]="loading" nzSize="small"
@@ -389,17 +392,38 @@ import { environment } from '../../../environments/environment';
     .stat-num { font-size: 24px; font-weight: 700; color: #1f3d6e; }
     .stat-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ── Filters ── */
-    .filter-row { margin-bottom: 12px; }
-    .filter-row nz-select { width: 200px; }
-    .filter-row ::ng-deep .ant-select-selector {
-      border-radius: 6px !important;
-      border-color: #d9d9d9 !important;
+    /* ── Sub Navigation (Payroll Style) ── */
+    .pp-sub-nav {
+      display: flex;
+      gap: 2px;
+      margin-bottom: 16px;
+      background: #f0f4ff;
+      border-radius: 10px;
+      padding: 4px;
+      border: 1px solid #e0e7ff;
     }
-    .filter-row ::ng-deep .ant-select-focused .ant-select-selector {
-      border-color: #1f3d6e !important;
-      box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      cursor: pointer;
     }
+    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
+    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
+    .pp-nav-item.active {
+      background: #ffffff;
+      color: #1f3d6e;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
+    }
+    .pp-nav-item.active i { color: #1f3d6e; }
 
     /* ── Table ── */
     .pending-content ::ng-deep .ant-table-thead > tr > th {
