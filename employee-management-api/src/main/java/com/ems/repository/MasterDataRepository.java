@@ -21,4 +21,7 @@ public interface MasterDataRepository extends JpaRepository<MasterData, Long> {
 
     @Query("SELECT DISTINCT md.category FROM MasterData md ORDER BY md.category")
     List<String> findDistinctCategories();
+
+    @Query("SELECT UPPER(md.category), COUNT(md) FROM MasterData md WHERE md.active = true GROUP BY UPPER(md.category)")
+    List<Object[]> countByCategory();
 }

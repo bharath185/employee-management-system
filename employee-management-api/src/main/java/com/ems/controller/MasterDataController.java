@@ -20,6 +20,11 @@ public class MasterDataController {
 
     private final MasterDataService masterDataService;
 
+    @GetMapping("/counts")
+    public ResponseEntity<APIResponse<java.util.Map<String, Long>>> getCategoryCounts() {
+        return ResponseEntity.ok(APIResponse.success(masterDataService.getCategoryCounts()));
+    }
+
     @GetMapping("/{category}")
     public ResponseEntity<APIResponse<List<MasterDataDTO>>> getByCategory(
             @PathVariable String category) {

@@ -68,6 +68,14 @@ export class MasterDataService {
     this.loadingCategories.clear();
   }
 
+  getCategoryCounts(): Observable<Record<string, number>> {
+    return this.http.get<APIResponse<Record<string, number>>>(`${this.baseUrl}/masters/counts`).pipe(
+      tap(),
+      catchError(() => of({} as any)),
+      shareReplay(1)
+    ) as any;
+  }
+
   preloadCommonCategories(): void {
     const categories = [
       'GENDER', 'PREFIX', 'MARITAL_STATUS', 'BLOOD_GROUP',

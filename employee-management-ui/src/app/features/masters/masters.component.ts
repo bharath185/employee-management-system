@@ -648,10 +648,18 @@ export class MastersComponent implements OnInit {
   }
 
   private loadCategoryCounts(): void {
-    this.categories.forEach(cat => {
-      this.masterDataService.getByCategory(cat.code).subscribe({
-        next: (data) => { cat.count = data.length; }
-      });
+    this.masterDataService.getCategoryCounts().subscribe({
+      next: (response: any) => {
+        const counts = response.data || response || {};
+        this.categories.forEach(cat => {
+          cat.count = counts[cat.code] !== undefined ? counts[cat.code] : (counts[cat.code.toUpperCase()] !== undefined ? counts[cat.code.toUpperCase()] : 0);
+        });
+      },
+      error: () => {
+        this.categories.forEach(cat => {
+          if (cat.count === null) cat.count = 0;
+        });
+      }
     });
   }
 

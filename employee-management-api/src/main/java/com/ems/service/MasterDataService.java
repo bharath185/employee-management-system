@@ -27,6 +27,17 @@ public class MasterDataService {
         return masterDataRepository.findDistinctCategories();
     }
 
+    public java.util.Map<String, Long> getCategoryCounts() {
+        List<Object[]> rows = masterDataRepository.countByCategory();
+        java.util.Map<String, Long> counts = new java.util.HashMap<>();
+        for (Object[] row : rows) {
+            if (row[0] != null) {
+                counts.put(((String) row[0]).toUpperCase(), (Long) row[1]);
+            }
+        }
+        return counts;
+    }
+
     public MasterDataDTO create(MasterDataDTO dto) {
         MasterData entity = masterDataRepository
             .findByCategoryIgnoreCaseAndCodeIgnoreCase(dto.getCategory(), dto.getCode())
