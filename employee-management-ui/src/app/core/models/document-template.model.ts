@@ -132,3 +132,22 @@ export const TEMPLATE_PLACEHOLDERS = {
     { key: '{{current_year}}', desc: 'Current Year' }
   ]
 };
+
+export const DOCUMENT_TEMPLATE_TYPES: { code: string; display: string }[] = [
+  { code: 'APPOINTMENT_LETTER', display: 'Appointment Letter' },
+  { code: 'JOINING_LETTER', display: 'Joining Letter' },
+  { code: 'OFFER_LETTER', display: 'Offer Letter' },
+  { code: 'CONFIRMATION_LETTER', display: 'Confirmation Letter' },
+  { code: 'EXPERIENCE_LETTER', display: 'Experience Letter' },
+  { code: 'RELIEVING_LETTER', display: 'Relieving Letter' },
+  { code: 'REFERENCE_CHECK', display: 'Reference Check Call Record' },
+  { code: 'SALARY_SLIP', display: 'Salary Slip' },
+  { code: 'NOC', display: 'No Objection Certificate' },
+  { code: 'TRANSFER_LETTER', display: 'Transfer Letter' },
+  { code: 'PROMOTION_LETTER', display: 'Promotion Letter' },
+  { code: 'WARNING_LETTER', display: 'Warning Letter' },
+  { code: 'SHOW_CAUSE', display: 'Show Cause Notice' },
+  { code: 'BONUS_LETTER', display: 'Bonus Letter' },
+  { code: 'INCREMENT_LETTER', display: 'Increment Letter' },
+  { code: 'OTHER', display: 'Other' }
+];

@@ -20,7 +20,7 @@ import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 
 import { DocumentTemplateService } from '../../core/services/document-template.service';
-import { DocumentTemplate } from '../../core/models/document-template.model';
+import { DocumentTemplate, DOCUMENT_TEMPLATE_TYPES } from '../../core/models/document-template.model';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 
@@ -556,7 +556,7 @@ export class DocumentTemplateListComponent implements OnInit, OnDestroy {
   filterType = '';
   filterActive = '';
 
-  typeOptions: {code: string; display: string}[] = [];
+  typeOptions: {code: string; display: string}[] = [...DOCUMENT_TEMPLATE_TYPES];
 
   private searchSubject = new Subject<string>();
   private searchSubscription?: Subscription;
@@ -605,8 +605,8 @@ export class DocumentTemplateListComponent implements OnInit, OnDestroy {
   private loadTypes(): void {
     this.templateService.getTemplateTypes().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.typeOptions = response.data || [];
+        if (response && response.success && response.data && response.data.length > 0) {
+          this.typeOptions = response.data;
         }
       }
     });

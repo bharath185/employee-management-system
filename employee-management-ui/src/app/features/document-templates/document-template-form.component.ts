@@ -20,7 +20,7 @@ import { NzCollapseModule } from 'ng-zorro-antd/collapse';
 import { NzTableModule } from 'ng-zorro-antd/table';
 
 import { DocumentTemplateService } from '../../core/services/document-template.service';
-import { DocumentTemplate, TEMPLATE_PLACEHOLDERS } from '../../core/models/document-template.model';
+import { DocumentTemplate, TEMPLATE_PLACEHOLDERS, DOCUMENT_TEMPLATE_TYPES } from '../../core/models/document-template.model';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { TemplatePreviewModalComponent } from './template-preview-modal.component';
 
@@ -72,7 +72,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
                 <div nz-col nzXs="24" nzMd="12">
                   <div class="form-group">
                     <label class="form-label">Template Type <span class="required">*</span></label>
-                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Select type" class="form-select" style="width:100%">
+                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Search or select type" nzShowSearch class="form-select" style="width:100%">
                       <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
                     </nz-select>
                   </div>
@@ -123,24 +123,33 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
 
           <!-- Placeholders Reference Card -->
           <nz-card class="form-card" nzTitle="Available Placeholders" nzBorderless>
+            <div class="ph-search-box">
+              <nz-input-group [nzPrefix]="phIcon">
+                <input nz-input [(ngModel)]="placeholderSearch" placeholder="Search placeholders (e.g. name, date)..." class="ph-input" />
+              </nz-input-group>
+              <ng-template #phIcon><i nz-icon nzType="search"></i></ng-template>
+            </div>
             <nz-collapse nzAccordion>
-              <nz-collapse-panel nzHeader="Employee Placeholders" nzActive="true">
-                <div class="placeholder-item" *ngFor="let ph of placeholders.employee">
+              <nz-collapse-panel [nzHeader]="'Employee Placeholders (' + filteredEmployeePlaceholders.length + ')'" nzActive="true">
+                <div class="placeholder-item" *ngFor="let ph of filteredEmployeePlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
                   <code class="placeholder-code">{{ ph.key }}</code>
                   <span class="placeholder-desc">{{ ph.desc }}</span>
                 </div>
+                <div *ngIf="filteredEmployeePlaceholders.length === 0" class="ph-empty">No matching employee placeholders</div>
               </nz-collapse-panel>
-              <nz-collapse-panel nzHeader="Company Placeholders">
-                <div class="placeholder-item" *ngFor="let ph of placeholders.company">
+              <nz-collapse-panel [nzHeader]="'Company Placeholders (' + filteredCompanyPlaceholders.length + ')'">
+                <div class="placeholder-item" *ngFor="let ph of filteredCompanyPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
                   <code class="placeholder-code">{{ ph.key }}</code>
                   <span class="placeholder-desc">{{ ph.desc }}</span>
                 </div>
+                <div *ngIf="filteredCompanyPlaceholders.length === 0" class="ph-empty">No matching company placeholders</div>
               </nz-collapse-panel>
-              <nz-collapse-panel nzHeader="System Placeholders">
-                <div class="placeholder-item" *ngFor="let ph of placeholders.system">
+              <nz-collapse-panel [nzHeader]="'System Placeholders (' + filteredSystemPlaceholders.length + ')'">
+                <div class="placeholder-item" *ngFor="let ph of filteredSystemPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
                   <code class="placeholder-code">{{ ph.key }}</code>
                   <span class="placeholder-desc">{{ ph.desc }}</span>
                 </div>
+                <div *ngIf="filteredSystemPlaceholders.length === 0" class="ph-empty">No matching system placeholders</div>
               </nz-collapse-panel>
             </nz-collapse>
           </nz-card>
@@ -289,7 +298,27 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
 
     .actions-section { display: flex; flex-direction: column; gap: 10px; }
 
-    .placeholder-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f0f2f5; }
+    .ph-search-box {
+      margin-bottom: 12px;
+    }
+    :host ::ng-deep .ph-input {
+      border-radius: 6px !important;
+      font-size: 12px !important;
+      height: 32px !important;
+    }
+    .placeholder-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px;
+      border-bottom: 1px solid #f0f2f5;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+    }
+    .placeholder-item:hover {
+      background: #f1f5f9;
+    }
     .placeholder-item:last-child { border-bottom: none; }
     .placeholder-code {
       font-family: 'Cascadia Code', 'Consolas', monospace;
@@ -303,6 +332,12 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
       border: 1px solid #e0e7ff;
     }
     .placeholder-desc { font-size: 12px; color: #64748b; }
+    .ph-empty {
+      font-size: 11px;
+      color: #94a3b8;
+      font-style: italic;
+      padding: 8px 4px;
+    }
 
     @media (max-width: 768px) {
       .template-form-container { padding: 12px 8px; }
@@ -322,8 +357,35 @@ export class DocumentTemplateFormComponent implements OnInit {
     active: true
   };
 
-  typeOptions: {code: string; display: string}[] = [];
+  typeOptions: {code: string; display: string}[] = [...DOCUMENT_TEMPLATE_TYPES];
   placeholders = TEMPLATE_PLACEHOLDERS;
+  placeholderSearch = '';
+
+  get filteredEmployeePlaceholders() {
+    if (!this.placeholderSearch) return this.placeholders.employee;
+    const q = this.placeholderSearch.toLowerCase();
+    return this.placeholders.employee.filter(p => p.key.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q));
+  }
+
+  get filteredCompanyPlaceholders() {
+    if (!this.placeholderSearch) return this.placeholders.company;
+    const q = this.placeholderSearch.toLowerCase();
+    return this.placeholders.company.filter(p => p.key.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q));
+  }
+
+  get filteredSystemPlaceholders() {
+    if (!this.placeholderSearch) return this.placeholders.system;
+    const q = this.placeholderSearch.toLowerCase();
+    return this.placeholders.system.filter(p => p.key.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q));
+  }
+
+  copyPlaceholder(key: string): void {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(key).then(() => {
+        this.message.success(`Copied ${key} to clipboard!`);
+      });
+    }
+  }
 
   isPreviewVisible = false;
 
@@ -348,8 +410,8 @@ export class DocumentTemplateFormComponent implements OnInit {
   private loadTypes(): void {
     this.templateService.getTemplateTypes().subscribe({
       next: (response) => {
-        if (response.success) {
-          this.typeOptions = response.data || [];
+        if (response && response.success && response.data && response.data.length > 0) {
+          this.typeOptions = response.data;
         }
       }
     });
