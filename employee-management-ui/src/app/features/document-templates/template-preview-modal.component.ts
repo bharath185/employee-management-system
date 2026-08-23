@@ -1,6 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -37,9 +39,13 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
         <div class="preview-controls" *ngIf="!isDirectPreview">
           <div class="preview-control-row">
             <label class="control-label">Preview with Employee:</label>
-            <nz-select [(ngModel)]="selectedEmployeeId" nzPlaceHolder="Select employee" style="width:280px"
-              (ngModelChange)="loadPreview()">
-              <nz-option *ngFor="let emp of employeeOptions" [nzValue]="emp.id" [nzLabel]="emp.firstName + ' ' + emp.surname + ' (' + emp.employeeCode + ')'"></nz-option>
+            <nz-select [(ngModel)]="selectedEmployeeId" nzPlaceHolder="Search or select employee (e.g. name or code)"
+              nzShowSearch [nzServerSearch]="true" (nzOnSearch)="onSearchEmployee($event)" (nzScrollToBottom)="loadMoreEmployees()"
+              style="min-width:320px" (ngModelChange)="loadPreview()" [nzLoading]="isLoadingEmployees">
+              <nz-option *ngFor="let emp of employeeOptions" [nzValue]="emp.id" [nzLabel]="emp.firstName + ' ' + (emp.surname || '') + ' (' + emp.employeeCode + ')'"></nz-option>
+              <nz-option *ngIf="isLoadingMore" nzDisabled nzCustomContent>
+                <div style="text-align:center; padding: 4px;"><i nz-icon nzType="loading"></i> Loading more...</div>
+              </nz-option>
             </nz-select>
             <button nz-button nzType="default" (click)="loadPreview()" [disabled]="!selectedEmployeeId">
               <i nz-icon nzType="eye"></i> Refresh Preview
@@ -101,7 +107,7 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
     .preview-loading p { font-size: 14px; color: #666; margin: 0; }
   `]
 })
-export class TemplatePreviewModalComponent implements OnInit, OnChanges {
+export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestroy {
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
   @Input() templateId: number | null = null;
@@ -114,6 +120,15 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
   isLoadingPreview = false;
 
   employeeOptions: Employee[] = [];
+  currentPage = 0;
+  pageSize = 10;
+  hasMore = true;
+  isLoadingEmployees = false;
+  isLoadingMore = false;
+  searchTerm = '';
+
+  private searchSubject = new Subject<string>();
+  private searchSubscription?: Subscription;
 
   constructor(
     private templateService: DocumentTemplateService,
@@ -122,7 +137,19 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
   ) {}
 
   ngOnInit(): void {
-    this.loadEmployees();
+    this.searchSubscription = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe((query) => {
+      this.searchTerm = query;
+      this.currentPage = 0;
+      this.loadEmployees(false);
+    });
+    this.loadEmployees(false);
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubscription?.unsubscribe();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -134,14 +161,51 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges {
     }
   }
 
-  private loadEmployees(): void {
-    this.employeeService.getEmployees({ page: 0, size: 200, sort: 'firstName,asc' }).subscribe({
+  loadEmployees(isAppend: boolean = false): void {
+    if (isAppend) {
+      this.isLoadingMore = true;
+    } else {
+      this.isLoadingEmployees = true;
+    }
+
+    const params: any = {
+      page: this.currentPage,
+      size: this.pageSize,
+      sort: 'firstName,asc'
+    };
+    if (this.searchTerm && this.searchTerm.trim()) {
+      params.search = this.searchTerm.trim();
+    }
+
+    this.employeeService.getEmployees(params).subscribe({
       next: (response) => {
-        if (response.success && response.data) {
-          this.employeeOptions = response.data.content;
+        this.isLoadingEmployees = false;
+        this.isLoadingMore = false;
+        if (response && response.success && response.data) {
+          const content = response.data.content || [];
+          if (isAppend) {
+            this.employeeOptions = [...this.employeeOptions, ...content];
+          } else {
+            this.employeeOptions = content;
+          }
+          this.hasMore = response.data.page < (response.data.totalPages - 1);
         }
+      },
+      error: () => {
+        this.isLoadingEmployees = false;
+        this.isLoadingMore = false;
       }
     });
+  }
+
+  loadMoreEmployees(): void {
+    if (this.isLoadingEmployees || this.isLoadingMore || !this.hasMore) return;
+    this.currentPage++;
+    this.loadEmployees(true);
+  }
+
+  onSearchEmployee(query: string): void {
+    this.searchSubject.next(query || '');
   }
 
   loadPreview(): void {
