@@ -140,6 +140,60 @@ public class AttendanceService {
     }
 
     @Transactional
+    public int markAllForDate(LocalDate date, String status, String process) {
+        List<Employee> targetEmployees;
+        if (process != null && !process.trim().isEmpty()) {
+            targetEmployees = employeeRepository.findLiveEmployeesByProcess(process.trim());
+        } else {
+            targetEmployees = employeeRepository.findAllLiveEmployees();
+        }
+
+        int count = 0;
+        List<AttendanceRecord> toSave = new ArrayList<>();
+        List<CompOff> earnedCompOffs = new ArrayList<>();
+
+        for (Employee emp : targetEmployees) {
+            AttendanceRecord record = attendanceRepository
+                .findByEmployeeIdAndAttendanceDate(emp.getId(), date)
+                .orElseGet(() -> AttendanceRecord.builder()
+                    .employee(emp)
+                    .attendanceDate(date)
+                    .build());
+
+            if (record.getId() != null && Boolean.TRUE.equals(record.getLocked())) {
+                // Protect leave-synced locked record
+                continue;
+            }
+
+            record.setStatus(status);
+            record.setEmployee(emp);
+            toSave.add(record);
+            count++;
+
+            if ("P".equals(status) && isHolidayOrWeekOff(date)) {
+                if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(emp.getId(), date, "EARNED")) {
+                    CompOff co = CompOff.builder()
+                        .employee(emp)
+                        .earnedDate(date)
+                        .status("EARNED")
+                        .remarks("Auto-earned: Worked on holiday/week-off")
+                        .build();
+                    earnedCompOffs.add(co);
+                }
+            }
+        }
+
+        if (!toSave.isEmpty()) {
+            attendanceRepository.saveAll(toSave);
+        }
+        if (!earnedCompOffs.isEmpty()) {
+            compOffRepository.saveAll(earnedCompOffs);
+        }
+        log.info("Marked {} employees as {} for date {} (process: {})", count, status, date, process);
+        return count;
+    }
+
+    @Transactional
     public MonthlyAttendanceDTO getMonthlyAttendance(LocalDate fromDate, LocalDate toDate, int page, int size, String process, String search) {
         markAllPresentForDate(LocalDate.now());
         return buildGrid(fromDate, toDate, page, size, process, search);

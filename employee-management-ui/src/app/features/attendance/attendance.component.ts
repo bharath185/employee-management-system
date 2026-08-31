@@ -58,6 +58,45 @@ import { saveAs } from 'file-saver';
             <i nz-icon nzType="upload"></i> Import
           </button>
           <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
+          <button nz-button nzType="default" nzSize="small"
+            nz-popover [nzPopoverContent]="bulkDayTpl" nzPopoverTrigger="click" nzPopoverPlacement="bottomRight"
+            nz-tooltip="Update all employees for a specific date (P, H, WO, etc.)"
+            class="bulk-day-btn">
+            <i nz-icon nzType="thunderbolt" nzTheme="fill" style="color:#faad14;"></i> Mark Day for All
+          </button>
+          <ng-template #bulkDayTpl>
+            <div class="bulk-day-popover">
+              <div class="pop-title"><strong>Mark Attendance for All</strong></div>
+              <div class="pop-field">
+                <label>Select Date:</label>
+                <nz-date-picker [(ngModel)]="bulkDate" nzSize="small" style="width:100%; border-radius:6px;"></nz-date-picker>
+              </div>
+              <div class="pop-field">
+                <label>Select Status:</label>
+                <nz-select [(ngModel)]="bulkStatus" nzSize="small" style="width:100%;">
+                  <nz-option nzValue="P" nzLabel="P — Present (Green)"></nz-option>
+                  <nz-option nzValue="H" nzLabel="H — Holiday / Sunday (Blue)"></nz-option>
+                  <nz-option nzValue="WO" nzLabel="WO — Week Off (Grey)"></nz-option>
+                  <nz-option nzValue="CO" nzLabel="CO — Comp Off (Cyan)"></nz-option>
+                  <nz-option nzValue="L" nzLabel="L — Leave (Orange)"></nz-option>
+                  <nz-option nzValue="A" nzLabel="A — Absent (Red)"></nz-option>
+                  <nz-option nzValue="ML" nzLabel="ML — Maternity Leave (Purple)"></nz-option>
+                  <nz-option nzValue="R" nzLabel="R — Resign / Relieved"></nz-option>
+                </nz-select>
+              </div>
+              <div class="pop-note" *ngIf="selectedProcess">
+                <small>Targeting Process: <strong>{{ selectedProcess }}</strong></small>
+              </div>
+              <div class="pop-note" *ngIf="!selectedProcess">
+                <small>Targeting: <strong>All Live Employees</strong></small>
+              </div>
+              <div class="pop-actions" style="margin-top:10px;">
+                <button nz-button nzType="primary" nzSize="small" (click)="applyBulkDay()" [nzLoading]="bulkUpdating" style="width:100%; border-radius:6px;">
+                  Apply to All Employees
+                </button>
+              </div>
+            </div>
+          </ng-template>
           <button nz-button nzSize="small"
             [nzType]="isEditMode ? 'primary' : 'default'"
             class="edit-btn" [class.saving]="saving"
@@ -326,6 +365,13 @@ import { saveAs } from 'file-saver';
     .opt-wo { color:#fff; background:linear-gradient(135deg,#8c8c8c,#a6a6a6); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     .opt-r { color:#fff; background:linear-gradient(135deg,#cf1322,#f5222d); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     .opt-co { color:#fff; background:linear-gradient(135deg,#13c2c2,#36cfc9); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .bulk-day-btn { font-weight:600 !important; color:#1f3d6e !important; border-color:#d0e2ff !important; background:#f0f7ff !important; }
+    .bulk-day-btn:hover { background:#e1effe !important; border-color:#4361ee !important; }
+    .bulk-day-popover { width:240px; padding:4px 0; }
+    .bulk-day-popover .pop-title { font-size:13px; color:#1f3d6e; margin-bottom:8px; border-bottom:1px solid #f0f0f0; padding-bottom:4px; }
+    .bulk-day-popover .pop-field { margin-bottom:8px; }
+    .bulk-day-popover .pop-field label { display:block; font-size:11px; font-weight:600; color:#555; margin-bottom:3px; }
+    .bulk-day-popover .pop-note { font-size:11px; color:#666; background:#f5f7fa; padding:4px 6px; border-radius:4px; margin-bottom:4px; }
     :host ::ng-deep .att-dropdown .ant-select-item-option-content { padding:0 !important; }
     :host ::ng-deep .ant-select-item-option { padding:3px 10px !important; }
     :host ::ng-deep .ant-select-item-option-active { background:#f0f4ff !important; }
@@ -347,6 +393,10 @@ export class AttendanceComponent implements OnInit {
   searchTerm = '';
   private searchDebounce: any;
   rangeDays = 30;
+
+  bulkDate: Date = new Date();
+  bulkStatus: string = 'H';
+  bulkUpdating: boolean = false;
 
   legendItems = [
     { code: 'P', label: 'P = Present', color: '#52c41a' },
@@ -472,6 +522,26 @@ export class AttendanceComponent implements OnInit {
         this.loadData();
       },
       error: (err) => { this.msg.error(err.error?.message || 'Save failed'); this.saving = false; }
+    });
+  }
+
+  applyBulkDay(): void {
+    if (!this.bulkDate || !this.bulkStatus) {
+      this.msg.warning('Please select a date and status');
+      return;
+    }
+    const dStr = this.formatDate(this.bulkDate);
+    this.bulkUpdating = true;
+    this.attendanceService.markAllForDate(dStr, this.bulkStatus, this.selectedProcess).subscribe({
+      next: (res) => {
+        this.msg.success(res.message || `Updated attendance to ${this.bulkStatus} for ${dStr}`);
+        this.bulkUpdating = false;
+        this.loadData();
+      },
+      error: (err) => {
+        this.msg.error(err.error?.message || 'Bulk update failed');
+        this.bulkUpdating = false;
+      }
     });
   }
 

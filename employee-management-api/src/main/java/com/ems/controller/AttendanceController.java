@@ -63,6 +63,19 @@ public class AttendanceController {
         return ResponseEntity.ok(APIResponse.success("Attendance updated", null));
     }
 
+    @PostMapping("/mark-all-for-date")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Map<String, Object>>> markAllForDate(
+            @RequestParam String date,
+            @RequestParam String status,
+            @RequestParam(required = false) String process) {
+        int updated = attendanceService.markAllForDate(LocalDate.parse(date), status, process);
+        return ResponseEntity.ok(APIResponse.success(
+            "Updated " + updated + " employees to " + status + " for " + date,
+            Map.of("date", date, "status", status, "updatedCount", updated)
+        ));
+    }
+
     @GetMapping("/export")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<byte[]> exportExcel(@RequestParam String fromDate, @RequestParam String toDate) {

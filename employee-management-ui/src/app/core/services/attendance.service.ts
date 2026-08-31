@@ -56,4 +56,12 @@ export class AttendanceService {
   seedMonthlyAttendance(year: number, month: number): Observable<APIResponse<any>> {
     return this.http.post<APIResponse<any>>(`${this.apiUrl}/seed-month?year=${year}&month=${month}`, {});
   }
+
+  markAllForDate(date: string, status: string, process = ''): Observable<APIResponse<any>> {
+    let params = new HttpParams().set('date', date).set('status', status);
+    if (process) {
+      params = params.set('process', process);
+    }
+    return this.http.post<APIResponse<any>>(`${this.apiUrl}/mark-all-for-date`, null, { params });
+  }
 }
