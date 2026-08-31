@@ -122,19 +122,20 @@ public class AttendanceService {
         List<Employee> liveEmployees = employeeRepository.findAllLiveEmployees();
         Set<Long> alreadyMarked = new HashSet<>(attendanceRepository.findEmployeeIdsWithAttendanceOn(date));
 
+        String defaultStatus = isHolidayOrWeekOff(date) ? "H" : "P";
         int count = 0;
         for (Employee emp : liveEmployees) {
             if (!alreadyMarked.contains(emp.getId())) {
                 AttendanceRecord record = AttendanceRecord.builder()
                     .employee(emp)
                     .attendanceDate(date)
-                    .status("P")
+                    .status(defaultStatus)
                     .build();
                 attendanceRepository.save(record);
                 count++;
             }
         }
-        log.info("Auto-marked {} employees as Present for {}", count, date);
+        log.info("Auto-marked {} employees as {} for {}", count, defaultStatus, date);
         return count;
     }
 
