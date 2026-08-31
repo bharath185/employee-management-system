@@ -53,6 +53,8 @@ docs/*.png
 # Temp / generated files
 opencode/*.txt
 *.xlsx
+*.xlsm
+docs/attandance/
 
 # PID files
 *.pid

@@ -238,9 +238,14 @@ public class AttendanceService {
             List<Boolean> lockedDays = new ArrayList<>();
             int p = 0, l = 0, ml = 0, r = 0;
             for (int i = 0; i < numDays; i++) {
+                LocalDate d = monthStart.plusDays(i);
                 String status = empDayMap.getOrDefault(i, "");
-                if ((status == null || status.isBlank()) && i == todayIndex) {
-                    status = "P";
+                if (status == null || status.isBlank()) {
+                    if (d.getDayOfWeek() == DayOfWeek.SUNDAY || holidayRepository.existsByDate(d)) {
+                        status = "H";
+                    } else if (i == todayIndex) {
+                        status = "P";
+                    }
                 }
                 days.add(status);
                 lockedDays.add(empLockMap.getOrDefault(i, false));
