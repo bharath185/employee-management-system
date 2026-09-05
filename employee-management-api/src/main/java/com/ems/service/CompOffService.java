@@ -29,6 +29,8 @@ public class CompOffService {
 
     private final CompOffRepository compOffRepository;
     private final EmployeeRepository employeeRepository;
+    private final com.ems.repository.LeaveBalanceRepository leaveBalanceRepository;
+    private final com.ems.repository.LeaveTypeRepository leaveTypeRepository;
 
     public List<CompOffDTO> getCompOffs(Long employeeId) {
         List<CompOff> list;
@@ -45,37 +47,134 @@ public class CompOffService {
     }
 
     @Transactional
+    public void recordCompOffEarned(Employee employee, LocalDate earnedDate, String remarks) {
+        if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(employee.getId(), earnedDate, "EARNED")) {
+            CompOff compOff = CompOff.builder()
+                .employee(employee)
+                .earnedDate(earnedDate)
+                .status("EARNED")
+                .remarks(remarks != null ? remarks : "Comp-off Earned (COG)")
+                .build();
+            compOffRepository.save(compOff);
+        }
+
+        // Sync CO Leave Balance for earned year
+        syncLeaveBalanceEarned(employee, earnedDate.getYear(), 1);
+    }
+
+    @Transactional
+    public void cancelCompOffEarned(Employee employee, LocalDate earnedDate) {
+        compOffRepository.findFirstByEmployeeIdAndEarnedDateAndStatus(employee.getId(), earnedDate, "EARNED")
+            .ifPresent(co -> {
+                compOffRepository.delete(co);
+                syncLeaveBalanceEarned(employee, earnedDate.getYear(), -1);
+            });
+    }
+
+    @Transactional
+    public void recordCompOffAvailed(Employee employee, LocalDate availedDate) {
+        compOffRepository.findFirstByEmployeeIdAndStatusOrderByEarnedDateAsc(employee.getId(), "EARNED")
+            .ifPresentOrElse(co -> {
+                co.setStatus("AVAILED");
+                co.setAvailedDate(availedDate);
+                compOffRepository.save(co);
+            }, () -> {
+                log.warn("Recording availed comp-off for emp {} but no EARNED comp-off found in DB", employee.getEmployeeCode());
+            });
+
+        // Sync CO Leave Balance for availed year
+        syncLeaveBalanceTaken(employee, availedDate.getYear(), 1);
+    }
+
+    @Transactional
+    public void cancelCompOffAvailed(Employee employee, LocalDate availedDate) {
+        compOffRepository.findFirstByEmployeeIdAndAvailedDateAndStatus(employee.getId(), availedDate, "AVAILED")
+            .or(() -> compOffRepository.findFirstByEmployeeIdAndStatusOrderByAvailedDateDesc(employee.getId(), "AVAILED"))
+            .ifPresent(co -> {
+                co.setStatus("EARNED");
+                co.setAvailedDate(null);
+                compOffRepository.save(co);
+                syncLeaveBalanceTaken(employee, availedDate.getYear(), -1);
+            });
+    }
+
+    private com.ems.model.LeaveType getOrCreateCOLeaveType() {
+        return leaveTypeRepository.findByName("CO")
+            .orElseGet(() -> leaveTypeRepository.save(com.ems.model.LeaveType.builder()
+                .name("CO")
+                .description("Compensatory Off")
+                .annualEntitlement(0)
+                .isCarryForward(false)
+                .isActive(true)
+                .build()));
+    }
+
+    private void syncLeaveBalanceEarned(Employee employee, int year, int delta) {
+        com.ems.model.LeaveType coType = getOrCreateCOLeaveType();
+        com.ems.model.LeaveBalance balance = leaveBalanceRepository
+            .findByEmployeeIdAndLeaveTypeIdAndYear(employee.getId(), coType.getId(), year)
+            .orElseGet(() -> com.ems.model.LeaveBalance.builder()
+                .employee(employee)
+                .leaveType(coType)
+                .year(year)
+                .entitled(0)
+                .taken(0)
+                .encashed(0)
+                .balance(0)
+                .build());
+
+        balance.setEntitled(Math.max(0, balance.getEntitled() + delta));
+        balance.computeBalance();
+        leaveBalanceRepository.save(balance);
+    }
+
+    private void syncLeaveBalanceTaken(Employee employee, int year, int delta) {
+        com.ems.model.LeaveType coType = getOrCreateCOLeaveType();
+        com.ems.model.LeaveBalance balance = leaveBalanceRepository
+            .findByEmployeeIdAndLeaveTypeIdAndYear(employee.getId(), coType.getId(), year)
+            .orElseGet(() -> com.ems.model.LeaveBalance.builder()
+                .employee(employee)
+                .leaveType(coType)
+                .year(year)
+                .entitled(0)
+                .taken(0)
+                .encashed(0)
+                .balance(0)
+                .build());
+
+        balance.setTaken(Math.max(0, balance.getTaken() + delta));
+        balance.computeBalance();
+        leaveBalanceRepository.save(balance);
+    }
+
+    @Transactional
     public CompOffDTO earnCompOff(Long employeeId, LocalDate earnedDate) {
         if (compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(employeeId, earnedDate, "EARNED")) {
             throw new BadRequestException("Comp-Off already earned for this date");
         }
         Employee employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new RuntimeException("Employee not found"));
-        CompOff compOff = CompOff.builder()
-            .employee(employee)
-            .earnedDate(earnedDate)
-            .status("EARNED")
-            .build();
-        return CompOffDTO.fromEntity(compOffRepository.save(compOff));
+        recordCompOffEarned(employee, earnedDate, "Manual Comp-Off Earned");
+        return compOffRepository.findFirstByEmployeeIdAndEarnedDateAndStatus(employeeId, earnedDate, "EARNED")
+            .map(CompOffDTO::fromEntity)
+            .orElseThrow(() -> new RuntimeException("Failed to save Comp-Off"));
     }
 
     @Transactional
     public CompOffDTO availOneCompOff(Long employeeId) {
+        Employee employee = employeeRepository.findById(employeeId)
+            .orElseThrow(() -> new RuntimeException("Employee not found"));
         CompOff compOff = compOffRepository.findFirstByEmployeeIdAndStatusOrderByEarnedDateAsc(employeeId, "EARNED")
             .orElseThrow(() -> new BadRequestException("No Comp-Off balance available"));
-        compOff.setStatus("AVAILED");
-        compOff.setAvailedDate(LocalDate.now());
-        return CompOffDTO.fromEntity(compOffRepository.save(compOff));
+        recordCompOffAvailed(employee, LocalDate.now());
+        return CompOffDTO.fromEntity(compOff);
     }
 
     @Transactional
     public void restoreOneCompOff(Long employeeId) {
-        compOffRepository.findFirstByEmployeeIdAndStatusOrderByAvailedDateDesc(employeeId, "AVAILED")
-            .ifPresent(co -> {
-                co.setStatus("EARNED");
-                co.setAvailedDate(null);
-                compOffRepository.save(co);
-            });
+        Employee employee = employeeRepository.findById(employeeId)
+            .orElseThrow(() -> new RuntimeException("Employee not found"));
+        cancelCompOffAvailed(employee, LocalDate.now());
     }
 
     public byte[] exportExcel() {
@@ -142,10 +241,7 @@ public class CompOffService {
                 LocalDate earnedDate = LocalDate.parse(earnedStr, df);
                 if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(emp.getId(), earnedDate, "EARNED")) {
                     String rem = getCellString(row.getCell(2));
-                    CompOff co = CompOff.builder()
-                        .employee(emp).earnedDate(earnedDate).status("EARNED")
-                        .remarks(rem != null ? rem : "").build();
-                    compOffRepository.save(co);
+                    recordCompOffEarned(emp, earnedDate, rem != null ? rem : "Imported Comp-Off");
                     imported++;
                 }
             }

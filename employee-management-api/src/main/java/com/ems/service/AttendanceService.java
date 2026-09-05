@@ -44,6 +44,7 @@ public class AttendanceService {
     private final EmployeeRepository employeeRepository;
     private final HolidayRepository holidayRepository;
     private final CompOffRepository compOffRepository;
+    private final CompOffService compOffService;
 
     /**
      * Mark live employees Present for today if not already marked.
@@ -151,7 +152,6 @@ public class AttendanceService {
 
         int count = 0;
         List<AttendanceRecord> toSave = new ArrayList<>();
-        List<CompOff> earnedCompOffs = new ArrayList<>();
 
         for (Employee emp : targetEmployees) {
             AttendanceRecord record = attendanceRepository
@@ -166,29 +166,21 @@ public class AttendanceService {
                 continue;
             }
 
-            record.setStatus(status);
+            String oldStatus = record.getId() != null ? record.getStatus() : null;
+            String newStatus = status != null ? status.toUpperCase().trim() : null;
+
+            if (!Objects.equals(oldStatus, newStatus)) {
+                handleCompOffTransition(emp, date, oldStatus, newStatus);
+            }
+
+            record.setStatus(newStatus);
             record.setEmployee(emp);
             toSave.add(record);
             count++;
-
-            if ("P".equals(status) && isHolidayOrWeekOff(date)) {
-                if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(emp.getId(), date, "EARNED")) {
-                    CompOff co = CompOff.builder()
-                        .employee(emp)
-                        .earnedDate(date)
-                        .status("EARNED")
-                        .remarks("Auto-earned: Worked on holiday/week-off")
-                        .build();
-                    earnedCompOffs.add(co);
-                }
-            }
         }
 
         if (!toSave.isEmpty()) {
             attendanceRepository.saveAll(toSave);
-        }
-        if (!earnedCompOffs.isEmpty()) {
-            compOffRepository.saveAll(earnedCompOffs);
         }
         log.info("Marked {} employees as {} for date {} (process: {})", count, status, date, process);
         return count;
@@ -357,7 +349,6 @@ public class AttendanceService {
     @Transactional
     public void bulkUpsert(List<AttendanceDTO> records) {
         List<String> blocked = new ArrayList<>();
-        List<CompOff> earnedCompOffs = new ArrayList<>();
         for (AttendanceDTO dto : records) {
             if (dto.getStatus() == null || dto.getStatus().isBlank()) continue;
             Employee employee = employeeRepository.findById(dto.getEmployeeId())
@@ -375,29 +366,39 @@ public class AttendanceService {
                 continue;
             }
 
-            record.setStatus(dto.getStatus());
+            String oldStatus = record.getId() != null ? record.getStatus() : null;
+            String newStatus = dto.getStatus().toUpperCase().trim();
+
+            if (!Objects.equals(oldStatus, newStatus)) {
+                handleCompOffTransition(employee, dto.getDate(), oldStatus, newStatus);
+            }
+
+            record.setStatus(newStatus);
             record.setEmployee(employee);
             attendanceRepository.save(record);
-
-            if ("P".equals(dto.getStatus()) && isHolidayOrWeekOff(dto.getDate())) {
-                if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(employee.getId(), dto.getDate(), "EARNED")) {
-                    CompOff co = CompOff.builder()
-                        .employee(employee)
-                        .earnedDate(dto.getDate())
-                        .status("EARNED")
-                        .remarks("Auto-earned: Worked on holiday/week-off")
-                        .build();
-                    earnedCompOffs.add(compOffRepository.save(co));
-                }
-            }
-        }
-        if (!earnedCompOffs.isEmpty()) {
-            log.info("Auto-earned {} Comp-Off(s) for working on holidays/week-offs", earnedCompOffs.size());
         }
         if (!blocked.isEmpty()) {
             log.warn("Blocked override of {} leave-synced attendance record(s): {}", blocked.size(), blocked);
         }
         log.info("Attendance bulk upsert: {} records", records.size());
+    }
+
+    private void handleCompOffTransition(Employee employee, LocalDate date, String oldStatus, String newStatus) {
+        if (Objects.equals(oldStatus, newStatus)) return;
+        if (oldStatus != null) {
+            if ("COG".equalsIgnoreCase(oldStatus)) {
+                compOffService.cancelCompOffEarned(employee, date);
+            } else if ("COT".equalsIgnoreCase(oldStatus) || "CO".equalsIgnoreCase(oldStatus)) {
+                compOffService.cancelCompOffAvailed(employee, date);
+            }
+        }
+        if (newStatus != null) {
+            if ("COG".equalsIgnoreCase(newStatus)) {
+                compOffService.recordCompOffEarned(employee, date, "Attendance COG on " + date);
+            } else if ("COT".equalsIgnoreCase(newStatus) || "CO".equalsIgnoreCase(newStatus)) {
+                compOffService.recordCompOffAvailed(employee, date);
+            }
+        }
     }
 
     private boolean isHolidayOrWeekOff(LocalDate date) {
@@ -537,7 +538,7 @@ public class AttendanceService {
                     String status = getCellStringValue(cell);
                     if (status == null || status.isBlank()) continue;
                     status = status.toUpperCase().trim();
-                    if (!Set.of("P", "A", "L", "ML", "H", "WO", "R", "CO").contains(status)) continue;
+                    if (!Set.of("P", "A", "L", "ML", "H", "WO", "R", "CO", "COG", "COT").contains(status)) continue;
 
                     LocalDate date = monthStart.plusDays(d);
                     Optional<AttendanceRecord> existingOpt = attendanceRepository
@@ -548,6 +549,12 @@ public class AttendanceService {
                             "message", "Cannot override leave-synced attendance: " + empCode + " on " + date));
                         continue;
                     }
+
+                    String oldStatus = existingOpt.map(AttendanceRecord::getStatus).orElse(null);
+                    if (!status.equals(oldStatus)) {
+                        handleCompOffTransition(emp, date, oldStatus, status);
+                    }
+
                     AttendanceRecord record = existingOpt
                         .orElseGet(() -> AttendanceRecord.builder()
                             .employee(emp)
@@ -557,18 +564,6 @@ public class AttendanceService {
                     if (record.getEmployee() == null) record.setEmployee(emp);
                     attendanceRepository.save(record);
                     imported++;
-
-                    if ("P".equals(status) && isHolidayOrWeekOff(date)) {
-                        if (!compOffRepository.existsByEmployeeIdAndEarnedDateAndStatus(emp.getId(), date, "EARNED")) {
-                            CompOff co = CompOff.builder()
-                                .employee(emp)
-                                .earnedDate(date)
-                                .status("EARNED")
-                                .remarks("Auto-earned: Worked on holiday/week-off")
-                                .build();
-                            compOffRepository.save(co);
-                        }
-                    }
                 }
             }
         } catch (IOException e) {

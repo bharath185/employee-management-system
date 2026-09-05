@@ -77,7 +77,8 @@ import { saveAs } from 'file-saver';
                   <nz-option nzValue="P" nzLabel="P — Present (Green)"></nz-option>
                   <nz-option nzValue="H" nzLabel="H — Holiday / Sunday (Blue)"></nz-option>
                   <nz-option nzValue="WO" nzLabel="WO — Week Off (Grey)"></nz-option>
-                  <nz-option nzValue="CO" nzLabel="CO — Comp Off (Cyan)"></nz-option>
+                  <nz-option nzValue="COG" nzLabel="COG — Comp Off Given (Cyan)"></nz-option>
+                  <nz-option nzValue="COT" nzLabel="COT — Comp Off Taken (Teal)"></nz-option>
                   <nz-option nzValue="L" nzLabel="L — Leave (Orange)"></nz-option>
                   <nz-option nzValue="A" nzLabel="A — Absent (Red)"></nz-option>
                   <nz-option nzValue="ML" nzLabel="ML — Maternity Leave (Purple)"></nz-option>
@@ -338,6 +339,8 @@ import { saveAs } from 'file-saver';
     .status-wo { background:linear-gradient(135deg,#8c8c8c,#a6a6a6); }
     .status-r { background:linear-gradient(135deg,#cf1322,#f5222d); }
     .status-co { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
+    .status-cog { background:linear-gradient(135deg,#13c2c2,#36cfc9); }
+    .status-cot { background:linear-gradient(135deg,#08979c,#13c2c2); }
     .locked-cell { border: 1px dashed rgba(0,0,0,.2); border-radius: 4px; }
     .locked-clickable { cursor: not-allowed; opacity: .85; border: 1px dashed rgba(0,0,0,.2); border-radius: 4px; }
     .day-empty { color:#e8e8e8; font-size:14px; }
@@ -365,6 +368,8 @@ import { saveAs } from 'file-saver';
     .opt-wo { color:#fff; background:linear-gradient(135deg,#8c8c8c,#a6a6a6); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     .opt-r { color:#fff; background:linear-gradient(135deg,#cf1322,#f5222d); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     .opt-co { color:#fff; background:linear-gradient(135deg,#13c2c2,#36cfc9); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-cog { color:#fff; background:linear-gradient(135deg,#13c2c2,#36cfc9); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
+    .opt-cot { color:#fff; background:linear-gradient(135deg,#08979c,#13c2c2); padding:2px 8px; border-radius:4px; font-weight:700; font-size:11px; }
     .bulk-day-btn { font-weight:600 !important; color:#1f3d6e !important; border-color:#d0e2ff !important; background:#f0f7ff !important; }
     .bulk-day-btn:hover { background:#e1effe !important; border-color:#4361ee !important; }
     .bulk-day-popover { width:240px; padding:4px 0; }
@@ -406,7 +411,8 @@ export class AttendanceComponent implements OnInit {
     { code: 'H', label: 'H = Holiday', color: '#1890ff' },
     { code: 'WO', label: 'WO = Week Off', color: '#8c8c8c' },
     { code: 'R', label: 'R = Resign', color: '#cf1322' },
-    { code: 'CO', label: 'CO = Comp Off', color: '#13c2c2' },
+    { code: 'COG', label: 'COG = Comp Off Given', color: '#13c2c2' },
+    { code: 'COT', label: 'COT = Comp Off Taken', color: '#08979c' },
   ];
 
   constructor(
@@ -487,7 +493,7 @@ export class AttendanceComponent implements OnInit {
 
   cycleStatus(emp: EmployeeAttendance, dayIdx: number): void {
     if (emp.lockedDays?.[dayIdx]) return;
-    const order = ['', 'P', 'A', 'L', 'ML', 'H', 'WO', 'R', 'CO'];
+    const order = ['', 'P', 'A', 'L', 'ML', 'H', 'WO', 'R', 'COG', 'COT'];
     const cur = emp.days[dayIdx] || '';
     const nextIdx = (order.indexOf(cur) + 1) % order.length;
     emp.days[dayIdx] = order[nextIdx];
@@ -597,6 +603,8 @@ export class AttendanceComponent implements OnInit {
       case 'H': return '#1890ff';
       case 'WO': return '#8c8c8c';
       case 'R': return '#cf1322';
+      case 'COG': return '#13c2c2';
+      case 'COT': return '#08979c';
       case 'CO': return '#13c2c2';
       default: return '#d9d9d9';
     }

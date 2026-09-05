@@ -73,18 +73,17 @@ public class LeaveService {
         Employee employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
 
-        List<LeaveType> leaveTypes = leaveTypeRepository.findByIsActiveTrue().stream()
-            .filter(lt -> !"CO".equals(lt.getName()))
-            .collect(Collectors.toList());
+        List<LeaveType> leaveTypes = leaveTypeRepository.findByIsActiveTrue();
         for (LeaveType lt : leaveTypes) {
             if (leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(employeeId, lt.getId(), year).isEmpty()) {
+                int entitled = "CO".equalsIgnoreCase(lt.getName()) ? 0 : (lt.getAnnualEntitlement() != null ? lt.getAnnualEntitlement() : 0);
                 LeaveBalance balance = LeaveBalance.builder()
                     .employee(employee)
                     .leaveType(lt)
                     .year(year)
-                    .entitled(lt.getAnnualEntitlement())
+                    .entitled(entitled)
                     .taken(0)
-                    .balance(lt.getAnnualEntitlement())
+                    .balance(entitled)
                     .build();
                 leaveBalanceRepository.save(balance);
             }
@@ -97,7 +96,6 @@ public class LeaveService {
         int count = 0;
         for (Employee emp : employees) {
             LeaveType firstType = leaveTypeRepository.findByIsActiveTrue().stream()
-                .filter(lt -> !"CO".equals(lt.getName()))
                 .findFirst().orElse(null);
             if (firstType == null) continue;
             boolean hasBalances = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
@@ -349,7 +347,7 @@ public class LeaveService {
     }
 
     private void syncAttendanceFromLeave(LeaveApplication app) {
-        String status = "CO".equals(app.getLeaveType().getName()) ? "CO" :
+        String status = "CO".equalsIgnoreCase(app.getLeaveType().getName()) ? "COT" :
             isMedicalLeave(app.getLeaveType()) ? "ML" : "L";
         for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
             final LocalDate day = d;
@@ -374,7 +372,7 @@ public class LeaveService {
                 .findByEmployeeIdAndAttendanceDate(app.getEmployee().getId(), d);
             if (existing.isPresent()) {
                 String s = existing.get().getStatus();
-                if ("L".equals(s) || "ML".equals(s) || "CO".equals(s)) {
+                if ("L".equals(s) || "ML".equals(s) || "CO".equals(s) || "COT".equals(s)) {
                     attendanceRepository.delete(existing.get());
                     removed++;
                 }

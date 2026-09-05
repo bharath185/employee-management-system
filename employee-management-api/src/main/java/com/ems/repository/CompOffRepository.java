@@ -19,6 +19,10 @@ public interface CompOffRepository extends JpaRepository<CompOff, Long> {
 
     Optional<CompOff> findFirstByEmployeeIdAndStatusOrderByAvailedDateDesc(Long employeeId, String status);
 
+    Optional<CompOff> findFirstByEmployeeIdAndEarnedDateAndStatus(Long employeeId, LocalDate earnedDate, String status);
+
+    Optional<CompOff> findFirstByEmployeeIdAndAvailedDateAndStatus(Long employeeId, LocalDate availedDate, String status);
+
     long countByEmployeeIdAndStatus(Long employeeId, String status);
 
     boolean existsByEmployeeIdAndEarnedDateAndStatus(Long employeeId, LocalDate earnedDate, String status);
