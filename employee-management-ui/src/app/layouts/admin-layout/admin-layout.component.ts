@@ -522,7 +522,8 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
       padding: 8px;
       height: calc(100vh - 52px);
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       box-sizing: border-box;
     }
 
