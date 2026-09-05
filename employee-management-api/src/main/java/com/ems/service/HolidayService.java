@@ -33,6 +33,12 @@ public class HolidayService {
     @Transactional
     public Holiday createHoliday(Holiday holiday) {
         holiday.setYear(holiday.getDate().getYear());
+        boolean specific = Boolean.TRUE.equals(holiday.getIsProcessSpecific()) || Boolean.TRUE.equals(holiday.getIsDepartmentSpecific());
+        String procs = holiday.getProcesses() != null ? holiday.getProcesses() : holiday.getDepartments();
+        holiday.setIsProcessSpecific(specific);
+        holiday.setProcesses(procs);
+        holiday.setIsDepartmentSpecific(specific);
+        holiday.setDepartments(procs);
         Holiday saved = holidayRepository.save(holiday);
         syncAttendanceForHolidayDate(saved.getDate());
         return saved;
@@ -48,8 +54,12 @@ public class HolidayService {
         holiday.setDate(updated.getDate());
         holiday.setYear(updated.getDate().getYear());
         holiday.setIsOptional(updated.getIsOptional());
-        holiday.setIsDepartmentSpecific(updated.getIsDepartmentSpecific());
-        holiday.setDepartments(updated.getDepartments());
+        boolean specific = Boolean.TRUE.equals(updated.getIsProcessSpecific()) || Boolean.TRUE.equals(updated.getIsDepartmentSpecific());
+        String procs = updated.getProcesses() != null ? updated.getProcesses() : updated.getDepartments();
+        holiday.setIsProcessSpecific(specific);
+        holiday.setProcesses(procs);
+        holiday.setIsDepartmentSpecific(specific);
+        holiday.setDepartments(procs);
         Holiday saved = holidayRepository.save(holiday);
 
         if (!oldDate.equals(saved.getDate())) {
@@ -76,7 +86,7 @@ public class HolidayService {
         boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
         for (Employee emp : liveEmployees) {
-            boolean isHoliday = isSunday || activeHolidays.stream().anyMatch(h -> h.appliesToDepartment(emp.getDepartment()));
+            boolean isHoliday = isSunday || activeHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
             attendanceRepository.findByEmployeeIdAndAttendanceDate(emp.getId(), date).ifPresent(record -> {
                 if (!Boolean.TRUE.equals(record.getLocked())) {
                     if (isHoliday && "P".equalsIgnoreCase(record.getStatus())) {

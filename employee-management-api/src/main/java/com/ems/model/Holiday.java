@@ -38,6 +38,13 @@ public class Holiday {
     @Builder.Default
     private Boolean isOptional = false;
 
+    @Column(name = "is_process_specific")
+    @Builder.Default
+    private Boolean isProcessSpecific = false;
+
+    @Column(name = "processes", length = 500)
+    private String processes;
+
     @Column(name = "is_department_specific")
     @Builder.Default
     private Boolean isDepartmentSpecific = false;
@@ -45,20 +52,26 @@ public class Holiday {
     @Column(name = "departments", length = 500)
     private String departments;
 
-    public boolean appliesToDepartment(String department) {
-        if (!Boolean.TRUE.equals(this.isDepartmentSpecific) || this.departments == null || this.departments.trim().isEmpty()) {
+    public boolean appliesToProcess(String process) {
+        boolean specific = Boolean.TRUE.equals(this.isProcessSpecific) || Boolean.TRUE.equals(this.isDepartmentSpecific);
+        String target = (this.processes != null && !this.processes.trim().isEmpty()) ? this.processes : this.departments;
+        if (!specific || target == null || target.trim().isEmpty()) {
             return true;
         }
-        if (department == null || department.trim().isEmpty()) {
+        if (process == null || process.trim().isEmpty()) {
             return false;
         }
-        String[] depts = this.departments.split(",");
-        for (String d : depts) {
-            if (d.trim().equalsIgnoreCase(department.trim())) {
+        String[] procs = target.split(",");
+        for (String p : procs) {
+            if (p.trim().equalsIgnoreCase(process.trim())) {
                 return true;
             }
         }
         return false;
+    }
+
+    public boolean appliesToDepartment(String department) {
+        return appliesToProcess(department);
     }
 
     @CreatedDate

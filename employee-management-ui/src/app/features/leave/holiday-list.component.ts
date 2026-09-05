@@ -43,7 +43,7 @@ import { Holiday } from '../../core/models/payroll.models';
               <th>Name</th>
               <th>Date</th>
               <th>Day</th>
-              <th>Department Scope</th>
+              <th>Process Scope</th>
               <th>Optional</th>
               <th class="th-actions">Actions</th>
             </tr>
@@ -54,9 +54,9 @@ import { Holiday } from '../../core/models/payroll.models';
               <td>{{ h.date }}</td>
               <td>{{ getDayName(h.date) }}</td>
               <td>
-                <nz-tag *ngIf="!h.isDepartmentSpecific || !h.departments" nzColor="green">All Departments</nz-tag>
-                <ng-container *ngIf="h.isDepartmentSpecific && h.departments">
-                  <nz-tag *ngFor="let dept of getDeptList(h.departments)" nzColor="cyan" style="margin-bottom:2px;">{{ dept }}</nz-tag>
+                <nz-tag *ngIf="!(h.isProcessSpecific || h.isDepartmentSpecific) || !(h.processes || h.departments)" nzColor="green">All Processes</nz-tag>
+                <ng-container *ngIf="(h.isProcessSpecific || h.isDepartmentSpecific) && (h.processes || h.departments)">
+                  <nz-tag *ngFor="let p of getProcList(h.processes || h.departments)" nzColor="cyan" style="margin-bottom:2px;">{{ p }}</nz-tag>
                 </ng-container>
               </td>
               <td><nz-tag [nzColor]="h.isOptional ? 'orange' : 'blue'">{{ h.isOptional ? 'Optional' : 'Mandatory' }}</nz-tag></td>
@@ -95,18 +95,18 @@ import { Holiday } from '../../core/models/payroll.models';
               <nz-date-picker [(ngModel)]="form.date" class="theme-datepicker" nzFormat="yyyy-MM-dd"></nz-date-picker>
             </div>
             <div class="form-row">
-              <label>Department Allocation</label>
-              <label nz-checkbox [(ngModel)]="form.isDepartmentSpecific">
-                Department-wise Allocation (Restrict to specific departments)
+              <label>Process Allocation</label>
+              <label nz-checkbox [(ngModel)]="form.isProcessSpecific">
+                Process-wise Allocation (Restrict to specific processes)
               </label>
             </div>
-            <div class="form-row" *ngIf="form.isDepartmentSpecific">
-              <label>Select Departments</label>
-              <nz-select [(ngModel)]="form.selectedDepartments" nzMode="multiple" nzPlaceHolder="Select one or more departments" style="width:100%;">
-                <nz-option *ngFor="let d of departmentList" [nzValue]="d" [nzLabel]="d"></nz-option>
+            <div class="form-row" *ngIf="form.isProcessSpecific">
+              <label>Select Processes</label>
+              <nz-select [(ngModel)]="form.selectedProcesses" nzMode="multiple" nzPlaceHolder="Select one or more processes" style="width:100%;">
+                <nz-option *ngFor="let p of processList" [nzValue]="p" [nzLabel]="p"></nz-option>
               </nz-select>
               <small class="text-muted" style="font-size:11px; color:#888; margin-top:3px; display:block;">
-                This holiday will only apply to employees in the selected departments.
+                This holiday will only apply to employees assigned to the selected processes.
               </small>
             </div>
             <div class="form-row">
@@ -248,9 +248,9 @@ export class HolidayListComponent implements OnInit {
   editingId: number | null = null;
   selectedYear = new Date().getFullYear();
   years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i - 1);
-  departmentList: string[] = [];
+  processList: string[] = [];
 
-  form: any = { name: '', date: null, isOptional: false, isDepartmentSpecific: false, selectedDepartments: [] };
+  form: any = { name: '', date: null, isOptional: false, isProcessSpecific: false, selectedProcesses: [] };
 
   constructor(
     private holidayService: HolidayService,
@@ -260,8 +260,8 @@ export class HolidayListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadHolidays();
-    this.attendanceService.getDepartments().subscribe({
-      next: (res) => { this.departmentList = res.data || []; },
+    this.attendanceService.getProcesses().subscribe({
+      next: (res) => { this.processList = res.data || []; },
       error: () => {}
     });
   }
@@ -280,13 +280,13 @@ export class HolidayListComponent implements OnInit {
     return d.toLocaleDateString('en-US', { weekday: 'long' });
   }
 
-  getDeptList(deptStr?: string): string[] {
-    return deptStr ? deptStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  getProcList(procStr?: string): string[] {
+    return procStr ? procStr.split(',').map(s => s.trim()).filter(Boolean) : [];
   }
 
   showAddModal(): void {
     this.editingId = null;
-    this.form = { name: '', date: null, isOptional: false, isDepartmentSpecific: false, selectedDepartments: [] };
+    this.form = { name: '', date: null, isOptional: false, isProcessSpecific: false, selectedProcesses: [] };
     this.modalVisible = true;
   }
 
@@ -296,8 +296,8 @@ export class HolidayListComponent implements OnInit {
       name: h.name,
       date: new Date(h.date),
       isOptional: h.isOptional,
-      isDepartmentSpecific: !!h.isDepartmentSpecific,
-      selectedDepartments: this.getDeptList(h.departments)
+      isProcessSpecific: !!(h.isProcessSpecific || h.isDepartmentSpecific),
+      selectedProcesses: this.getProcList(h.processes || h.departments)
     };
     this.modalVisible = true;
   }
@@ -307,20 +307,23 @@ export class HolidayListComponent implements OnInit {
       this.msg.warning('Please fill in all required fields');
       return;
     }
-    if (this.form.isDepartmentSpecific && (!this.form.selectedDepartments || this.form.selectedDepartments.length === 0)) {
-      this.msg.warning('Please select at least one department or uncheck Department Allocation');
+    if (this.form.isProcessSpecific && (!this.form.selectedProcesses || this.form.selectedProcesses.length === 0)) {
+      this.msg.warning('Please select at least one process or uncheck Process Allocation');
       return;
     }
 
     this.saving = true;
+    const procStr = this.form.isProcessSpecific && this.form.selectedProcesses?.length
+      ? this.form.selectedProcesses.join(',')
+      : null;
     const payload = {
       name: this.form.name,
       date: this.formatDate(this.form.date),
       isOptional: this.form.isOptional,
-      isDepartmentSpecific: !!this.form.isDepartmentSpecific,
-      departments: this.form.isDepartmentSpecific && this.form.selectedDepartments?.length
-        ? this.form.selectedDepartments.join(',')
-        : null
+      isProcessSpecific: !!this.form.isProcessSpecific,
+      processes: procStr,
+      isDepartmentSpecific: !!this.form.isProcessSpecific,
+      departments: procStr
     };
     const obs = this.editingId
       ? this.holidayService.updateHoliday(this.editingId, payload)

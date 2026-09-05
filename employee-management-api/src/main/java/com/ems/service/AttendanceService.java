@@ -94,7 +94,7 @@ public class AttendanceService {
                     String status;
                     if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
                         status = "WO";
-                    } else if (isHolidayForEmployee(date, emp.getDepartment(), holidays)) {
+                    } else if (isHolidayForEmployee(date, emp.getProcessAssigned(), holidays)) {
                         status = "H";
                     } else {
                         status = "P";
@@ -132,7 +132,7 @@ public class AttendanceService {
         int count = 0;
         for (Employee emp : liveEmployees) {
             if (!alreadyMarked.contains(emp.getId())) {
-                boolean isHoliday = isSunday || dateHolidays.stream().anyMatch(h -> h.appliesToDepartment(emp.getDepartment()));
+                boolean isHoliday = isSunday || dateHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
                 String defaultStatus = isHoliday ? "H" : "P";
                 AttendanceRecord record = AttendanceRecord.builder()
                     .employee(emp)
@@ -326,7 +326,7 @@ public class AttendanceService {
                 LocalDate d = monthStart.plusDays(i);
                 String status = empDayMap.getOrDefault(i, "");
                 if (status == null || status.isBlank()) {
-                    if (d.getDayOfWeek() == DayOfWeek.SUNDAY || isHolidayForEmployee(d, emp.getDepartment(), holidaysInRange)) {
+                    if (d.getDayOfWeek() == DayOfWeek.SUNDAY || isHolidayForEmployee(d, emp.getProcessAssigned(), holidaysInRange)) {
                         status = "H";
                     } else if (i == todayIndex) {
                         status = "P";
@@ -437,17 +437,17 @@ public class AttendanceService {
         }
     }
 
-    public boolean isHolidayForEmployee(LocalDate date, String department, List<Holiday> holidays) {
+    public boolean isHolidayForEmployee(LocalDate date, String process, List<Holiday> holidays) {
         if (holidays == null || holidays.isEmpty() || date == null) return false;
         return holidays.stream()
             .filter(h -> h.getDate() != null && h.getDate().equals(date))
-            .anyMatch(h -> h.appliesToDepartment(department));
+            .anyMatch(h -> h.appliesToProcess(process));
     }
 
-    public boolean isHolidayOrWeekOffForEmployee(LocalDate date, String department) {
+    public boolean isHolidayOrWeekOffForEmployee(LocalDate date, String process) {
         if (date.getDayOfWeek() == DayOfWeek.SUNDAY) return true;
         List<Holiday> holidays = holidayRepository.findAllByDate(date);
-        return holidays.stream().anyMatch(h -> h.appliesToDepartment(department));
+        return holidays.stream().anyMatch(h -> h.appliesToProcess(process));
     }
 
     private boolean isHolidayOrWeekOff(LocalDate date) {

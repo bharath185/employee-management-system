@@ -70,6 +70,8 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE leave_balances ADD COLUMN IF NOT EXISTS encashed INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS is_department_specific BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS departments VARCHAR(500)",
+            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS is_process_specific BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS processes VARCHAR(500)",
             "DELETE FROM master_data WHERE category = 'PROCESS' AND code IN ('PROCESS_A', 'PROCESS_B', 'PROCESS_C', 'PROCESS_D')",
             "UPDATE employees SET process_assigned = 'Housing Loan' WHERE process_assigned = 'HOUSING LOAN'",
             "UPDATE employees SET process_assigned = 'Education Loan' WHERE process_assigned IN ('EDUCATION LOAN', 'Ed+AS217:AU217')"
