@@ -20,4 +20,5 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   data?: Text2SqlResponse;
+  showRaw?: boolean;
 }

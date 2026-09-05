@@ -559,163 +559,272 @@ public class Text2SqlService {
     }
 
     // =========================================================================
-    // INTELLIGENT MARKDOWN FORMATTER
+    // SMART & NATURAL HUMAN-LIKE MARKDOWN FORMATTER
     // =========================================================================
 
     private String formatIntelligentResponse(String question, String sql, Text2SqlResponse.SqlResult result) {
         if (result.error != null) {
             log.error("Database query failed: {} with error: {}", sql, result.error);
-            return "⚠️ **Database Error**: I encountered an issue querying the database: `" + result.error + "`.\n\nPlease check your input or try rephrasing.";
+            return "I ran into a small hiccup querying the database (`" + result.error + "`). Could you please check or rephrase your question?";
         }
 
         if (result.rows.isEmpty()) {
-            return "ℹ️ **No matching records found** in the database for your query.";
+            return "I couldn't find any matching records in the database for your query. Let me know if you'd like to search with different details!";
         }
 
         String q = question.toLowerCase();
 
-        // 1. Single scalar result (like COUNT(*))
+        // 1. Single scalar result (e.g. COUNT(*))
         if (result.columns.size() == 1 && result.rows.size() == 1) {
             Object val = result.rows.get(0).get(result.columns.get(0));
             String col = result.columns.get(0).toLowerCase();
             if (col.contains("count") || col.contains("total")) {
-                return "📊 **Total Count**: **" + val + "**";
+                return "The current total count is **" + val + "**.";
             }
-            return "Result: **" + val + "**";
+            return "Here is what I found: **" + val + "**.";
         }
 
-        // 2. Payroll Summary (Total Gross, Net Disbursed)
+        // 2. Organization / Payroll Summary
         if (result.columns.contains("total_gross") || result.columns.contains("total_net_disbursed")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### 💵 Payroll Summary & Disbursement\n\n");
+            sb.append("Here is the **Payroll Summary & Disbursement**:\n\n");
             for (Map<String, Object> r : result.rows) {
-                String my = r.containsKey("wage_month") ? (r.get("wage_month") + "/" + r.get("wage_year")) : "Overall";
-                sb.append("• **Month/Year**: `").append(my).append("`\n");
-                if (r.containsKey("total_employees")) sb.append("  - **Processed Employees**: `").append(r.get("total_employees")).append("`\n");
-                if (r.containsKey("total_gross")) sb.append("  - **Total Gross Salary**: ₹`").append(r.get("total_gross")).append("`\n");
-                if (r.containsKey("total_net_disbursed")) sb.append("  - **Total Net Disbursed**: **₹").append(r.get("total_net_disbursed")).append("**\n");
-                if (r.containsKey("avg_net_pay")) sb.append("  - **Average Net Pay**: ₹`").append(String.format("%.2f", Double.parseDouble(String.valueOf(r.get("avg_net_pay"))))).append("`\n\n");
+                String my = r.containsKey("wage_month") ? (r.get("wage_month") + "/" + r.get("wage_year")) : "Latest Month";
+                sb.append("💰 **Payroll Cycle: ").append(my).append("**\n");
+                if (r.containsKey("total_employees")) sb.append("• 👥 **Processed Employees**: **").append(r.get("total_employees")).append(" staff members**\n");
+                if (r.containsKey("total_gross")) sb.append("• 💵 **Total Gross Earnings**: ₹**").append(formatMoney(r.get("total_gross"))).append("**\n");
+                if (r.containsKey("total_net_disbursed")) sb.append("• 💳 **Total Net Disbursed**: **₹").append(formatMoney(r.get("total_net_disbursed"))).append("**\n");
+                if (r.containsKey("avg_net_pay")) sb.append("• 📈 **Average Take-Home Pay**: ₹**").append(formatMoney(r.get("avg_net_pay"))).append("**\n\n");
             }
             return sb.toString().trim();
         }
 
-        // 3. Summary stats (Total, Active, Exited)
+        // 3. Employee Workforce Overview (Total, Active, Exited)
         if (result.rows.size() == 1 && result.columns.contains("total_employees")) {
             Map<String, Object> r = result.rows.get(0);
-            return "### 👥 Employee Overview\n" +
-                   "- **Total Registered Employees**: " + r.getOrDefault("total_employees", 0) + "\n" +
-                   "- **Active / Working (LIVE)**: " + r.getOrDefault("active_employees", 0) + "\n" +
-                   "- **Exited / Inactive**: " + r.getOrDefault("exited_employees", 0);
+            return "Here is the current **Workforce Overview** across the organization:\n\n" +
+                   "• 👥 **Total Registered Workforce**: **" + r.getOrDefault("total_employees", 0) + " employees**\n" +
+                   "• 🟢 **Actively Working (LIVE)**: **" + r.getOrDefault("active_employees", 0) + " employees**\n" +
+                   "• ⚪ **Exited / Relieved**: **" + r.getOrDefault("exited_employees", 0) + " employees**";
         }
 
-        // 4. Single employee lookup details
+        // 4. Single Employee Comprehensive Profile
         if (result.rows.size() == 1 && result.columns.contains("employee_code")) {
             Map<String, Object> r = result.rows.get(0);
             String code = String.valueOf(r.getOrDefault("employee_code", ""));
             String firstName = String.valueOf(r.getOrDefault("first_name", ""));
             String surname = String.valueOf(r.getOrDefault("surname", ""));
             String fullName = (firstName + " " + surname).trim();
+            if (fullName.isBlank() || fullName.equalsIgnoreCase("null null")) fullName = code;
 
             StringBuilder sb = new StringBuilder();
-            sb.append("### 👤 Employee Details: **").append(fullName.isBlank() ? code : fullName).append("** (`").append(code).append("`)\n\n");
+            sb.append("Here is the profile for **").append(fullName).append("** (`").append(code).append("`):\n\n");
 
-            for (String col : result.columns) {
-                if (col.equals("employee_code") || col.equals("first_name") || col.equals("surname") || col.equals("id")) continue;
-                Object val = r.get(col);
-                if (val != null && !val.toString().isBlank() && !val.toString().equalsIgnoreCase("null")) {
-                    sb.append("• **").append(formatColumnLabel(col)).append("**: `").append(val).append("`\n");
+            // Role & Status
+            sb.append("📌 **Employment & Role**\n");
+            if (r.containsKey("designation") && r.get("designation") != null) {
+                sb.append("• **Designation**: `").append(r.get("designation")).append("`\n");
+            }
+            if (r.containsKey("process_assigned") && r.get("process_assigned") != null) {
+                sb.append("• **Process**: `").append(r.get("process_assigned")).append("`\n");
+            }
+            if (r.containsKey("employee_status") && r.get("employee_status") != null) {
+                String st = String.valueOf(r.get("employee_status"));
+                String badge = st.equalsIgnoreCase("LIVE") ? "🟢 Active (LIVE)" : "⚪ " + st;
+                sb.append("• **Status**: ").append(badge).append("\n");
+            }
+            if (r.containsKey("doj") && r.get("doj") != null) {
+                sb.append("• **Joining Date**: `").append(r.get("doj")).append("`\n");
+            }
+
+            // Contact
+            boolean hasContact = r.containsKey("mobile") || r.containsKey("email") || r.containsKey("present_address");
+            if (hasContact) {
+                sb.append("\n📞 **Contact Details**\n");
+                if (r.containsKey("mobile") && r.get("mobile") != null) {
+                    sb.append("• **Mobile**: `").append(r.get("mobile")).append("`\n");
                 }
+                if (r.containsKey("email") && r.get("email") != null && !r.get("email").toString().isBlank()) {
+                    sb.append("• **Email**: `").append(r.get("email")).append("`\n");
+                }
+                if (r.containsKey("present_address") && r.get("present_address") != null && !r.get("present_address").toString().isBlank()) {
+                    sb.append("• **Address**: ").append(r.get("present_address")).append("\n");
+                }
+            }
+
+            // Bank Details
+            if (r.containsKey("bank_name") && r.get("bank_name") != null && !r.get("bank_name").toString().isBlank()) {
+                sb.append("\n🏦 **Banking & Salary Account**\n");
+                sb.append("• **Bank**: `").append(r.get("bank_name")).append("`\n");
+                if (r.containsKey("account_number") && r.get("account_number") != null) {
+                    sb.append("• **Account No**: `").append(r.get("account_number")).append("`\n");
+                }
+                if (r.containsKey("ifsc_code") && r.get("ifsc_code") != null) {
+                    sb.append("• **IFSC**: `").append(r.get("ifsc_code")).append("`\n");
+                }
+            }
+
+            // Identity / Verification
+            if (r.containsKey("aadhar_number") || r.containsKey("pan_number")) {
+                sb.append("\n🪪 **Identity & Verification**\n");
+                if (r.containsKey("aadhar_number") && r.get("aadhar_number") != null) {
+                    sb.append("• **Aadhaar**: `").append(maskAadhaar(String.valueOf(r.get("aadhar_number")))).append("` (Status: `").append(r.getOrDefault("aadhaar_verification", "N/A")).append("`)\n");
+                }
+                if (r.containsKey("pan_number") && r.get("pan_number") != null) {
+                    sb.append("• **PAN**: `").append(r.get("pan_number")).append("` (Status: `").append(r.getOrDefault("pan_verification", "N/A")).append("`)\n");
+                }
+            }
+
+            // Salary details if present in single row
+            if (r.containsKey("gross_salary") || r.containsKey("net_pay")) {
+                sb.append("\n💵 **Latest Compensation**\n");
+                if (r.containsKey("gross_salary")) sb.append("• **Gross Salary**: ₹`").append(r.get("gross_salary")).append("`\n");
+                if (r.containsKey("total_deductions")) sb.append("• **Total Deductions**: ₹`").append(r.get("total_deductions")).append("`\n");
+                if (r.containsKey("net_pay")) sb.append("• **Take-Home Net Pay**: **₹").append(r.get("net_pay")).append("**\n");
+            }
+
+            return sb.toString().trim();
+        }
+
+        // 5. Leave Balances Overview
+        if (result.columns.contains("leave_type") && result.columns.contains("balance")) {
+            StringBuilder sb = new StringBuilder();
+            String firstEmpName = "";
+            String firstEmpCode = "";
+            if (!result.rows.isEmpty()) {
+                Map<String, Object> r0 = result.rows.get(0);
+                firstEmpName = (r0.getOrDefault("first_name", "") + " " + r0.getOrDefault("surname", "")).trim();
+                firstEmpCode = String.valueOf(r0.getOrDefault("employee_code", ""));
+            }
+
+            if (!firstEmpName.isBlank() && result.rows.size() <= 6) {
+                sb.append("Here is the leave availability for **").append(firstEmpName).append("** (`").append(firstEmpCode).append("`):\n\n");
+            } else {
+                sb.append("Here is the **Leave Balance Overview** (").append(result.rows.size()).append(" record(s)):\n\n");
+            }
+
+            for (Map<String, Object> r : result.rows) {
+                String type = String.valueOf(r.getOrDefault("leave_type", "Leave"));
+                String icon = getLeaveIcon(type);
+                String bal = String.valueOf(r.getOrDefault("balance", "0"));
+                String ent = String.valueOf(r.getOrDefault("entitled", "0"));
+                String taken = String.valueOf(r.getOrDefault("taken", "0"));
+                String emp = r.containsKey("first_name") && result.rows.size() > 6 ? (r.get("first_name") + " (" + r.get("employee_code") + ") — ") : "";
+
+                sb.append(icon).append(" **").append(emp).append(type).append("**: **").append(bal).append(" available** ")
+                  .append("(Entitled: `").append(ent).append("`, Taken: `").append(taken).append("`)\n");
             }
             return sb.toString().trim();
         }
 
-        // 4. Leave balances table
-        if (result.columns.contains("leave_type") && result.columns.contains("balance")) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("### 🏖️ Leave Balance Information\n\n");
-            sb.append("| Employee | Leave Type | Entitled | Taken | Balance |\n");
-            sb.append("| :--- | :--- | :---: | :---: | :---: |\n");
-            for (Map<String, Object> r : result.rows) {
-                String emp = r.containsKey("first_name") ? (r.get("first_name") + " (" + r.get("employee_code") + ")") : String.valueOf(r.getOrDefault("employee_code", ""));
-                sb.append("| ").append(emp)
-                  .append(" | **").append(r.getOrDefault("leave_type", ""))
-                  .append("** | ").append(r.getOrDefault("entitled", "0"))
-                  .append(" | ").append(r.getOrDefault("taken", "0"))
-                  .append(" | **").append(r.getOrDefault("balance", "0")).append("** |\n");
-            }
-            return sb.toString();
-        }
-
-        // 5. Comp-off records
+        // 6. Comp-Off Records (COG / COT)
         if (q.contains("cog") || q.contains("cot") || result.columns.contains("earned_date")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### ⏱️ Comp-Off Records (").append(result.rows.size()).append(" found)\n\n");
-            sb.append("| Employee | Process | Date / Earned | Status |\n");
-            sb.append("| :--- | :--- | :--- | :---: |\n");
+            boolean isCog = q.contains("cog") || q.contains("earned") || q.contains("given");
+            boolean isCot = q.contains("cot") || q.contains("taken") || q.contains("availed");
+
+            if (isCog) {
+                sb.append("Here are the team members who recently **earned Comp-Off credit (`COG`)**:\n\n");
+            } else if (isCot) {
+                sb.append("Here are the team members who recently **availed Comp-Off leave (`COT`)**:\n\n");
+            } else {
+                sb.append("Here are the **Comp-Off Records**:\n\n");
+            }
+
+            int idx = 1;
             for (Map<String, Object> r : result.rows) {
-                String emp = r.getOrDefault("first_name", "") + " " + r.getOrDefault("surname", "") + " (`" + r.getOrDefault("employee_code", "") + "`)";
-                String proc = String.valueOf(r.getOrDefault("process_assigned", "-"));
+                String emp = (r.getOrDefault("first_name", "") + " " + r.getOrDefault("surname", "")).trim();
+                String code = String.valueOf(r.getOrDefault("employee_code", ""));
+                String proc = String.valueOf(r.getOrDefault("process_assigned", ""));
                 String dt = String.valueOf(r.containsKey("attendance_date") ? r.get("attendance_date") : r.getOrDefault("earned_date", "-"));
                 String st = String.valueOf(r.getOrDefault("status", ""));
-                sb.append("| ").append(emp).append(" | ").append(proc).append(" | ").append(dt).append(" | `").append(st).append("` |\n");
+
+                sb.append(idx++).append(". **").append(emp.isBlank() ? code : emp).append("** (`").append(code).append("`)");
+                if (!proc.isBlank() && !proc.equalsIgnoreCase("null") && !proc.equalsIgnoreCase("-")) {
+                    sb.append(" — *").append(proc).append("*");
+                }
+                sb.append("\n   • **Date**: `").append(dt).append("` | **Status**: `").append(st).append("`\n");
             }
-            return sb.toString();
+            return sb.toString().trim();
         }
 
-        // 6. Attendance records list
+        // 7. Attendance Records (Absent / Present / Log)
         if (result.columns.contains("attendance_date") && result.columns.contains("status")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### 📅 Attendance Records (").append(result.rows.size()).append(")\n\n");
-            sb.append("| Employee | Process | Date | Status |\n");
-            sb.append("| :--- | :--- | :--- | :---: |\n");
+            boolean isAbsent = q.contains("absent") || q.contains("not present");
+            boolean isPresent = q.contains("present") && !q.contains("absent");
+
+            if (isAbsent) {
+                sb.append("Here are the team members marked **Absent (A)** (").append(result.rows.size()).append(" employee(s)):\n\n");
+            } else if (isPresent) {
+                sb.append("Here are the team members marked **Present (P)** (").append(result.rows.size()).append(" employee(s)):\n\n");
+            } else {
+                sb.append("Here are the **Attendance Records** (").append(result.rows.size()).append("):\n\n");
+            }
+
+            int idx = 1;
             for (Map<String, Object> r : result.rows) {
-                String emp = r.containsKey("first_name") ? (r.get("first_name") + " " + r.get("surname") + " (`" + r.get("employee_code") + "`)") : String.valueOf(r.getOrDefault("employee_code", "-"));
-                String proc = String.valueOf(r.getOrDefault("process_assigned", "-"));
+                String emp = (r.getOrDefault("first_name", "") + " " + r.getOrDefault("surname", "")).trim();
+                String code = String.valueOf(r.getOrDefault("employee_code", ""));
+                String proc = String.valueOf(r.getOrDefault("process_assigned", ""));
+                String desig = String.valueOf(r.getOrDefault("designation", ""));
                 String dt = String.valueOf(r.getOrDefault("attendance_date", ""));
                 String st = String.valueOf(r.getOrDefault("status", ""));
-                sb.append("| ").append(emp).append(" | ").append(proc).append(" | ").append(dt).append(" | `").append(st).append("` |\n");
+                String mob = String.valueOf(r.getOrDefault("mobile", ""));
+
+                sb.append(idx++).append(". **").append(emp.isBlank() ? code : emp).append("** (`").append(code).append("`)");
+                if (!desig.isBlank() && !desig.equalsIgnoreCase("null")) {
+                    sb.append(" — *").append(desig).append("*");
+                }
+                if (!proc.isBlank() && !proc.equalsIgnoreCase("null")) {
+                    sb.append(" [").append(proc).append("]");
+                }
+                sb.append("\n   • **Date**: `").append(dt).append("` | **Status**: `").append(st).append("`");
+                if (!mob.isBlank() && !mob.equalsIgnoreCase("null")) {
+                    sb.append(" | 📞 `").append(mob).append("`");
+                }
+                sb.append("\n");
             }
-            return sb.toString();
+            return sb.toString().trim();
         }
 
-        // 7. Holidays List
+        // 8. Holidays Calendar
         if (result.columns.contains("holiday_date")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### 🎉 Holidays Calendar\n\n");
-            sb.append("| Holiday Name | Date | Type | Process Specific |\n");
-            sb.append("| :--- | :--- | :---: | :--- |\n");
+            sb.append("Here are the **Holidays** in the system calendar:\n\n");
             for (Map<String, Object> r : result.rows) {
                 String name = String.valueOf(r.getOrDefault("name", ""));
                 String dt = String.valueOf(r.getOrDefault("holiday_date", ""));
-                String opt = Boolean.TRUE.equals(r.get("is_optional")) ? "Optional" : "Mandatory";
+                boolean opt = Boolean.TRUE.equals(r.get("is_optional"));
                 String proc = Boolean.TRUE.equals(r.get("is_process_specific")) ? String.valueOf(r.getOrDefault("processes", "All")) : "All Processes";
-                sb.append("| **").append(name).append("** | `").append(dt).append("` | ").append(opt).append(" | ").append(proc).append(" |\n");
+
+                sb.append("🎉 **").append(name).append("**\n")
+                  .append("• **Date**: `").append(dt).append("` (").append(opt ? "Optional" : "Mandatory").append(")\n")
+                  .append("• **Applicable Processes**: *").append(proc).append("*\n\n");
             }
-            return sb.toString();
+            return sb.toString().trim();
         }
 
-        // 8. Payslips Table
+        // 9. Payslips Table
         if (result.columns.contains("gross_salary") || result.columns.contains("net_pay")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### 💵 Payroll & Payslip Records\n\n");
-            sb.append("| Employee | Month/Year | Gross Salary | Deductions | Net Pay |\n");
-            sb.append("| :--- | :---: | :---: | :---: | :---: |\n");
+            sb.append("Here are the **Payroll & Salary Records**:\n\n");
             for (Map<String, Object> r : result.rows) {
-                String emp = r.containsKey("first_name") ? (r.get("first_name") + " " + r.get("surname") + " (`" + r.get("employee_code") + "`)") : String.valueOf(r.getOrDefault("employee_code", "-"));
+                String emp = (r.getOrDefault("first_name", "") + " " + r.getOrDefault("surname", "")).trim();
+                String code = String.valueOf(r.getOrDefault("employee_code", ""));
                 String my = r.getOrDefault("wage_month", "") + "/" + r.getOrDefault("wage_year", "");
-                sb.append("| ").append(emp)
-                  .append(" | ").append(my)
-                  .append(" | ₹").append(r.getOrDefault("gross_salary", "0"))
-                  .append(" | ₹").append(r.getOrDefault("total_deductions", "0"))
-                  .append(" | **₹").append(r.getOrDefault("net_pay", "0")).append("** |\n");
+                sb.append("💵 **").append(emp.isBlank() ? code : emp).append("** (`").append(code).append("`) — *").append(my).append("*\n")
+                  .append("• **Gross Salary**: ₹`").append(r.getOrDefault("gross_salary", "0")).append("`\n")
+                  .append("• **Deductions**: ₹`").append(r.getOrDefault("total_deductions", "0")).append("`\n")
+                  .append("• **Take-Home Net Pay**: **₹").append(r.getOrDefault("net_pay", "0")).append("**\n\n");
             }
-            return sb.toString();
+            return sb.toString().trim();
         }
 
-        // 9. Aggregation counts / distributions (e.g. process counts, gender counts, designations)
+        // 10. Aggregation Breakdown (Processes, Gender, Designation)
         if (result.columns.stream().anyMatch(c -> c.toLowerCase().contains("count") || c.toLowerCase().contains("total"))) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### 📊 Distribution Breakdown\n\n");
+            sb.append("Here is the **Distribution Breakdown**:\n\n");
             for (Map<String, Object> r : result.rows) {
                 String label = r.entrySet().stream()
                     .filter(e -> !e.getKey().toLowerCase().contains("count") && !e.getKey().toLowerCase().contains("total") && !e.getKey().toLowerCase().contains("percentage"))
@@ -725,24 +834,24 @@ public class Text2SqlService {
                     .filter(e -> e.getKey().toLowerCase().contains("count") || e.getKey().toLowerCase().contains("total"))
                     .map(Map.Entry::getValue)
                     .findFirst().orElse("0");
-                sb.append("• **").append(label.isBlank() ? "Total" : label).append("**: `").append(count).append("`");
+                sb.append("• 🏢 **").append(label.isBlank() ? "Total" : label).append("**: **").append(count).append(" employees**");
                 if (r.containsKey("percentage")) {
-                    sb.append(" (").append(r.get("percentage")).append("%)");
+                    sb.append(" (*").append(r.get("percentage")).append("%*)");
                 }
                 sb.append("\n");
             }
             return sb.toString().trim();
         }
 
-        // 10. General Employee List (up to 20 rows)
+        // 11. General Employee List (up to 30 rows)
         if (result.columns.contains("employee_code")) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Found **").append(result.rows.size()).append("** employee(s):\n\n");
+            sb.append("I found **").append(result.rows.size()).append(" employee(s)**:\n\n");
             int idx = 1;
             for (Map<String, Object> r : result.rows) {
                 String code = String.valueOf(r.getOrDefault("employee_code", ""));
                 String name = (r.getOrDefault("first_name", "") + " " + r.getOrDefault("surname", "")).trim();
-                sb.append(idx++).append(". **").append(name.isBlank() ? code : name + " (" + code + ")").append("**");
+                sb.append(idx++).append(". **").append(name.isBlank() ? code : name).append("** (`").append(code).append("`)");
                 if (r.containsKey("designation") && r.get("designation") != null && !r.get("designation").toString().isBlank()) {
                     sb.append(" — *").append(r.get("designation")).append("*");
                 }
@@ -757,8 +866,36 @@ public class Text2SqlService {
             return sb.toString().trim();
         }
 
-        // Generic fallback table
-        return "I found **" + result.rows.size() + "** result(s). Details are shown in the table below.";
+        return "I found **" + result.rows.size() + "** result(s) for your inquiry.";
+    }
+
+    private String getLeaveIcon(String type) {
+        if (type == null) return "🏖️";
+        String t = type.toUpperCase();
+        if (t.contains("CL") || t.contains("CASUAL")) return "🏖️";
+        if (t.contains("PL") || t.contains("PAID") || t.contains("PRIVILEGE")) return "🌴";
+        if (t.contains("SL") || t.contains("SICK")) return "🤒";
+        if (t.contains("CO") || t.contains("COMP")) return "⏱️";
+        return "📅";
+    }
+
+    private String formatMoney(Object amount) {
+        if (amount == null) return "0";
+        try {
+            double val = Double.parseDouble(String.valueOf(amount));
+            return String.format("%,.2f", val);
+        } catch (Exception e) {
+            return String.valueOf(amount);
+        }
+    }
+
+    private String maskAadhaar(String aadhaar) {
+        if (aadhaar == null || aadhaar.length() < 8) return aadhaar != null ? aadhaar : "";
+        String clean = aadhaar.replaceAll("\\s+", "");
+        if (clean.length() >= 8) {
+            return "XXXX-XXXX-" + clean.substring(clean.length() - 4);
+        }
+        return aadhaar;
     }
 
     // =========================================================================
