@@ -13,6 +13,8 @@ public interface HolidayRepository extends JpaRepository<Holiday, Long> {
 
     List<Holiday> findByYear(Integer year);
 
+    List<Holiday> findAllByDate(LocalDate date);
+
     Optional<Holiday> findByDate(LocalDate date);
 
     boolean existsByDate(LocalDate date);

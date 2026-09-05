@@ -180,6 +180,8 @@ export interface Holiday {
   date: string;
   year: number;
   isOptional: boolean;
+  isDepartmentSpecific?: boolean;
+  departments?: string;
   createdAt?: string;
   updatedAt?: string;
 }

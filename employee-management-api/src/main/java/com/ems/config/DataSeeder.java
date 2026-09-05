@@ -67,7 +67,9 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE employees ALTER COLUMN account_number TYPE VARCHAR(30)",
             "ALTER TABLE pending_registrations ALTER COLUMN mobile TYPE VARCHAR(20)",
             "ALTER TABLE attendance_records ALTER COLUMN status TYPE VARCHAR(10)",
-            "ALTER TABLE leave_balances ADD COLUMN IF NOT EXISTS encashed INTEGER NOT NULL DEFAULT 0"
+            "ALTER TABLE leave_balances ADD COLUMN IF NOT EXISTS encashed INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS is_department_specific BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS departments VARCHAR(500)"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {

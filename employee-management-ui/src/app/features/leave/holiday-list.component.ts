@@ -9,9 +9,11 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { HolidayService } from '../../core/services/holiday.service';
+import { AttendanceService } from '../../core/services/attendance.service';
 import { Holiday } from '../../core/models/payroll.models';
 
 
@@ -20,7 +22,7 @@ import { Holiday } from '../../core/models/payroll.models';
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzDatePickerModule, NzInputModule, NzSwitchModule,
+    NzIconModule, NzDatePickerModule, NzInputModule, NzSwitchModule, NzCheckboxModule,
     NzPopconfirmModule, NzTagModule
   ],
   template: `
@@ -41,6 +43,7 @@ import { Holiday } from '../../core/models/payroll.models';
               <th>Name</th>
               <th>Date</th>
               <th>Day</th>
+              <th>Department Scope</th>
               <th>Optional</th>
               <th class="th-actions">Actions</th>
             </tr>
@@ -50,6 +53,12 @@ import { Holiday } from '../../core/models/payroll.models';
               <td><strong>{{ h.name }}</strong></td>
               <td>{{ h.date }}</td>
               <td>{{ getDayName(h.date) }}</td>
+              <td>
+                <nz-tag *ngIf="!h.isDepartmentSpecific || !h.departments" nzColor="green">All Departments</nz-tag>
+                <ng-container *ngIf="h.isDepartmentSpecific && h.departments">
+                  <nz-tag *ngFor="let dept of getDeptList(h.departments)" nzColor="cyan" style="margin-bottom:2px;">{{ dept }}</nz-tag>
+                </ng-container>
+              </td>
               <td><nz-tag [nzColor]="h.isOptional ? 'orange' : 'blue'">{{ h.isOptional ? 'Optional' : 'Mandatory' }}</nz-tag></td>
               <td class="td-actions">
                 <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editHoliday(h)" nz-tooltip="Edit">
@@ -61,14 +70,14 @@ import { Holiday } from '../../core/models/payroll.models';
               </td>
             </tr>
             <tr *ngIf="holidays.length === 0 && !loading">
-              <td colspan="5" class="empty-cell">No holidays found for {{ selectedYear }}</td>
+              <td colspan="6" class="empty-cell">No holidays found for {{ selectedYear }}</td>
             </tr>
           </tbody>
         </nz-table>
       </div>
 
       <div class="modal-overlay" *ngIf="modalVisible" (click)="modalVisible = false">
-        <div class="modal-box" style="width:460px" (click)="$event.stopPropagation()">
+        <div class="modal-box" style="width:480px" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-header-left">
               <div class="modal-header-icon"><i nz-icon nzType="gift"></i></div>
@@ -84,6 +93,21 @@ import { Holiday } from '../../core/models/payroll.models';
             <div class="form-row">
               <label>Date</label>
               <nz-date-picker [(ngModel)]="form.date" class="theme-datepicker" nzFormat="yyyy-MM-dd"></nz-date-picker>
+            </div>
+            <div class="form-row">
+              <label>Department Allocation</label>
+              <label nz-checkbox [(ngModel)]="form.isDepartmentSpecific">
+                Department-wise Allocation (Restrict to specific departments)
+              </label>
+            </div>
+            <div class="form-row" *ngIf="form.isDepartmentSpecific">
+              <label>Select Departments</label>
+              <nz-select [(ngModel)]="form.selectedDepartments" nzMode="multiple" nzPlaceHolder="Select one or more departments" style="width:100%;">
+                <nz-option *ngFor="let d of departmentList" [nzValue]="d" [nzLabel]="d"></nz-option>
+              </nz-select>
+              <small class="text-muted" style="font-size:11px; color:#888; margin-top:3px; display:block;">
+                This holiday will only apply to employees in the selected departments.
+              </small>
             </div>
             <div class="form-row">
               <label>Optional Holiday</label>
@@ -224,16 +248,22 @@ export class HolidayListComponent implements OnInit {
   editingId: number | null = null;
   selectedYear = new Date().getFullYear();
   years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i - 1);
+  departmentList: string[] = [];
 
-  form: any = { name: '', date: null, isOptional: false };
+  form: any = { name: '', date: null, isOptional: false, isDepartmentSpecific: false, selectedDepartments: [] };
 
   constructor(
     private holidayService: HolidayService,
+    private attendanceService: AttendanceService,
     private msg: NzMessageService
   ) {}
 
   ngOnInit(): void {
     this.loadHolidays();
+    this.attendanceService.getDepartments().subscribe({
+      next: (res) => { this.departmentList = res.data || []; },
+      error: () => {}
+    });
   }
 
   loadHolidays(): void {
@@ -250,28 +280,47 @@ export class HolidayListComponent implements OnInit {
     return d.toLocaleDateString('en-US', { weekday: 'long' });
   }
 
+  getDeptList(deptStr?: string): string[] {
+    return deptStr ? deptStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+  }
+
   showAddModal(): void {
     this.editingId = null;
-    this.form = { name: '', date: null, isOptional: false };
+    this.form = { name: '', date: null, isOptional: false, isDepartmentSpecific: false, selectedDepartments: [] };
     this.modalVisible = true;
   }
 
   editHoliday(h: Holiday): void {
     this.editingId = h.id;
-    this.form = { name: h.name, date: new Date(h.date), isOptional: h.isOptional };
+    this.form = {
+      name: h.name,
+      date: new Date(h.date),
+      isOptional: h.isOptional,
+      isDepartmentSpecific: !!h.isDepartmentSpecific,
+      selectedDepartments: this.getDeptList(h.departments)
+    };
     this.modalVisible = true;
   }
 
   save(): void {
     if (!this.form.name || !this.form.date) {
-      this.msg.warning('Please fill in all fields');
+      this.msg.warning('Please fill in all required fields');
       return;
     }
+    if (this.form.isDepartmentSpecific && (!this.form.selectedDepartments || this.form.selectedDepartments.length === 0)) {
+      this.msg.warning('Please select at least one department or uncheck Department Allocation');
+      return;
+    }
+
     this.saving = true;
     const payload = {
       name: this.form.name,
       date: this.formatDate(this.form.date),
-      isOptional: this.form.isOptional
+      isOptional: this.form.isOptional,
+      isDepartmentSpecific: !!this.form.isDepartmentSpecific,
+      departments: this.form.isDepartmentSpecific && this.form.selectedDepartments?.length
+        ? this.form.selectedDepartments.join(',')
+        : null
     };
     const obs = this.editingId
       ? this.holidayService.updateHoliday(this.editingId, payload)

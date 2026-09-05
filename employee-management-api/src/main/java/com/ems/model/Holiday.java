@@ -13,9 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "holidays", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"holiday_date"})
-})
+@Table(name = "holidays")
 @Data
 @Builder
 @NoArgsConstructor
@@ -39,6 +37,29 @@ public class Holiday {
     @Column(name = "is_optional")
     @Builder.Default
     private Boolean isOptional = false;
+
+    @Column(name = "is_department_specific")
+    @Builder.Default
+    private Boolean isDepartmentSpecific = false;
+
+    @Column(name = "departments", length = 500)
+    private String departments;
+
+    public boolean appliesToDepartment(String department) {
+        if (!Boolean.TRUE.equals(this.isDepartmentSpecific) || this.departments == null || this.departments.trim().isEmpty()) {
+            return true;
+        }
+        if (department == null || department.trim().isEmpty()) {
+            return false;
+        }
+        String[] depts = this.departments.split(",");
+        for (String d : depts) {
+            if (d.trim().equalsIgnoreCase(department.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
