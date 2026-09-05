@@ -255,7 +255,7 @@ export class EncashmentComponent implements OnInit {
   }
 
   loadEmployees(): void {
-    this.employeeService.getEmployees({ size: 200, employeeStatus: 'LIVE' }).subscribe({
+    this.employeeService.getEmployees({ size: 1000, employeeStatus: 'LIVE', sort: 'employeeCode,desc' }).subscribe({
       next: (res) => { if (res.success) this.employees = res.data?.content || []; }
     });
   }

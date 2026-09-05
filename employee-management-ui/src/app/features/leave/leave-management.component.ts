@@ -115,9 +115,9 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               <nz-select [(ngModel)]="balanceYear" (ngModelChange)="loadBalances()" class="filter-select" style="width:110px">
                 <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
               </nz-select>
-              <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
+              <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px" nzShowSearch nzAllowClear>
                 <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
               </nz-select>
               <button nz-button class="filter-action-btn" (click)="fileInput.click()" [nzLoading]="uploading"
                       *ngIf="authService.canManageStaff()" nz-tooltip="Upload Excel file and sync to database">
@@ -209,8 +209,8 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
           <div class="modal-body">
             <div class="form-row">
               <label>Employee</label>
-              <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" (ngModelChange)="onEmployeeChanged()" nzPlaceHolder="Select Employee" class="theme-select">
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
+              <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" (ngModelChange)="onEmployeeChanged()" nzPlaceHolder="Select Employee" class="theme-select" nzShowSearch nzAllowClear>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
               </nz-select>
             </div>
             <div class="form-row">
@@ -970,7 +970,7 @@ export class LeaveManagementComponent implements OnInit {
   }
 
   loadEmployees(): void {
-    this.employeeService.getEmployees({ size: 200, employeeStatus: 'LIVE' }).subscribe({
+    this.employeeService.getEmployees({ size: 1000, employeeStatus: 'LIVE', sort: 'employeeCode,desc' }).subscribe({
       next: (res) => {
         if (res.success && res.data) this.employees = res.data.content || [];
       }

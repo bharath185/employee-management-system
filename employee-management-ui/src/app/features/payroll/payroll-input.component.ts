@@ -509,7 +509,7 @@ export class PayrollInputComponent implements OnInit {
     this.loading = true;
     this.loadedFromMaster = 0;
     // Load LIVE employees + Salary Master + existing monthly data in parallel
-    this.employeeService.getEmployees({ size: 200, employeeStatus: 'LIVE' }).subscribe({
+    this.employeeService.getEmployees({ size: 1000, employeeStatus: 'LIVE', sort: 'employeeCode,desc' }).subscribe({
       next: (res) => {
         const empList = res.data?.content || [];
         if (empList.length === 0) {

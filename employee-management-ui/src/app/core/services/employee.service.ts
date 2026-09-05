@@ -31,7 +31,7 @@ export class EmployeeService {
     let httpParams = new HttpParams()
       .set('page', (params.page ?? 0).toString())
       .set('size', (params.size ?? 10).toString())
-      .set('sort', params.sort ?? 'createdAt,desc');
+      .set('sort', params.sort ?? 'employeeStatus,asc;employeeCode,desc');
 
     const filterParams = [
       'search', 'employeeCode', 'firstName', 'surname',
