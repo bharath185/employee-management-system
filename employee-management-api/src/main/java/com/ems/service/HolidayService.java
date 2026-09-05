@@ -83,16 +83,14 @@ public class HolidayService {
         if (date == null) return;
         List<Holiday> activeHolidays = holidayRepository.findAllByDate(date);
         List<Employee> liveEmployees = employeeRepository.findAllLiveEmployees();
-        boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
-
         for (Employee emp : liveEmployees) {
-            boolean isHoliday = isSunday || activeHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
+            boolean isHoliday = activeHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
             attendanceRepository.findByEmployeeIdAndAttendanceDate(emp.getId(), date).ifPresent(record -> {
                 if (!Boolean.TRUE.equals(record.getLocked())) {
                     if (isHoliday && "P".equalsIgnoreCase(record.getStatus())) {
                         record.setStatus("H");
                         attendanceRepository.save(record);
-                    } else if (!isHoliday && !isSunday && "H".equalsIgnoreCase(record.getStatus())) {
+                    } else if (!isHoliday && "H".equalsIgnoreCase(record.getStatus())) {
                         record.setStatus("P");
                         attendanceRepository.save(record);
                     }

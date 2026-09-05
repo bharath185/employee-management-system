@@ -92,9 +92,7 @@ public class AttendanceService {
                 String key = emp.getId() + "_" + date;
                 if (!existingKeys.contains(key)) {
                     String status;
-                    if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                        status = "WO";
-                    } else if (isHolidayForEmployee(date, emp.getProcessAssigned(), holidays)) {
+                    if (isHolidayForEmployee(date, emp.getProcessAssigned(), holidays)) {
                         status = "H";
                     } else {
                         status = "P";
@@ -127,12 +125,11 @@ public class AttendanceService {
         List<Employee> liveEmployees = employeeRepository.findAllLiveEmployees();
         Set<Long> alreadyMarked = new HashSet<>(attendanceRepository.findEmployeeIdsWithAttendanceOn(date));
         List<Holiday> dateHolidays = holidayRepository.findAllByDate(date);
-        boolean isSunday = date.getDayOfWeek() == DayOfWeek.SUNDAY;
 
         int count = 0;
         for (Employee emp : liveEmployees) {
             if (!alreadyMarked.contains(emp.getId())) {
-                boolean isHoliday = isSunday || dateHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
+                boolean isHoliday = dateHolidays.stream().anyMatch(h -> h.appliesToProcess(emp.getProcessAssigned()));
                 String defaultStatus = isHoliday ? "H" : "P";
                 AttendanceRecord record = AttendanceRecord.builder()
                     .employee(emp)
@@ -149,6 +146,11 @@ public class AttendanceService {
 
     @Transactional
     public int markAllForDate(LocalDate date, String status, String process) {
+        LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
+        if (date.isBefore(currentMonthStart)) {
+            throw new IllegalArgumentException("Cannot update attendance for past month. Past months are frozen.");
+        }
+
         List<Employee> targetEmployees;
         if (process != null && !process.trim().isEmpty()) {
             targetEmployees = employeeRepository.findLiveEmployeesByProcess(process.trim());
@@ -326,7 +328,7 @@ public class AttendanceService {
                 LocalDate d = monthStart.plusDays(i);
                 String status = empDayMap.getOrDefault(i, "");
                 if (status == null || status.isBlank()) {
-                    if (d.getDayOfWeek() == DayOfWeek.SUNDAY || isHolidayForEmployee(d, emp.getProcessAssigned(), holidaysInRange)) {
+                    if (isHolidayForEmployee(d, emp.getProcessAssigned(), holidaysInRange)) {
                         status = "H";
                     } else if (i == todayIndex) {
                         status = "P";
@@ -384,9 +386,14 @@ public class AttendanceService {
 
     @Transactional
     public void bulkUpsert(List<AttendanceDTO> records) {
+        LocalDate currentMonthStart = LocalDate.now().withDayOfMonth(1);
         List<String> blocked = new ArrayList<>();
         for (AttendanceDTO dto : records) {
             if (dto.getStatus() == null || dto.getStatus().isBlank()) continue;
+            if (dto.getDate().isBefore(currentMonthStart)) {
+                blocked.add(dto.getDate() + " (frozen past month)");
+                continue;
+            }
             Employee employee = employeeRepository.findById(dto.getEmployeeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found: " + dto.getEmployeeId()));
             AttendanceRecord record = attendanceRepository
@@ -414,7 +421,7 @@ public class AttendanceService {
             attendanceRepository.save(record);
         }
         if (!blocked.isEmpty()) {
-            log.warn("Blocked override of {} leave-synced attendance record(s): {}", blocked.size(), blocked);
+            log.warn("Blocked override of {} leave-synced/frozen attendance record(s): {}", blocked.size(), blocked);
         }
         log.info("Attendance bulk upsert: {} records", records.size());
     }
@@ -445,14 +452,12 @@ public class AttendanceService {
     }
 
     public boolean isHolidayOrWeekOffForEmployee(LocalDate date, String process) {
-        if (date.getDayOfWeek() == DayOfWeek.SUNDAY) return true;
         List<Holiday> holidays = holidayRepository.findAllByDate(date);
         return holidays.stream().anyMatch(h -> h.appliesToProcess(process));
     }
 
     private boolean isHolidayOrWeekOff(LocalDate date) {
-        if (holidayRepository.existsByDate(date)) return true;
-        return date.getDayOfWeek() == DayOfWeek.SUNDAY;
+        return holidayRepository.existsByDate(date);
     }
 
     @Transactional

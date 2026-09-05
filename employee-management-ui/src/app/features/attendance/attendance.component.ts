@@ -49,19 +49,23 @@ import { saveAs } from 'file-saver';
           <span class="nav-sep"></span>
           <input nz-input placeholder="Search code / name" [(ngModel)]="searchTerm"
             (ngModelChange)="onSearchChange()" class="search-input" nzSize="small" style="width:160px; height:28px; font-size:12px; border-radius:6px;" />
+          <nz-tag *ngIf="isPastPeriodFrozen" nzColor="default" style="margin-left:4px; font-weight:600;">
+            <i nz-icon nzType="lock"></i> Month Frozen
+          </nz-tag>
         </div>
         <div class="toolbar-actions">
           <button nz-button nzType="default" nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
             <i nz-icon nzType="download"></i> Export
           </button>
-          <button nz-button nzType="default" nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading">
+          <button nz-button nzType="default" nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading || isPastPeriodFrozen">
             <i nz-icon nzType="upload"></i> Import
           </button>
           <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
           <button nz-button nzType="default" nzSize="small"
             nz-popover [nzPopoverContent]="bulkDayTpl" nzPopoverTrigger="click" nzPopoverPlacement="bottomRight"
             nz-tooltip="Update all employees for a specific date (P, H, WO, etc.)"
-            class="bulk-day-btn">
+            class="bulk-day-btn"
+            [disabled]="isPastPeriodFrozen">
             <i nz-icon nzType="thunderbolt" nzTheme="fill" style="color:#faad14;"></i> Mark Day for All
           </button>
           <ng-template #bulkDayTpl>
@@ -75,7 +79,7 @@ import { saveAs } from 'file-saver';
                 <label>Select Status:</label>
                 <nz-select [(ngModel)]="bulkStatus" nzSize="small" style="width:100%;">
                   <nz-option nzValue="P" nzLabel="P — Present (Green)"></nz-option>
-                  <nz-option nzValue="H" nzLabel="H — Holiday / Sunday (Blue)"></nz-option>
+                  <nz-option nzValue="H" nzLabel="H — Holiday (Blue)"></nz-option>
                   <nz-option nzValue="WO" nzLabel="WO — Week Off (Grey)"></nz-option>
                   <nz-option nzValue="COG" nzLabel="COG — Comp Off Given (Cyan)"></nz-option>
                   <nz-option nzValue="COT" nzLabel="COT — Comp Off Taken (Teal)"></nz-option>
@@ -101,7 +105,7 @@ import { saveAs } from 'file-saver';
           <button nz-button nzSize="small"
             [nzType]="isEditMode ? 'primary' : 'default'"
             class="edit-btn" [class.saving]="saving"
-            (click)="toggleEdit()" [disabled]="saving">
+            (click)="toggleEdit()" [disabled]="saving || isPastPeriodFrozen">
             <i nz-icon nzType="save" *ngIf="isEditMode; else editIcon"></i>
             <ng-template #editIcon><i nz-icon nzType="edit"></i></ng-template>
             <span>{{ isEditMode ? (saving ? 'Saving...' : 'Save') : 'Edit' }}</span>
@@ -420,9 +424,17 @@ export class AttendanceComponent implements OnInit {
     private msg: NzMessageService
   ) {
     const now = new Date();
-    this.toDate = new Date(now.getFullYear(), now.getMonth(), 25);
-    this.fromDate = new Date(now.getFullYear(), now.getMonth() - 1, 26);
+    this.fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    this.toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     this.rangeDays = Math.round((this.toDate.getTime() - this.fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    this.bulkDate = new Date();
+  }
+
+  get isPastPeriodFrozen(): boolean {
+    if (!this.toDate) return false;
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return this.toDate < currentMonthStart;
   }
 
   ngOnInit(): void {
@@ -455,9 +467,12 @@ export class AttendanceComponent implements OnInit {
   }
 
   shiftRange(delta: number): void {
-    const days = this.rangeDays;
-    this.fromDate = new Date(this.fromDate.getTime() + delta * days * 24 * 60 * 60 * 1000);
-    this.toDate = new Date(this.toDate.getTime() + delta * days * 24 * 60 * 60 * 1000);
+    if (!this.fromDate) return;
+    const year = this.fromDate.getFullYear();
+    const month = this.fromDate.getMonth() + delta;
+    this.fromDate = new Date(year, month, 1);
+    this.toDate = new Date(year, month + 1, 0);
+    this.rangeDays = Math.round((this.toDate.getTime() - this.fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     this.onDateRangeChange();
   }
 
@@ -492,7 +507,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   cycleStatus(emp: EmployeeAttendance, dayIdx: number): void {
-    if (emp.lockedDays?.[dayIdx]) return;
+    if (this.isPastPeriodFrozen || emp.lockedDays?.[dayIdx]) return;
     const order = ['', 'P', 'A', 'L', 'ML', 'H', 'WO', 'R', 'COG', 'COT'];
     const cur = emp.days[dayIdx] || '';
     const nextIdx = (order.indexOf(cur) + 1) % order.length;
@@ -501,11 +516,20 @@ export class AttendanceComponent implements OnInit {
   }
 
   toggleEdit(): void {
+    if (this.isPastPeriodFrozen) {
+      this.msg.warning('Past months are frozen and cannot be edited.');
+      return;
+    }
     if (this.isEditMode) this.saveChanges();
     else { this.changedRecords.clear(); this.isEditMode = true; }
   }
 
   saveChanges(): void {
+    if (this.isPastPeriodFrozen) {
+      this.msg.warning('Past months are frozen and cannot be edited.');
+      this.isEditMode = false;
+      return;
+    }
     if (!this.data) return;
     const records: AttendanceRecord[] = [];
     for (const emp of this.data.employees) {
@@ -532,8 +556,18 @@ export class AttendanceComponent implements OnInit {
   }
 
   applyBulkDay(): void {
+    if (this.isPastPeriodFrozen) {
+      this.msg.warning('Past months are frozen and cannot be edited.');
+      return;
+    }
     if (!this.bulkDate || !this.bulkStatus) {
       this.msg.warning('Please select a date and status');
+      return;
+    }
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (this.bulkDate < currentMonthStart) {
+      this.msg.warning('Cannot update attendance for past month. Past months are frozen.');
       return;
     }
     const dStr = this.formatDate(this.bulkDate);
@@ -563,6 +597,10 @@ export class AttendanceComponent implements OnInit {
 
   importExcel(event: Event): void {
     if (!this.fromDate || !this.toDate) return;
+    if (this.isPastPeriodFrozen) {
+      this.msg.warning('Cannot import attendance for past months. Past months are frozen.');
+      return;
+    }
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
     const from = this.formatDate(this.fromDate);
