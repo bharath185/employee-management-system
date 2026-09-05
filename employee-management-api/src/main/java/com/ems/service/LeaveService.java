@@ -211,8 +211,8 @@ public class LeaveService {
         }
 
         if ("CO".equals(app.getLeaveType().getName())) {
-            for (int i = 0; i < app.getDays(); i++) {
-                compOffService.availOneCompOff(app.getEmployee().getId());
+            for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
+                compOffService.recordCompOffAvailed(app.getEmployee(), d);
             }
         } else {
             Integer year = app.getFromDate().getYear();
@@ -269,8 +269,8 @@ public class LeaveService {
 
         if ("APPROVED".equals(app.getStatus())) {
             if ("CO".equals(app.getLeaveType().getName())) {
-                for (int i = 0; i < app.getDays(); i++) {
-                    compOffService.restoreOneCompOff(app.getEmployee().getId());
+                for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
+                    compOffService.cancelCompOffAvailed(app.getEmployee(), d);
                 }
             } else {
                 Integer year = app.getFromDate().getYear();
