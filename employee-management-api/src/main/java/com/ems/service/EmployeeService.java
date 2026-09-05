@@ -62,9 +62,31 @@ public class EmployeeService {
             String surname, String gender, String employeeStatus,
             String designation, String religion, String socialCategory, String processAssigned) {
 
-        Sort sorting = Sort.by(sort.contains("desc") ?
-            Sort.Direction.DESC : Sort.Direction.ASC,
-            sort.split(",")[0]);
+        Sort sorting;
+        if (sort != null && !sort.isBlank()) {
+            List<Sort.Order> orders = new ArrayList<>();
+            for (String part : sort.split(";")) {
+                String[] fieldAndDir = part.trim().split(",");
+                if (fieldAndDir.length > 0 && !fieldAndDir[0].isBlank()) {
+                    String prop = fieldAndDir[0].trim();
+                    Sort.Direction dir = (fieldAndDir.length > 1 && fieldAndDir[1].trim().equalsIgnoreCase("desc"))
+                        ? Sort.Direction.DESC : Sort.Direction.ASC;
+                    orders.add(new Sort.Order(dir, prop));
+                }
+            }
+            if (orders.stream().anyMatch(o -> o.getProperty().equals("employeeStatus"))
+                && orders.stream().noneMatch(o -> o.getProperty().equals("employeeCode"))) {
+                orders.add(Sort.Order.desc("employeeCode"));
+            }
+            sorting = orders.isEmpty()
+                ? Sort.by(Sort.Order.asc("employeeStatus"), Sort.Order.desc("employeeCode"))
+                : Sort.by(orders);
+        } else {
+            sorting = Sort.by(
+                Sort.Order.asc("employeeStatus"),
+                Sort.Order.desc("employeeCode")
+            );
+        }
 
         Pageable pageable = PageRequest.of(page, size, sorting);
 

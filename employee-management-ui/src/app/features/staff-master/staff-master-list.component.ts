@@ -685,7 +685,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     const params: any = {
       page: this.pageIndex,
       size: this.pageSize,
-      sort: 'employeeStatus,asc'
+      sort: 'employeeStatus,asc;employeeCode,desc'
     };
     if (this.searchTerm) params.search = this.searchTerm;
     if (this.filterStatus) params.employeeStatus = this.filterStatus;

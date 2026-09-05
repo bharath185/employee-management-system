@@ -17,6 +17,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -242,7 +243,8 @@ public class AttendanceService {
         }
 
         int totalEmployees = (int) employeeRepository.count(spec);
-        List<Employee> employees = employeeRepository.findAll(spec, PageRequest.of(page, size)).getContent();
+        Sort sort = Sort.by(Sort.Order.asc("employeeStatus"), Sort.Order.desc("employeeCode"));
+        List<Employee> employees = employeeRepository.findAll(spec, PageRequest.of(page, size, sort)).getContent();
 
         LocalDate today = LocalDate.now();
         int todayIndex = (!today.isBefore(monthStart) && !today.isAfter(monthEnd))

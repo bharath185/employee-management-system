@@ -50,10 +50,10 @@ public interface EmployeeRepository
     @Query("SELECT COUNT(e) FROM Employee e WHERE e.gender = :gender AND e.isDeleted = false")
     long countByGender(String gender);
 
-    @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false")
+    @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false ORDER BY e.employeeCode DESC")
     List<Employee> findAllLiveEmployees();
 
-    @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false AND e.processAssigned = :process")
+    @Query("SELECT e FROM Employee e WHERE e.employeeStatus = 'LIVE' AND e.isDeleted = false AND e.processAssigned = :process ORDER BY e.employeeCode DESC")
     List<Employee> findLiveEmployeesByProcess(String process);
 
     List<Employee> findByEmployeeStatusAndIsDeletedFalse(String employeeStatus, org.springframework.data.domain.Pageable pageable);
