@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -18,97 +18,168 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     NzButtonModule, NzInputModule, NzIconModule, NzTableModule, NzSpinModule
   ],
   template: `
-    <!-- Floating bot button -->
-    <button class="chat-fab" (click)="toggleChat()"
-      [class.open]="isOpen"
-      [attr.aria-label]="isOpen ? 'Close chat' : 'Open chat'">
-      <img *ngIf="!isOpen" src="assets/chatbot.png" alt="Chat" class="fab-icon">
-      <i *ngIf="isOpen" nz-icon nzType="close"></i>
-    </button>
+    <div class="chat-widget-wrapper"
+      [style.left.px]="posX"
+      [style.top.px]="posY">
 
-    <!-- Chat panel -->
-    <div class="chat-panel" [class.open]="isOpen">
-      <div class="chat-header">
-        <img src="assets/chatbot.png" alt="Chat" class="header-icon">
-        <span>Ask about your data</span>
-        <button class="chat-back-btn" (click)="isOpen = false" aria-label="Back to menu">
-          <i nz-icon nzType="arrow-left"></i> Back
-        </button>
-      </div>
+      <!-- Floating bot button (Draggable) -->
+      <button class="chat-fab"
+        [class.open]="isOpen"
+        [class.dragging]="isDragging"
+        (mousedown)="onMouseDown($event)"
+        (touchstart)="onTouchStart($event)"
+        (click)="onFabClick($event)"
+        [attr.aria-label]="isOpen ? 'Close chat' : 'Open chat'">
+        <img *ngIf="!isOpen" src="assets/chatbot.png" alt="Chat" class="fab-icon" draggable="false">
+        <i *ngIf="isOpen" nz-icon nzType="close"></i>
+      </button>
 
-      <div class="chat-messages" #messageContainer>
-        <div class="welcome-msg" *ngIf="messages.length === 0">
-          <img src="assets/chatbot.png" alt="Chat" class="welcome-icon">
-          <p>Ask questions about your employee data in plain English!</p>
-          <div class="suggestions">
-            <button nz-button nzSize="small" nzType="default"
-              *ngFor="let s of suggestions" (click)="ask(s)">{{ s }}</button>
-          </div>
+      <!-- Chat panel -->
+      <div class="chat-panel"
+        [class.open]="isOpen"
+        [class.open-up]="openUpward"
+        [class.open-down]="!openUpward"
+        [class.open-left]="openLeftward"
+        [class.open-right]="!openLeftward">
+
+        <div class="chat-header">
+          <img src="assets/chatbot.png" alt="Chat" class="header-icon">
+          <span>Ask about your data</span>
+          <button class="chat-back-btn" (click)="isOpen = false" aria-label="Back to menu">
+            <i nz-icon nzType="arrow-left"></i> Back
+          </button>
         </div>
 
-        <div *ngFor="let msg of messages" class="message"
-          [class.user-msg]="msg.type === 'user'"
-          [class.bot-msg]="msg.type === 'bot'"
-          [class.error-msg]="msg.type === 'error'"
-          [class.sql-msg]="msg.type === 'sql'">
-
-          <div class="msg-bubble">
-            <div class="msg-text" [innerHTML]="msg.content"></div>
-
-            <!-- Results table (secondary, shown alongside conversational message) -->
-            <div *ngIf="msg.type === 'bot' && msg.data?.rows?.length" class="result-section">
-              <div class="result-table-wrapper">
-                <nz-table [nzData]="msg.data!.rows" [nzFrontPagination]="false"
-                  [nzShowPagination]="msg.data!.rows.length > 10"
-                  [nzPageSize]="10" nzSize="small">
-                  <thead>
-                    <tr>
-                      <th nz-th *ngFor="let col of msg.data!.columns">{{ col }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let row of msg.data!.rows">
-                      <td nz-td *ngFor="let col of msg.data!.columns">{{ row[col] }}</td>
-                    </tr>
-                  </tbody>
-                </nz-table>
-              </div>
+        <div class="chat-messages" #messageContainer>
+          <div class="welcome-msg" *ngIf="messages.length === 0">
+            <img src="assets/chatbot.png" alt="Chat" class="welcome-icon">
+            <p>Ask questions about your employee data in plain English!</p>
+            <div class="suggestions">
+              <button nz-button nzSize="small" nzType="default"
+                *ngFor="let s of suggestions" (click)="ask(s)">{{ s }}</button>
             </div>
+          </div>
 
-            <div class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</div>
+          <div *ngFor="let msg of messages" class="message"
+            [class.user-msg]="msg.type === 'user'"
+            [class.bot-msg]="msg.type === 'bot'"
+            [class.error-msg]="msg.type === 'error'"
+            [class.sql-msg]="msg.type === 'sql'">
+
+            <div class="msg-bubble">
+              <div class="msg-text" [innerHTML]="msg.content"></div>
+
+              <!-- Results table (secondary, shown alongside conversational message) -->
+              <div *ngIf="msg.type === 'bot' && msg.data?.rows?.length" class="result-section">
+                <div class="result-table-wrapper">
+                  <nz-table [nzData]="msg.data!.rows" [nzFrontPagination]="false"
+                    [nzShowPagination]="msg.data!.rows.length > 10"
+                    [nzPageSize]="10" nzSize="small">
+                    <thead>
+                      <tr>
+                        <th nz-th *ngFor="let col of msg.data!.columns">{{ col }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let row of msg.data!.rows">
+                        <td nz-td *ngFor="let col of msg.data!.columns">{{ row[col] }}</td>
+                      </tr>
+                    </tbody>
+                  </nz-table>
+                </div>
+              </div>
+
+              <div class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</div>
+            </div>
+          </div>
+
+          <div *ngIf="isLoading" class="message bot-msg">
+            <div class="msg-bubble loading-bubble">
+              <nz-spin nzSimple [nzSize]="'small'"></nz-spin>
+              <span>Thinking...</span>
+            </div>
           </div>
         </div>
 
-        <div *ngIf="isLoading" class="message bot-msg">
-          <div class="msg-bubble loading-bubble">
-            <nz-spin nzSimple [nzSize]="'small'"></nz-spin>
-            <span>Thinking...</span>
-          </div>
+        <div class="chat-input">
+          <input nz-input [(ngModel)]="userInput" placeholder="Ask a question..."
+            (keyup.enter)="sendMessage()" [disabled]="isLoading">
+          <button nz-button nzType="primary" nzSize="small" (click)="sendMessage()"
+            [disabled]="!userInput.trim() || isLoading">
+            <i nz-icon nzType="send"></i>
+          </button>
         </div>
-      </div>
-
-      <div class="chat-input">
-        <input nz-input [(ngModel)]="userInput" placeholder="Ask a question..."
-          (keyup.enter)="sendMessage()" [disabled]="isLoading">
-        <button nz-button nzType="primary" nzSize="small" (click)="sendMessage()"
-          [disabled]="!userInput.trim() || isLoading">
-          <i nz-icon nzType="send"></i>
-        </button>
       </div>
     </div>
   `,
   styles: [`
-    :host { position: fixed; bottom: 24px; right: 24px; z-index: 1000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    :host { display: block; }
 
-    .chat-fab { width: 64px; height: 64px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.25s cubic-bezier(0.4,0,0.2,1); position: relative; padding: 0; }
+    .chat-widget-wrapper {
+      position: fixed;
+      z-index: 1000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      user-select: none;
+    }
+
+    .chat-fab {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      padding: 0;
+      touch-action: none;
+    }
     .chat-fab:hover { transform: scale(1.08); }
+    .chat-fab.dragging {
+      cursor: grabbing !important;
+      transform: scale(1.15) !important;
+      filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+    }
     .chat-fab.open { transform: rotate(90deg); }
     .chat-fab.open i { font-size: 32px; color: #666; }
-    .fab-icon { width: 52px; height: 52px; object-fit: contain; }
+    .fab-icon { width: 52px; height: 52px; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
     .header-icon { width: 24px; height: 24px; object-fit: contain; }
 
-    .chat-panel { position: absolute; bottom: 64px; right: 0; width: 420px; max-height: 580px; background: #fff; border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,0.18); display: flex; flex-direction: column; overflow: hidden; opacity: 0; transform: translateY(16px) scale(0.96); pointer-events: none; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); transform-origin: bottom right; }
-    .chat-panel.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+    .chat-panel {
+      position: absolute;
+      width: 420px;
+      max-height: 580px;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      user-select: auto;
+    }
+
+    /* Position panel relative to FAB */
+    .chat-panel.open-up { bottom: 70px; }
+    .chat-panel.open-down { top: 70px; }
+    .chat-panel.open-left { right: 0; }
+    .chat-panel.open-right { left: 0; }
+
+    .chat-panel.open-up.open-left { transform-origin: bottom right; transform: translateY(16px) scale(0.96); }
+    .chat-panel.open-up.open-right { transform-origin: bottom left; transform: translateY(16px) scale(0.96); }
+    .chat-panel.open-down.open-left { transform-origin: top right; transform: translateY(-16px) scale(0.96); }
+    .chat-panel.open-down.open-right { transform-origin: top left; transform: translateY(-16px) scale(0.96); }
+
+    .chat-panel.open {
+      opacity: 1;
+      transform: translateY(0) scale(1) !important;
+      pointer-events: all;
+    }
 
     .chat-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px; background: linear-gradient(135deg, #1f3d6e, #2a5298); color: #fff; font-size: 14px; font-weight: 600; }
     .chat-header i { font-size: 18px; }
@@ -156,12 +227,25 @@ import { ChatMessage } from '../../core/models/text2sql.model';
     .chat-input button { border-radius: 50%; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; }
 
     @media (max-width: 480px) {
-      .chat-panel { width: calc(100vw - 32px); right: -8px; max-height: 70vh; }
+      .chat-panel { width: calc(100vw - 32px); max-height: 70vh; }
+      .chat-panel.open-left { right: -8px; }
+      .chat-panel.open-right { left: -8px; }
     }
   `]
 })
 export class ChatWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('messageContainer') private messageContainer!: ElementRef;
+
+  // Draggable position coordinates
+  posX = 0;
+  posY = 0;
+  isDragging = false;
+  private hasMoved = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private initialPosX = 0;
+  private initialPosY = 0;
+
   isOpen = false;
   isLoading = false;
   userInput = '';
@@ -181,11 +265,128 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   constructor(private text2SqlService: Text2SqlService) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.initPosition();
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  get openUpward(): boolean {
+    return this.posY > 350;
+  }
+
+  get openLeftward(): boolean {
+    return this.posX > 440;
+  }
+
+  private initPosition(): void {
+    const saved = localStorage.getItem('chatbot_fab_pos');
+    if (saved) {
+      try {
+        const pos = JSON.parse(saved);
+        if (typeof pos.x === 'number' && typeof pos.y === 'number') {
+          this.posX = pos.x;
+          this.posY = pos.y;
+        }
+      } catch (e) {}
+    }
+    if (!this.posX && !this.posY) {
+      this.posX = Math.max(10, window.innerWidth - 64 - 24);
+      this.posY = Math.max(10, window.innerHeight - 64 - 24);
+    }
+    this.clampPosition();
+  }
+
+  private clampPosition(): void {
+    const maxW = Math.max(10, window.innerWidth - 68);
+    const maxH = Math.max(10, window.innerHeight - 68);
+    this.posX = Math.max(10, Math.min(this.posX, maxW));
+    this.posY = Math.max(10, Math.min(this.posY, maxH));
+  }
+
+  private savePosition(): void {
+    localStorage.setItem('chatbot_fab_pos', JSON.stringify({ x: this.posX, y: this.posY }));
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.clampPosition();
+  }
+
+  // --- Drag and Drop Handlers ---
+  onMouseDown(event: MouseEvent): void {
+    if (event.button !== 0) return; // only left click
+    event.preventDefault();
+    this.startDrag(event.clientX, event.clientY);
+  }
+
+  onTouchStart(event: TouchEvent): void {
+    if (event.touches.length === 1) {
+      this.startDrag(event.touches[0].clientX, event.touches[0].clientY);
+    }
+  }
+
+  private startDrag(clientX: number, clientY: number): void {
+    this.isDragging = true;
+    this.hasMoved = false;
+    this.dragStartX = clientX;
+    this.dragStartY = clientY;
+    this.initialPosX = this.posX;
+    this.initialPosY = this.posY;
+
+    const onMove = (e: MouseEvent) => {
+      if (!this.isDragging) return;
+      const dx = e.clientX - this.dragStartX;
+      const dy = e.clientY - this.dragStartY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        this.hasMoved = true;
+      }
+      this.posX = this.initialPosX + dx;
+      this.posY = this.initialPosY + dy;
+      this.clampPosition();
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!this.isDragging || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - this.dragStartX;
+      const dy = e.touches[0].clientY - this.dragStartY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+        this.hasMoved = true;
+      }
+      this.posX = this.initialPosX + dx;
+      this.posY = this.initialPosY + dy;
+      this.clampPosition();
+    };
+
+    const onEnd = () => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        this.savePosition();
+      }
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onEnd);
+    window.addEventListener('touchcancel', onEnd);
+  }
+
+  onFabClick(event: MouseEvent): void {
+    if (this.hasMoved) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.toggleChat();
   }
 
   toggleChat(): void {
@@ -236,7 +437,6 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private formatMessage(text: string): string {
-    // Convert **bold** to <strong>
     return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
   }
 
@@ -268,3 +468,4 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     }, 50);
   }
 }
+
