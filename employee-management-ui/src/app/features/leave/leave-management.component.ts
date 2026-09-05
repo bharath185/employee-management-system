@@ -921,9 +921,9 @@ export class LeaveManagementComponent implements OnInit {
   appTotal = 0;
   holidayDates: Set<string> = new Set();
   compOffAvailable = 0;
-  balanceYear = new Date().getFullYear();
+  balanceYear = 2026;
   balanceEmployeeId: number | null = null;
-  years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  years = [2026, 2025, 2024, 2023];
 
   editBalanceData: any = { id: 0, employeeName: '', leaveTypeName: '', entitled: 0, taken: 0 };
 

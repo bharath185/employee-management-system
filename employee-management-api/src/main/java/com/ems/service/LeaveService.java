@@ -43,13 +43,27 @@ public class LeaveService {
         return leaveTypeRepository.save(leaveType);
     }
 
+    @Transactional
     public List<LeaveBalanceDTO> getLeaveBalances(Long employeeId, Integer year) {
+        if (year == null) {
+            year = 2026;
+        }
         if (employeeId != null) {
-            return leaveBalanceRepository.findByEmployeeIdAndYear(employeeId, year).stream()
+            List<LeaveBalance> balances = leaveBalanceRepository.findByEmployeeIdAndYear(employeeId, year);
+            if (balances.isEmpty()) {
+                initializeLeaveBalances(employeeId, year);
+                balances = leaveBalanceRepository.findByEmployeeIdAndYear(employeeId, year);
+            }
+            return balances.stream()
                 .map(LeaveBalanceDTO::fromEntity)
                 .collect(Collectors.toList());
         }
-        return leaveBalanceRepository.findByYear(year).stream()
+        List<LeaveBalance> balances = leaveBalanceRepository.findByYear(year);
+        if (balances.isEmpty()) {
+            initializeAllLeaveBalances(year);
+            balances = leaveBalanceRepository.findByYear(year);
+        }
+        return balances.stream()
             .map(LeaveBalanceDTO::fromEntity)
             .collect(Collectors.toList());
     }
