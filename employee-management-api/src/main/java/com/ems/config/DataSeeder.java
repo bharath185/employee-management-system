@@ -69,7 +69,10 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE attendance_records ALTER COLUMN status TYPE VARCHAR(10)",
             "ALTER TABLE leave_balances ADD COLUMN IF NOT EXISTS encashed INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS is_department_specific BOOLEAN NOT NULL DEFAULT FALSE",
-            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS departments VARCHAR(500)"
+            "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS departments VARCHAR(500)",
+            "DELETE FROM master_data WHERE category = 'PROCESS' AND code IN ('PROCESS_A', 'PROCESS_B', 'PROCESS_C', 'PROCESS_D')",
+            "UPDATE employees SET process_assigned = 'Housing Loan' WHERE process_assigned = 'HOUSING LOAN'",
+            "UPDATE employees SET process_assigned = 'Education Loan' WHERE process_assigned IN ('EDUCATION LOAN', 'Ed+AS217:AU217')"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {
@@ -179,10 +182,15 @@ public class DataSeeder implements CommandLineRunner {
             log.debug("Master data already exists, skipping seed");
         }
 
-        // Seed categories independently â€” existing databases may have been seeded before these were added
+        // Seed categories independently — existing databases may have been seeded before these were added
         seedCategory("PROCESS", new String[][]{
-            {"PROCESS_A", "Process A"}, {"PROCESS_B", "Process B"},
-            {"PROCESS_C", "Process C"}, {"PROCESS_D", "Process D"}
+            {"HOUSING_LOAN", "Housing Loan"},
+            {"EDUCATION_LOAN", "Education Loan"},
+            {"BUSINESS_LOAN", "Business Loan"},
+            {"INSURANCE", "Insurance"},
+            {"LIFE_INSURANCE", "Life Insurance"},
+            {"SME_VEHICLE_LOAN", "SME/Vehicle Loan"},
+            {"HR", "HR"}
         });
         seedCategory("DOCUMENT_TYPE", new String[][]{
             {"AADHAR", "Aadhar Card"}, {"PAN", "PAN Card"},

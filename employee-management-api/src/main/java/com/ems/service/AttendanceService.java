@@ -6,17 +6,21 @@ import com.ems.model.AttendanceRecord;
 import com.ems.model.CompOff;
 import com.ems.model.Employee;
 import com.ems.model.Holiday;
+import com.ems.model.MasterData;
 import com.ems.repository.AttendanceRepository;
 import com.ems.repository.CompOffRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.HolidayRepository;
+import com.ems.repository.MasterDataRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -45,6 +49,7 @@ public class AttendanceService {
     private final HolidayRepository holidayRepository;
     private final CompOffRepository compOffRepository;
     private final CompOffService compOffService;
+    private final MasterDataRepository masterDataRepository;
 
     /**
      * Mark live employees Present for today if not already marked.
@@ -194,11 +199,37 @@ public class AttendanceService {
     }
 
     public List<String> getProcesses() {
-        return employeeRepository.findDistinctProcesses();
+        List<String> list = new ArrayList<>(masterDataRepository
+            .findByCategoryIgnoreCaseAndActiveTrueOrderBySortOrderAsc("PROCESS")
+            .stream()
+            .map(MasterData::getValue)
+            .filter(v -> v != null && !v.isBlank())
+            .toList());
+
+        List<String> empProcs = employeeRepository.findDistinctProcesses();
+        for (String p : empProcs) {
+            if (p != null && !p.isBlank() && !list.contains(p)) {
+                list.add(p);
+            }
+        }
+        return list;
     }
 
     public List<String> getDepartments() {
-        return employeeRepository.findDistinctDepartments();
+        List<String> list = new ArrayList<>(masterDataRepository
+            .findByCategoryIgnoreCaseAndActiveTrueOrderBySortOrderAsc("DEPARTMENT")
+            .stream()
+            .map(MasterData::getValue)
+            .filter(v -> v != null && !v.isBlank())
+            .toList());
+
+        List<String> empDepts = employeeRepository.findDistinctDepartments();
+        for (String d : empDepts) {
+            if (d != null && !d.isBlank() && !list.contains(d)) {
+                list.add(d);
+            }
+        }
+        return list;
     }
 
     private MonthlyAttendanceDTO buildGrid(LocalDate monthStart, LocalDate monthEnd, int page, int size, String process, String search) {

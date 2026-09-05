@@ -144,10 +144,10 @@ export class EmploymentTabComponent implements OnInit {
       this.employeeStatusOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
     this.masterDataService.getByCategory('PROCESS').subscribe(data => {
-      this.processOptions = data.map(i => ({ value: i.code, label: i.value }));
+      this.processOptions = data.map(i => ({ value: i.value || i.code, label: i.value || i.code }));
     });
     this.masterDataService.getByCategory('DEPARTMENT').subscribe(data => {
-      this.departmentOptions = data.map(i => ({ value: i.code, label: i.value }));
+      this.departmentOptions = data.map(i => ({ value: i.value || i.code, label: i.value || i.code }));
     });
     this.masterDataService.getByCategory('DESIGNATION').subscribe(data => {
       this.designationOptions = data.map(i => ({ value: i.code, label: i.value }));
