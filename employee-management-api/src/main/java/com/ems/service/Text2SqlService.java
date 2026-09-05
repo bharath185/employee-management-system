@@ -117,7 +117,17 @@ public class Text2SqlService {
                 .build();
         }
 
-        // 2. Build SQL using local semantic query generator
+        // 2. EMS Workflow & Policy FAQs (COG/COT, Attendance locking, Holidays by Process, Processes)
+        String policyMsg = getPolicyExplanation(q);
+        if (policyMsg != null) {
+            return Text2SqlResponse.builder()
+                .success(true)
+                .question(question)
+                .message(policyMsg)
+                .build();
+        }
+
+        // 3. Build SQL using local semantic query generator
         String sql = buildLocalSql(question);
 
         if (sql == null) {
@@ -130,7 +140,8 @@ public class Text2SqlService {
                          "- **Leaves**: *'Leave balance of PARI0001'*, *'Pending leave applications'*\n" +
                          "- **Salaries**: *'Salary of Ramesh'*, *'Total payroll cost for August'*\n" +
                          "- **Employees**: *'Employees in Housing Loan'*, *'Total active employees'*\n" +
-                         "- **Holidays**: *'Upcoming holidays'*, *'Holidays in September'*")
+                         "- **Holidays**: *'Upcoming holidays'*, *'Holidays in September'*\n" +
+                         "- **Rules**: *'How does COG work?'*, *'How to add holiday by process?'*")
                 .build();
         }
 
@@ -821,7 +832,20 @@ public class Text2SqlService {
             return sb.toString().trim();
         }
 
-        // 10. Aggregation Breakdown (Processes, Gender, Designation)
+        // 10. Master Processes List
+        if (result.columns.contains("process_name")) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Here are the **Master Processes** configured in the system:\n\n");
+            int idx = 1;
+            for (Map<String, Object> r : result.rows) {
+                String pName = String.valueOf(r.getOrDefault("process_name", ""));
+                String code = String.valueOf(r.getOrDefault("code", ""));
+                sb.append(idx++).append(". 🏢 **").append(pName).append("** (`").append(code).append("`)\n");
+            }
+            return sb.toString().trim();
+        }
+
+        // 11. Aggregation Breakdown (Processes, Gender, Designation)
         if (result.columns.stream().anyMatch(c -> c.toLowerCase().contains("count") || c.toLowerCase().contains("total"))) {
             StringBuilder sb = new StringBuilder();
             sb.append("Here is the **Distribution Breakdown**:\n\n");
@@ -1158,9 +1182,59 @@ public class Text2SqlService {
                "Just type your question naturally!";
     }
 
-    // =========================================================================
-    // OPTIONAL LLM FALLBACK (IF USER CONFIGURES API KEY)
-    // =========================================================================
+    private String getPolicyExplanation(String q) {
+        // Comp-off explanation (COG vs COT)
+        if ((q.contains("cog") || q.contains("cot") || q.contains("comp off") || q.contains("compoff")) 
+            && (q.contains("how") || q.contains("what is") || q.contains("mean") || q.contains("rule") || q.contains("work") || q.contains("explain"))) {
+            return "⏱️ **How Comp-Offs (`COG` & `COT`) Work in EMS:**\n\n" +
+                   "• **`COG` (Comp-Off Given / Earned)**:\n" +
+                   "  When an employee works on a Holiday or Week-Off, updating attendance status to `COG` automatically **adds +1 Comp-Off** to their leave balance (`CO`) and logs the earned date in the Comp-Off Ledger.\n\n" +
+                   "• **`COT` (Comp-Off Taken / Availed)**:\n" +
+                   "  When the employee avails their comp-off leave, updating attendance to `COT` (or approving their `CO` leave application) deducts 1 day from their comp-off balance and marks the earliest available credit as **AVAILED** with the availed date.\n\n" +
+                   "• **Applying for Comp-Off**:\n" +
+                   "  Employees can choose `CO` in **Leave Application** to consume their earned comp-off credit.";
+        }
+
+        // Attendance Locking & Freezing policy
+        if ((q.contains("freeze") || q.contains("lock") || q.contains("past month") || q.contains("last month") || q.contains("sunday") || q.contains("weekoff") || q.contains("week off"))
+            && (q.contains("how") || q.contains("why") || q.contains("rule") || q.contains("work") || q.contains("explain") || q.contains("policy"))) {
+            return "📅 **EMS Attendance & Freezing Policy:**\n\n" +
+                   "• **Monthly Calendar Range**: 1st to 30th/31st of every month.\n" +
+                   "• **Past Month Freezing**: Previous months are automatically locked to prevent unintended retro-modifications and protect payroll integrity.\n" +
+                   "• **Sunday Week-Offs**: Sundays are no longer hardcoded as default holidays. HR has full control to mark Sundays or specific days as Week-Off (`WO`) or Holiday (`H`) using the **'Mark Day for All'** action.";
+        }
+
+        // Holiday allocation by Process
+        if ((q.contains("holiday") || q.contains("process")) && (q.contains("how") || q.contains("allocate") || q.contains("assign") || q.contains("specific") || q.contains("checkbox"))) {
+            if (q.contains("holiday")) {
+                return "🎉 **Holiday Allocation by Process:**\n\n" +
+                       "• When creating or editing a holiday in **Masters > Holiday List**, HR can check **Process Specific Allocation**.\n" +
+                       "• Select specific processes (*e.g. Housing Loan, Education Loan, HR*) to apply the holiday exclusively to those teams.\n" +
+                       "• Leaving the checkbox unchecked applies the holiday to **all employees** across the organization.";
+            }
+        }
+
+        // Master Processes in EMS
+        if (q.contains("what process") || q.contains("list process") || q.contains("which process") || q.contains("all process")) {
+            return "🏢 **Official Master Processes in EMS:**\n\n" +
+                   "1. **Housing Loan**\n" +
+                   "2. **Education Loan**\n" +
+                   "3. **Business Loan**\n" +
+                   "4. **Insurance**\n" +
+                   "5. **Life Insurance**\n" +
+                   "6. **SME / Vehicle Loan**\n" +
+                   "7. **HR (Human Resources)**\n\n" +
+                   "These processes are unified across Employee Onboarding, Attendance filters, and Process-wise Holiday allocations.";
+        }
+
+        // Draggable Chatbot Icon
+        if (q.contains("drag") || q.contains("move") || (q.contains("chat") && q.contains("icon"))) {
+            return "🤖 **Floating Assistant Navigation:**\n\n" +
+                   "You can click and drag the chatbot floating icon anywhere on your screen. It automatically clamps to screen boundaries and saves your preferred position in your browser!";
+        }
+
+        return null;
+    }
 
     private Text2SqlResponse processWithLlm(String question) {
         String llmResponse = callLlm(question);
