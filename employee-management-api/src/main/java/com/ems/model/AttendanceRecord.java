@@ -32,7 +32,7 @@ public class AttendanceRecord {
     @Column(name = "attendance_date", nullable = false)
     private LocalDate attendanceDate;
 
-    @Column(name = "status", length = 2, nullable = false)
+    @Column(name = "status", length = 10, nullable = false)
     private String status;
 
     @Column(name = "locked", nullable = false)
