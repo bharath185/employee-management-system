@@ -119,6 +119,10 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                 <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
                 <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
               </nz-select>
+              <nz-input-group [nzPrefix]="searchBalIcon" style="width:220px">
+                <input nz-input [(ngModel)]="balanceSearchText" (ngModelChange)="applyBalanceFilter()" placeholder="Search code / name..." />
+              </nz-input-group>
+              <ng-template #searchBalIcon><i nz-icon nzType="search"></i></ng-template>
               <button nz-button class="filter-action-btn" (click)="fileInput.click()" [nzLoading]="uploading"
                       *ngIf="authService.canManageStaff()" nz-tooltip="Upload Excel file and sync to database">
                 <i nz-icon nzType="upload"></i> Import Excel
@@ -140,7 +144,9 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               </button>
             </div>
 
-            <nz-table #balTable [nzData]="balances" [nzLoading]="loadingBals" class="theme-table" nzSize="small">
+            <nz-table #balTable [nzData]="filteredBalances" [nzLoading]="loadingBals" class="theme-table" nzSize="small"
+                      [(nzPageIndex)]="balPageIndex" [(nzPageSize)]="balPageSize"
+                      [nzPageSizeOptions]="[10, 20, 50, 100]" [nzShowSizeChanger]="true" [nzShowPagination]="true">
               <thead>
                 <tr>
                   <th>Employee Code</th>
@@ -171,8 +177,8 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                     <span *ngIf="!authService.canManageStaff()" class="text-muted">—</span>
                   </td>
                 </tr>
-                <tr *ngIf="balances.length === 0 && !loadingBals">
-                  <td colspan="7" class="empty-cell">No balances found</td>
+                <tr *ngIf="filteredBalances.length === 0 && !loadingBals">
+                  <td colspan="8" class="empty-cell">No balances found</td>
                 </tr>
               </tbody>
             </nz-table>
@@ -923,6 +929,10 @@ export class LeaveManagementComponent implements OnInit {
   compOffAvailable = 0;
   balanceYear = 2026;
   balanceEmployeeId: number | null = null;
+  balanceSearchText = '';
+  filteredBalances: LeaveBalance[] = [];
+  balPageIndex = 1;
+  balPageSize = 20;
   years = [2026, 2025, 2024, 2023];
 
   editBalanceData: any = { id: 0, employeeName: '', leaveTypeName: '', entitled: 0, taken: 0 };
@@ -1029,10 +1039,29 @@ export class LeaveManagementComponent implements OnInit {
     this.leaveService.getLeaveBalances(this.balanceEmployeeId || undefined, this.balanceYear).subscribe({
       next: (res) => {
         this.balances = res.data || [];
+        this.applyBalanceFilter();
         this.loadingBals = false;
       },
-      error: () => { this.loadingBals = false; }
+      error: () => {
+        this.loadingBals = false;
+        this.balances = [];
+        this.filteredBalances = [];
+      }
     });
+  }
+
+  applyBalanceFilter(): void {
+    if (!this.balanceSearchText || !this.balanceSearchText.trim()) {
+      this.filteredBalances = [...this.balances];
+    } else {
+      const q = this.balanceSearchText.trim().toLowerCase();
+      this.filteredBalances = this.balances.filter(b =>
+        (b.employeeCode && b.employeeCode.toLowerCase().includes(q)) ||
+        (b.employeeName && b.employeeName.toLowerCase().includes(q)) ||
+        (b.leaveTypeName && b.leaveTypeName.toLowerCase().includes(q))
+      );
+    }
+    this.balPageIndex = 1;
   }
 
   showApplyModal(): void {

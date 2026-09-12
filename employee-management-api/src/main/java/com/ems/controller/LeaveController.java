@@ -45,10 +45,17 @@ public class LeaveController {
     }
 
     @GetMapping("/balances")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<APIResponse<List<LeaveBalanceDTO>>> getLeaveBalances(
             @RequestParam(required = false) Long employeeId,
-            @RequestParam Integer year) {
+            @RequestParam Integer year,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser != null && currentUser.getAuthorities().stream().noneMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_HR".equals(a.getAuthority()))) {
+            employeeId = currentUser.getEmployeeId();
+            if (employeeId == null) {
+                return ResponseEntity.ok(APIResponse.success(List.of()));
+            }
+        }
         return ResponseEntity.ok(APIResponse.success(leaveService.getLeaveBalances(employeeId, year)));
     }
 
