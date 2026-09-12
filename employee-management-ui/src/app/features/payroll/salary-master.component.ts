@@ -21,6 +21,8 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { PayrollService } from '../../core/services/payroll.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
+import { DocumentTemplateService } from '../../core/services/document-template.service';
+import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 import { SalaryMasterDTO } from '../../core/models/payroll.models';
 
 @Component({
@@ -143,7 +145,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
               <th rowspan="2" class="th-net">Net In-Hand</th>
               <th rowspan="2" class="th-ctc">Annual CTC</th>
               <th rowspan="2">Worker Type</th>
-              <th rowspan="2" class="th-actions">History</th>
+              <th rowspan="2" class="th-actions">Actions</th>
             </tr>
             <tr>
               <th class="td-right">Basic</th>
@@ -232,9 +234,14 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
 
               <!-- Actions -->
               <td class="td-center">
-                <button nz-button nzType="link" nzSize="small" (click)="showHistory(m)" nz-tooltip="View history & snapshots">
-                  <i nz-icon nzType="clock-circle"></i>
-                </button>
+                <div style="display:flex;align-items:center;justify-content:center;gap:2px;">
+                  <button nz-button nzType="link" nzSize="small" (click)="openAppointmentLetter(m)" nz-tooltip="Appointment Letter (Salary Master)" style="color:#2563eb;padding:0 3px;">
+                    <i nz-icon nzType="file-done"></i>
+                  </button>
+                  <button nz-button nzType="link" nzSize="small" (click)="showHistory(m)" nz-tooltip="View history & snapshots" style="padding:0 3px;">
+                    <i nz-icon nzType="clock-circle"></i>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr *ngIf="filteredMasters.length === 0 && !loading">
@@ -243,6 +250,34 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
           </tbody>
         </nz-table>
       </div>
+
+      <!-- ===== APPOINTMENT LETTER PREVIEW MODAL ===== -->
+      <nz-modal [(nzVisible)]="isLetterModalVisible" [nzTitle]="letterModalTitle" (nzOnCancel)="isLetterModalVisible = false" nzWidth="920px" [nzFooter]="letterModalFooter">
+        <ng-template nzModalContent>
+          <div *ngIf="letterLoading" style="text-align:center;padding:50px 0;">
+            <nz-spin nzSimple nzTip="Generating Appointment Letter from Salary Master..."></nz-spin>
+          </div>
+          <div *ngIf="!letterLoading && letterPreviewHtml" style="max-height:72vh;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;background:#fff;padding:8px;">
+            <iframe [srcdoc]="letterPreviewHtml" style="width:100%;height:68vh;border:none;" sandbox="allow-same-origin allow-scripts"></iframe>
+          </div>
+          <div *ngIf="!letterLoading && !letterPreviewHtml" style="text-align:center;padding:40px;color:#94a3b8;">
+            No preview available.
+          </div>
+        </ng-template>
+        <ng-template #letterModalFooter>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:#64748b;">
+              Salary structure taken directly from <strong>Salary Master</strong>.
+            </span>
+            <div style="display:flex;gap:8px;">
+              <button nz-button nzType="default" (click)="isLetterModalVisible = false">Close</button>
+              <button nz-button nzType="primary" (click)="downloadAppointmentLetter()" [nzLoading]="isLetterDownloading" [disabled]="!letterPreviewHtml">
+                <i nz-icon nzType="printer"></i> Print / Save PDF
+              </button>
+            </div>
+          </div>
+        </ng-template>
+      </nz-modal>
 
       <!-- ===== SYNC TO MONTH MODAL ===== -->
       <nz-modal [(nzVisible)]="isSyncModalVisible" nzTitle="Sync Salary Master to Payroll Reports" (nzOnCancel)="isSyncModalVisible = false" (nzOnOk)="executeSync()" [nzOkLoading]="syncLoading">
@@ -629,9 +664,18 @@ export class SalaryMasterComponent implements OnInit {
   snapshots: any[] = [];
   snapshotsLoading = false;
 
+  isLetterModalVisible = false;
+  letterLoading = false;
+  isLetterDownloading = false;
+  letterModalTitle = 'Appointment Letter';
+  letterPreviewHtml = '';
+  selectedEmployeeForLetter: SalaryMasterDTO | null = null;
+  appointmentTemplateId: number | null = null;
+
   constructor(
     private payrollService: PayrollService,
     private employeeService: EmployeeService,
+    private docTemplateService: DocumentTemplateService,
     public authService: AuthService,
     private msg: NzMessageService,
     private modal: NzModalService
@@ -877,6 +921,99 @@ export class SalaryMasterComponent implements OnInit {
   getMonthName(m: number): string {
     const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return names[m - 1] || '';
+  }
+
+  openAppointmentLetter(m: SalaryMasterDTO): void {
+    if (!m.employeeId) return;
+    this.selectedEmployeeForLetter = m;
+    this.letterModalTitle = `Appointment Letter — ${m.employeeCode || ''} (${m.employeeName || ''})`;
+    this.isLetterModalVisible = true;
+    this.letterLoading = true;
+    this.letterPreviewHtml = '';
+
+    if (this.appointmentTemplateId) {
+      this.fetchAppointmentLetterPreview(this.appointmentTemplateId, m.employeeId);
+    } else {
+      this.docTemplateService.getTemplates({ templateType: 'APPOINTMENT_LETTER', active: true, size: 10 }).subscribe({
+        next: (res) => {
+          const list = res.data?.content || [];
+          const tpl = list.length > 0 ? list[0] : null;
+          if (tpl && tpl.id) {
+            this.appointmentTemplateId = tpl.id;
+            this.fetchAppointmentLetterPreview(tpl.id, m.employeeId!);
+          } else {
+            this.letterLoading = false;
+            this.msg.error('Appointment Letter template not found or inactive');
+          }
+        },
+        error: () => {
+          this.letterLoading = false;
+          this.msg.error('Failed to load Appointment Letter template');
+        }
+      });
+    }
+  }
+
+  private fetchAppointmentLetterPreview(templateId: number, employeeId: number): void {
+    this.docTemplateService.previewTemplate(templateId, employeeId).subscribe({
+      next: (res) => {
+        this.letterLoading = false;
+        if (res.success && res.data) {
+          this.letterPreviewHtml = res.data;
+        } else {
+          this.msg.error(res.message || 'Could not generate appointment letter preview');
+        }
+      },
+      error: (err) => {
+        this.letterLoading = false;
+        this.msg.error(err.error?.message || 'Error generating preview');
+      }
+    });
+  }
+
+  downloadAppointmentLetter(): void {
+    if (!this.appointmentTemplateId || !this.selectedEmployeeForLetter?.employeeId) return;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      try {
+        printWindow.document.open();
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Generating Appointment Letter...</title></head>
+          <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#334155;">
+            <div style="text-align:center;">
+              <div style="font-size:28px;margin-bottom:12px;">📄</div>
+              <div style="font-size:16px;font-weight:600;">Preparing Appointment Letter...</div>
+              <div style="font-size:13px;color:#64748b;margin-top:4px;">Print / Save as PDF will open in a moment</div>
+            </div>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+      } catch (e) {
+        console.warn('Could not write placeholder to print window', e);
+      }
+    }
+
+    this.isLetterDownloading = true;
+    this.docTemplateService.generateDocument(this.appointmentTemplateId, this.selectedEmployeeForLetter.employeeId, 'pdf').subscribe({
+      next: (response) => {
+        this.isLetterDownloading = false;
+        if (response.success && response.data?.html) {
+          openDocumentPrintPreview(response.data.html, printWindow);
+          this.msg.success('Appointment Letter ready for Print / Save as PDF');
+        } else {
+          if (printWindow) printWindow.close();
+          this.msg.error(response.message || 'Failed to generate document');
+        }
+      },
+      error: (err) => {
+        this.isLetterDownloading = false;
+        if (printWindow) printWindow.close();
+        this.msg.error(err.error?.message || 'Failed to generate document');
+      }
+    });
   }
 
   private saveBlob(blob: Blob, filename: string): void {

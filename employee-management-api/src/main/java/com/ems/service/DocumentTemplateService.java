@@ -354,41 +354,52 @@ public class DocumentTemplateService {
             BigDecimal health = BigDecimal.ZERO;
             boolean found = false;
 
-            // 1. First check recent monthly Salary
-            List<Salary> salaries = salaryRepository.findByEmployeeId(employee.getId());
-            if (salaries != null && !salaries.isEmpty()) {
-                salaries.sort((a, b) -> {
-                    int y = b.getWageYear().compareTo(a.getWageYear());
-                    return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
-                });
-                Salary s = salaries.get(0);
-                basic = safe(s.getBasic());
-                hra = safe(s.getHra());
-                fpa = safe(s.getFixedPersonalAllowance());
-                oa = safe(s.getOtherAllowance());
-                pf = safe(s.getPfDeduction());
-                esi = safe(s.getEsiDeduction());
-                pt = safe(s.getPtDeduction());
-                health = safe(s.getHealthInsurance());
-                if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0) {
+            // 1. Primary Source: Always check SalaryMaster first (Authoritative master structure for letters & contracts)
+            Optional<SalaryMaster> smOpt = salaryMasterRepository.findByEmployeeId(employee.getId());
+            if (smOpt.isPresent()) {
+                SalaryMaster sm = smOpt.get();
+                basic = safe(sm.getBasic());
+                hra = safe(sm.getHra());
+                fpa = safe(sm.getFixedPersonalAllowance());
+                oa = safe(sm.getOtherAllowance());
+                pf = safe(sm.getPfDeduction());
+                esi = safe(sm.getEsiDeduction());
+                pt = safe(sm.getPtDeduction());
+                health = safe(sm.getHealthInsurance());
+                if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0 || oa.compareTo(BigDecimal.ZERO) > 0) {
                     found = true;
+                }
+                if (sm.getWorkingHoursPerDay() != null) {
+                    salaryValues.put("working_hours_per_day", String.valueOf(sm.getWorkingHoursPerDay()));
+                }
+                if (sm.getWeeklyOff() != null) {
+                    salaryValues.put("weekly_off", sm.getWeeklyOff());
+                }
+                if (sm.getWorkerType() != null) {
+                    salaryValues.put("worker_type", sm.getWorkerType());
                 }
             }
 
-            // 2. Fall back to SalaryMaster if no monthly salary or basic was 0
+            // 2. Secondary Fallback: Recent monthly Salary if SalaryMaster has no data
             if (!found) {
-                Optional<SalaryMaster> smOpt = salaryMasterRepository.findByEmployeeId(employee.getId());
-                if (smOpt.isPresent()) {
-                    SalaryMaster sm = smOpt.get();
-                    basic = safe(sm.getBasic());
-                    hra = safe(sm.getHra());
-                    fpa = safe(sm.getFixedPersonalAllowance());
-                    oa = safe(sm.getOtherAllowance());
-                    pf = safe(sm.getPfDeduction());
-                    esi = safe(sm.getEsiDeduction());
-                    pt = safe(sm.getPtDeduction());
-                    health = safe(sm.getHealthInsurance());
-                    found = true;
+                List<Salary> salaries = salaryRepository.findByEmployeeId(employee.getId());
+                if (salaries != null && !salaries.isEmpty()) {
+                    salaries.sort((a, b) -> {
+                        int y = b.getWageYear().compareTo(a.getWageYear());
+                        return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
+                    });
+                    Salary s = salaries.get(0);
+                    basic = safe(s.getBasic());
+                    hra = safe(s.getHra());
+                    fpa = safe(s.getFixedPersonalAllowance());
+                    oa = safe(s.getOtherAllowance());
+                    pf = safe(s.getPfDeduction());
+                    esi = safe(s.getEsiDeduction());
+                    pt = safe(s.getPtDeduction());
+                    health = safe(s.getHealthInsurance());
+                    if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0) {
+                        found = true;
+                    }
                 }
             }
 

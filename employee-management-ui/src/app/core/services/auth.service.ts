@@ -36,6 +36,10 @@ export class AuthService {
 
   private baseUrl = environment.apiUrl;
 
+  pingServer(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/auth/ping`);
+  }
+
   login(credentials: LoginRequest): Observable<APIResponse<LoginResponse>> {
     return this.http.post<APIResponse<LoginResponse>>(`${this.baseUrl}/auth/login`, credentials)
       .pipe(

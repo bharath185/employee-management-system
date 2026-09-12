@@ -21,36 +21,37 @@ public class DashboardService {
     private final EmployeeRepository employeeRepository;
 
     public DashboardStatsDTO getStats() {
-        long total = employeeRepository.countActive();
-        long active = employeeRepository.countLive();
-        long male = employeeRepository.countByGender("MALE");
-        long female = employeeRepository.countByGender("FEMALE");
+        List<Employee> all = employeeRepository.findAll();
+        List<Employee> nonDeleted = all.stream().filter(e -> !Boolean.TRUE.equals(e.getIsDeleted())).toList();
+
+        long total = nonDeleted.size();
+        long active = nonDeleted.stream().filter(e -> "LIVE".equalsIgnoreCase(e.getEmployeeStatus())).count();
+        long male = nonDeleted.stream().filter(e -> "MALE".equalsIgnoreCase(e.getGender())).count();
+        long female = nonDeleted.stream().filter(e -> "FEMALE".equalsIgnoreCase(e.getGender())).count();
 
         // Count new employees this month
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
-        long newThisMonth = employeeRepository.findAll().stream()
+        long newThisMonth = nonDeleted.stream()
             .filter(e -> e.getCreatedAt() != null &&
                 e.getCreatedAt().toLocalDate().isAfter(startOfMonth.minusDays(1)))
             .count();
 
         // Status distribution (normalize to uppercase codes)
-        Map<String, Long> statusDistribution = employeeRepository.findAll().stream()
-            .filter(e -> !e.getIsDeleted())
+        Map<String, Long> statusDistribution = nonDeleted.stream()
             .collect(Collectors.groupingBy(
-                e -> e.getEmployeeStatus() != null ? e.getEmployeeStatus().toUpperCase() : "Unknown",
+                e -> e.getEmployeeStatus() != null ? e.getEmployeeStatus().toUpperCase() : "UNKNOWN",
                 Collectors.counting()));
 
         // Gender distribution (normalize to uppercase codes)
-        Map<String, Long> genderDistribution = employeeRepository.findAll().stream()
-            .filter(e -> !e.getIsDeleted())
+        Map<String, Long> genderDistribution = nonDeleted.stream()
             .collect(Collectors.groupingBy(
-                e -> e.getGender() != null ? e.getGender().toUpperCase() : "Unknown",
+                e -> e.getGender() != null ? e.getGender().toUpperCase() : "UNKNOWN",
                 Collectors.counting()));
 
         // Designation distribution
         List<DashboardStatsDTO.DesignationCount> designationCounts =
-            employeeRepository.findAll().stream()
-                .filter(e -> !e.getIsDeleted() && e.getDesignation() != null)
+            nonDeleted.stream()
+                .filter(e -> e.getDesignation() != null && !e.getDesignation().isBlank())
                 .collect(Collectors.groupingBy(
                     Employee::getDesignation, Collectors.counting()))
                 .entrySet().stream()
@@ -63,8 +64,8 @@ public class DashboardService {
 
         // Age bracket distribution
         List<DashboardStatsDTO.AgeBracketCount> ageBracketCounts =
-            employeeRepository.findAll().stream()
-                .filter(e -> !e.getIsDeleted() && e.getAgeBracket() != null)
+            nonDeleted.stream()
+                .filter(e -> e.getAgeBracket() != null && !e.getAgeBracket().isBlank())
                 .collect(Collectors.groupingBy(
                     Employee::getAgeBracket, Collectors.counting()))
                 .entrySet().stream()
@@ -79,11 +80,11 @@ public class DashboardService {
         return DashboardStatsDTO.builder()
             .totalEmployees(total)
             .activeEmployees(active)
-            .exitedEmployees(total - active)
+            .exitedEmployees(Math.max(0, total - active))
             .maleCount(male)
             .femaleCount(female)
             .newThisMonth(newThisMonth)
-            .exitedThisMonth(0) // Would need exit tracking
+            .exitedThisMonth(0)
             .statusDistribution(statusDistribution)
             .genderDistribution(genderDistribution)
             .designationDistribution(designationCounts)

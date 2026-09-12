@@ -15,6 +15,14 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @GetMapping("/ping")
+    public ResponseEntity<APIResponse<java.util.Map<String, Object>>> ping() {
+        return ResponseEntity.ok(APIResponse.success("pong", java.util.Map.of(
+            "status", "UP",
+            "timestamp", System.currentTimeMillis()
+        )));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<APIResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request) {

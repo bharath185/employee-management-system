@@ -167,7 +167,15 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.authService.isAuthenticated()) this.navigateToHome();
+    if (this.authService.isAuthenticated()) {
+      this.navigateToHome();
+      return;
+    }
+    // Pre-warm backend and database connection pool as soon as the login page loads
+    this.authService.pingServer().subscribe({
+      next: () => {},
+      error: () => {}
+    });
   }
 
   onSubmit(): void {

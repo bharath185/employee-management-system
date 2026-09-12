@@ -6,6 +6,7 @@ import com.ems.exception.ResourceNotFoundException;
 import com.ems.exception.UnauthorizedException;
 import com.ems.model.User;
 import com.ems.repository.UserRepository;
+import com.ems.repository.EmployeeRepository;
 import com.ems.security.CustomUserDetails;
 import com.ems.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmployeeService employeeService;
+    private final EmployeeRepository employeeRepository;
 
     public LoginResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -45,15 +47,18 @@ public class AuthService {
         EmployeeBasicDTO employeeBasic = null;
         if (userDetails.getEmployeeId() != null) {
             try {
-                var emp = employeeService.getEmployeeById(userDetails.getEmployeeId());
-                employeeBasic = EmployeeBasicDTO.builder()
-                    .id(emp.getId())
-                    .employeeCode(emp.getEmployeeCode())
-                    .firstName(emp.getFirstName())
-                    .surname(emp.getSurname())
-                    .email(emp.getEmail())
-                    .photoPath(emp.getPhotoPath())
-                    .build();
+                var empOpt = employeeRepository.findById(userDetails.getEmployeeId());
+                if (empOpt.isPresent()) {
+                    var emp = empOpt.get();
+                    employeeBasic = EmployeeBasicDTO.builder()
+                        .id(emp.getId())
+                        .employeeCode(emp.getEmployeeCode())
+                        .firstName(emp.getFirstName())
+                        .surname(emp.getSurname())
+                        .email(emp.getEmail())
+                        .photoPath(emp.getPhotoPath())
+                        .build();
+                }
             } catch (Exception e) {
                 // Employee may not exist yet for admin accounts
             }
