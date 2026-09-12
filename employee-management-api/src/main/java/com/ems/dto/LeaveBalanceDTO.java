@@ -25,18 +25,39 @@ public class LeaveBalanceDTO {
     private Integer balance;
 
     public static LeaveBalanceDTO fromEntity(LeaveBalance lb) {
+        if (lb == null) return null;
+        Long empId = null;
+        String empCode = "";
+        String empName = "";
+        try {
+            if (lb.getEmployee() != null) {
+                empId = lb.getEmployee().getId();
+                empCode = lb.getEmployee().getEmployeeCode();
+                empName = lb.getEmployee().getFullName();
+            }
+        } catch (Exception ignored) {}
+
+        Long ltId = null;
+        String ltName = "";
+        try {
+            if (lb.getLeaveType() != null) {
+                ltId = lb.getLeaveType().getId();
+                ltName = lb.getLeaveType().getName();
+            }
+        } catch (Exception ignored) {}
+
         return LeaveBalanceDTO.builder()
             .id(lb.getId())
-            .employeeId(lb.getEmployee().getId())
-            .employeeCode(lb.getEmployee().getEmployeeCode())
-            .employeeName(lb.getEmployee().getFullName())
-            .leaveTypeId(lb.getLeaveType().getId())
-            .leaveTypeName(lb.getLeaveType().getName())
+            .employeeId(empId)
+            .employeeCode(empCode)
+            .employeeName(empName)
+            .leaveTypeId(ltId)
+            .leaveTypeName(ltName)
             .year(lb.getYear())
-            .entitled(lb.getEntitled())
-            .taken(lb.getTaken())
-            .encashed(lb.getEncashed())
-            .balance(lb.getBalance())
+            .entitled(lb.getEntitled() != null ? lb.getEntitled() : 0)
+            .taken(lb.getTaken() != null ? lb.getTaken() : 0)
+            .encashed(lb.getEncashed() != null ? lb.getEncashed() : 0)
+            .balance(lb.getBalance() != null ? lb.getBalance() : 0)
             .build();
     }
 }

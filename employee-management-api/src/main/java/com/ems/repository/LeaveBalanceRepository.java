@@ -12,14 +12,15 @@ import java.util.Optional;
 @Repository
 public interface LeaveBalanceRepository extends JpaRepository<LeaveBalance, Long> {
 
-    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.leaveType WHERE lb.employee.id = :employeeId AND lb.year = :year")
+    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.employee JOIN FETCH lb.leaveType WHERE lb.employee.id = :employeeId AND lb.year = :year")
     List<LeaveBalance> findByEmployeeIdAndYear(@Param("employeeId") Long employeeId, @Param("year") Integer year);
 
-    Optional<LeaveBalance> findByEmployeeIdAndLeaveTypeIdAndYear(Long employeeId, Long leaveTypeId, Integer year);
+    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.employee JOIN FETCH lb.leaveType WHERE lb.employee.id = :employeeId AND lb.leaveType.id = :leaveTypeId AND lb.year = :year")
+    Optional<LeaveBalance> findByEmployeeIdAndLeaveTypeIdAndYear(@Param("employeeId") Long employeeId, @Param("leaveTypeId") Long leaveTypeId, @Param("year") Integer year);
 
-    @Query("SELECT lb FROM LeaveBalance lb WHERE lb.year = :year ORDER BY lb.employee.id, lb.leaveType.name")
+    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.employee JOIN FETCH lb.leaveType WHERE lb.year = :year ORDER BY lb.employee.id, lb.leaveType.name")
     List<LeaveBalance> findByYear(@Param("year") Integer year);
 
-    @Query("SELECT lb FROM LeaveBalance lb WHERE lb.employee.employeeCode = :empCode AND lb.year = :year")
+    @Query("SELECT lb FROM LeaveBalance lb JOIN FETCH lb.employee JOIN FETCH lb.leaveType WHERE lb.employee.employeeCode = :empCode AND lb.year = :year")
     List<LeaveBalance> findByEmployeeCodeAndYear(@Param("empCode") String empCode, @Param("year") Integer year);
 }
