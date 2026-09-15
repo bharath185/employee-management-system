@@ -2,7 +2,7 @@
 setlocal
 cd /d %~dp0
 echo =========================================================================
-echo PRIGENIX EMPLOYEE MANAGEMENT SYSTEM - 100%% STANDALONE INSTALLER BUILD
+echo PRIGENIX EMPLOYEE MANAGEMENT SYSTEM - PRODUCTION INSTALLER BUILD PIPELINE
 echo =========================================================================
 echo.
 
@@ -37,8 +37,8 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [4/4] Compiling 100%% Standalone Single-File Setup Executable (EMS_Setup_v1.0.exe)...
-python scratch\build_single_file_exe.py
+echo [4/4] Compiling Standalone Setup with Uninstaller and Icons...
+python scratch\build_uninstaller_and_setup.py
 if %ERRORLEVEL% NEQ 0 (
     echo Installer compilation failed!
     pause
@@ -49,6 +49,6 @@ echo.
 echo =========================================================================
 echo BUILD SUCCESSFUL!
 echo Single-File Installer: %~dp0dist_installer\EMS_Setup_v1.0.exe
-echo (You ONLY need to copy/distribute this one EMS_Setup_v1.0.exe file!)
+echo (Contains embedded JRE, PostgreSQL, App, Icons, and Windows Uninstaller)
 echo =========================================================================
 pause
