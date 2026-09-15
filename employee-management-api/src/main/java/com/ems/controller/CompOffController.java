@@ -24,8 +24,16 @@ public class CompOffController {
     private final CompOffService compOffService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<List<CompOffDTO>>> getCompOffs(@RequestParam(required = false) Long employeeId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<APIResponse<List<CompOffDTO>>> getCompOffs(
+            @RequestParam(required = false) Long employeeId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        if (currentUser != null && currentUser.getAuthorities().stream().noneMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_HR".equals(a.getAuthority()))) {
+            employeeId = currentUser.getEmployeeId();
+            if (employeeId == null) {
+                return ResponseEntity.ok(APIResponse.success(List.of()));
+            }
+        }
         return ResponseEntity.ok(APIResponse.success(compOffService.getCompOffs(employeeId)));
     }
 

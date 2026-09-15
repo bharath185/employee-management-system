@@ -8,12 +8,17 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 @Repository
 public interface CompOffRepository extends JpaRepository<CompOff, Long> {
 
-    List<CompOff> findByEmployeeIdOrderByEarnedDateDesc(Long employeeId);
+    @Query("SELECT c FROM CompOff c JOIN FETCH c.employee WHERE c.employee.id = :employeeId ORDER BY c.earnedDate DESC")
+    List<CompOff> findByEmployeeIdOrderByEarnedDateDesc(@Param("employeeId") Long employeeId);
 
-    List<CompOff> findByEmployeeIdAndStatusOrderByEarnedDateDesc(Long employeeId, String status);
+    @Query("SELECT c FROM CompOff c JOIN FETCH c.employee WHERE c.employee.id = :employeeId AND c.status = :status ORDER BY c.earnedDate DESC")
+    List<CompOff> findByEmployeeIdAndStatusOrderByEarnedDateDesc(@Param("employeeId") Long employeeId, @Param("status") String status);
 
     Optional<CompOff> findFirstByEmployeeIdAndStatusOrderByEarnedDateAsc(Long employeeId, String status);
 
@@ -27,5 +32,6 @@ public interface CompOffRepository extends JpaRepository<CompOff, Long> {
 
     boolean existsByEmployeeIdAndEarnedDateAndStatus(Long employeeId, LocalDate earnedDate, String status);
 
+    @Query("SELECT c FROM CompOff c JOIN FETCH c.employee ORDER BY c.earnedDate DESC")
     List<CompOff> findAllByOrderByEarnedDateDesc();
 }

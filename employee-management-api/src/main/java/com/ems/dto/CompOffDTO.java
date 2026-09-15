@@ -26,11 +26,23 @@ public class CompOffDTO {
     private LocalDateTime createdAt;
 
     public static CompOffDTO fromEntity(CompOff co) {
+        if (co == null) return null;
+        Long empId = null;
+        String empCode = "";
+        String empName = "";
+        try {
+            if (co.getEmployee() != null) {
+                empId = co.getEmployee().getId();
+                empCode = co.getEmployee().getEmployeeCode();
+                empName = co.getEmployee().getFullName();
+            }
+        } catch (Exception ignored) {}
+
         return CompOffDTO.builder()
             .id(co.getId())
-            .employeeId(co.getEmployee().getId())
-            .employeeCode(co.getEmployee().getEmployeeCode())
-            .employeeName(co.getEmployee().getFullName())
+            .employeeId(empId)
+            .employeeCode(empCode)
+            .employeeName(empName)
             .earnedDate(co.getEarnedDate())
             .status(co.getStatus())
             .availedDate(co.getAvailedDate())

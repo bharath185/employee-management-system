@@ -77,3 +77,6 @@ docs/*.sql
 *.cmd
 gen_*.ps1
 gen_*.py
+installer_build/
+dist_installer/
+employee-management-api/src/main/resources/static/

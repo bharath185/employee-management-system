@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzTagModule } from 'ng-zorro-antd/tag';
@@ -13,20 +14,29 @@ import { EmployeeService } from '../../core/services/employee.service';
 import { CompOff } from '../../core/models/payroll.models';
 import { saveAs } from 'file-saver';
 
-
 @Component({
   selector: 'app-comp-off-tracking',
   standalone: true,
   imports: [
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzToolTipModule
+    NzInputModule, NzIconModule, NzTagModule, NzToolTipModule
   ],
   template: `
       <div class="section-toolbar">
         <nz-select [(ngModel)]="employeeFilter" (ngModelChange)="loadCompOffs()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
           <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
+          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
         </nz-select>
+        <nz-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()" class="filter-select" nzPlaceHolder="All Statuses" style="width:140px">
+          <nz-option [nzValue]="null" nzLabel="All Statuses"></nz-option>
+          <nz-option nzValue="EARNED" nzLabel="EARNED"></nz-option>
+          <nz-option nzValue="AVAILED" nzLabel="AVAILED"></nz-option>
+        </nz-select>
+        <nz-input-group [nzPrefix]="searchIcon" style="width:220px">
+          <input nz-input [(ngModel)]="searchText" (ngModelChange)="applyFilter()" placeholder="Search code / name / remarks..." />
+        </nz-input-group>
+        <ng-template #searchIcon><i nz-icon nzType="search"></i></ng-template>
+
         <button nz-button nzType="default" nzSize="small" (click)="exportExcel()" [nzLoading]="exporting" nz-tooltip="Download Excel">
           <i nz-icon nzType="download"></i> Export
         </button>
@@ -39,7 +49,9 @@ import { saveAs } from 'file-saver';
         <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
       </div>
 
-      <nz-table #t [nzData]="compOffs" [nzLoading]="loading" class="theme-table" nzSize="small">
+      <nz-table #t [nzData]="filteredCompOffs" [nzLoading]="loading" class="theme-table" nzSize="small"
+                [(nzPageIndex)]="pageIndex" [(nzPageSize)]="pageSize"
+                [nzPageSizeOptions]="[10, 20, 50, 100]" [nzShowSizeChanger]="true" [nzShowPagination]="true">
         <thead>
           <tr>
             <th>Employee</th>
@@ -59,7 +71,7 @@ import { saveAs } from 'file-saver';
             <td>{{ c.availedDate || '—' }}</td>
             <td>{{ c.remarks || '—' }}</td>
           </tr>
-          <tr *ngIf="compOffs.length === 0 && !loading">
+          <tr *ngIf="filteredCompOffs.length === 0 && !loading">
             <td colspan="5" class="empty-cell">No comp-offs found</td>
           </tr>
         </tbody>
@@ -68,6 +80,8 @@ import { saveAs } from 'file-saver';
   styles: [`
     .section-toolbar {
       display: flex;
+      flex-wrap: wrap;
+      align-items: center;
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -100,11 +114,16 @@ import { saveAs } from 'file-saver';
 })
 export class CompOffTrackingComponent implements OnInit {
   compOffs: CompOff[] = [];
+  filteredCompOffs: CompOff[] = [];
   employees: any[] = [];
   loading = false;
   exporting = false;
   importing = false;
   employeeFilter: number | null = null;
+  statusFilter: string | null = null;
+  searchText = '';
+  pageIndex = 1;
+  pageSize = 20;
 
   constructor(
     private compOffService: CompOffService,
@@ -126,9 +145,36 @@ export class CompOffTrackingComponent implements OnInit {
   loadCompOffs(): void {
     this.loading = true;
     this.compOffService.getCompOffs(this.employeeFilter ?? undefined).subscribe({
-      next: (res) => { this.compOffs = res.data || []; this.loading = false; },
-      error: () => { this.loading = false; }
+      next: (res) => {
+        this.compOffs = res.data || [];
+        this.applyFilter();
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.compOffs = [];
+        this.filteredCompOffs = [];
+      }
     });
+  }
+
+  applyFilter(): void {
+    let result = [...this.compOffs];
+    if (this.statusFilter) {
+      result = result.filter(c => c.status === this.statusFilter);
+    }
+    if (this.searchText && this.searchText.trim()) {
+      const q = this.searchText.trim().toLowerCase();
+      result = result.filter(c =>
+        (c.employeeCode && c.employeeCode.toLowerCase().includes(q)) ||
+        (c.employeeName && c.employeeName.toLowerCase().includes(q)) ||
+        (c.remarks && c.remarks.toLowerCase().includes(q)) ||
+        (c.earnedDate && c.earnedDate.toString().includes(q)) ||
+        (c.availedDate && c.availedDate.toString().includes(q))
+      );
+    }
+    this.filteredCompOffs = result;
+    this.pageIndex = 1;
   }
 
   tagColor(status: string): string {
