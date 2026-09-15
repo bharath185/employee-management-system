@@ -2,7 +2,7 @@
 setlocal
 cd /d %~dp0
 echo =========================================================================
-echo EMPLOYEE MANAGEMENT SYSTEM - PRODUCTION INSTALLER BUILD PIPELINE
+echo PRIGENIX EMPLOYEE MANAGEMENT SYSTEM - PRODUCTION INSTALLER BUILD PIPELINE
 echo =========================================================================
 echo.
 
@@ -37,8 +37,8 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo [4/4] Compiling Windows Setup Executable (EMS_Setup_v1.0.exe)...
-python scratch\build_exe_installer.py
+echo [4/4] Compiling Prigenix Setup Executable with Icons (EMS_Setup_v1.0.exe)...
+python scratch\generate_icons_and_installer.py
 if %ERRORLEVEL% NEQ 0 (
     echo Installer compilation failed!
     pause
