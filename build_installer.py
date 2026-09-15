@@ -189,15 +189,8 @@ set "PGBIN=%ROOT_DIR%\\pgsql\\bin"
 set "JAVA_EXE=%ROOT_DIR%\\jre\\bin\\java.exe"
 set "JAR_FILE=%ROOT_DIR%\\app\\employee-management-app.jar"
 set "LOGS_DIR=%ROOT_DIR%\\logs"
-set "HOSTS_FILE=%WINDIR%\\System32\\drivers\\etc\\hosts"
 
 if not exist "%LOGS_DIR%" mkdir "%LOGS_DIR%"
-
-:: Ensure ems.parikar.com is mapped in hosts
-findstr /I "ems.parikar.com" "%HOSTS_FILE%" >nul 2>&1
-if %ERRORLEVEL% NEQ 0 (
-    echo 127.0.0.1 ems.parikar.com >> "%HOSTS_FILE%" 2>nul
-)
 
 if not exist "%PGDATA%\\PG_VERSION" (
     call "%ROOT_DIR%\\bin\\init-db.bat"
@@ -209,8 +202,7 @@ if %ERRORLEVEL% NEQ 0 (
     "%PGBIN%\\pg_ctl.exe" start -D "%PGDATA%" -l "%LOGS_DIR%\\postgres.log" -w
 )
 
-net stop w3svc /y >nul 2>&1
-echo Starting Employee Management System on http://ems.parikar.com...
+echo Starting Employee Management System on http://localhost:8085...
 start "Employee Management System Backend" /B "%JAVA_EXE%" -jar "%JAR_FILE%" --spring.profiles.active=production > "%LOGS_DIR%\\ems_startup.log" 2>&1
 
 echo Waiting for EMS to become ready...
@@ -218,14 +210,14 @@ set /a ATTEMPTS=0
 :WAIT_LOOP
 set /a ATTEMPTS+=1
 timeout /t 1 /nobreak >nul
-powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1/api/v1/auth/ping' -TimeoutSec 1 -UseBasicParsing; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
+powershell -Command "try { $r = Invoke-WebRequest -Uri 'http://localhost:8085/api/v1/auth/ping' -TimeoutSec 1 -UseBasicParsing; if ($r.StatusCode -eq 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
 if %ERRORLEVEL% EQU 0 goto LAUNCH_BROWSER
 if %ATTEMPTS% GEQ 45 goto LAUNCH_BROWSER
 goto WAIT_LOOP
 
 :LAUNCH_BROWSER
-echo Launching Browser at http://ems.parikar.com...
-start "" "http://ems.parikar.com"
+echo Launching Browser at http://localhost:8085...
+start "" "http://localhost:8085"
 """
     with open(os.path.join(PKG_DIR, "bin", "start-ems.bat"), "w", encoding="utf-8") as f:
         f.write(start_ems_bat)
@@ -417,22 +409,6 @@ public class PrigenixUninstaller : Form {
         this.Controls.Add(btnUninstall);
     }
 
-    private void RemoveHostMapping() {
-        try {
-            string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
-            if (File.Exists(hostsPath)) {
-                string[] lines = File.ReadAllLines(hostsPath);
-                List<string> filtered = new List<string>();
-                foreach (string line in lines) {
-                    if (!line.Contains("ems.parikar.com") && !line.Contains("# PRIGENIX EMS")) {
-                        filtered.Add(line);
-                    }
-                }
-                File.WriteAllLines(hostsPath, filtered.ToArray());
-            }
-        } catch {}
-    }
-
     private void StartUninstall(object sender, EventArgs e) {
         btnUninstall.Enabled = false;
         btnCancel.Enabled = false;
@@ -462,9 +438,6 @@ public class PrigenixUninstaller : Form {
                 string lnk2 = Path.Combine(desktop, "Employee Management System.lnk");
                 if (File.Exists(lnk1)) File.Delete(lnk1);
                 if (File.Exists(lnk2)) File.Delete(lnk2);
-
-                UpdateProgress(50, "Cleaning Windows Hosts domain mapping (ems.parikar.com)...");
-                RemoveHostMapping();
 
                 UpdateProgress(65, "Removing Windows Control Panel Registry entries...");
                 try {
@@ -592,7 +565,7 @@ Company:           PRIGENIX
 Product:           Employee Management System (Enterprise Standalone Edition)
 Build Timestamp:   {now_str}
 Setup Executable:  EMS_Setup_v1.0.exe
-Target Domain:     http://ems.parikar.com
+Target URL:        http://localhost:8085
 
 --------------------------------------------------------------------------------
 YOUR UNIQUE INSTALLATION LICENSE KEY:
@@ -624,7 +597,7 @@ IMPORTANT INSTRUCTIONS:
                 rel_path = os.path.relpath(abs_path, PKG_DIR)
                 zipf.write(abs_path, rel_path)
 
-    # Smart Installer C# Code with Upgrade, File Transfer Animation, Strict License Key Validation & Host file mapping
+    # Smart Installer C# Code with Upgrade, File Transfer Animation, Strict License Key Validation
     cs_installer = r"""
 using System;
 using System.IO;
@@ -854,7 +827,7 @@ public class PrigenixEMSInstaller : Form {
         cardPanel.Controls.Add(chkDesktopShortcut);
 
         chkLaunchAfter = new CheckBox() {
-            Text = "Automatically launch EMS and open browser at http://ems.parikar.com",
+            Text = "Automatically launch EMS and open browser at http://localhost:8085",
             Checked = true,
             Font = new Font("Segoe UI", 9F),
             ForeColor = Color.FromArgb(51, 65, 85),
@@ -881,7 +854,7 @@ public class PrigenixEMSInstaller : Form {
         cardPanel.Controls.Add(lblStatus);
 
         lblSubStatus = new Label() {
-            Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://ems.parikar.com",
+            Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://localhost:8085",
             Font = new Font("Segoe UI", 8F),
             ForeColor = Color.FromArgb(100, 116, 139),
             Location = new Point(18, 232),
@@ -1037,20 +1010,8 @@ public class PrigenixEMSInstaller : Form {
             lblModeBadge.ForeColor = Color.FromArgb(20, 120, 60);
             btnInstall.Text = "Install Now";
             lblStatus.Text = "Ready to install PRIGENIX EMS.";
-            lblSubStatus.Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://ems.parikar.com";
+            lblSubStatus.Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://localhost:8085";
         }
-    }
-
-    private void EnsureHostMapping() {
-        try {
-            string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
-            if (File.Exists(hostsPath)) {
-                string text = File.ReadAllText(hostsPath);
-                if (!text.Contains("ems.parikar.com")) {
-                    File.AppendAllText(hostsPath, "\r\n# PRIGENIX EMS Local Domain Mapping\r\n127.0.0.1 ems.parikar.com\r\n");
-                }
-            }
-        } catch {}
     }
 
     private void StartInstallation(object sender, EventArgs e) {
@@ -1169,9 +1130,6 @@ public class PrigenixEMSInstaller : Form {
                     pInit.WaitForExit();
                 }
 
-                UpdateProgress(85, "Configuring local domain http://ems.parikar.com...", "Updating Windows hosts file...", "drivers/etc/hosts", "Adding 127.0.0.1 ems.parikar.com");
-                EnsureHostMapping();
-
                 UpdateProgress(90, "Registering in Windows Control Panel (Add or Remove Programs)...", "Configuring uninstaller...", "Uninstall.exe", "Writing HKCU Uninstall entries");
                 RegisterWindowsUninstall(targetDir);
 
@@ -1197,8 +1155,8 @@ public class PrigenixEMSInstaller : Form {
 
                 string finishTitle = isUpgrade ? "PRIGENIX EMS — Update Complete" : "PRIGENIX EMS — Setup Complete";
                 string finishMsg = isUpgrade 
-                    ? "PRIGENIX Employee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nWeb Portal: http://ems.parikar.com"
-                    : "PRIGENIX Employee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nWeb Portal: http://ems.parikar.com\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
+                    ? "PRIGENIX Employee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nWeb Portal: http://localhost:8085"
+                    : "PRIGENIX Employee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nWeb Portal: http://localhost:8085\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
 
                 this.Invoke((MethodInvoker)delegate {
                     MessageBox.Show(finishMsg, finishTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1322,7 +1280,7 @@ def main():
     print(f"\n=========================================================================")
     print(f"FRESH BUILD & SMART UPGRADE INSTALLER COMPLETED IN {elapsed}s!")
     print(f"Branding: PRIGENIX")
-    print(f"Domain URL: http://ems.parikar.com")
+    print(f"Target URL: http://localhost:8085")
     print(f"Target Executable: {os.path.join(DIST_DIR, 'EMS_Setup_v1.0.exe')}")
     print(f"Installation Key File: {os.path.join(DIST_DIR, 'INSTALLATION_KEY.txt')}")
     print(f"=========================================================================")
