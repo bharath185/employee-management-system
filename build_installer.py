@@ -3,6 +3,9 @@ import shutil
 import subprocess
 import zipfile
 import time
+import secrets
+import hashlib
+from datetime import datetime
 from PIL import Image
 
 BASE_DIR = r"h:\PARIKAR"
@@ -36,6 +39,14 @@ APP_MANIFEST = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   </trustInfo>
 </assembly>
 """
+
+def generate_fresh_license_key():
+    chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    parts = ["".join(secrets.choice(chars) for _ in range(4)) for _ in range(4)]
+    key = "PRX-EMS-" + "-".join(parts)
+    norm = key.replace("-", "").replace(" ", "").upper()
+    key_hash = hashlib.sha256(norm.encode('utf-8')).hexdigest().upper()
+    return key, key_hash
 
 def step1_build_frontend():
     print("\n=======================================================")
@@ -261,7 +272,7 @@ WshShell.Run Chr(34) & strPath & "\\bin\\start-ems.bat" & Chr(34), 0, False
 
 def step4_compile_uninstaller():
     print("\n=======================================================")
-    print("[4/5] Compiling Prigenix Uninstaller (Uninstall.exe)...")
+    print("[4/5] Compiling PRIGENIX Uninstaller (Uninstall.exe)...")
     print("=======================================================")
     cs_uninstaller = r"""
 using System;
@@ -317,8 +328,8 @@ public class PrigenixUninstaller : Form {
         this.Controls.Add(headerPanel);
 
         lblTitle = new Label() {
-            Text = "PRIGENIX PRIVATE LIMITED",
-            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            Text = "PRIGENIX",
+            Font = new Font("Segoe UI", 14F, FontStyle.Bold),
             ForeColor = Color.FromArgb(255, 220, 220),
             Location = new Point(20, 12),
             AutoSize = true,
@@ -330,7 +341,7 @@ public class PrigenixUninstaller : Form {
             Text = "Employee Management System Uninstaller",
             Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
             ForeColor = Color.White,
-            Location = new Point(20, 38),
+            Location = new Point(20, 40),
             AutoSize = true,
             BackColor = Color.Transparent
         };
@@ -565,8 +576,43 @@ public class PrigenixUninstaller : Form {
 
 def step5_compile_smart_installer():
     print("\n=======================================================")
-    print("[5/5] Compiling 100% Self-Contained Standalone Installer (with Smart Upgrade)...")
+    print("[5/5] Generating License Key and Compiling Standalone Installer...")
     print("=======================================================")
+
+    # Generate Unique Key for this build
+    license_key, key_hash = generate_fresh_license_key()
+    
+    # Save Key file to companion txt in dist_installer
+    key_file_path = os.path.join(DIST_DIR, "INSTALLATION_KEY.txt")
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    key_doc = f"""================================================================================
+PRIGENIX EMPLOYEE MANAGEMENT SYSTEM (EMS) - OFFICIAL INSTALLATION KEY
+================================================================================
+Company:           PRIGENIX
+Product:           Employee Management System (Enterprise Standalone Edition)
+Build Timestamp:   {now_str}
+Setup Executable:  EMS_Setup_v1.0.exe
+Target Domain:     http://ems.parikar.com
+
+--------------------------------------------------------------------------------
+YOUR UNIQUE INSTALLATION LICENSE KEY:
+--------------------------------------------------------------------------------
+
+{license_key}
+
+--------------------------------------------------------------------------------
+IMPORTANT INSTRUCTIONS:
+--------------------------------------------------------------------------------
+1. This Installation Key is cryptographically verified by the setup engine.
+2. When prompted during installation or update, enter this key exactly as shown.
+3. If an incorrect key is entered 3 times, the installation will strictly terminate.
+4. No bypass options are permitted.
+================================================================================
+"""
+    with open(key_file_path, "w", encoding="utf-8") as f:
+        f.write(key_doc)
+    print(f"Fresh Installation Key Generated: {license_key}")
+    print(f"Key File Saved: {key_file_path}")
 
     zip_path = os.path.join(DIST_DIR, "ems_payload.zip")
     if os.path.exists(zip_path): os.remove(zip_path)
@@ -578,7 +624,7 @@ def step5_compile_smart_installer():
                 rel_path = os.path.relpath(abs_path, PKG_DIR)
                 zipf.write(abs_path, rel_path)
 
-    # Smart Installer C# Code with Upgrade / In-Place Update detection + Host file mapping
+    # Smart Installer C# Code with Upgrade, File Transfer Animation, Strict License Key Validation & Host file mapping
     cs_installer = r"""
 using System;
 using System.IO;
@@ -588,10 +634,14 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Win32;
 using System.Threading;
 
 public class PrigenixEMSInstaller : Form {
+    private const string EXPECTED_KEY_HASH = """ + f'"{key_hash}"' + r""";
+
     private Panel headerPanel;
     private Label lblHeaderCompany;
     private Label lblHeaderApp;
@@ -601,25 +651,38 @@ public class PrigenixEMSInstaller : Form {
     private Label lblDestTitle;
     private TextBox txtInstallPath;
     private Button btnBrowse;
+
+    private Label lblKeyTitle;
+    private TextBox txtLicenseKey;
+    private Label lblKeyValidation;
+
     private CheckBox chkDesktopShortcut;
     private CheckBox chkLaunchAfter;
     
     private Label lblStatus;
     private Label lblSubStatus;
     private Label lblModeBadge;
+    private Panel transferPanel;
+    private Label lblTransferFile;
+    private Label lblTransferRate;
+    private Label lblPercentBadge;
     private ProgressBar progressBar;
     private Button btnInstall;
     private Button btnCancel;
     private Panel cardPanel;
+    private System.Windows.Forms.Timer animTimer;
+    private int animStep = 0;
+    private bool isInstalling = false;
     private bool isUpgrade = false;
+    private int failedAttempts = 0;
 
     public PrigenixEMSInstaller() {
         this.Text = "PRIGENIX - Employee Management System Setup v1.0";
-        this.Size = new Size(580, 490);
+        this.Size = new Size(610, 600);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.MaximizeBox = false;
-        this.BackColor = Color.FromArgb(245, 247, 250);
+        this.BackColor = Color.FromArgb(243, 246, 250);
         this.Font = new Font("Segoe UI", 9F);
 
         try {
@@ -628,36 +691,40 @@ public class PrigenixEMSInstaller : Form {
             if (icoStream != null) { this.Icon = new Icon(icoStream); }
         } catch {}
 
+        // Premium Header
         headerPanel = new Panel() {
             Dock = DockStyle.Top,
-            Height = 90
+            Height = 92
         };
         headerPanel.Paint += (s, e) => {
             using (LinearGradientBrush brush = new LinearGradientBrush(
                 headerPanel.ClientRectangle,
-                Color.FromArgb(15, 32, 67),
-                Color.FromArgb(32, 80, 150),
+                Color.FromArgb(11, 23, 44),
+                Color.FromArgb(24, 60, 118),
                 45F)) {
                 e.Graphics.FillRectangle(brush, headerPanel.ClientRectangle);
+            }
+            using (Pen pen = new Pen(Color.FromArgb(56, 189, 248), 2F)) {
+                e.Graphics.DrawLine(pen, 0, headerPanel.Height - 2, headerPanel.Width, headerPanel.Height - 2);
             }
         };
         this.Controls.Add(headerPanel);
 
         lblHeaderCompany = new Label() {
-            Text = "PRIGENIX PRIVATE LIMITED",
-            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            Text = "PRIGENIX",
+            Font = new Font("Segoe UI", 15F, FontStyle.Bold),
             ForeColor = Color.FromArgb(255, 215, 0),
-            Location = new Point(24, 14),
+            Location = new Point(24, 12),
             AutoSize = true,
             BackColor = Color.Transparent
         };
         headerPanel.Controls.Add(lblHeaderCompany);
 
         lblHeaderApp = new Label() {
-            Text = "Employee Management System — Standalone Setup v1.0",
-            Font = new Font("Segoe UI", 10F, FontStyle.Regular),
+            Text = "Employee Management System — Enterprise Standalone Setup v1.0",
+            Font = new Font("Segoe UI", 9.5F, FontStyle.Regular),
             ForeColor = Color.White,
-            Location = new Point(24, 38),
+            Location = new Point(25, 40),
             AutoSize = true,
             BackColor = Color.Transparent
         };
@@ -666,8 +733,8 @@ public class PrigenixEMSInstaller : Form {
         lblHeaderTagline = new Label() {
             Text = "Turnkey Standalone Enterprise Installer • Automated In-Place Upgrade Engine",
             Font = new Font("Segoe UI", 8F),
-            ForeColor = Color.FromArgb(200, 225, 255),
-            Location = new Point(24, 62),
+            ForeColor = Color.FromArgb(186, 215, 255),
+            Location = new Point(25, 64),
             AutoSize = true,
             BackColor = Color.Transparent
         };
@@ -680,30 +747,32 @@ public class PrigenixEMSInstaller : Form {
                 picLogo = new PictureBox() {
                     Image = Image.FromStream(logoStream),
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    Size = new Size(64, 64),
-                    Location = new Point(485, 12),
+                    Size = new Size(66, 66),
+                    Location = new Point(510, 12),
                     BackColor = Color.Transparent
                 };
                 headerPanel.Controls.Add(picLogo);
             }
         } catch {}
 
+        // Main Container Card
         cardPanel = new Panel() {
-            Location = new Point(24, 105),
-            Size = new Size(516, 270),
+            Location = new Point(24, 104),
+            Size = new Size(546, 422),
             BackColor = Color.White
         };
         cardPanel.Paint += (s, e) => {
             ControlPaint.DrawBorder(e.Graphics, cardPanel.ClientRectangle, 
-                Color.FromArgb(220, 225, 235), ButtonBorderStyle.Solid);
+                Color.FromArgb(218, 224, 233), ButtonBorderStyle.Solid);
         };
         this.Controls.Add(cardPanel);
 
+        // Destination Folder
         lblDestTitle = new Label() {
             Text = "Installation Destination Folder:",
             Font = new Font("Segoe UI", 9F, FontStyle.Bold),
             ForeColor = Color.FromArgb(30, 41, 59),
-            Location = new Point(18, 14),
+            Location = new Point(18, 12),
             AutoSize = true
         };
         cardPanel.Controls.Add(lblDestTitle);
@@ -711,8 +780,8 @@ public class PrigenixEMSInstaller : Form {
         string defaultPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PRIGENIX_EMS");
         txtInstallPath = new TextBox() {
             Text = defaultPath,
-            Location = new Point(18, 36),
-            Size = new Size(380, 26),
+            Location = new Point(18, 32),
+            Size = new Size(410, 26),
             Font = new Font("Segoe UI", 9.5F)
         };
         txtInstallPath.TextChanged += (s, e) => CheckExistingInstallation();
@@ -720,7 +789,7 @@ public class PrigenixEMSInstaller : Form {
 
         btnBrowse = new Button() {
             Text = "Browse...",
-            Location = new Point(408, 34),
+            Location = new Point(438, 30),
             Size = new Size(88, 28),
             Font = new Font("Segoe UI", 9F),
             FlatStyle = FlatStyle.System
@@ -739,18 +808,48 @@ public class PrigenixEMSInstaller : Form {
             Text = "Mode: Fresh Installation",
             Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
             ForeColor = Color.FromArgb(20, 120, 60),
-            Location = new Point(18, 68),
+            Location = new Point(18, 62),
             AutoSize = true
         };
         cardPanel.Controls.Add(lblModeBadge);
 
+        // Mandatory Installation Key
+        lblKeyTitle = new Label() {
+            Text = "Product Installation Key (Mandatory — from INSTALLATION_KEY.txt):",
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(190, 30, 45),
+            Location = new Point(18, 86),
+            AutoSize = true
+        };
+        cardPanel.Controls.Add(lblKeyTitle);
+
+        txtLicenseKey = new TextBox() {
+            Location = new Point(18, 106),
+            Size = new Size(508, 26),
+            Font = new Font("Consolas", 10.5F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(20, 40, 80),
+            CharacterCasing = CharacterCasing.Upper
+        };
+        txtLicenseKey.TextChanged += OnKeyTextChanged;
+        cardPanel.Controls.Add(txtLicenseKey);
+
+        lblKeyValidation = new Label() {
+            Text = "* Key format: PRX-EMS-XXXX-XXXX-XXXX-XXXX (Verification is strictly enforced)",
+            Font = new Font("Segoe UI", 8F),
+            ForeColor = Color.FromArgb(120, 130, 145),
+            Location = new Point(18, 135),
+            Size = new Size(508, 18)
+        };
+        cardPanel.Controls.Add(lblKeyValidation);
+
+        // Shortcuts & Options
         chkDesktopShortcut = new CheckBox() {
-            Text = "Create Desktop Shortcut with Prigenix Icon",
+            Text = "Create Desktop Shortcut with PRIGENIX Icon",
             Checked = true,
             Font = new Font("Segoe UI", 9F),
             ForeColor = Color.FromArgb(51, 65, 85),
-            Location = new Point(18, 92),
-            Size = new Size(420, 22)
+            Location = new Point(18, 156),
+            Size = new Size(440, 22)
         };
         cardPanel.Controls.Add(chkDesktopShortcut);
 
@@ -759,24 +858,25 @@ public class PrigenixEMSInstaller : Form {
             Checked = true,
             Font = new Font("Segoe UI", 9F),
             ForeColor = Color.FromArgb(51, 65, 85),
-            Location = new Point(18, 116),
-            Size = new Size(480, 22)
+            Location = new Point(18, 178),
+            Size = new Size(508, 22)
         };
         cardPanel.Controls.Add(chkLaunchAfter);
 
         Label lblDivider = new Label() {
             BorderStyle = BorderStyle.Fixed3D,
-            Location = new Point(18, 146),
-            Size = new Size(478, 2)
+            Location = new Point(18, 204),
+            Size = new Size(508, 2)
         };
         cardPanel.Controls.Add(lblDivider);
 
+        // Status & Animated Transfer Area
         lblStatus = new Label() {
-            Text = "Ready to install Prigenix EMS.",
+            Text = "Ready to install PRIGENIX EMS.",
             Font = new Font("Segoe UI", 9F, FontStyle.Bold),
             ForeColor = Color.FromArgb(30, 41, 59),
-            Location = new Point(18, 154),
-            Size = new Size(478, 20)
+            Location = new Point(18, 212),
+            Size = new Size(508, 20)
         };
         cardPanel.Controls.Add(lblStatus);
 
@@ -784,21 +884,62 @@ public class PrigenixEMSInstaller : Form {
             Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://ems.parikar.com",
             Font = new Font("Segoe UI", 8F),
             ForeColor = Color.FromArgb(100, 116, 139),
-            Location = new Point(18, 176),
-            Size = new Size(478, 30)
+            Location = new Point(18, 232),
+            Size = new Size(508, 26)
         };
         cardPanel.Controls.Add(lblSubStatus);
 
+        // Visual File Transfer Animation Card
+        transferPanel = new Panel() {
+            Location = new Point(18, 262),
+            Size = new Size(508, 70),
+            BackColor = Color.FromArgb(248, 250, 252)
+        };
+        transferPanel.Paint += DrawTransferAnimation;
+        cardPanel.Controls.Add(transferPanel);
+
+        lblTransferFile = new Label() {
+            Text = "Waiting for setup confirmation...",
+            Font = new Font("Segoe UI", 8F, FontStyle.Italic),
+            ForeColor = Color.FromArgb(71, 85, 105),
+            Location = new Point(10, 8),
+            Size = new Size(410, 18),
+            BackColor = Color.Transparent
+        };
+        transferPanel.Controls.Add(lblTransferFile);
+
+        lblPercentBadge = new Label() {
+            Text = "0%",
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(15, 80, 160),
+            Location = new Point(445, 6),
+            Size = new Size(55, 18),
+            TextAlign = ContentAlignment.TopRight,
+            BackColor = Color.Transparent
+        };
+        transferPanel.Controls.Add(lblPercentBadge);
+
         progressBar = new ProgressBar() {
-            Location = new Point(18, 214),
-            Size = new Size(478, 20),
+            Location = new Point(10, 32),
+            Size = new Size(488, 16),
             Style = ProgressBarStyle.Continuous
         };
-        cardPanel.Controls.Add(progressBar);
+        transferPanel.Controls.Add(progressBar);
 
+        lblTransferRate = new Label() {
+            Text = "● Ready",
+            Font = new Font("Segoe UI", 7.5F),
+            ForeColor = Color.FromArgb(100, 116, 139),
+            Location = new Point(10, 50),
+            Size = new Size(488, 16),
+            BackColor = Color.Transparent
+        };
+        transferPanel.Controls.Add(lblTransferRate);
+
+        // Buttons
         btnCancel = new Button() {
             Text = "Cancel",
-            Location = new Point(340, 395),
+            Location = new Point(365, 534),
             Size = new Size(95, 34),
             Font = new Font("Segoe UI", 9.5F),
             FlatStyle = FlatStyle.System
@@ -808,7 +949,7 @@ public class PrigenixEMSInstaller : Form {
 
         btnInstall = new Button() {
             Text = "Install Now",
-            Location = new Point(445, 395),
+            Location = new Point(470, 534),
             Size = new Size(115, 34),
             BackColor = Color.FromArgb(15, 80, 160),
             ForeColor = Color.White,
@@ -819,7 +960,63 @@ public class PrigenixEMSInstaller : Form {
         btnInstall.Click += StartInstallation;
         this.Controls.Add(btnInstall);
 
+        // 30 FPS Animation Timer for smooth transfer pulses
+        animTimer = new System.Windows.Forms.Timer() { Interval = 40 };
+        animTimer.Tick += (s, e) => {
+            if (isInstalling) {
+                animStep = (animStep + 1) % 60;
+                transferPanel.Invalidate();
+            }
+        };
+        animTimer.Start();
+
         CheckExistingInstallation();
+    }
+
+    private void DrawTransferAnimation(object sender, PaintEventArgs e) {
+        Graphics g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        // Border around transfer panel
+        using (Pen p = new Pen(Color.FromArgb(226, 232, 240), 1)) {
+            g.DrawRectangle(p, 0, 0, transferPanel.Width - 1, transferPanel.Height - 1);
+        }
+
+        // Live pulse indicator when extracting
+        if (isInstalling) {
+            int pulseX = (animStep * (transferPanel.Width / 30)) % transferPanel.Width;
+            using (LinearGradientBrush pulseBrush = new LinearGradientBrush(
+                new Rectangle(pulseX - 40, 0, 80, transferPanel.Height),
+                Color.FromArgb(0, 56, 189, 248),
+                Color.FromArgb(35, 56, 189, 248),
+                0F)) {
+                g.FillRectangle(pulseBrush, pulseX - 40, 0, 80, transferPanel.Height);
+            }
+        }
+    }
+
+    private void OnKeyTextChanged(object sender, EventArgs e) {
+        if (ValidateKey(txtLicenseKey.Text)) {
+            lblKeyValidation.Text = "✓ Key Verified: Authentic PRIGENIX Enterprise License";
+            lblKeyValidation.ForeColor = Color.FromArgb(20, 130, 60);
+        } else {
+            lblKeyValidation.Text = "* Key format: PRX-EMS-XXXX-XXXX-XXXX-XXXX (Verification is strictly enforced)";
+            lblKeyValidation.ForeColor = Color.FromArgb(120, 130, 145);
+        }
+    }
+
+    private bool ValidateKey(string inputKey) {
+        if (string.IsNullOrWhiteSpace(inputKey)) return false;
+        string norm = inputKey.Trim().ToUpper().Replace("-", "").Replace(" ", "");
+        using (SHA256 sha = SHA256.Create()) {
+            byte[] bytes = Encoding.UTF8.GetBytes(norm);
+            byte[] hash = sha.ComputeHash(bytes);
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in hash) {
+                sb.Append(b.ToString("X2"));
+            }
+            return sb.ToString().ToUpper() == EXPECTED_KEY_HASH;
+        }
     }
 
     private void CheckExistingInstallation() {
@@ -839,7 +1036,7 @@ public class PrigenixEMSInstaller : Form {
             lblModeBadge.Text = "Mode: Fresh Installation";
             lblModeBadge.ForeColor = Color.FromArgb(20, 120, 60);
             btnInstall.Text = "Install Now";
-            lblStatus.Text = "Ready to install Prigenix EMS.";
+            lblStatus.Text = "Ready to install PRIGENIX EMS.";
             lblSubStatus.Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://ems.parikar.com";
         }
     }
@@ -857,10 +1054,35 @@ public class PrigenixEMSInstaller : Form {
     }
 
     private void StartInstallation(object sender, EventArgs e) {
+        // STRICT KEY VALIDATION — ZERO BYPASS
+        string enteredKey = txtLicenseKey.Text;
+        if (!ValidateKey(enteredKey)) {
+            failedAttempts++;
+            if (failedAttempts >= 3) {
+                MessageBox.Show(
+                    "Installation Terminated: Too many invalid key attempts.\n\nSetup will now exit. Please refer to INSTALLATION_KEY.txt for your genuine product key.",
+                    "Security Violation - Setup Terminated",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Stop);
+                Application.Exit();
+                return;
+            }
+            MessageBox.Show(
+                "Invalid Installation Key!\n\nPlease enter the authentic Product Installation Key generated for this build (found in INSTALLATION_KEY.txt).\n\nAttempts remaining: " + (3 - failedAttempts),
+                "Authentication Failed - Invalid Key",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            txtLicenseKey.Focus();
+            txtLicenseKey.SelectAll();
+            return;
+        }
+
         btnInstall.Enabled = false;
         btnCancel.Enabled = false;
         btnBrowse.Enabled = false;
         txtInstallPath.ReadOnly = true;
+        txtLicenseKey.ReadOnly = true;
+        isInstalling = true;
 
         string targetDir = txtInstallPath.Text.Trim();
         bool createShortcut = chkDesktopShortcut.Checked;
@@ -870,7 +1092,7 @@ public class PrigenixEMSInstaller : Form {
             try {
                 // If upgrading, stop running services first
                 if (isUpgrade) {
-                    UpdateProgress(5, "Stopping running EMS services for in-place upgrade...", "Closing background tasks...");
+                    UpdateProgress(5, "Stopping running EMS services for in-place upgrade...", "Closing background tasks...", "stop-ems.bat", "Terminating active worker processes");
                     string stopBat = Path.Combine(targetDir, "bin", "stop-ems.bat");
                     if (File.Exists(stopBat)) {
                         ProcessStartInfo psiStop = new ProcessStartInfo("cmd.exe", "/c \"" + stopBat + "\"") {
@@ -883,12 +1105,12 @@ public class PrigenixEMSInstaller : Form {
                     }
                 }
 
-                UpdateProgress(10, "Preparing target destination folder...", targetDir);
+                UpdateProgress(10, "Preparing target destination folder...", targetDir, "Verifying filesystem permissions...", "Local Directory Setup");
                 if (!Directory.Exists(targetDir)) {
                     Directory.CreateDirectory(targetDir);
                 }
 
-                UpdateProgress(15, isUpgrade ? "Updating application binaries, JRE, and JAR..." : "Extracting embedded components (JRE, PostgreSQL, App JAR)...", "Please wait...");
+                UpdateProgress(15, isUpgrade ? "Updating application binaries, JRE, and JAR..." : "Extracting embedded components (JRE, PostgreSQL, App JAR)...", "Please wait...", "ems_payload.zip", "Decompressing payload");
 
                 Assembly asm = Assembly.GetExecutingAssembly();
                 Stream payloadStream = asm.GetManifestResourceStream("ems_payload.zip");
@@ -923,14 +1145,19 @@ public class PrigenixEMSInstaller : Form {
                             if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                             entry.ExtractToFile(fullPath, true);
                         }
-                        if (current % 100 == 0) {
-                            int p = 15 + (int)((current / (double)total) * 50.0);
-                            UpdateProgress(p, "Updating files: " + entry.Name, current + " / " + total + " files");
+                        if (current % 40 == 0 || current == total) {
+                            int p = 15 + (int)((current / (double)total) * 55.0);
+                            string shortName = entry.FullName.Length > 48 ? "..." + entry.FullName.Substring(entry.FullName.Length - 45) : entry.FullName;
+                            UpdateProgress(p, 
+                                isUpgrade ? "Updating files: " + entry.Name : "Transferring: " + entry.Name,
+                                current + " / " + total + " files deployed",
+                                "Transferring: " + shortName,
+                                "Extracting archive stream • " + current + " of " + total);
                         }
                     }
                 }
 
-                UpdateProgress(70, isUpgrade ? "Verifying database integrity..." : "Initializing PostgreSQL Database Cluster silently...", "Running database verification...");
+                UpdateProgress(75, isUpgrade ? "Verifying database integrity..." : "Initializing PostgreSQL Database Cluster silently...", "Configuring schemas and seed data...", "pgsql/bin/initdb.exe", "Executing database setup");
                 string initBat = Path.Combine(targetDir, "bin", "init-db.bat");
                 if (File.Exists(initBat)) {
                     ProcessStartInfo psiInit = new ProcessStartInfo("cmd.exe", "/c \"" + initBat + "\"") {
@@ -942,13 +1169,13 @@ public class PrigenixEMSInstaller : Form {
                     pInit.WaitForExit();
                 }
 
-                UpdateProgress(80, "Configuring local domain ems.parikar.com...", "Updating Windows hosts file...");
+                UpdateProgress(85, "Configuring local domain http://ems.parikar.com...", "Updating Windows hosts file...", "drivers/etc/hosts", "Adding 127.0.0.1 ems.parikar.com");
                 EnsureHostMapping();
 
-                UpdateProgress(88, "Registering in Windows Control Panel (Add or Remove Programs)...", "Configuring uninstaller...");
+                UpdateProgress(90, "Registering in Windows Control Panel (Add or Remove Programs)...", "Configuring uninstaller...", "Uninstall.exe", "Writing HKCU Uninstall entries");
                 RegisterWindowsUninstall(targetDir);
 
-                UpdateProgress(94, "Updating Prigenix EMS Desktop Shortcut...", "Applying Prigenix icon...");
+                UpdateProgress(96, "Updating PRIGENIX EMS Desktop Shortcut...", "Applying PRIGENIX official icon...", "Prigenix EMS.lnk", "Configuring desktop icon");
                 if (createShortcut) {
                     string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                     string shortcutPath = Path.Combine(desktop, "Prigenix EMS.lnk");
@@ -958,7 +1185,8 @@ public class PrigenixEMSInstaller : Form {
                     CreateDesktopShortcut(shortcutPath, vbsPath, icoPath, targetDir);
                 }
 
-                UpdateProgress(100, isUpgrade ? "Update Complete!" : "Installation Complete!", "Prigenix Employee Management System is ready.");
+                isInstalling = false;
+                UpdateProgress(100, isUpgrade ? "Update Complete!" : "Installation Complete!", "PRIGENIX Employee Management System is ready.", "Setup Complete", "All components deployed successfully");
 
                 if (launchAfter) {
                     string vbsPath = Path.Combine(targetDir, "EMS.vbs");
@@ -967,10 +1195,10 @@ public class PrigenixEMSInstaller : Form {
                     });
                 }
 
-                string finishTitle = isUpgrade ? "Prigenix EMS — Update Complete" : "Prigenix EMS — Setup Complete";
+                string finishTitle = isUpgrade ? "PRIGENIX EMS — Update Complete" : "PRIGENIX EMS — Setup Complete";
                 string finishMsg = isUpgrade 
-                    ? "Prigenix Employee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nWeb Portal: http://ems.parikar.com"
-                    : "Prigenix Employee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nWeb Portal: http://ems.parikar.com\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
+                    ? "PRIGENIX Employee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nWeb Portal: http://ems.parikar.com"
+                    : "PRIGENIX Employee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nWeb Portal: http://ems.parikar.com\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
 
                 this.Invoke((MethodInvoker)delegate {
                     MessageBox.Show(finishMsg, finishTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -978,6 +1206,7 @@ public class PrigenixEMSInstaller : Form {
                 });
 
             } catch (Exception ex) {
+                isInstalling = false;
                 this.Invoke((MethodInvoker)delegate {
                     MessageBox.Show("Installation Error:\n" + ex.Message, "Setup Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     btnInstall.Enabled = true;
@@ -995,9 +1224,9 @@ public class PrigenixEMSInstaller : Form {
             string icoPath = Path.Combine(targetDir, "app.ico");
             using (RegistryKey key = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\PrigenixEMS")) {
                 if (key != null) {
-                    key.SetValue("DisplayName", "Prigenix - Employee Management System");
+                    key.SetValue("DisplayName", "PRIGENIX - Employee Management System");
                     key.SetValue("DisplayVersion", "1.0.0");
-                    key.SetValue("Publisher", "Prigenix Private Limited");
+                    key.SetValue("Publisher", "PRIGENIX");
                     key.SetValue("UninstallString", "\"" + uninstallPath + "\"");
                     key.SetValue("InstallLocation", targetDir);
                     if (File.Exists(icoPath)) {
@@ -1010,12 +1239,16 @@ public class PrigenixEMSInstaller : Form {
         } catch {}
     }
 
-    private void UpdateProgress(int value, string status, string subStatus) {
+    private void UpdateProgress(int value, string status, string subStatus, string transferFile, string transferRate) {
         if (this.IsHandleCreated) {
             this.Invoke((MethodInvoker)delegate {
-                progressBar.Value = Math.Min(100, Math.Max(0, value));
+                int clp = Math.Min(100, Math.Max(0, value));
+                progressBar.Value = clp;
+                lblPercentBadge.Text = clp + "%";
                 lblStatus.Text = status;
                 lblSubStatus.Text = subStatus;
+                lblTransferFile.Text = transferFile;
+                lblTransferRate.Text = "● " + transferRate;
             });
         }
     }
@@ -1027,7 +1260,7 @@ public class PrigenixEMSInstaller : Form {
         shortcut.TargetPath = "wscript.exe";
         shortcut.Arguments = "\"" + targetPath + "\"";
         shortcut.WorkingDirectory = workingDir;
-        shortcut.Description = "Prigenix Employee Management System";
+        shortcut.Description = "PRIGENIX Employee Management System";
         if (File.Exists(iconPath)) {
             shortcut.IconLocation = iconPath + ", 0";
         }
@@ -1088,8 +1321,10 @@ def main():
     elapsed = round(time.time() - start, 2)
     print(f"\n=========================================================================")
     print(f"FRESH BUILD & SMART UPGRADE INSTALLER COMPLETED IN {elapsed}s!")
+    print(f"Branding: PRIGENIX")
     print(f"Domain URL: http://ems.parikar.com")
     print(f"Target Executable: {os.path.join(DIST_DIR, 'EMS_Setup_v1.0.exe')}")
+    print(f"Installation Key File: {os.path.join(DIST_DIR, 'INSTALLATION_KEY.txt')}")
     print(f"=========================================================================")
 
 if __name__ == "__main__":
