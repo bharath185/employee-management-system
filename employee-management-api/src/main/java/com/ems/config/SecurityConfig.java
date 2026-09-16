@@ -52,10 +52,8 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
                     "/swagger-ui.html", "/api-docs/**").permitAll()
-                .requestMatchers("/photos/**", "/company-uploads/**", "/company/logo", "/company/logo/**", "/public/**").permitAll()
+                .requestMatchers("/photos/**", "/company-uploads/**", "/company/logo", "/company/logo/**", "/public/**", "/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/photos/**").permitAll()
-                .requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.svg", "/*.woff*", "/*.ttf", "/assets/**", "/media/**").permitAll()
-                .requestMatchers("/admin/**", "/employee/**", "/login", "/register", "/portal/**", "/leave/**", "/payroll/**", "/attendance/**", "/dashboard/**", "/masters/**", "/reports/**", "/settings/**").permitAll()
                 .requestMatchers("/api/v1/masters/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/dashboard/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/email-config/**").hasAnyRole("ADMIN", "HR")
@@ -63,7 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/payroll/**").authenticated()
                 .requestMatchers("/api/v1/statutory-reports/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/employees/**").authenticated()
-                .anyRequest().authenticated()
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().permitAll()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .addFilterBefore(jwtAuthenticationFilter,
