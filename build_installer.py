@@ -143,40 +143,53 @@ def step3_assemble_package():
     init_db_bat = """@echo off
 setlocal
 cd /d "%~dp0\\.."
-set "PGDATA=%CD%\\data\\pgdata"
-set "PGBIN=%CD%\\pgsql\\bin"
-set "SEED_SQL=%CD%\\app\\seed_data.sql"
+set "ROOT_DIR=%CD%"
+set "PGDATA=%ROOT_DIR%\\data\\pgdata"
+set "PGBIN=%ROOT_DIR%\\pgsql\\bin"
+set "SEED_SQL=%ROOT_DIR%\\app\\seed_data.sql"
+set "LOGS_DIR=%ROOT_DIR%\\logs"
 
-if exist "%PGDATA%\\PG_VERSION" (
-    echo [INFO] Database cluster already exists. Preserving existing database data.
-    exit /b 0
+if not exist "%LOGS_DIR%" mkdir "%LOGS_DIR%"
+
+if not exist "%PGDATA%\\PG_VERSION" (
+    echo [INFO] Initializing new PostgreSQL Database Cluster...
+    if not exist "%ROOT_DIR%\\data" mkdir "%ROOT_DIR%\\data"
+    if not exist "%PGDATA%" mkdir "%PGDATA%"
+    "%PGBIN%\\initdb.exe" -D "%PGDATA%" -U postgres -E UTF8 --locale=C -A trust >nul 2>&1
 )
 
-echo [INFO] Initializing new PostgreSQL Database Cluster...
-if not exist "%CD%\\data" mkdir "%CD%\\data"
-if not exist "%PGDATA%" mkdir "%PGDATA%"
+echo [INFO] Starting PostgreSQL to verify database and load seed data...
+"%PGBIN%\\pg_ctl.exe" start -D "%PGDATA%" -l "%LOGS_DIR%\\init_postgres.log" -w -t 30
 
-"%PGBIN%\\initdb.exe" -D "%PGDATA%" -U postgres -E UTF8 --locale=C -A trust >nul 2>&1
+set /a ATTEMPTS=0
+:WAIT_INIT_DB
+set /a ATTEMPTS+=1
+"%PGBIN%\\pg_isready.exe" -h localhost -p 5432 -U postgres >nul 2>&1
+if %ERRORLEVEL% EQU 0 goto INIT_DB_READY
+if %ATTEMPTS% GEQ 20 goto INIT_DB_READY
+timeout /t 1 /nobreak >nul
+goto WAIT_INIT_DB
+
+:INIT_DB_READY
+:: Check if employee_management database exists; if not, create it
+"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -lqt | findstr /C:"employee_management" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] initdb failed with code %ERRORLEVEL%
-    exit /b %ERRORLEVEL%
+    echo [INFO] Creating employee_management database...
+    "%PGBIN%\\createdb.exe" -h localhost -p 5432 -U postgres employee_management >nul 2>&1
 )
 
-echo [INFO] Temporarily starting PostgreSQL for schema initialization...
-"%PGBIN%\\pg_ctl.exe" start -D "%PGDATA%" -l "%CD%\\logs\\init_postgres.log" -w
+:: Set postgres password
+"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD 'postgres';" >nul 2>&1
+
+:: Verify if employees table exists and contains records; if count is 0, restore seed_data.sql!
+"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -t -c "SELECT count(*) FROM employees;" 2>nul | findstr /R "[1-9]" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Failed to start PostgreSQL service
-    exit /b %ERRORLEVEL%
+    if exist "%SEED_SQL%" (
+        echo [INFO] Restoring complete initial database records and schema...
+        "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -f "%SEED_SQL%" > "%LOGS_DIR%\\db_seed.log" 2>&1
+    )
+    "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -c "ALTER USER postgres WITH PASSWORD 'postgres';" >nul 2>&1
 )
-
-"%PGBIN%\\createdb.exe" -h localhost -p 5432 -U postgres employee_management >nul 2>&1
-
-if exist "%SEED_SQL%" (
-    echo [INFO] Restoring complete initial database records and schema...
-    "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -f "%SEED_SQL%" > "%CD%\\logs\\db_seed.log" 2>&1
-)
-
-"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -c "ALTER USER postgres WITH PASSWORD 'postgres';" >nul 2>&1
 
 "%PGBIN%\\pg_ctl.exe" stop -D "%PGDATA%" -m fast >nul 2>&1
 echo [SUCCESS] Database initialization completed successfully!
@@ -194,6 +207,7 @@ set "PGBIN=%ROOT_DIR%\\pgsql\\bin"
 set "JAVA_EXE=%ROOT_DIR%\\jre\\bin\\java.exe"
 set "JAR_FILE=%ROOT_DIR%\\app\\employee-management-app.jar"
 set "LOGS_DIR=%ROOT_DIR%\\logs"
+set "SEED_SQL=%ROOT_DIR%\\app\\seed_data.sql"
 set "HOSTS_FILE=%WINDIR%\\System32\\drivers\\etc\\hosts"
 
 if not exist "%LOGS_DIR%" mkdir "%LOGS_DIR%"
@@ -209,10 +223,39 @@ if not exist "%PGDATA%\\PG_VERSION" (
     call "%ROOT_DIR%\\bin\\init-db.bat"
 )
 
-"%PGBIN%\\pg_isready.exe" -h localhost -p 5432 >nul 2>&1
+:: Ensure PostgreSQL is started for this specific PGDATA
+"%PGBIN%\\pg_isready.exe" -h localhost -p 5432 -U postgres >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo Starting PostgreSQL Database...
-    "%PGBIN%\\pg_ctl.exe" start -D "%PGDATA%" -l "%LOGS_DIR%\\postgres.log" -w
+    "%PGBIN%\\pg_ctl.exe" start -D "%PGDATA%" -l "%LOGS_DIR%\\postgres.log" -w -t 30
+)
+
+:: Wait until PostgreSQL is confirmed accepting connections
+set /a DB_ATTEMPTS=0
+:WAIT_DB
+set /a DB_ATTEMPTS+=1
+"%PGBIN%\\pg_isready.exe" -h localhost -p 5432 -U postgres >nul 2>&1
+if %ERRORLEVEL% EQU 0 goto DB_READY
+if %DB_ATTEMPTS% GEQ 20 goto DB_READY
+timeout /t 1 /nobreak >nul
+goto WAIT_DB
+
+:DB_READY
+:: Check if employee_management database exists
+"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -lqt | findstr /C:"employee_management" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo [INFO] Creating employee_management database...
+    "%PGBIN%\\createdb.exe" -h localhost -p 5432 -U postgres employee_management >nul 2>&1
+)
+
+:: Verify if employees table exists and contains records; if count is 0, restore seed data!
+"%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -t -c "SELECT count(*) FROM employees;" 2>nul | findstr /R "[1-9]" >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    if exist "%SEED_SQL%" (
+        echo [INFO] Restoring initial seed data (1,041 employees)...
+        "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -f "%SEED_SQL%" > "%LOGS_DIR%\\db_restore.log" 2>&1
+    )
+    "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -c "ALTER USER postgres WITH PASSWORD 'postgres';" >nul 2>&1
 )
 
 echo Starting Employee Management System on http://localhost:8085 (or http://ems.parrikar.com:8085)...
