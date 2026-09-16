@@ -76,6 +76,8 @@ def step2_build_backend():
     print("\n=======================================================")
     print("[2/5] Packaging Unified Spring Boot Executable JAR...")
     print("=======================================================")
+    subprocess.run("taskkill /F /IM java.exe /T", shell=True, capture_output=True)
+    time.sleep(1)
     env = os.environ.copy()
     env["JAVA_HOME"] = JDK_17_DIR
     mvnw_cmd = os.path.join(API_DIR, "mvnw.cmd") if os.name == 'nt' else os.path.join(API_DIR, "mvnw")
@@ -502,7 +504,10 @@ public class PrigenixUninstaller : Form {
                     p.WaitForExit(8000);
                 }
 
+                KillProcesses("java");
+                KillProcesses("javaw");
                 KillProcesses("postgres");
+                KillProcesses("pg_ctl");
 
                 UpdateProgress(35, "Removing Desktop and Start Menu Shortcuts...");
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
