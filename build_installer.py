@@ -76,7 +76,13 @@ def step2_build_backend():
     print("\n=======================================================")
     print("[2/5] Packaging Unified Spring Boot Executable JAR...")
     print("=======================================================")
-    res = subprocess.run(["powershell", "-Command", "mvn package -DskipTests"], cwd=API_DIR, capture_output=True, text=True)
+    env = os.environ.copy()
+    env["JAVA_HOME"] = JDK_17_DIR
+    mvnw_cmd = os.path.join(API_DIR, "mvnw.cmd") if os.name == 'nt' else os.path.join(API_DIR, "mvnw")
+    if os.path.exists(mvnw_cmd):
+        res = subprocess.run([mvnw_cmd, "package", "-DskipTests"], cwd=API_DIR, env=env, capture_output=True, text=True)
+    else:
+        res = subprocess.run(["mvn", "package", "-DskipTests"], cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
     if res.returncode != 0:
         print(f"Maven error: {res.stderr}\n{res.stdout}")
         raise RuntimeError("Maven build failed")
@@ -102,18 +108,14 @@ def step3_assemble_package():
     src_jar = os.path.join(API_DIR, "target", "employee-management-api-1.0.0.jar")
     shutil.copy2(src_jar, os.path.join(PKG_DIR, "app", "employee-management-app.jar"))
 
-    # Export DB Seed
+    # Bundle DB Seed Data directly from docs/production_data_dump.sql
     dst_sql = os.path.join(PKG_DIR, "app", "seed_data.sql")
-    pg_dump = os.path.join(PG_17_DIR, "bin", "pg_dump.exe")
-    env = os.environ.copy()
-    env["PGPASSWORD"] = "postgres"
-    cmd = [
-        pg_dump, "-h", "localhost", "-p", "5432", "-U", "postgres",
-        "-d", "employee_management", "-F", "p", "--no-owner", "--no-privileges", "-f", dst_sql
-    ]
-    subprocess.run(cmd, env=env, capture_output=True, text=True)
-    if os.path.exists(dst_sql):
-        print(f"Database dump exported: {round(os.path.getsize(dst_sql)/(1024*1024),2)} MB")
+    src_dump = os.path.join(DOCS_DIR, "production_data_dump.sql")
+    if os.path.exists(src_dump):
+        shutil.copy2(src_dump, dst_sql)
+        print(f"Production database seed bundled: {round(os.path.getsize(dst_sql)/(1024*1024),2)} MB")
+    else:
+        print("WARNING: production_data_dump.sql not found in docs!")
 
     # Copy JRE
     dst_jre = os.path.join(PKG_DIR, "jre")
@@ -127,8 +129,11 @@ def step3_assemble_package():
 
     # Copy PostgreSQL Binaries
     dst_pg = os.path.join(PKG_DIR, "pgsql")
+    pg_src_candidate = PG_17_DIR
+    if not os.path.exists(os.path.join(pg_src_candidate, "bin", "initdb.exe")):
+        pg_src_candidate = r"C:\Users\Bharath\AppData\Local\EMS\pgsql"
     for item in ["bin", "lib", "share"]:
-        s = os.path.join(PG_17_DIR, item)
+        s = os.path.join(pg_src_candidate, item)
         d = os.path.join(dst_pg, item)
         if os.path.exists(s):
             shutil.copytree(s, d, dirs_exist_ok=True)
