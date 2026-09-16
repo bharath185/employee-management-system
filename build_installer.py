@@ -254,7 +254,7 @@ if %ERRORLEVEL% NEQ 0 (
 "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -t -c "SELECT count(*) FROM employees;" 2>nul | findstr /R "[1-9]" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     if exist "%SEED_SQL%" (
-        echo [INFO] Restoring initial seed data (1,041 employees)...
+        echo [INFO] Restoring initial seed data...
         "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -f "%SEED_SQL%" > "%LOGS_DIR%\\db_restore.log" 2>&1
     )
     "%PGBIN%\\psql.exe" -h localhost -p 5432 -U postgres -d employee_management -c "ALTER USER postgres WITH PASSWORD 'postgres';" >nul 2>&1
