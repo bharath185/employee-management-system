@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -47,7 +47,7 @@ import { environment } from '../../../environments/environment';
             <button nz-button nzType="primary" routerLink="/auth/login">Go to Login</button>
           </div>
 
-          <form *ngIf="!submitted && !loading" #regForm="ngForm" (ngSubmit)="onSubmit()" class="reg-form">
+          <form *ngIf="!submitted && !loading" #regForm="ngForm" (ngSubmit)="onSubmit(regForm)" class="reg-form" novalidate>
             <!-- Personal Information -->
             <h3 class="section-title">Personal Information</h3>
             <div class="form-row">
@@ -57,30 +57,46 @@ import { environment } from '../../../environments/environment';
                   <nz-option *ngFor="let opt of prefixes" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
                 </nz-select>
               </div>
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)">
                 <label>First Name <span class="required">*</span></label>
-                <input nz-input [(ngModel)]="formData.firstName" name="firstName" required placeholder="Enter first name" />
+                <input nz-input [(ngModel)]="formData.firstName" name="firstName" required placeholder="Enter first name"
+                  #firstNameCtrl="ngModel" [class.input-error]="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)" />
+                <div class="field-error" *ngIf="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> First name is required
+                </div>
               </div>
               <div class="form-group">
                 <label>Middle Name</label>
                 <input nz-input [(ngModel)]="formData.middleName" name="middleName" placeholder="Enter middle name" />
               </div>
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)">
                 <label>Surname <span class="required">*</span></label>
-                <input nz-input [(ngModel)]="formData.surname" name="surname" required placeholder="Enter surname" />
+                <input nz-input [(ngModel)]="formData.surname" name="surname" required placeholder="Enter surname"
+                  #surnameCtrl="ngModel" [class.input-error]="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)" />
+                <div class="field-error" *ngIf="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Surname is required
+                </div>
               </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="!formData.gender && (genderCtrl.touched || submitAttempted)">
                 <label>Gender <span class="required">*</span></label>
-                <nz-select [(ngModel)]="formData.gender" name="gender" required nzPlaceHolder="Select gender" style="width:100%">
+                <nz-select [(ngModel)]="formData.gender" name="gender" required nzPlaceHolder="Select gender" style="width:100%"
+                  #genderCtrl="ngModel" [class.input-error]="!formData.gender && (genderCtrl.touched || submitAttempted)">
                   <nz-option *ngFor="let g of genders" [nzValue]="g.code" [nzLabel]="g.value"></nz-option>
                 </nz-select>
+                <div class="field-error" *ngIf="!formData.gender && (genderCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Gender is required
+                </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="!formData.dob && (dobCtrl.touched || submitAttempted)">
                 <label>Date of Birth <span class="required">*</span></label>
-                <input nz-input type="date" [(ngModel)]="formData.dob" name="dob" required />
+                <input nz-input type="date" [(ngModel)]="formData.dob" name="dob" required
+                  #dobCtrl="ngModel" [class.input-error]="!formData.dob && (dobCtrl.touched || submitAttempted)" />
+                <div class="field-error" *ngIf="!formData.dob && (dobCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Date of birth is required
+                </div>
               </div>
               <div class="form-group">
                 <label>Marital Status</label>
@@ -88,24 +104,30 @@ import { environment } from '../../../environments/environment';
                   <nz-option *ngFor="let opt of maritalStatuses" [nzValue]="opt.code" [nzLabel]="opt.value"></nz-option>
                 </nz-select>
               </div>
+              <div class="form-group" [class.has-error]="(mobileCtrl.invalid || !formData.mobile) && (mobileCtrl.touched || submitAttempted)">
+                <label>Mobile <span class="required">*</span></label>
+                <input nz-input [(ngModel)]="formData.mobile" name="mobile" required placeholder="Enter 10-digit mobile" maxlength="10" pattern="^[0-9]{10}$"
+                  #mobileCtrl="ngModel" [class.input-error]="(mobileCtrl.invalid || !formData.mobile) && (mobileCtrl.touched || submitAttempted)" />
+                <div class="field-error" *ngIf="(!formData.mobile || mobileCtrl.errors?.['required']) && (mobileCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Mobile number is required
+                </div>
+                <div class="field-error" *ngIf="formData.mobile && mobileCtrl.errors?.['pattern'] && (mobileCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Enter a valid 10-digit mobile number
+                </div>
+              </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label>Mobile <span class="required">*</span></label>
-                <input nz-input [(ngModel)]="formData.mobile" name="mobile" required placeholder="Enter 10-digit mobile" maxlength="10" pattern="^[0-9]{10}$" />
-              </div>
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="(emailCtrl.invalid || !formData.email) && (emailCtrl.touched || submitAttempted)" style="grid-column: span 2;">
                 <label>Email <span class="required">*</span></label>
-                <input nz-input [(ngModel)]="formData.email" name="email" required email placeholder="Enter email" />
-              </div>
-              <div class="form-group">
-                <label>Father's Name</label>
-                <input nz-input [(ngModel)]="formData.fatherName" name="fatherName" placeholder="Enter father's name" />
-              </div>
-              <div class="form-group">
-                <label>Father's Phone</label>
-                <input nz-input [(ngModel)]="formData.fatherPhone" name="fatherPhone" placeholder="Enter father's phone" maxlength="10" pattern="^[0-9]{10}$" />
+                <input nz-input [(ngModel)]="formData.email" name="email" required email placeholder="Enter email address"
+                  #emailCtrl="ngModel" [class.input-error]="(emailCtrl.invalid || !formData.email) && (emailCtrl.touched || submitAttempted)" />
+                <div class="field-error" *ngIf="(!formData.email || emailCtrl.errors?.['required']) && (emailCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Email address is required
+                </div>
+                <div class="field-error" *ngIf="formData.email && emailCtrl.errors?.['email'] && (emailCtrl.touched || submitAttempted)">
+                  <i nz-icon nzType="close-circle"></i> Enter a valid email address (e.g. name&#64;domain.com)
+                </div>
               </div>
             </div>
 
@@ -511,10 +533,15 @@ import { environment } from '../../../environments/environment';
             <!-- Documents -->
             <h3 class="section-title">Documents</h3>
             <div class="form-row">
-              <div class="form-group">
+              <div class="form-group" [class.has-error]="submitAttempted && !selectedPhoto">
                 <label>Photo <span class="required">*</span></label>
-                <input type="file" accept="image/jpeg,image/png" (change)="onFileChange($event, 'photo')" />
-                <span *ngIf="selectedPhoto" class="file-name">{{ selectedPhoto.name }}</span>
+                <input type="file" accept="image/jpeg,image/png" (change)="onFileChange($event, 'photo')" [class.input-error]="submitAttempted && !selectedPhoto" />
+                <span *ngIf="selectedPhoto" class="file-name" style="color:#52c41a;font-weight:500;">
+                  <i nz-icon nzType="check-circle" nzTheme="fill"></i> {{ selectedPhoto.name }}
+                </span>
+                <div class="field-error" *ngIf="submitAttempted && !selectedPhoto">
+                  <i nz-icon nzType="close-circle"></i> Candidate photo is required (JPG or PNG)
+                </div>
               </div>
               <div class="form-group">
                 <label>Aadhar Document</label>
@@ -544,11 +571,24 @@ import { environment } from '../../../environments/environment';
               </div>
             </div>
 
-            <div class="form-actions" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-              <button nz-button nzType="primary" nzSize="large" [nzLoading]="isSaving" [disabled]="!regForm.valid">
+            <!-- Form Actions & Clear Error Reporting -->
+            <div class="form-actions">
+              <!-- Clear Validation Issue Box -->
+              <div class="validation-summary-box" *ngIf="submitAttempted && getValidationErrors().length > 0">
+                <div class="validation-summary-title">
+                  <i nz-icon nzType="exclamation-circle" nzTheme="fill"></i>
+                  <span>Please complete the following {{ getValidationErrors().length }} required field(s) to submit:</span>
+                </div>
+                <ul class="validation-summary-list">
+                  <li *ngFor="let err of getValidationErrors()">
+                    <i nz-icon nzType="close-circle" style="color: #ff4d4f; margin-right: 6px;"></i> {{ err }}
+                  </li>
+                </ul>
+              </div>
+
+              <button nz-button nzType="primary" nzSize="large" [nzLoading]="isSaving" type="submit" class="submit-btn">
                 <i nz-icon nzType="check"></i> Submit Registration
               </button>
-            
             </div>
           </form>
 
@@ -556,7 +596,6 @@ import { environment } from '../../../environments/environment';
             <i nz-icon nzType="loading" style="font-size:32px;"></i>
             <p>Loading form data...</p>
           </div>
-
 
         </div>
 
@@ -640,10 +679,70 @@ import { environment } from '../../../environments/environment';
       color: #666;
       margin-top: 4px;
     }
+    .field-error {
+      color: #ff4d4f;
+      font-size: 12px;
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.3;
+    }
+    .input-error,
+    .has-error input,
+    .has-error .ant-select-selector {
+      border-color: #ff4d4f !important;
+      box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.15) !important;
+    }
+    .validation-summary-box {
+      width: 100%;
+      max-width: 650px;
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: 8px;
+      padding: 16px 20px;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(255, 77, 79, 0.08);
+      animation: fadeIn 0.3s ease-in-out;
+      margin-bottom: 8px;
+    }
+    .validation-summary-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #cf1322;
+      margin-bottom: 10px;
+    }
+    .validation-summary-list {
+      margin: 0;
+      padding-left: 4px;
+      list-style-type: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .validation-summary-list li {
+      font-size: 13px;
+      color: #a8071a;
+      display: flex;
+      align-items: center;
+    }
     .form-actions {
-      text-align: center;
-      padding-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding-top: 20px;
       border-top: 1px solid #f0f0f0;
+    }
+    .submit-btn {
+      min-width: 240px;
+      height: 44px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
     }
     .success-section {
       text-align: center;
@@ -666,13 +765,11 @@ import { environment } from '../../../environments/environment';
     .reg-footer a { color: #1f3d6e; font-weight: 600; }
     .lang-section { padding: 8px 0; }
     nz-table { margin-top: 8px; }
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center;
-      justify-content: center; z-index: 1000; padding: 20px;
-    }
 
-    .form-actions button[nz-button] { min-width: 200px; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   `]
 })
 export class PublicRegistrationComponent implements OnInit {
@@ -684,6 +781,7 @@ export class PublicRegistrationComponent implements OnInit {
   selectedPersonalDocs: File[] = [];
   isSaving = false;
   submitted = false;
+  submitAttempted = false;
   registrationCode = '';
   loading = true;
 
@@ -705,7 +803,6 @@ export class PublicRegistrationComponent implements OnInit {
   languageOptions: any[] = [];
   selectedLanguage: string | null = null;
   languages: { language: string; canRead: boolean; canWrite: boolean; canSpeak: boolean }[] = [];
-
 
   get availableLanguageOptions(): any[] {
     const added = new Set(this.languages.map(l => l.language));
@@ -800,9 +897,66 @@ export class PublicRegistrationComponent implements OnInit {
     }
   }
 
-  onSubmit() {
-    if (!this.formData.firstName || !this.formData.surname || !this.formData.mobile || !this.formData.gender || !this.formData.dob || !this.formData.email) {
-      this.notification.error('Error', 'Please fill in all required fields');
+  getValidationErrors(): string[] {
+    const errors: string[] = [];
+    if (!this.formData.firstName || !this.formData.firstName.trim()) {
+      errors.push('First Name is required');
+    }
+    if (!this.formData.surname || !this.formData.surname.trim()) {
+      errors.push('Surname is required');
+    }
+    if (!this.formData.gender) {
+      errors.push('Gender is required');
+    }
+    if (!this.formData.dob) {
+      errors.push('Date of Birth is required');
+    }
+    if (!this.formData.mobile || !this.formData.mobile.trim()) {
+      errors.push('Mobile number is required (10 digits)');
+    } else if (!/^[0-9]{10}$/.test(this.formData.mobile.trim())) {
+      errors.push('Mobile number must be exactly 10 digits (e.g. 9876543210)');
+    }
+    if (!this.formData.email || !this.formData.email.trim()) {
+      errors.push('Email address is required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email.trim())) {
+      errors.push('Please enter a valid email address (e.g. name&#64;domain.com)');
+    }
+    if (!this.selectedPhoto) {
+      errors.push('Candidate Photo is required (upload JPG/PNG)');
+    }
+    return errors;
+  }
+
+  onSubmit(form?: NgForm) {
+    this.submitAttempted = true;
+
+    if (form) {
+      Object.values(form.controls).forEach(control => {
+        control.markAsTouched();
+        control.markAsDirty();
+        control.updateValueAndValidity();
+      });
+    }
+
+    const errors = this.getValidationErrors();
+    if (errors.length > 0) {
+      this.notification.error(
+        'Incomplete Registration Form',
+        `Please fix the ${errors.length} highlighted field(s) before submitting.`,
+        { nzDuration: 6000 }
+      );
+
+      // Auto scroll to first invalid field
+      setTimeout(() => {
+        const firstInvalid = document.querySelector('.input-error, .has-error, .field-error');
+        if (firstInvalid) {
+          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const focusable = firstInvalid.querySelector('input, select, textarea') || firstInvalid;
+          if (focusable && typeof (focusable as HTMLElement).focus === 'function') {
+            (focusable as HTMLElement).focus();
+          }
+        }
+      }, 100);
       return;
     }
 
