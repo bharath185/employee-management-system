@@ -141,6 +141,17 @@ def step3_assemble_package():
             shutil.copytree(s, d, dirs_exist_ok=True)
     print("PostgreSQL 17 distribution binaries copied.")
 
+    # Bundle VC++ Runtime DLLs so clean machines without VC++ Redistributable run out-of-the-box
+    vc_dlls = ['vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll', 'msvcp140_1.dll', 'msvcp140_2.dll', 'msvcp140_codecvt_ids.dll', 'vccorlib140.dll']
+    sys32 = r"C:\Windows\System32"
+    for dll in vc_dlls:
+        src = os.path.join(sys32, dll)
+        if os.path.exists(src):
+            for target_sub in [os.path.join(PKG_DIR, "pgsql", "bin"), os.path.join(PKG_DIR, "bin"), os.path.join(PKG_DIR, "jre", "bin")]:
+                os.makedirs(target_sub, exist_ok=True)
+                shutil.copy2(src, os.path.join(target_sub, dll))
+    print("Visual C++ 140 Runtime DLLs bundled for zero-dependency portability.")
+
     # Control scripts
     init_db_bat = """@echo off
 setlocal
