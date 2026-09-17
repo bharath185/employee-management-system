@@ -638,6 +638,44 @@ public class PrigenixUninstaller : Form {
     if os.path.exists(cs_uninstaller_file): os.remove(cs_uninstaller_file)
     print("Uninstall.exe compiled with Admin Manifest.")
 
+    # Compile native GUI launcher (EMS.exe) to eliminate any VBScript (.vbs) dependency
+    cs_launcher = r"""
+using System;
+using System.IO;
+using System.Diagnostics;
+
+class Program {
+    [STAThread]
+    static void Main() {
+        try {
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
+            string startBat = Path.Combine(baseDir, "bin", "start-ems.bat");
+            if (File.Exists(startBat)) {
+                ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", "/c \"" + startBat + "\"") {
+                    WorkingDirectory = baseDir,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                Process.Start(psi);
+            }
+        } catch {}
+    }
+}
+"""
+    cs_launcher_file = os.path.join(DIST_DIR, "EMS_Launcher.cs")
+    with open(cs_launcher_file, "w", encoding="utf-8") as f:
+        f.write(cs_launcher)
+    exe_launcher_out = os.path.join(PKG_DIR, "EMS.exe")
+    cmd_l = [
+        csc_path, "/target:winexe", f"/out:{exe_launcher_out}", f"/win32icon:{dist_ico}",
+        f"/win32manifest:{manifest_file}", "/reference:System.dll",
+        cs_launcher_file
+    ]
+    subprocess.run(cmd_l, capture_output=True, text=True)
+    if os.path.exists(cs_launcher_file): os.remove(cs_launcher_file)
+    print("EMS.exe native launcher compiled with official icon.")
+
 def step5_compile_smart_installer():
     print("\n=======================================================")
     print("[5/5] Generating License Key and Compiling Standalone Installer...")
@@ -1248,20 +1286,28 @@ public class PrigenixEMSInstaller : Form {
                 if (createShortcut) {
                     string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                     string shortcutPath = Path.Combine(desktop, "Prigenix EMS.lnk");
-                    string vbsPath = Path.Combine(targetDir, "EMS.vbs");
+                    string exePath = Path.Combine(targetDir, "EMS.exe");
                     string icoPath = Path.Combine(targetDir, "app.ico");
                     
-                    CreateDesktopShortcut(shortcutPath, vbsPath, icoPath, targetDir);
+                    CreateDesktopShortcut(shortcutPath, exePath, icoPath, targetDir);
                 }
 
                 isInstalling = false;
                 UpdateProgress(100, isUpgrade ? "Update Complete!" : "Installation Complete!", "PRIGENIX Employee Management System is ready.", "Setup Complete", "All components deployed successfully");
 
                 if (launchAfter) {
-                    string vbsPath = Path.Combine(targetDir, "EMS.vbs");
-                    Process.Start(new ProcessStartInfo("wscript.exe", "\"" + vbsPath + "\"") {
-                        WorkingDirectory = targetDir
-                    });
+                    string exePath = Path.Combine(targetDir, "EMS.exe");
+                    if (File.Exists(exePath)) {
+                        Process.Start(new ProcessStartInfo(exePath) { WorkingDirectory = targetDir });
+                    } else {
+                        string startBat = Path.Combine(targetDir, "bin", "start-ems.bat");
+                        ProcessStartInfo psiStart = new ProcessStartInfo("cmd.exe", "/c \"" + startBat + "\"") {
+                            WorkingDirectory = targetDir,
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        };
+                        Process.Start(psiStart);
+                    }
                 }
 
                 string finishTitle = isUpgrade ? "PRIGENIX EMS — Update Complete" : "PRIGENIX EMS — Setup Complete";
