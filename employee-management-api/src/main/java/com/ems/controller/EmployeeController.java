@@ -199,4 +199,42 @@ public class EmployeeController {
         Map<String, Object> result = employeeService.importFromExcel(file);
         return ResponseEntity.ok(APIResponse.success("Import completed", result));
     }
+
+    @GetMapping("/custom-report")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    public ResponseEntity<APIResponse<List<EmployeeDTO>>> getCustomReportEmployees(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String employeeCode,
+            @RequestParam(required = false) String firstName,
+            @RequestParam(required = false) String surname,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String employeeStatus,
+            @RequestParam(required = false) String designation,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String religion,
+            @RequestParam(required = false) String socialCategory,
+            @RequestParam(required = false) String socialSubcategory,
+            @RequestParam(required = false) String processAssigned,
+            @RequestParam(required = false) String bloodGroup,
+            @RequestParam(required = false) String highestQualification,
+            @RequestParam(required = false) String maritalStatus,
+            @RequestParam(required = false) String aadhaarVerification,
+            @RequestParam(required = false) String panVerification,
+            @RequestParam(required = false) String dojFrom,
+            @RequestParam(required = false) String dojTo,
+            @RequestParam(required = false) Integer dojYear,
+            @RequestParam(required = false) Integer dojMonth,
+            @RequestParam(defaultValue = "doj") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection) {
+
+        List<EmployeeDTO> list = employeeService.getCustomReportEmployees(
+            search, employeeCode, firstName, surname, gender, employeeStatus,
+            designation, department, religion, socialCategory, socialSubcategory,
+            processAssigned, bloodGroup, highestQualification, maritalStatus,
+            aadhaarVerification, panVerification, dojFrom, dojTo, dojYear, dojMonth,
+            sortBy, sortDirection);
+
+        return ResponseEntity.ok(APIResponse.success("Report data fetched", list));
+    }
+
 }

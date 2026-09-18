@@ -111,4 +111,16 @@ export class EmployeeService {
       `${this.apiUrl}/import`, formData
     );
   }
+
+  getCustomReportEmployees(params: any = {}): Observable<APIResponse<Employee[]>> {
+    let httpParams = new HttpParams();
+    Object.keys(params).forEach(k => {
+      const v = params[k];
+      if (v !== undefined && v !== null && v !== '') {
+        httpParams = httpParams.set(k, v.toString());
+      }
+    });
+    return this.http.get<APIResponse<Employee[]>>(`${this.apiUrl}/custom-report`, { params: httpParams });
+  }
+
 }

@@ -1,0 +1,388 @@
+.rp-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 0 16px 24px;
+}
+
+.pp-sub-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: #f0f4ff;
+  border-radius: 10px;
+  padding: 4px;
+  border: 1px solid #e0e7ff;
+}
+
+.pp-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  text-decoration: none;
+  transition: all .15s;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(67, 97, 238, 0.08);
+    color: #4361ee;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(67, 97, 238, 0.3);
+
+    i { color: #fff; }
+  }
+}
+
+// Toolbar Card
+.toolbar-card {
+  margin-bottom: 12px;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+
+  .toolbar-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .toolbar-left, .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .template-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .toolbar-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .template-dropdown {
+      min-width: 200px;
+    }
+  }
+
+  .action-btn {
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    height: 32px;
+  }
+
+  .export-excel-btn {
+    background: #10b981 !important;
+    border-color: #10b981 !important;
+
+    &:hover {
+      background: #059669 !important;
+      border-color: #059669 !important;
+    }
+  }
+}
+
+// Filter Card
+.filter-card {
+  margin-bottom: 12px;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+
+  .filter-extra-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+
+    @media (max-width: 1200px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+  }
+}
+
+// KPI Summary Grid
+.kpi-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .kpi-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+
+    .kpi-icon-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+
+      &.blue { background: #eff6ff; color: #2563eb; }
+      &.green { background: #f0fdf4; color: #16a34a; }
+      &.red { background: #fef2f2; color: #dc2626; }
+      &.purple { background: #faf5ff; color: #9333ea; }
+    }
+
+    .kpi-info {
+      display: flex;
+      flex-direction: column;
+
+      .kpi-val {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+      }
+
+      .kpi-lbl {
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Live Data Table Card
+.table-card {
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+
+  .table-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 8px;
+
+    .table-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .table-subtitle {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .sort-indicator {
+      font-size: 11px;
+      color: #475569;
+      background: #f8fafc;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+  }
+
+  .emp-code-badge {
+    font-family: monospace;
+    font-weight: 600;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .emp-name-cell {
+    color: #0f172a;
+  }
+
+  ::ng-deep .ant-table-thead > tr > th {
+    background: #f8fafc !important;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    padding: 8px 10px !important;
+  }
+
+  ::ng-deep .ant-table-tbody > tr > td {
+    font-size: 12px;
+    padding: 8px 10px !important;
+  }
+}
+
+// Column Selector Modal Styles
+.column-modal-container {
+  .column-preset-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+
+    .preset-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+    }
+  }
+
+  .column-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .column-category-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #cbd5e1;
+
+      h4 {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+      }
+
+      .category-badge {
+        font-size: 10px;
+        color: #64748b;
+        background: #e2e8f0;
+        padding: 1px 4px;
+        border-radius: 3px;
+      }
+    }
+
+    .category-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      .col-checkbox {
+        font-size: 12px;
+        color: #334155;
+      }
+    }
+  }
+}
+
+// Save Template Modal
+.save-template-modal {
+  .modal-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 12px;
+  }
+
+  .form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+  }
+
+  .template-summary-preview {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: #475569;
+  }
+}
+
+// Legacy Stats Styles
+.rp-tabs { margin-top: 0; }
+.card-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; border-bottom: 1px solid #f0f2f5; }
+.card-icon-circle { width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.card-icon-circle i { font-size: 18px; color: #2563eb; }
+.card-header-text { flex: 1; }
+.card-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin: 0 0 2px; }
+.card-subtitle { font-size: 12px; color: #6c757d; margin: 0; }
+.card-body { padding: 16px 20px; }
+.card-body-stats { padding: 8px 0; }
+.card-footer { padding: 12px 20px; border-top: 1px solid #f0f2f5; }
+.stats-summary { padding: 0; }
+.stat-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid #f5f5f5; }
+.stat-row-alt { background: #fafbfc; }
+.stat-row-last { border-bottom: none; }
+.stat-left { display: flex; align-items: center; gap: 10px; }
+.stat-icon { font-size: 16px; color: #4361ee; width: 24px; text-align: center; }
+.stat-label { font-size: 13px; color: #555; }
+.stat-value { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.stats-empty { text-align: center; padding: 24px; }
+.stats-spinner { text-align: center; padding: 24px; }

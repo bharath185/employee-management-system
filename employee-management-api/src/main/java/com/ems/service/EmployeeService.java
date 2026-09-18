@@ -38,6 +38,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -583,4 +586,125 @@ public class EmployeeService {
         employee.setLanguagesCanSpeak(value);
         employeeRepository.save(employee);
     }
+
+    public List<EmployeeDTO> getCustomReportEmployees(
+            String search, String employeeCode, String firstName,
+            String surname, String gender, String employeeStatus,
+            String designation, String department, String religion,
+            String socialCategory, String socialSubcategory,
+            String processAssigned, String bloodGroup,
+            String highestQualification, String maritalStatus,
+            String aadhaarVerification, String panVerification,
+            String dojFrom, String dojTo, Integer dojYear, Integer dojMonth,
+            String sortBy, String sortDirection) {
+
+        Specification<Employee> spec = Specification.where(null);
+
+        if (search != null && !search.isBlank()) {
+            spec = spec.and(EmployeeSpecification.search(search.trim()));
+        }
+        if (employeeCode != null && !employeeCode.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasEmployeeCode(employeeCode.trim()));
+        }
+        if (firstName != null && !firstName.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasFirstName(firstName.trim()));
+        }
+        if (surname != null && !surname.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasSurname(surname.trim()));
+        }
+        if (gender != null && !gender.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasGender(gender.trim()));
+        }
+        if (employeeStatus != null && !employeeStatus.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasEmployeeStatus(employeeStatus.trim()));
+        }
+        if (designation != null && !designation.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasDesignation(designation.trim()));
+        }
+        if (department != null && !department.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasDepartment(department.trim()));
+        }
+        if (religion != null && !religion.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasReligion(religion.trim()));
+        }
+        if (socialCategory != null && !socialCategory.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasSocialCategory(socialCategory.trim()));
+        }
+        if (socialSubcategory != null && !socialSubcategory.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasSocialSubcategory(socialSubcategory.trim()));
+        }
+        if (processAssigned != null && !processAssigned.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasProcessAssigned(processAssigned.trim()));
+        }
+        if (bloodGroup != null && !bloodGroup.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasBloodGroup(bloodGroup.trim()));
+        }
+        if (highestQualification != null && !highestQualification.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasHighestQualification(highestQualification.trim()));
+        }
+        if (maritalStatus != null && !maritalStatus.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasMaritalStatus(maritalStatus.trim()));
+        }
+        if (aadhaarVerification != null && !aadhaarVerification.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasAadhaarVerification(aadhaarVerification.trim()));
+        }
+        if (panVerification != null && !panVerification.isBlank()) {
+            spec = spec.and(EmployeeSpecification.hasPanVerification(panVerification.trim()));
+        }
+
+        // Date filters
+        if (dojMonth != null && dojYear != null) {
+            spec = spec.and(EmployeeSpecification.hasDojMonth(dojYear, dojMonth));
+        } else if (dojYear != null) {
+            spec = spec.and(EmployeeSpecification.hasDojYear(dojYear));
+        } else if ((dojFrom != null && !dojFrom.isBlank()) || (dojTo != null && !dojTo.isBlank())) {
+            LocalDate from = (dojFrom != null && !dojFrom.isBlank()) ? LocalDate.parse(dojFrom.trim()) : null;
+            LocalDate to = (dojTo != null && !dojTo.isBlank()) ? LocalDate.parse(dojTo.trim()) : null;
+            spec = spec.and(EmployeeSpecification.hasDojBetween(from, to));
+        }
+
+        List<Employee> employees = employeeRepository.findAll(spec);
+        boolean isDesc = "desc".equalsIgnoreCase(sortDirection);
+
+        Comparator<Employee> comparator;
+        if ("employeeCodeNumeric".equalsIgnoreCase(sortBy) || "numericCode".equalsIgnoreCase(sortBy) || "employeeCode".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparingInt(e -> extractNumericCode(e.getEmployeeCode()));
+        } else if ("doj".equalsIgnoreCase(sortBy) || "joiningDate".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(Employee::getDoj, Comparator.nullsLast(Comparator.naturalOrder()));
+        } else if ("firstName".equalsIgnoreCase(sortBy) || "name".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(e -> (e.getFirstName() != null ? e.getFirstName() : "") + " " + (e.getSurname() != null ? e.getSurname() : ""), String.CASE_INSENSITIVE_ORDER);
+        } else if ("designation".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(Employee::getDesignation, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        } else if ("department".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(Employee::getDepartment, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        } else if ("employeeStatus".equalsIgnoreCase(sortBy) || "status".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(Employee::getEmployeeStatus, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        } else if ("dob".equalsIgnoreCase(sortBy)) {
+            comparator = Comparator.comparing(Employee::getDob, Comparator.nullsLast(Comparator.naturalOrder()));
+        } else {
+            comparator = Comparator.comparing(Employee::getDoj, Comparator.nullsLast(Comparator.naturalOrder()));
+        }
+
+        if (isDesc) {
+            comparator = comparator.reversed();
+        }
+
+        employees.sort(comparator);
+
+        return employees.stream()
+            .map(EmployeeDTO::fromEntity)
+            .collect(Collectors.toList());
+    }
+
+    private int extractNumericCode(String code) {
+        if (code == null || code.isBlank()) return 0;
+        String digits = code.replaceAll("\\D+", "");
+        if (digits.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
+    }
+
 }
