@@ -682,7 +682,7 @@ public class EmployeeService {
         } else if ("dob".equalsIgnoreCase(sortBy)) {
             comparator = Comparator.comparing(Employee::getDob, Comparator.nullsLast(Comparator.naturalOrder()));
         } else {
-            comparator = Comparator.comparing(Employee::getDoj, Comparator.nullsLast(Comparator.naturalOrder()));
+            comparator = Comparator.comparingInt(e -> extractNumericCode(e.getEmployeeCode()));
         }
 
         if (isDesc) {

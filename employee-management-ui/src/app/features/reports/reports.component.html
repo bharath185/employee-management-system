@@ -87,7 +87,7 @@
         <div class="filter-group">
           <label class="filter-label">Joining Date Filter Mode</label>
           <nz-select [(ngModel)]="dojFilterMode" style="width:100%" (ngModelChange)="applyFilters()">
-            <nz-option nzValue="ALL" nzLabel="All Time"></nz-option>
+            <nz-option nzValue="ALL" nzLabel="All (No Date Filter)"></nz-option>
             <nz-option nzValue="MONTH_YEAR" nzLabel="📅 By Month & Year"></nz-option>
             <nz-option nzValue="YEAR" nzLabel="📆 By Year"></nz-option>
             <nz-option nzValue="RANGE" nzLabel="⏳ Custom Date Range"></nz-option>
@@ -125,8 +125,8 @@
         <div class="filter-group">
           <label class="filter-label">Sort Records By</label>
           <nz-select [(ngModel)]="sortBy" style="width:100%" (ngModelChange)="applyFilters()">
+            <nz-option nzValue="employeeCodeNumeric" nzLabel="🔢 Employee Code (Numeric: 1, 2, 3...)"></nz-option>
             <nz-option nzValue="doj" nzLabel="📅 Joining Date (DOJ)"></nz-option>
-            <nz-option nzValue="employeeCodeNumeric" nzLabel="🔢 Numeric Emp Code (1, 2, 10, 100...)"></nz-option>
             <nz-option nzValue="name" nzLabel="👤 Employee Full Name"></nz-option>
             <nz-option nzValue="department" nzLabel="🏢 Department"></nz-option>
             <nz-option nzValue="designation" nzLabel="💼 Designation"></nz-option>

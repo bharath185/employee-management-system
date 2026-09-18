@@ -84,8 +84,8 @@ export class ReportsComponent implements OnInit {
   filterPanVerification = '';
 
   // Sorting
-  sortBy: 'doj' | 'employeeCodeNumeric' | 'name' | 'department' | 'designation' | 'status' | 'dob' = 'doj';
-  sortDirection: 'asc' | 'desc' = 'desc';
+  sortBy: 'employeeCodeNumeric' | 'doj' | 'name' | 'department' | 'designation' | 'status' | 'dob' = 'employeeCodeNumeric';
+  sortDirection: 'asc' | 'desc' = 'asc';
 
   // Options Dropdowns
   statusOptions: { value: string; label: string }[] = [];
@@ -350,8 +350,8 @@ export class ReportsComponent implements OnInit {
     this.filterQualification = '';
     this.filterAadhaarVerification = '';
     this.filterPanVerification = '';
-    this.sortBy = 'doj';
-    this.sortDirection = 'desc';
+    this.sortBy = 'employeeCodeNumeric';
+    this.sortDirection = 'asc';
     this.selectedTemplateId = null;
 
     this.applyFilters();

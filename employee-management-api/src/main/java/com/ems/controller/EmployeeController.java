@@ -224,8 +224,8 @@ public class EmployeeController {
             @RequestParam(required = false) String dojTo,
             @RequestParam(required = false) Integer dojYear,
             @RequestParam(required = false) Integer dojMonth,
-            @RequestParam(defaultValue = "doj") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "employeeCodeNumeric") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
 
         List<EmployeeDTO> list = employeeService.getCustomReportEmployees(
             search, employeeCode, firstName, surname, gender, employeeStatus,
