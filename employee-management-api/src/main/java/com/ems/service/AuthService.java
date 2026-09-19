@@ -102,7 +102,7 @@ public class AuthService {
         }
 
         String username = authentication.getName();
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameIgnoreCase(username)
             .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
 
         // Verify old password
@@ -120,7 +120,7 @@ public class AuthService {
             throw new BadRequestException("Invalid or expired refresh token");
         }
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameIgnoreCase(username)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(

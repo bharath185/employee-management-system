@@ -6,17 +6,17 @@
     <title>New Employee Joining Report — {{company_name}}</title>
     <style>
         :root {
-            --color-primary:       #1a3a5c;
-            --color-primary-dark:  #0f2740;
-            --color-primary-light: #e8f0f8;
-            --color-accent:        #2b7fc1;
-            --color-text:          #1e293b;
-            --color-text-muted:    #475569;
-            --color-border:        #cbd5e1;
-            --color-bg:            #f1f5f9;
+            --color-primary:       #14335e;
+            --color-primary-dark:  #0a1f3d;
+            --color-primary-light: #e2e8f0;
+            --color-accent:        #2563eb;
+            --color-text:          #0f172a;
+            --color-text-muted:    #334155;
+            --color-border:        #94a3b8;
+            --color-bg:            #f8fafc;
             --color-white:         #ffffff;
             --color-header-text:   #ffffff;
-            --color-label-bg:      #e8f0f8;
+            --color-label-bg:      #edf2f7;
             --color-row-alt:       #f8fafc;
 
             --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, sans-serif;
@@ -96,7 +96,7 @@
             justify-content: space-between;
             gap: var(--spacing-md);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--color-border);
+            border-bottom: 1.5px solid var(--color-border);
             position: relative;
         }
 
@@ -124,7 +124,7 @@
         .header-logo-icon img {
             height: 52px;
             width: auto;
-            max-width: 200px;
+            max-width: 180px;
             object-fit: contain;
             display: block;
         }
@@ -188,67 +188,71 @@
             border-collapse: collapse;
             font-size: var(--font-size-base);
             margin-bottom: 10px;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
+            border: 1.5px solid #64748b;
         }
 
         .data-table td {
-            padding: 3px 6px;
-            border: 1px solid var(--color-border);
+            padding: 4px 6px;
+            border: 1px solid #94a3b8;
             vertical-align: middle;
         }
 
         /* Label cells — left column */
         .data-table .label {
-            background: var(--color-label-bg);
+            background: #edf2f7 !important;
             font-weight: 600;
-            color: var(--color-primary-dark);
+            color: #0f172a;
             width: 28%;
             white-space: nowrap;
             font-size: var(--font-size-xs);
             letter-spacing: 0.2px;
+            border: 1px solid #94a3b8;
         }
 
         /* Value / input cells */
         .data-table .value {
-            background: var(--color-white);
-            color: var(--color-text);
+            background: #ffffff;
+            color: #0f172a;
             font-weight: 500;
             font-size: var(--font-size-sm);
+            border: 1px solid #94a3b8;
         }
 
         /* Alternating row tint (subtle) */
         .data-table tbody tr:nth-child(even) td {
-            background-color: var(--color-row-alt);
+            background-color: #f8fafc;
         }
 
         /* But keep label background on alt rows */
         .data-table tbody tr:nth-child(even) td.label {
-            background: var(--color-label-bg);
+            background: #edf2f7 !important;
         }
 
         /* Section dividers — rows that introduce a new section */
         .data-table .section-head {
-            background: var(--color-primary) !important;
-            color: var(--color-header-text);
+            background: #14335e !important;
+            color: #ffffff !important;
             font-weight: 700;
             font-size: var(--font-size-sm);
             text-transform: uppercase;
             letter-spacing: 1px;
-            padding: var(--spacing-sm) var(--spacing-lg);
-            border-color: var(--color-primary-dark);
+            padding: 4px 8px;
+            border: 1px solid #0a1f3d !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         .data-table .section-head td {
-            background: var(--color-primary) !important;
-            color: var(--color-header-text);
+            background: #14335e !important;
+            color: #ffffff !important;
             font-weight: 700;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            padding: 3px 6px;
-            font-size: 9px;
+            padding: 4px 6px;
+            border: 1px solid #0a1f3d !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         /* Inline value groups (e.g., Landline + Mobile on same row) */
