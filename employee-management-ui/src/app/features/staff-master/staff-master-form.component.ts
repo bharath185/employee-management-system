@@ -8,6 +8,10 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageModule, NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzBadgeModule } from 'ng-zorro-antd/badge';
+import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzNotificationModule, NzNotificationService } from 'ng-zorro-antd/notification';
 
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeeService } from '../../core/services/employee.service';
@@ -29,6 +33,108 @@ export function minAgeValidator(minAge: number): ValidatorFn {
   };
 }
 
+export interface ValidationErrorDetail {
+  fieldKey: string;
+  fieldLabel: string;
+  tabIndex: number;
+  tabName: string;
+  errorKey: string;
+  errorMessage: string;
+}
+
+const FIELD_METAS: Record<string, { label: string; tabIndex: number; tabName: string }> = {
+  // Tab 0: Personal Info
+  firstName: { label: 'First Name', tabIndex: 0, tabName: 'Personal Info' },
+  surname: { label: 'Surname', tabIndex: 0, tabName: 'Personal Info' },
+  gender: { label: 'Gender', tabIndex: 0, tabName: 'Personal Info' },
+  dob: { label: 'Date of Birth', tabIndex: 0, tabName: 'Personal Info' },
+  email: { label: 'Email Address', tabIndex: 0, tabName: 'Personal Info' },
+  mobile: { label: 'Mobile Number', tabIndex: 0, tabName: 'Personal Info' },
+  prefix: { label: 'Prefix', tabIndex: 0, tabName: 'Personal Info' },
+  maritalStatus: { label: 'Marital Status', tabIndex: 0, tabName: 'Personal Info' },
+  fatherHusbandName: { label: 'Father/Husband Name', tabIndex: 0, tabName: 'Personal Info' },
+  presentAddress: { label: 'Present Address', tabIndex: 0, tabName: 'Personal Info' },
+  permanentAddress: { label: 'Permanent Address', tabIndex: 0, tabName: 'Personal Info' },
+  closeRelativeName: { label: 'Emergency Contact Name', tabIndex: 0, tabName: 'Personal Info' },
+  closeRelativeMobile: { label: 'Emergency Contact Mobile', tabIndex: 0, tabName: 'Personal Info' },
+  doj: { label: 'Date of Joining', tabIndex: 0, tabName: 'Personal Info' },
+  highestQualification: { label: 'Highest Qualification', tabIndex: 0, tabName: 'Personal Info' },
+  levelOfEducation: { label: 'Level of Education', tabIndex: 0, tabName: 'Personal Info' },
+  yearOfPassing: { label: 'Year of Passing', tabIndex: 0, tabName: 'Personal Info' },
+  percentageMarks: { label: '% of Marks', tabIndex: 0, tabName: 'Personal Info' },
+
+  // Tab 1: Employment
+  employeeCode: { label: 'Employee Code', tabIndex: 1, tabName: 'Employment' },
+  userRole: { label: 'Login Role', tabIndex: 1, tabName: 'Employment' },
+  employeeStatus: { label: 'Employee Status', tabIndex: 1, tabName: 'Employment' },
+  processAssigned: { label: 'Process / Unit', tabIndex: 1, tabName: 'Employment' },
+  department: { label: 'Department', tabIndex: 1, tabName: 'Employment' },
+  designation: { label: 'Designation', tabIndex: 1, tabName: 'Employment' },
+  esicNo: { label: 'ESIC Number', tabIndex: 1, tabName: 'Employment' },
+  uanNo: { label: 'UAN Number', tabIndex: 1, tabName: 'Employment' },
+  pfNo: { label: 'PF Number', tabIndex: 1, tabName: 'Employment' },
+  aadharSeeding: { label: 'Aadhar Seeding', tabIndex: 1, tabName: 'Employment' },
+  uanActivation: { label: 'UAN Activation', tabIndex: 1, tabName: 'Employment' },
+
+  // Tab 2: Bank & Identity
+  bankName: { label: 'Bank Name', tabIndex: 2, tabName: 'Bank & Identity' },
+  accountNumber: { label: 'Account Number', tabIndex: 2, tabName: 'Bank & Identity' },
+  ifscCode: { label: 'IFSC Code', tabIndex: 2, tabName: 'Bank & Identity' },
+  branch: { label: 'Bank Branch', tabIndex: 2, tabName: 'Bank & Identity' },
+  bloodGroup: { label: 'Blood Group', tabIndex: 2, tabName: 'Bank & Identity' },
+  aadharNumber: { label: 'Aadhaar Number', tabIndex: 2, tabName: 'Bank & Identity' },
+  panNumber: { label: 'PAN Number', tabIndex: 2, tabName: 'Bank & Identity' },
+  rationCard: { label: 'Ration Card', tabIndex: 2, tabName: 'Bank & Identity' },
+
+  // Tab 3: Education
+  sscStatus: { label: 'SSC / Std X', tabIndex: 3, tabName: 'Education' },
+  intermediateStatus: { label: 'Intermediate / Std XII', tabIndex: 3, tabName: 'Education' },
+  bachelorsDegree: { label: "Bachelor's Degree", tabIndex: 3, tabName: 'Education' },
+  mastersDegree: { label: "Master's Degree", tabIndex: 3, tabName: 'Education' },
+  aadhaarVerification: { label: 'Aadhaar Verification', tabIndex: 3, tabName: 'Education' },
+  panVerification: { label: 'PAN Verification', tabIndex: 3, tabName: 'Education' },
+  osv: { label: 'OSV', tabIndex: 3, tabName: 'Education' },
+  remarks: { label: 'Remarks', tabIndex: 3, tabName: 'Education' },
+
+  // Tab 4: Family & Kin
+  fatherName: { label: "Father's Name", tabIndex: 4, tabName: 'Family & Kin' },
+  fatherPhone: { label: "Father's Phone", tabIndex: 4, tabName: 'Family & Kin' },
+  motherName: { label: "Mother's Name", tabIndex: 4, tabName: 'Family & Kin' },
+  motherPhone: { label: "Mother's Phone", tabIndex: 4, tabName: 'Family & Kin' },
+  spouseName: { label: "Spouse's Name", tabIndex: 4, tabName: 'Family & Kin' },
+  spousePhone: { label: "Spouse's Phone", tabIndex: 4, tabName: 'Family & Kin' },
+
+  // Tab 5: Experience & Ref.
+  pastExperience: { label: 'Past Experience', tabIndex: 5, tabName: 'Experience & Ref.' },
+  organizationName: { label: 'Previous Organization', tabIndex: 5, tabName: 'Experience & Ref.' },
+  periodOfEmployment: { label: 'Period of Employment', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref1Name: { label: 'Reference 1 Name', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref1Relationship: { label: 'Reference 1 Relationship', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref1Address: { label: 'Reference 1 Address', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref1Mobile: { label: 'Reference 1 Mobile', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref2Name: { label: 'Reference 2 Name', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref2Relationship: { label: 'Reference 2 Relationship', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref2Address: { label: 'Reference 2 Address', tabIndex: 5, tabName: 'Experience & Ref.' },
+  ref2Mobile: { label: 'Reference 2 Mobile', tabIndex: 5, tabName: 'Experience & Ref.' },
+
+  // Tab 6: Demographics & Assets
+  religion: { label: 'Religion', tabIndex: 6, tabName: 'Demographics & Assets' },
+  socialCategory: { label: 'Social Category', tabIndex: 6, tabName: 'Demographics & Assets' },
+  socialSubcategory: { label: 'Social Subcategory', tabIndex: 6, tabName: 'Demographics & Assets' },
+  hasTv: { label: 'Has TV', tabIndex: 6, tabName: 'Demographics & Assets' },
+  hasFridge: { label: 'Has Fridge', tabIndex: 6, tabName: 'Demographics & Assets' },
+  hasLaptop: { label: 'Has Laptop', tabIndex: 6, tabName: 'Demographics & Assets' },
+  hasWifi: { label: 'Has WiFi', tabIndex: 6, tabName: 'Demographics & Assets' },
+  has2wheeler: { label: 'Has 2-Wheeler', tabIndex: 6, tabName: 'Demographics & Assets' },
+  has4wheeler: { label: 'Has 4-Wheeler', tabIndex: 6, tabName: 'Demographics & Assets' },
+
+  // Tab 7: Exit & Docs
+  doe: { label: 'Date of Exit', tabIndex: 7, tabName: 'Exit & Docs' },
+  deletionMonth: { label: 'Deletion Month (MM/YYYY)', tabIndex: 7, tabName: 'Exit & Docs' },
+  exitType: { label: 'Exit Type', tabIndex: 7, tabName: 'Exit & Docs' },
+  exitReason: { label: 'Exit Reason', tabIndex: 7, tabName: 'Exit & Docs' }
+};
+
 import { PersonalInfoTabComponent } from './tabs/personal-info-tab/personal-info-tab.component';
 import { DemographicsTabComponent } from './tabs/demographics-tab/demographics-tab.component';
 import { AssetsTabComponent } from './tabs/assets-tab/assets-tab.component';
@@ -40,7 +146,6 @@ import { FamilyTabComponent } from './tabs/family-tab/family-tab.component';
 import { ExperienceRefTabComponent } from './tabs/experience-ref-tab/experience-ref-tab.component';
 import { ExitDocsTabComponent } from './tabs/exit-docs-tab/exit-docs-tab.component';
 import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.component';
-import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-staff-master-form',
@@ -55,6 +160,10 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
     NzMessageModule,
     NzSpinModule,
     NzModalModule,
+    NzBadgeModule,
+    NzTagModule,
+    NzAlertModule,
+    NzNotificationModule,
     PersonalInfoTabComponent,
     DemographicsTabComponent,
     AssetsTabComponent,
@@ -69,6 +178,7 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
   ],
   template: `
     <div class="pl-container">
+      <!-- Top Action Navigation Bar -->
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/employees">
           <i class="bi bi-arrow-left"></i><span>Back</span>
@@ -77,52 +187,137 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
           <i class="bi bi-pencil-square"></i><span>{{ isEditMode ? 'Edit Employee' : 'New Employee' }}</span>
         </span>
         <span class="pp-spacer"></span>
+
+        <!-- Tab completion progress (Add Mode) -->
         <div class="pp-tab-progress" *ngIf="!isEditMode">
           <div class="pp-progress-bar">
             <div class="pp-progress-fill" [style.width.%]="completedTabs / totalTabs * 100"></div>
           </div>
           <span class="pp-progress-text">{{ completedTabs }}/{{ totalTabs }}</span>
         </div>
+
         <div class="pp-actions">
           <button nz-button nzType="default" type="button" routerLink="/admin/employees" class="act-btn">Cancel</button>
-          <button nz-button nzType="default" type="button" (click)="saveDraft()" [disabled]="isSaving" class="act-btn"><i class="bi bi-save"></i> Draft</button>
-          <button nz-button class="act-btn btn-primary-gradient" type="button" (click)="saveAndNew()" [disabled]="isSaving" [nzLoading]="isSaving">Save & New</button>
-          <button nz-button class="act-btn act-save" type="button" (click)="saveAndClose()" [disabled]="isSaving" [nzLoading]="isSaving">{{ isEditMode ? 'Update' : 'Save & Close' }}</button>
+          <button nz-button nzType="default" type="button" (click)="saveDraft()" [disabled]="isSaving" class="act-btn">
+            <i class="bi bi-save"></i> Draft
+          </button>
+          <button nz-button class="act-btn btn-primary-gradient" type="button" (click)="saveAndNew()" [disabled]="isSaving" [nzLoading]="isSaving">
+            Save & New
+          </button>
+          <button nz-button class="act-btn act-save" type="button" (click)="saveAndClose()" [disabled]="isSaving" [nzLoading]="isSaving">
+            {{ isEditMode ? 'Update Record' : 'Save & Close' }}
+          </button>
         </div>
-        <span class="validation-summary" *ngIf="formErrors.length > 0">
-          <i class="bi bi-exclamation-triangle-fill"></i> {{ formErrors.length }} error(s)
-        </span>
+
+        <button type="button" class="validation-summary-badge" *ngIf="validationErrorsList.length > 0" (click)="showErrorsModal()">
+          <i nz-icon nzType="exclamation-circle" nzTheme="fill"></i>
+          <span>{{ validationErrorsList.length }} Validation Error{{ validationErrorsList.length > 1 ? 's' : '' }}</span>
+        </button>
       </div>
 
+      <!-- Prominent Validation Errors Banner (shown after save attempt or when invalid fields exist) -->
+      <div class="validation-banner" *ngIf="submitAttempted && validationErrorsList.length > 0">
+        <div class="vb-header">
+          <div class="vb-title">
+            <i nz-icon nzType="close-circle" nzTheme="fill" style="color: #ef4444; font-size: 16px;"></i>
+            <strong>Please resolve the following {{ validationErrorsList.length }} field error{{ validationErrorsList.length > 1 ? 's' : '' }} before saving:</strong>
+          </div>
+          <button nz-button nzType="text" nzSize="small" (click)="submitAttempted = false" class="vb-close">
+            <i nz-icon nzType="close"></i>
+          </button>
+        </div>
+        <div class="vb-grid">
+          <div class="vb-item" *ngFor="let err of validationErrorsList" (click)="goToField(err.tabIndex, err.fieldKey)">
+            <span class="vb-tab-tag">{{ err.tabName }}</span>
+            <div class="vb-info">
+              <strong class="vb-field">{{ err.fieldLabel }}</strong>
+              <span class="vb-msg">{{ err.errorMessage }}</span>
+            </div>
+            <span class="vb-arrow"><i nz-icon nzType="arrow-right"></i> Fix</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Multi-tab Employee Form -->
       <form [formGroup]="employeeForm" class="form-wrap">
         <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex" (nzSelectedIndexChange)="onTabChange($event)">
-          <nz-tab nzTitle="Personal Info">
+
+          <!-- Tab 0: Personal Info -->
+          <nz-tab [nzTitle]="tab0Title">
+            <ng-template #tab0Title>
+              <span>Personal Info</span>
+              <nz-badge *ngIf="getTabErrorCount(0) > 0" [nzCount]="getTabErrorCount(0)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode" (languagesChange)="onLanguagesChange($event)"></app-personal-info-tab>
           </nz-tab>
-          <nz-tab nzTitle="Employment">
+
+          <!-- Tab 1: Employment -->
+          <nz-tab [nzTitle]="tab1Title">
+            <ng-template #tab1Title>
+              <span>Employment</span>
+              <nz-badge *ngIf="getTabErrorCount(1) > 0" [nzCount]="getTabErrorCount(1)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-employment-tab [form]="employeeForm"></app-employment-tab>
           </nz-tab>
-          <nz-tab nzTitle="Bank & Identity">
+
+          <!-- Tab 2: Bank & Identity -->
+          <nz-tab [nzTitle]="tab2Title">
+            <ng-template #tab2Title>
+              <span>Bank & Identity</span>
+              <nz-badge *ngIf="getTabErrorCount(2) > 0" [nzCount]="getTabErrorCount(2)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-bank-tab [form]="employeeForm"></app-bank-tab>
             <app-identity-tab [form]="employeeForm"></app-identity-tab>
           </nz-tab>
-          <nz-tab nzTitle="Education">
+
+          <!-- Tab 3: Education -->
+          <nz-tab [nzTitle]="tab3Title">
+            <ng-template #tab3Title>
+              <span>Education</span>
+              <nz-badge *ngIf="getTabErrorCount(3) > 0" [nzCount]="getTabErrorCount(3)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-education-tab [form]="employeeForm"></app-education-tab>
           </nz-tab>
-          <nz-tab nzTitle="Family & Kin">
+
+          <!-- Tab 4: Family & Kin -->
+          <nz-tab [nzTitle]="tab4Title">
+            <ng-template #tab4Title>
+              <span>Family & Kin</span>
+              <nz-badge *ngIf="getTabErrorCount(4) > 0" [nzCount]="getTabErrorCount(4)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-family-tab [form]="employeeForm"></app-family-tab>
           </nz-tab>
-          <nz-tab nzTitle="Experience & Ref.">
+
+          <!-- Tab 5: Experience & Ref. -->
+          <nz-tab [nzTitle]="tab5Title">
+            <ng-template #tab5Title>
+              <span>Experience & Ref.</span>
+              <nz-badge *ngIf="getTabErrorCount(5) > 0" [nzCount]="getTabErrorCount(5)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
           </nz-tab>
-          <nz-tab nzTitle="Demographics & Assets">
+
+          <!-- Tab 6: Demographics & Assets -->
+          <nz-tab [nzTitle]="tab6Title">
+            <ng-template #tab6Title>
+              <span>Demographics & Assets</span>
+              <nz-badge *ngIf="getTabErrorCount(6) > 0" [nzCount]="getTabErrorCount(6)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
             <app-assets-tab [form]="employeeForm"></app-assets-tab>
           </nz-tab>
-          <nz-tab nzTitle="Exit & Docs">
+
+          <!-- Tab 7: Exit & Docs -->
+          <nz-tab [nzTitle]="tab7Title">
+            <ng-template #tab7Title>
+              <span>Exit & Docs</span>
+              <nz-badge *ngIf="getTabErrorCount(7) > 0" [nzCount]="getTabErrorCount(7)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
+            </ng-template>
             <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
                                (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
           </nz-tab>
+
+          <!-- Tab 8: Documents -->
           <nz-tab nzTitle="Documents" [nzDisabled]="!isEditMode">
             <app-documents-tab [employeeId]="employeeId" [isEditMode]="isEditMode"></app-documents-tab>
           </nz-tab>
@@ -146,9 +341,9 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
     .pl-container::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 3px; }
 
     .pp-sub-nav {
-      display: flex; gap: 2px; margin-bottom: 8px;
-      background: #f0f4ff; border-radius: 8px; padding: 3px;
-      border: 1px solid #e0e7ff; align-items: center;
+      display: flex; gap: 4px; margin-bottom: 8px;
+      background: #f0f4ff; border-radius: 8px; padding: 4px 8px;
+      border: 1px solid #e0e7ff; align-items: center; flex-wrap: wrap;
     }
     .pp-nav-item {
       display: flex; align-items: center; gap: 5px;
@@ -160,19 +355,19 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
     .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active { background: #ffffff; color: #1f3d6e; box-shadow: 0 1px 4px rgba(31,61,110,0.1); }
     .pp-spacer { flex: 1; }
-    .pp-tab-progress { display: flex; align-items: center; gap: 8px; }
+    .pp-tab-progress { display: flex; align-items: center; gap: 8px; margin-right: 8px; }
     .pp-progress-bar { width: 80px; height: 4px; background: #e0e7ff; border-radius: 3px; overflow: hidden; }
     .pp-progress-fill { height: 100%; background: linear-gradient(90deg, #4361ee, #3a0ca3); border-radius: 3px; transition: width 0.4s ease; }
     .pp-progress-text { font-size: 11px; color: #6c757d; font-weight: 500; }
 
     .pp-actions {
-      display: flex; gap: 4px; flex-wrap: wrap;
+      display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
     }
     .act-btn {
-      height: 28px; line-height: 28px; border-radius: 6px; font-size: 11px;
-      font-weight: 500; padding: 0 10px;
+      height: 30px; line-height: 28px; border-radius: 6px; font-size: 12px;
+      font-weight: 500; padding: 0 12px; display: inline-flex; align-items: center;
     }
-    .act-btn i { margin-right: 3px; font-size: 12px; }
+    .act-btn i { margin-right: 4px; font-size: 13px; }
     .act-btn[nzType="default"] { background: #fff; border: 1px solid #d1d5db; color: #374151; }
     .act-btn[nzType="default"]:hover { border-color: #4361ee; color: #4361ee; }
     .btn-primary-gradient {
@@ -185,7 +380,61 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
       border: none !important; color: #fff !important;
       box-shadow: 0 2px 8px rgba(31,61,110,0.3) !important;
     }
-    .validation-summary { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: #ef4444; font-weight: 500; background: #fef2f2; padding: 2px 8px; border-radius: 5px; margin-left: 6px; }
+
+    .validation-summary-badge {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+      color: #b91c1c; font-weight: 600; background: #fef2f2;
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #fecaca;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .validation-summary-badge:hover {
+      background: #fee2e2; border-color: #fca5a5;
+    }
+
+    /* Validation Banner */
+    .validation-banner {
+      background: #fff5f5; border: 1px solid #feb2b2; border-left: 4px solid #ef4444;
+      border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .vb-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .vb-title {
+      display: flex; align-items: center; gap: 8px; color: #991b1b; font-size: 13px;
+    }
+    .vb-close {
+      color: #991b1b !important;
+    }
+    .vb-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px;
+    }
+    .vb-item {
+      display: flex; align-items: center; gap: 8px; background: #ffffff;
+      border: 1px solid #fee2e2; border-radius: 6px; padding: 6px 10px;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .vb-item:hover {
+      border-color: #ef4444; background: #fffaf0; transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+    }
+    .vb-tab-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      background: #fee2e2; color: #b91c1c; padding: 2px 6px;
+      border-radius: 4px; white-space: nowrap;
+    }
+    .vb-info {
+      flex: 1; display: flex; flex-direction: column; min-width: 0;
+    }
+    .vb-field {
+      font-size: 12px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .vb-msg {
+      font-size: 11px; color: #dc2626; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .vb-arrow {
+      font-size: 11px; color: #4361ee; font-weight: 600; white-space: nowrap; display: flex; align-items: center; gap: 2px;
+    }
 
     .form-wrap {
       flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
@@ -245,9 +494,31 @@ import { ConfirmDialogComponent, ConfirmDialogData } from '../../shared/componen
     :host ::ng-deep .ant-picker-focused { border-color: #4361ee !important; box-shadow: 0 0 0 2px rgba(67,97,238,0.12) !important; }
     :host ::ng-deep .ant-checkbox-checked .ant-checkbox-inner { background: #4361ee !important; border-color: #4361ee !important; }
 
+    :host ::ng-deep .ant-form-item-has-error .ant-input,
+    :host ::ng-deep .ant-form-item-has-error .ant-select-selector,
+    :host ::ng-deep .ant-form-item-has-error .ant-picker {
+      border-color: #ef4444 !important;
+      background-color: #fff8f8 !important;
+    }
+
+    :host ::ng-deep .highlight-pulse {
+      animation: highlightPulse 1.8s ease-in-out;
+    }
+
+    @keyframes highlightPulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); border-color: #ef4444; }
+      50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); border-color: #ef4444; }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
     :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar { width: 5px; }
     :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
     :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-thumb { background: #c1c7cd; border-radius: 3px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     @media (max-width: 768px) {
       :host ::ng-deep .form-grid, :host ::ng-deep .form-grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -262,6 +533,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   isEditMode = false;
   employeeId: number | null = null;
   isSaving = false;
+  submitAttempted = false;
   masterData: any = {};
   selectedFile: File | null = null;
   existingPhotoUrl: string = '';
@@ -297,13 +569,13 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
   private readonly tabControlMap: string[][] = [
     // 0: Personal Info
-    ['firstName', 'surname', 'gender', 'dob', 'email', 'mobile', 'prefix', 'maritalStatus', 'bloodGroup', 'presentAddress', 'permanentAddress', 'closeRelativeName', 'closeRelativeMobile'],
+    ['firstName', 'surname', 'gender', 'dob', 'email', 'mobile', 'prefix', 'maritalStatus', 'bloodGroup', 'presentAddress', 'permanentAddress', 'closeRelativeName', 'closeRelativeMobile', 'doj', 'highestQualification', 'levelOfEducation', 'yearOfPassing', 'percentageMarks'],
     // 1: Employment
-    ['employeeCode', 'userRole', 'employeeStatus', 'processAssigned', 'department', 'designation', 'doj', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation'],
+    ['employeeCode', 'userRole', 'employeeStatus', 'processAssigned', 'department', 'designation', 'esicNo', 'aadharSeeding', 'uanNo', 'pfNo', 'uanActivation'],
     // 2: Bank & Identity
     ['bankName', 'accountNumber', 'ifscCode', 'branch', 'aadharNumber', 'panNumber', 'rationCard'],
     // 3: Education
-    ['highestQualification', 'levelOfEducation', 'yearOfPassing', 'percentageMarks', 'sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
+    ['sscStatus', 'intermediateStatus', 'bachelorsDegree', 'mastersDegree', 'aadhaarVerification', 'panVerification', 'osv', 'remarks'],
     // 4: Family & Kin
     ['fatherName', 'fatherPhone', 'motherName', 'motherPhone', 'spouseName', 'spousePhone', 'fatherHusbandName', 'fMH', 'occupationKin', 'occupationKinSub'],
     // 5: Experience & Ref.
@@ -324,6 +596,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     private router: Router,
     private message: NzMessageService,
     private modal: NzModalService,
+    private notification: NzNotificationService,
     private authService: AuthService
   ) {
     this.employeeForm = this.createForm();
@@ -351,9 +624,10 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
           control.markAsTouched();
         }
       });
+      this.formErrors = this.collectFormErrors();
     });
 
-    // Unsaved changes warning
+    // Unsaved changes warning on tab/window close
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
@@ -497,7 +771,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
           this.capturedLanguages = emp.languages;
         }
       },
-      error: (err) => {
+      error: () => {
         this.message.error('Error loading employee data', { nzDuration: 3000 });
         this.router.navigate(['/admin/employees']);
       }
@@ -505,28 +779,14 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   }
 
   onTabChange(index: number): void {
-    if (this.employeeForm.dirty && index !== this.previousTabIndex) {
-      this.modal.confirm({
-        nzTitle: 'Unsaved Changes',
-        nzContent: 'You have unsaved changes. Are you sure you want to switch tabs?',
-        nzOnOk: () => {
-          this.previousTabIndex = index;
-          this.selectedTabIndex = index;
-          this.focusFirstField();
-        },
-        nzOnCancel: () => {
-          this.selectedTabIndex = this.previousTabIndex;
-        }
-      });
-    } else {
-      this.previousTabIndex = index;
-      this.focusFirstField();
-    }
+    this.previousTabIndex = index;
+    this.selectedTabIndex = index;
+    this.focusFirstField();
   }
 
   private focusFirstField(): void {
     setTimeout(() => {
-      const firstInput = document.querySelector('.ant-tabs-tabpane-active input, .ant-tabs-tabpane-active nz-select, .ant-tabs-tabpane-active nz-date-picker') as HTMLElement;
+      const firstInput = document.querySelector('.ant-tabs-tabpane-active input:not([readonly]), .ant-tabs-tabpane-active nz-select, .ant-tabs-tabpane-active nz-date-picker') as HTMLElement;
       firstInput?.focus();
     }, 50);
   }
@@ -540,17 +800,143 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     this.employeeForm.get('languages')?.setValue(languages);
   }
 
-  private collectFormErrors(): string[] {
-    const errors: string[] = [];
+  getErrorMessage(key: string, errorKey: string, errorVal: any): string {
+    if (errorKey === 'required') {
+      return 'is required';
+    }
+    if (errorKey === 'minAge') {
+      return `Must be at least ${errorVal?.requiredAge || 18} years old (current age is ${errorVal?.actualAge || 'under 18'})`;
+    }
+    if (errorKey === 'email') {
+      return 'Must be a valid email format (e.g. name@domain.com)';
+    }
+    if (errorKey === 'pattern') {
+      if (['mobile', 'fatherPhone', 'motherPhone', 'spousePhone', 'closeRelativeMobile', 'ref1Mobile', 'ref2Mobile'].includes(key)) {
+        return 'Must be a valid 10-digit mobile number';
+      }
+      if (key === 'aadharNumber') {
+        return 'Must be a valid 12-digit Aadhaar number';
+      }
+      if (key === 'panNumber') {
+        return 'Must be valid PAN format (e.g. ABCDE1234F)';
+      }
+      if (key === 'accountNumber') {
+        return 'Must be valid account number (9 to 18 digits)';
+      }
+      if (key === 'ifscCode') {
+        return 'Must be valid IFSC code (e.g. SBIN0001234)';
+      }
+      if (key === 'deletionMonth') {
+        return 'Must be in MM/YYYY format (e.g. 05/2026)';
+      }
+      if (key === 'employeeCode') {
+        return 'Can only contain letters and numbers';
+      }
+      return 'Invalid format';
+    }
+    if (errorKey === 'maxlength') {
+      return `Cannot exceed ${errorVal?.requiredLength} characters`;
+    }
+    if (errorKey === 'min') {
+      return `Value must be at least ${errorVal?.min}`;
+    }
+    if (errorKey === 'max') {
+      return `Value cannot exceed ${errorVal?.max}`;
+    }
+    return 'Invalid value';
+  }
+
+  get validationErrorsList(): ValidationErrorDetail[] {
+    const list: ValidationErrorDetail[] = [];
     Object.keys(this.employeeForm.controls).forEach(key => {
       const control = this.employeeForm.get(key);
-      if (control?.errors) {
-        Object.keys(control.errors).forEach(errorKey => {
-          errors.push(`${key}: ${errorKey}`);
+      if (control && control.invalid && control.errors) {
+        const meta = FIELD_METAS[key] || {
+          label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+          tabIndex: 0,
+          tabName: 'Personal Info'
+        };
+        Object.keys(control.errors).forEach(errKey => {
+          list.push({
+            fieldKey: key,
+            fieldLabel: meta.label,
+            tabIndex: meta.tabIndex,
+            tabName: meta.tabName,
+            errorKey: errKey,
+            errorMessage: this.getErrorMessage(key, errKey, control.errors?.[errKey])
+          });
         });
       }
     });
-    return errors;
+    return list;
+  }
+
+  getTabErrorCount(tabIndex: number): number {
+    return this.validationErrorsList.filter(e => e.tabIndex === tabIndex).length;
+  }
+
+  goToField(tabIndex: number, fieldKey: string): void {
+    this.selectedTabIndex = tabIndex;
+    setTimeout(() => {
+      const control = this.employeeForm.get(fieldKey);
+      if (control) {
+        control.markAsTouched();
+        control.markAsDirty();
+      }
+
+      // Try locating the input element
+      const el = document.querySelector(`[formcontrolname="${fieldKey}"], input[name="${fieldKey}"], select[name="${fieldKey}"], nz-select[formcontrolname="${fieldKey}"]`) as HTMLElement;
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-pulse');
+        setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
+        el.focus();
+      }
+    }, 120);
+  }
+
+  showErrorsModal(): void {
+    const errors = this.validationErrorsList;
+    if (errors.length === 0) {
+      this.message.success('All required fields are valid!', { nzDuration: 2500 });
+      return;
+    }
+
+    const errorItemsHtml = errors.map(e => `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; margin-bottom: 6px; background: #fff5f5; border: 1px solid #fee2e2; border-radius: 6px;">
+        <div style="display:flex; align-items:center; gap: 8px;">
+          <span style="font-size:10px; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px;">
+            ${e.tabName}
+          </span>
+          <span style="font-size:12px; color:#111827;">
+            <strong>${e.fieldLabel}</strong>: <span style="color:#dc2626;">${e.errorMessage}</span>
+          </span>
+        </div>
+      </div>
+    `).join('');
+
+    this.modal.error({
+      nzTitle: `⚠️ ${errors.length} Validation Error${errors.length > 1 ? 's' : ''} Need Attention`,
+      nzContent: `
+        <div style="max-height: 350px; overflow-y: auto; padding-right: 4px;">
+          <p style="margin-bottom: 12px; color: #4b5563; font-size: 13px;">
+            Please fix the following field(s) across form tabs:
+          </p>
+          ${errorItemsHtml}
+        </div>
+      `,
+      nzOkText: 'Go to First Error',
+      nzWidth: 560,
+      nzOnOk: () => {
+        if (errors.length > 0) {
+          this.goToField(errors[0].tabIndex, errors[0].fieldKey);
+        }
+      }
+    });
+  }
+
+  private collectFormErrors(): string[] {
+    return this.validationErrorsList.map(e => `[${e.tabName}] ${e.fieldLabel}: ${e.errorMessage}`);
   }
 
   private buildEmployeeData(): Employee {
@@ -587,21 +973,35 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   }
 
   validateForm(): boolean {
-    this.formErrors = this.collectFormErrors();
+    this.submitAttempted = true;
+
+    // Touch all controls to show inline field red borders and error tips
     Object.keys(this.employeeForm.controls).forEach(key => {
-      this.employeeForm.get(key)?.markAsTouched();
+      const control = this.employeeForm.get(key);
+      control?.markAsTouched();
+      control?.markAsDirty();
+      control?.updateValueAndValidity({ onlySelf: true });
     });
-    if (this.formErrors.length > 0) {
+
+    this.formErrors = this.collectFormErrors();
+    const errors = this.validationErrorsList;
+
+    if (errors.length > 0) {
+      // Auto-switch to the tab of the first error
+      const firstError = errors[0];
+      this.selectedTabIndex = firstError.tabIndex;
       setTimeout(() => {
-        const firstError = document.querySelector('.ant-form-item-has-error');
-        if (firstError) {
-          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const input = firstError.querySelector('input, textarea, nz-select, nz-date-picker') as HTMLElement;
-          input?.focus();
-        }
+        this.goToField(firstError.tabIndex, firstError.fieldKey);
       }, 100);
+
+      this.notification.error(
+        'Validation Errors Found',
+        `Please correct ${errors.length} field(s) before saving. Click on the error banner or badges to jump directly to invalid fields.`,
+        { nzDuration: 5000 }
+      );
+      return false;
     }
-    return this.formErrors.length === 0;
+    return true;
   }
 
   saveDraft(): void {
@@ -661,8 +1061,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   }
 
   saveAndNew(): void {
-    if (!this.isEditMode && !this.validateForm()) {
-      this.message.warning('Please fix validation errors before saving', { nzDuration: 3000 });
+    if (!this.validateForm()) {
       return;
     }
 
@@ -676,8 +1075,9 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     action.subscribe({
       next: (response) => {
         this.isSaving = false;
+        this.submitAttempted = false;
         this.clearDraft();
-        this.message.success(response.message || 'Saved successfully', { nzDuration: 3000 });
+        this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
         this.employeeForm.reset();
         this.employeeForm.get('employeeCode')?.enable();
         this.selectedFile = null;
@@ -685,17 +1085,17 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
         this.employeeForm.markAsPristine();
         this.isEditMode = false;
         this.employeeId = null;
+        this.selectedTabIndex = 0;
       },
       error: (err) => {
         this.isSaving = false;
-        this.message.error(err.message || 'Error saving', { nzDuration: 3000 });
+        this.handleBackendError(err);
       }
     });
   }
 
   saveAndClose(): void {
-    if (!this.isEditMode && !this.validateForm()) {
-      this.message.warning('Please fix validation errors before saving', { nzDuration: 3000 });
+    if (!this.validateForm()) {
       return;
     }
 
@@ -709,14 +1109,46 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     action.subscribe({
       next: (response) => {
         this.isSaving = false;
+        this.submitAttempted = false;
         this.clearDraft();
-        this.message.success(response.message || 'Saved successfully', { nzDuration: 3000 });
+        this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
         this.router.navigate(['/admin/employees']);
       },
       error: (err) => {
         this.isSaving = false;
-        this.message.error(err.message || 'Error saving', { nzDuration: 3000 });
+        this.handleBackendError(err);
       }
+    });
+  }
+
+  private handleBackendError(err: any): void {
+    let errorTitle = 'Save Failed';
+    let errorMessage = 'An error occurred while saving employee record.';
+    let fieldErrorsHtml = '';
+
+    if (err?.error) {
+      if (typeof err.error === 'string') {
+        errorMessage = err.error;
+      } else if (err.error.message) {
+        errorMessage = err.error.message;
+      }
+
+      if (err.error.data && typeof err.error.data === 'object') {
+        const entries = Object.entries(err.error.data);
+        if (entries.length > 0) {
+          fieldErrorsHtml = '<ul style="padding-left: 20px; margin-top: 8px;">' +
+            entries.map(([f, msg]) => `<li><strong>${f}</strong>: ${msg}</li>`).join('') +
+            '</ul>';
+        }
+      }
+    } else if (err?.message) {
+      errorMessage = err.message;
+    }
+
+    this.modal.error({
+      nzTitle: `❌ ${errorTitle}`,
+      nzContent: `<div><p style="margin-bottom:6px; color:#b91c1c; font-weight:500;">${errorMessage}</p>${fieldErrorsHtml}</div>`,
+      nzOkText: 'Understood'
     });
   }
 }
