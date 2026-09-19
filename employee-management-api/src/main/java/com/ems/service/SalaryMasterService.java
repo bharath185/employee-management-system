@@ -258,41 +258,45 @@ public class SalaryMasterService {
                 createCell(hRow, i, headers[i], headerStyle);
             }
 
-            // Pre-populate with live employees and sample starting values
-            for (Employee emp : employees) {
-                Row row = sheet.createRow(r++);
-                int c = 0;
-                createCell(row, c++, emp.getEmployeeCode(), dataStyle);
-                createCell(row, c++, emp.getFullName(), dataStyle);
-                createCell(row, c++, safeStr(emp.getDesignation()), dataStyle);
-                createCell(row, c++, safeStr(emp.getDepartment() != null ? emp.getDepartment() : emp.getProcessAssigned()), dataStyle);
+            // Pre-populate with exactly 1 sample reference record
+            Employee sampleEmp = (employees != null && !employees.isEmpty()) ? employees.get(0) : null;
+            String sampleCode = sampleEmp != null && sampleEmp.getEmployeeCode() != null ? sampleEmp.getEmployeeCode() : "PARI0001";
+            String sampleName = sampleEmp != null && sampleEmp.getFullName() != null ? sampleEmp.getFullName() : "Sample Employee";
+            String sampleDesig = sampleEmp != null ? safeStr(sampleEmp.getDesignation()) : "Executive";
+            String sampleDept = sampleEmp != null ? safeStr(sampleEmp.getDepartment() != null ? sampleEmp.getDepartment() : sampleEmp.getProcessAssigned()) : "Operations";
 
-                // Sample base calculations
-                BigDecimal basic = new BigDecimal("15000.00");
-                BigDecimal hra = new BigDecimal("6000.00");
-                BigDecimal fpa = new BigDecimal("3000.00");
-                BigDecimal other = new BigDecimal("1000.00");
-                BigDecimal pf = new BigDecimal("1800.00");
-                BigDecimal esi = new BigDecimal("187.50");
-                BigDecimal pt = new BigDecimal("200.00");
-                BigDecimal health = new BigDecimal("500.00");
+            Row row = sheet.createRow(r++);
+            int c = 0;
+            createCell(row, c++, sampleCode, dataStyle);
+            createCell(row, c++, sampleName, dataStyle);
+            createCell(row, c++, sampleDesig, dataStyle);
+            createCell(row, c++, sampleDept, dataStyle);
 
-                createCell(row, c++, basic, currencyStyle);
-                createCell(row, c++, hra, currencyStyle);
-                createCell(row, c++, fpa, currencyStyle);
-                createCell(row, c++, other, currencyStyle);
-                createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-                createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-                createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-                createCell(row, c++, pf, currencyStyle);
-                createCell(row, c++, esi, currencyStyle);
-                createCell(row, c++, pt, currencyStyle);
-                createCell(row, c++, health, currencyStyle);
-                createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-                createCell(row, c++, 8, dataStyle);
-                createCell(row, c++, "Allowed", dataStyle);
-                createCell(row, c++, "Permanent", dataStyle);
-            }
+            // Sample base calculations
+            BigDecimal basic = new BigDecimal("15000.00");
+            BigDecimal hra = new BigDecimal("6000.00");
+            BigDecimal fpa = new BigDecimal("3000.00");
+            BigDecimal other = new BigDecimal("1000.00");
+            BigDecimal pf = new BigDecimal("1800.00");
+            BigDecimal esi = new BigDecimal("187.50");
+            BigDecimal pt = new BigDecimal("200.00");
+            BigDecimal health = new BigDecimal("500.00");
+
+            createCell(row, c++, basic, currencyStyle);
+            createCell(row, c++, hra, currencyStyle);
+            createCell(row, c++, fpa, currencyStyle);
+            createCell(row, c++, other, currencyStyle);
+            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
+            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
+            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
+            createCell(row, c++, pf, currencyStyle);
+            createCell(row, c++, esi, currencyStyle);
+            createCell(row, c++, pt, currencyStyle);
+            createCell(row, c++, health, currencyStyle);
+            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
+            createCell(row, c++, 8, dataStyle);
+            createCell(row, c++, "Allowed", dataStyle);
+            createCell(row, c++, "Permanent", dataStyle);
 
             for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
             wb.write(out);
