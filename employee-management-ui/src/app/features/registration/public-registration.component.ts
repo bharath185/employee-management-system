@@ -1163,6 +1163,9 @@ export class PublicRegistrationComponent implements OnInit {
     if (this.languages.length > 0) {
       fd.append('languages', JSON.stringify(this.languages));
     }
+    if (this.formData.customFieldsMap && Object.keys(this.formData.customFieldsMap).length > 0) {
+      fd.append('customFields', JSON.stringify(this.formData.customFieldsMap));
+    }
     if (this.selectedPhoto) fd.append('photo', this.selectedPhoto);
     if (this.selectedAadharDoc) fd.append('aadharDoc', this.selectedAadharDoc);
     if (this.selectedPanDoc) fd.append('panDoc', this.selectedPanDoc);

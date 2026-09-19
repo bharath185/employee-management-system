@@ -56,4 +56,5 @@ export interface PendingRegistration {
   approvedAt?: string;
   approvedBy?: string;
   languages?: string;
+  customFields?: string;
 }

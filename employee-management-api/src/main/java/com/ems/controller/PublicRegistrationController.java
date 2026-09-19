@@ -86,6 +86,7 @@ public class PublicRegistrationController {
             @RequestParam(value = "ref2Address", required = false) String ref2Address,
             @RequestParam(value = "ref2Mobile", required = false) String ref2Mobile,
             @RequestParam(value = "languages", required = false) String languages,
+            @RequestParam(value = "customFields", required = false) String customFields,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam(value = "aadharDoc", required = false) MultipartFile aadharDoc,
             @RequestParam(value = "panDoc", required = false) MultipartFile panDoc) {
@@ -154,6 +155,7 @@ public class PublicRegistrationController {
             .ref2Address(ref2Address)
             .ref2Mobile(ref2Mobile)
             .languages(languages)
+            .customFields(customFields)
             .build();
 
         PendingRegistrationDTO created = pendingRegistrationService.create(dto, photo, aadharDoc, panDoc);

@@ -29,6 +29,7 @@ import { environment } from '../../../environments/environment';
 import { DocumentTemplateService } from '../../core/services/document-template.service';
 import { DownloadTrackingService } from '../../core/services/download-tracking.service';
 import { DocumentTemplate, DownloadLog } from '../../core/models/document-template.model';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 
 @Component({
@@ -147,6 +148,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                   </div>
                 </nz-descriptions-item>
               </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Personal Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Personal Info').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Personal Info')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
             </div>
           </nz-tab>
 
@@ -185,6 +190,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="Exit Type">{{ employee.exitType | titleCase }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Exit Reason">{{ employee.exitReason || '-' }}</nz-descriptions-item>
               </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Employment Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Employment').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Employment')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
             </div>
           </nz-tab>
 
@@ -210,6 +219,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="OSV (Original Seen & Verified)">{{ employee.osv || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Remarks">{{ employee.remarks || '-' }}</nz-descriptions-item>
               </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Bank & Identity Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Bank & Identity').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Bank & Identity')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
             </div>
           </nz-tab>
 
@@ -228,6 +241,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="Intermediate / 10+2">{{ employee.intermediateStatus || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Bachelor's Degree">{{ employee.bachelorsDegree || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Master's Degree">{{ employee.mastersDegree || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Education Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Education').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Education')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
               </nz-descriptions>
             </div>
           </nz-tab>
@@ -249,6 +266,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="Relation (F/M/H)">{{ employee.fMH || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Occupation of Kin">{{ employee.occupationKin || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Occupation Sub-Category">{{ employee.occupationKinSub || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Family Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Family & Kin').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Family & Kin')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
               </nz-descriptions>
             </div>
           </nz-tab>
@@ -275,6 +296,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="Mobile">{{ employee.ref2Mobile || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Address">{{ employee.ref2Address || '-' }}</nz-descriptions-item>
               </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Experience & References" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Experience & Ref.').length > 0">
+                <nz-descriptions-item *ngFor="let cf of getCustomFieldsForTab('Experience & Ref.')" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
             </div>
           </nz-tab>
 
@@ -285,6 +310,10 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
                 <nz-descriptions-item nzTitle="Religion">{{ employee.religion || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Social Category">{{ employee.socialCategory || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Social Subcategory">{{ employee.socialSubcategory || '-' }}</nz-descriptions-item>
+              </nz-descriptions>
+
+              <nz-descriptions nzTitle="Additional Demographics Details" nzBordered [nzColumn]="{ xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions" *ngIf="getCustomFieldsForTab('Demographics & Assets').length > 0 || getCustomFieldsForTab('Demographics').length > 0">
+                <nz-descriptions-item *ngFor="let cf of (getCustomFieldsForTab('Demographics & Assets').concat(getCustomFieldsForTab('Demographics')))" [nzTitle]="cf.label">{{ cf.value || '-' }}</nz-descriptions-item>
               </nz-descriptions>
 
               <nz-divider nzText="Household Assets Owned" nzOrientation="left"></nz-divider>
@@ -641,6 +670,7 @@ export class StaffMasterViewComponent implements OnInit {
   downloadHistory: DownloadLog[] = [];
 
   isGenerateModalVisible = false;
+  fieldConfigs: FormFieldConfig[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -650,6 +680,7 @@ export class StaffMasterViewComponent implements OnInit {
     private notification: NzNotificationService,
     private templateService: DocumentTemplateService,
     private downloadTrackingService: DownloadTrackingService,
+    private formFieldConfigService: FormFieldConfigService,
     private message: NzMessageService,
     private modal: NzModalService
   ) {}
@@ -659,6 +690,53 @@ export class StaffMasterViewComponent implements OnInit {
     if (this.employeeId) {
       this.loadEmployee(this.employeeId);
       this.loadTemplateTypes();
+      this.loadFieldConfigurations();
+    }
+  }
+
+  private loadFieldConfigurations(): void {
+    this.formFieldConfigService.getVisibleConfigs().subscribe({
+      next: (configs) => {
+        this.fieldConfigs = configs;
+      },
+      error: () => {}
+    });
+  }
+
+  getCustomFieldsForTab(tabName: string): { key: string; label: string; value: any }[] {
+    if (!this.employee || !this.employee.customFields) return [];
+    try {
+      const parsed = typeof this.employee.customFields === 'string' ? JSON.parse(this.employee.customFields) : this.employee.customFields;
+      if (!parsed || typeof parsed !== 'object') return [];
+
+      const matchingConfigs = this.fieldConfigs.filter(f => f.isCustom && f.tabName === tabName);
+      const result = matchingConfigs
+        .filter(f => parsed[f.fieldKey] !== undefined && parsed[f.fieldKey] !== null && parsed[f.fieldKey] !== '')
+        .map(f => ({
+          key: f.fieldKey,
+          label: f.fieldLabel,
+          value: parsed[f.fieldKey]
+        }));
+
+      if (tabName === 'Personal Info') {
+        const knownTabs = ['Personal Info', 'Employment', 'Bank & Identity', 'Education', 'Family & Kin', 'Experience & Ref.', 'Demographics & Assets', 'Exit & Docs', 'Exit & Documents', 'Demographics'];
+        Object.keys(parsed).forEach(key => {
+          const cfg = this.fieldConfigs.find(f => f.fieldKey === key);
+          if (!cfg || !knownTabs.includes(cfg.tabName)) {
+            if (!result.some(r => r.key === key) && parsed[key] !== undefined && parsed[key] !== null && parsed[key] !== '') {
+              result.push({
+                key,
+                label: cfg ? cfg.fieldLabel : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+                value: parsed[key]
+              });
+            }
+          }
+        });
+      }
+
+      return result;
+    } catch {
+      return [];
     }
   }
 

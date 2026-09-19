@@ -529,6 +529,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
 export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactivate {
   allFieldConfigs: FormFieldConfig[] = [];
   mandatoryMap: Record<string, boolean> = {};
+  loadedCustomFields: Record<string, any> = {};
   @ViewChild(ExitDocsTabComponent) exitDocsTab!: ExitDocsTabComponent;
 
   employeeForm: FormGroup;
@@ -774,6 +775,18 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
           this.employeeForm.get('languages')?.setValue(emp.languages);
           this.capturedLanguages = emp.languages;
         }
+        if (emp.customFields) {
+          try {
+            this.loadedCustomFields = typeof emp.customFields === 'string' ? JSON.parse(emp.customFields) : emp.customFields;
+          } catch (e) {
+            this.loadedCustomFields = {};
+          }
+          Object.keys(this.loadedCustomFields).forEach(key => {
+            if (this.employeeForm.contains(key)) {
+              this.employeeForm.get(key)?.setValue(this.loadedCustomFields[key]);
+            }
+          });
+        }
       },
       error: () => {
         this.message.error('Error loading employee data', { nzDuration: 3000 });
@@ -971,6 +984,21 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
     if (this.capturedLanguages.length > 0) {
       employee.languages = this.capturedLanguages;
+    }
+
+    // Collect custom fields into JSON string
+    const customValues: Record<string, any> = {};
+    const customConfigs = (this.allFieldConfigs || []).filter(f => f.isCustom);
+    customConfigs.forEach(cfg => {
+      const val = this.employeeForm.get(cfg.fieldKey)?.value;
+      if (val !== null && val !== undefined && val !== '') {
+        customValues[cfg.fieldKey] = val;
+      }
+    });
+    if (Object.keys(customValues).length > 0) {
+      employee.customFields = JSON.stringify(customValues);
+    } else {
+      employee.customFields = undefined;
     }
 
     return employee;
@@ -1179,7 +1207,10 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
       // Add custom field control if not present
       if (cfg.isCustom && !this.employeeForm.contains(cfg.fieldKey)) {
-        this.employeeForm.addControl(cfg.fieldKey, this.fb.control('', cfg.isMandatory ? [Validators.required] : []));
+        const initialVal = this.loadedCustomFields[cfg.fieldKey] !== undefined ? this.loadedCustomFields[cfg.fieldKey] : '';
+        this.employeeForm.addControl(cfg.fieldKey, this.fb.control(initialVal, cfg.isMandatory ? [Validators.required] : []));
+      } else if (cfg.isCustom && this.loadedCustomFields[cfg.fieldKey] !== undefined) {
+        this.employeeForm.get(cfg.fieldKey)?.setValue(this.loadedCustomFields[cfg.fieldKey]);
       }
 
       // Dynamically update validators for control

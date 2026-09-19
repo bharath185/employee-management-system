@@ -18,6 +18,7 @@ import * as QRCode from 'qrcode';
 
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { PendingRegistration } from '../../core/models/pending-registration.model';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -277,6 +278,15 @@ import { environment } from '../../../environments/environment';
                   <div><strong>Mobile :</strong> {{ selectedReg.ref2Mobile || '-' }}</div>
                 </td>
               </tr>
+              <ng-container *ngIf="getCustomFieldsEntries(selectedReg).length > 0">
+                <tr class="jr-section">
+                  <td colspan="4">Additional Information (Custom Fields)</td>
+                </tr>
+                <tr *ngFor="let cf of getCustomFieldsEntries(selectedReg)">
+                  <td class="jr-label">{{ cf.label }}</td>
+                  <td class="jr-value" colspan="3">{{ cf.value }}</td>
+                </tr>
+              </ng-container>
             </tbody>
           </table>
           <div class="jr-declaration">
@@ -559,8 +569,11 @@ export class PendingRegistrationsComponent implements OnInit {
   qrDataUrl = '';
   registrationUrl = '';
 
+  fieldConfigs: FormFieldConfig[] = [];
+
   constructor(
     private pendingService: PendingRegistrationService,
+    private formFieldConfigService: FormFieldConfigService,
     private notification: NzNotificationService,
     private modal: NzModalService
   ) {}
@@ -568,7 +581,36 @@ export class PendingRegistrationsComponent implements OnInit {
   ngOnInit() {
     this.loadData();
     this.loadPendingCount();
+    this.loadFieldConfigs();
     this.registrationUrl = window.location.origin + '/register-new';
+  }
+
+  loadFieldConfigs() {
+    this.formFieldConfigService.getVisibleConfigs().subscribe({
+      next: (configs) => {
+        this.fieldConfigs = configs;
+      },
+      error: () => {}
+    });
+  }
+
+  getCustomFieldsEntries(reg: PendingRegistration | null): { key: string; label: string; value: any }[] {
+    if (!reg || !reg.customFields) return [];
+    try {
+      const parsed = typeof reg.customFields === 'string' ? JSON.parse(reg.customFields) : reg.customFields;
+      if (!parsed || typeof parsed !== 'object') return [];
+      return Object.keys(parsed).map(key => {
+        const cfg = this.fieldConfigs.find(c => c.fieldKey === key);
+        const label = cfg ? cfg.fieldLabel : key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        return {
+          key,
+          label,
+          value: parsed[key]
+        };
+      }).filter(entry => entry.value !== null && entry.value !== undefined && entry.value !== '');
+    } catch {
+      return [];
+    }
   }
 
   loadData() {

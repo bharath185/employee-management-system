@@ -543,6 +543,7 @@ public class EmployeeService {
         if (source.getDeletionMonth() != null) existing.setDeletionMonth(source.getDeletionMonth());
         if (source.getExitType() != null) existing.setExitType(source.getExitType());
         if (source.getExitReason() != null) existing.setExitReason(source.getExitReason());
+        if (source.getCustomFields() != null) existing.setCustomFields(source.getCustomFields());
     }
 
     public void saveEmployeeLanguages(Long employeeId, List<EmployeeLanguageDTO> languages) {

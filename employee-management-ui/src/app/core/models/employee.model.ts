@@ -92,6 +92,7 @@ export interface Employee {
   createdAt?: string;
   updatedAt?: string;
   userRole?: string;
+  customFields?: string;
 }
 
 export interface EmployeeListDTO {
