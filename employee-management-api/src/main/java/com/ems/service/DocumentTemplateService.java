@@ -31,6 +31,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -52,6 +53,8 @@ public class DocumentTemplateService {
     private final SalaryRepository salaryRepository;
     private final SalaryMasterRepository salaryMasterRepository;
     private final CompanyService companyService;
+    @org.springframework.beans.factory.annotation.Value("${app.photo.upload-dir:uploads/photos}")
+    private String photoUploadDir;
 
     // ========== TEMPLATE CRUD ==========
 
@@ -158,6 +161,7 @@ public class DocumentTemplateService {
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
         filledContent = resolveLogoUrl(filledContent, company);
+        filledContent = resolveEmployeePhoto(filledContent, employee);
         filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
         styledHtml = applyA4PreviewFrame(styledHtml);
@@ -185,6 +189,7 @@ public class DocumentTemplateService {
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
         filledContent = resolveLogoUrl(filledContent, company);
+        filledContent = resolveEmployeePhoto(filledContent, employee);
         filledContent = resolveSalaryPlaceholders(filledContent, employee);
         String styledHtml = wrapWithPrintStyles(filledContent, template.getTemplateName());
         styledHtml = applyA4PreviewFrame(styledHtml);
@@ -480,6 +485,77 @@ public class DocumentTemplateService {
             }
         }
         return content.replace("{{company_logo}}", logoSrc);
+    }
+
+    /**
+     * Resolves employee photo placeholders ({{employee_photo}}, {{photo}}, etc.)
+     * and embeds the base64-encoded image into the template or signature box.
+     */
+    private String resolveEmployeePhoto(String content, Employee employee) {
+        if (content == null || content.isEmpty() || employee == null) return content;
+
+        String photoSrc = "";
+        String photoImgTag = "";
+
+        if (employee.getPhotoPath() != null && !employee.getPhotoPath().trim().isEmpty()) {
+            String rawPath = employee.getPhotoPath().trim();
+            String fileName = rawPath.contains("/") ? rawPath.substring(rawPath.lastIndexOf('/') + 1) : rawPath;
+            if (fileName.contains("\\")) {
+                fileName = fileName.substring(fileName.lastIndexOf('\\') + 1);
+            }
+
+            Path[] candidatePaths = new Path[] {
+                Paths.get(photoUploadDir != null ? photoUploadDir : "uploads/photos").resolve(fileName),
+                Paths.get("data/uploads/photos").resolve(fileName),
+                Paths.get("uploads/photos").resolve(fileName),
+                Paths.get("data", "uploads", "photos", fileName),
+                Paths.get("uploads", "photos", fileName),
+                Paths.get(rawPath)
+            };
+
+            for (Path p : candidatePaths) {
+                if (Files.exists(p) && Files.isRegularFile(p)) {
+                    try {
+                        byte[] bytes = Files.readAllBytes(p);
+                        String mime = Files.probeContentType(p);
+                        if (mime == null || mime.isBlank()) {
+                            String name = p.getFileName().toString().toLowerCase();
+                            mime = name.endsWith(".png") ? "image/png"
+                                : name.endsWith(".gif") ? "image/gif"
+                                : name.endsWith(".webp") ? "image/webp"
+                                : "image/jpeg";
+                        }
+                        photoSrc = "data:" + mime + ";base64," + Base64.getEncoder().encodeToString(bytes);
+                        photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"Employee Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+                        break;
+                    } catch (Exception e) {
+                        log.warn("Could not read employee photo from {}: {}", p, e.getMessage());
+                    }
+                }
+            }
+
+            if (photoSrc.isEmpty()) {
+                photoSrc = rawPath.startsWith("/") ? rawPath : "/api/v1/photos/" + fileName;
+                photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"Employee Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+            }
+        }
+
+        // Replace placeholders
+        content = content.replace("{{photo}}", photoImgTag)
+                         .replace("{{employee_photo}}", photoImgTag)
+                         .replace("{{photo_img}}", photoImgTag)
+                         .replace("{{employee_photo_img}}", photoImgTag)
+                         .replace("{{photo_url}}", photoSrc)
+                         .replace("{{employee_photo_url}}", photoSrc)
+                         .replace("{{employee_photo_src}}", photoSrc)
+                         .replace("{{photo_src}}", photoSrc);
+
+        // If employee has a photo and template has empty signature-box (<div class="signature-box"></div>), inject the photo
+        if (!photoImgTag.isEmpty()) {
+            content = content.replaceAll("(<div class=\"signature-box\"[^>]*>)\\s*(</div>)", "$1" + java.util.regex.Matcher.quoteReplacement(photoImgTag) + "$2");
+        }
+
+        return content;
     }
 
     /**

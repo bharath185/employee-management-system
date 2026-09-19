@@ -51,6 +51,26 @@ public final class TemplatePlaceholderResolver {
         values.put("occupation_kin_sub", nullSafe(employee.getOccupationKinSub()));
         values.put("ration_card", nullSafe(employee.getRationCard()));
 
+        // Photo fields
+        String photo = nullSafe(employee.getPhotoPath());
+        values.put("photo_path", photo);
+        values.put("photo_url", photo);
+        values.put("employee_photo_url", photo);
+        values.put("photo_src", photo);
+        values.put("employee_photo_src", photo);
+        if (!photo.isEmpty()) {
+            String imgTag = "<img src=\"" + photo + "\" alt=\"Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+            values.put("photo", imgTag);
+            values.put("employee_photo", imgTag);
+            values.put("photo_img", imgTag);
+            values.put("employee_photo_img", imgTag);
+        } else {
+            values.put("photo", "");
+            values.put("employee_photo", "");
+            values.put("photo_img", "");
+            values.put("employee_photo_img", "");
+        }
+
         // Dates
         String dojStr = employee.getDoj() != null ? employee.getDoj().format(DATE_FORMATTER) : "";
         values.put("doj", dojStr);
