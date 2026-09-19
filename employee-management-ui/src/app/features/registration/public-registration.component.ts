@@ -1113,12 +1113,17 @@ export class PublicRegistrationComponent implements OnInit {
     fd.append('panNumber', this.formData.panNumber || '');
     fd.append('highestQualification', this.formData.highestQualification || '');
     fd.append('designation', this.formData.designation || '');
+    fd.append('department', this.formData.department || '');
+    fd.append('processAssigned', this.formData.processAssigned || '');
     fd.append('doj', this.formData.doj || '');
     fd.append('bankName', this.formData.bankName || '');
     fd.append('accountNumber', this.formData.accountNumber || '');
     fd.append('ifscCode', this.formData.ifscCode || '');
     fd.append('branch', this.formData.branch || '');
-    fd.append('fatherName', this.formData.fatherName || '');
+    fd.append('fatherHusbandName', this.formData.fatherHusbandName || this.formData.fatherName || '');
+    fd.append('fMH', this.formData.fMH || '');
+    fd.append('occupationKin', this.formData.occupationKin || '');
+    fd.append('fatherName', this.formData.fatherName || this.formData.fatherHusbandName || '');
     fd.append('fatherPhone', this.formData.fatherPhone || '');
     fd.append('motherName', this.formData.motherName || '');
     fd.append('motherPhone', this.formData.motherPhone || '');

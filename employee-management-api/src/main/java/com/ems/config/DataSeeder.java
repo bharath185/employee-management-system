@@ -76,9 +76,13 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS processes VARCHAR(500)",
             "DELETE FROM master_data WHERE category = 'PROCESS' AND code IN ('PROCESS_A', 'PROCESS_B', 'PROCESS_C', 'PROCESS_D')",
             "UPDATE employees SET process_assigned = 'Housing Loan' WHERE process_assigned = 'HOUSING LOAN'",
-            "UPDATE employees SET process_assigned = 'Education Loan' WHERE process_assigned IN ('EDUCATION LOAN', 'Ed+AS217:AU217')",
             "ALTER TABLE employees ADD COLUMN IF NOT EXISTS custom_fields TEXT",
-            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS custom_fields TEXT"
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS custom_fields TEXT",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS father_husband_name VARCHAR(40)",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS f_m_h VARCHAR(10)",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS occupation_kin VARCHAR(30)",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS department VARCHAR(56)",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS process_assigned VARCHAR(56)"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {

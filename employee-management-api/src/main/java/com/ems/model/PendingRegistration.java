@@ -75,6 +75,12 @@ public class PendingRegistration {
     @Column(name = "designation", length = 40)
     private String designation;
 
+    @Column(name = "department", length = 56)
+    private String department;
+
+    @Column(name = "process_assigned", length = 56)
+    private String processAssigned;
+
     @Column(name = "doj")
     private LocalDate doj;
 
@@ -90,13 +96,22 @@ public class PendingRegistration {
     @Column(name = "branch", length = 40)
     private String branch;
 
-    @Column(name = "father_name", length = 20)
+    @Column(name = "father_husband_name", length = 40)
+    private String fatherHusbandName;
+
+    @Column(name = "f_m_h", length = 10)
+    private String fMH;
+
+    @Column(name = "occupation_kin", length = 30)
+    private String occupationKin;
+
+    @Column(name = "father_name", length = 40)
     private String fatherName;
 
     @Column(name = "father_phone", length = 15)
     private String fatherPhone;
 
-    @Column(name = "mother_name", length = 20)
+    @Column(name = "mother_name", length = 40)
     private String motherName;
 
     @Column(name = "mother_phone", length = 15)

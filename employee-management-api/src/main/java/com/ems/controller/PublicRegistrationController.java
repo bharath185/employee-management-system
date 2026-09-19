@@ -38,11 +38,16 @@ public class PublicRegistrationController {
             @RequestParam(value = "panNumber", required = false) String panNumber,
             @RequestParam(value = "highestQualification", required = false) String highestQualification,
             @RequestParam(value = "designation", required = false) String designation,
+            @RequestParam(value = "department", required = false) String department,
+            @RequestParam(value = "processAssigned", required = false) String processAssigned,
             @RequestParam(value = "doj", required = false) String doj,
             @RequestParam(value = "bankName", required = false) String bankName,
             @RequestParam(value = "accountNumber", required = false) String accountNumber,
             @RequestParam(value = "ifscCode", required = false) String ifscCode,
             @RequestParam(value = "branch", required = false) String branch,
+            @RequestParam(value = "fatherHusbandName", required = false) String fatherHusbandName,
+            @RequestParam(value = "fMH", required = false) String fMH,
+            @RequestParam(value = "occupationKin", required = false) String occupationKin,
             @RequestParam(value = "fatherName", required = false) String fatherName,
             @RequestParam(value = "fatherPhone", required = false) String fatherPhone,
             @RequestParam(value = "motherName", required = false) String motherName,
@@ -107,11 +112,16 @@ public class PublicRegistrationController {
             .panNumber(panNumber)
             .highestQualification(highestQualification)
             .designation(designation)
+            .department(department)
+            .processAssigned(processAssigned)
             .doj(doj)
             .bankName(bankName)
             .accountNumber(accountNumber)
             .ifscCode(ifscCode)
             .branch(branch)
+            .fatherHusbandName(fatherHusbandName)
+            .fMH(fMH)
+            .occupationKin(occupationKin)
             .fatherName(fatherName)
             .fatherPhone(fatherPhone)
             .motherName(motherName)

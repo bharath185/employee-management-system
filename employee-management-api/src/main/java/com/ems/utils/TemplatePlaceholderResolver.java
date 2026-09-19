@@ -37,16 +37,35 @@ public final class TemplatePlaceholderResolver {
         values.put("surname", nullSafe(employee.getSurname()));
         values.put("prefix", nullSafe(employee.getPrefix()));
         values.put("marital_status", nullSafe(employee.getMaritalStatus()));
-        values.put("father_husband_name", nullSafe(employee.getFatherHusbandName()));
+        String resolvedFather = nullSafe(employee.getFatherHusbandName());
+        if (resolvedFather.isEmpty()) {
+            resolvedFather = nullSafe(employee.getFatherName());
+        }
+        values.put("father_husband_name", resolvedFather);
+        values.put("father_name", resolvedFather);
+        values.put("fathername", resolvedFather);
+        values.put("father_or_husband_name", resolvedFather);
+        values.put("father_husband", resolvedFather);
         values.put("f_m_h", nullSafe(employee.getFMH()));
         values.put("occupation_kin", nullSafe(employee.getOccupationKin()));
         values.put("occupation_kin_sub", nullSafe(employee.getOccupationKinSub()));
         values.put("ration_card", nullSafe(employee.getRationCard()));
 
         // Dates
-        values.put("doj", employee.getDoj() != null ? employee.getDoj().format(DATE_FORMATTER) : "");
-        values.put("doe", employee.getDoe() != null ? employee.getDoe().format(DATE_FORMATTER) : "");
-        values.put("dob", employee.getDob() != null ? employee.getDob().format(DATE_FORMATTER) : "");
+        String dojStr = employee.getDoj() != null ? employee.getDoj().format(DATE_FORMATTER) : "";
+        values.put("doj", dojStr);
+        values.put("date_of_joining", dojStr);
+        values.put("joining_date", dojStr);
+
+        String doeStr = employee.getDoe() != null ? employee.getDoe().format(DATE_FORMATTER) : "";
+        values.put("doe", doeStr);
+        values.put("date_of_exit", doeStr);
+        values.put("exit_date", doeStr);
+
+        String dobStr = employee.getDob() != null ? employee.getDob().format(DATE_FORMATTER) : "";
+        values.put("dob", dobStr);
+        values.put("date_of_birth", dobStr);
+        values.put("birth_date", dobStr);
 
         // Bank fields
         values.put("bank_name", nullSafe(employee.getBankName()));
@@ -164,10 +183,27 @@ public final class TemplatePlaceholderResolver {
             values.put("incorporated_date", "");
         }
 
-        // Current date
-        values.put("current_date", java.time.LocalDate.now().format(DATE_FORMATTER));
-        values.put("current_time", java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
-        values.put("current_year", String.valueOf(java.time.LocalDate.now().getYear()));
+        // Custom fields parsing
+        if (employee.getCustomFields() != null && !employee.getCustomFields().trim().isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> customMap = mapper.readValue(
+                        employee.getCustomFields(),
+                        new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+                );
+                if (customMap != null) {
+                    for (Map.Entry<String, Object> entry : customMap.entrySet()) {
+                        if (entry.getValue() != null) {
+                            String val = String.valueOf(entry.getValue());
+                            values.put(entry.getKey(), val);
+                            values.put(entry.getKey().toLowerCase(), val);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // Ignore JSON parse issues in custom fields
+            }
+        }
 
         return values;
     }

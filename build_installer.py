@@ -82,7 +82,7 @@ def step2_build_backend():
     env["JAVA_HOME"] = JDK_17_DIR
     mvnw_cmd = os.path.join(API_DIR, "mvnw.cmd") if os.name == 'nt' else os.path.join(API_DIR, "mvnw")
     if os.path.exists(mvnw_cmd):
-        res = subprocess.run([mvnw_cmd, "package", "-DskipTests"], cwd=API_DIR, env=env, capture_output=True, text=True)
+        res = subprocess.run(f'"{mvnw_cmd}" package -DskipTests', cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
     else:
         res = subprocess.run(["mvn", "package", "-DskipTests"], cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
     if res.returncode != 0:

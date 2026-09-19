@@ -32,11 +32,16 @@ public class PendingRegistrationDTO {
     private String panNumber;
     private String highestQualification;
     private String designation;
+    private String department;
+    private String processAssigned;
     private String doj;
     private String bankName;
     private String accountNumber;
     private String ifscCode;
     private String branch;
+    private String fatherHusbandName;
+    private String fMH;
+    private String occupationKin;
     private String fatherName;
     private String fatherPhone;
     private String motherName;
@@ -109,11 +114,16 @@ public class PendingRegistrationDTO {
             .panNumber(entity.getPanNumber())
             .highestQualification(entity.getHighestQualification())
             .designation(entity.getDesignation())
+            .department(entity.getDepartment())
+            .processAssigned(entity.getProcessAssigned())
             .doj(entity.getDoj() != null ? entity.getDoj().toString() : null)
             .bankName(entity.getBankName())
             .accountNumber(entity.getAccountNumber())
             .ifscCode(entity.getIfscCode())
             .branch(entity.getBranch())
+            .fatherHusbandName(entity.getFatherHusbandName())
+            .fMH(entity.getFMH())
+            .occupationKin(entity.getOccupationKin())
             .fatherName(entity.getFatherName())
             .fatherPhone(entity.getFatherPhone())
             .motherName(entity.getMotherName())

@@ -38,8 +38,14 @@ public class PendingRegistrationController {
     public ResponseEntity<APIResponse<EmployeeDTO>> approve(
             @PathVariable Long id,
             @RequestParam(value = "employeeCode", required = false) String employeeCode,
+            @RequestParam(value = "doj", required = false) String doj,
+            @RequestParam(value = "designation", required = false) String designation,
+            @RequestParam(value = "department", required = false) String department,
+            @RequestParam(value = "processAssigned", required = false) String processAssigned,
+            @RequestParam(value = "fatherHusbandName", required = false) String fatherHusbandName,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        APIResponse<EmployeeDTO> response = pendingRegistrationService.approve(id, employeeCode, userDetails.getUsername());
+        APIResponse<EmployeeDTO> response = pendingRegistrationService.approve(
+                id, employeeCode, doj, designation, department, processAssigned, fatherHusbandName, userDetails.getUsername());
         return ResponseEntity.ok(response);
     }
 

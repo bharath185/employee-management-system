@@ -153,11 +153,15 @@ import { environment } from '../../../environments/environment';
               </tr>
               <tr>
                 <td class="jr-label">Blood Group</td>
-                <td class="jr-value" colspan="3">{{ selectedReg.bloodGroup || '-' }}</td>
+                <td class="jr-value">{{ selectedReg.bloodGroup || '-' }}</td>
+                <td class="jr-label">Father/Husband</td>
+                <td class="jr-value">{{ selectedReg.fatherHusbandName || selectedReg.fatherName || '-' }}</td>
               </tr>
               <tr>
-                <td class="jr-label">Father's Name</td>
-                <td class="jr-value" colspan="3">{{ selectedReg.fatherName || '-' }}</td>
+                <td class="jr-label">Designation</td>
+                <td class="jr-value">{{ selectedReg.designation || '-' }}</td>
+                <td class="jr-label">Department / Process</td>
+                <td class="jr-value">{{ selectedReg.department || '-' }} / {{ selectedReg.processAssigned || '-' }}</td>
               </tr>
               <tr class="jr-section">
                 <td colspan="4">Address &amp; Contact Details</td>
@@ -336,19 +340,55 @@ import { environment } from '../../../environments/environment';
     </nz-modal>
 
     <nz-modal [(nzVisible)]="isApproveModalVisible" nzTitle="Approve Registration"
-      (nzOnCancel)="isApproveModalVisible = false" [nzFooter]="approveFooter" nzWidth="440px" [nzMaskClosable]="false">
+      (nzOnCancel)="isApproveModalVisible = false" [nzFooter]="approveFooter" nzWidth="520px" [nzMaskClosable]="false">
       <ng-template nzModalContent>
-        <div class="approve-modal-body">
-          <div style="margin-bottom:16px">
-            <p>Approve <strong>{{ selectedReg?.firstName }} {{ selectedReg?.surname }}</strong> ({{ selectedReg?.registrationCode }})</p>
-            <p style="font-size:13px;color:#666;">Employee code will be auto-generated.</p>
+        <div class="approve-modal-body" *ngIf="selectedReg">
+          <div style="margin-bottom:14px;padding:8px 12px;background:#f0f4ff;border-radius:6px;border:1px solid #d0e1fd;">
+            <p style="margin:0;font-weight:600;color:#1f3d6e;">
+              {{ selectedReg.prefix || '' }} {{ selectedReg.firstName }} {{ selectedReg.surname }} ({{ selectedReg.registrationCode }})
+            </p>
+            <p style="margin:2px 0 0 0;font-size:12px;color:#666;">
+              Review or adjust joining details before approving and generating the employee record.
+            </p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="grid-column: span 2;">
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Employee Code (leave blank to auto-generate)</label>
+              <input nz-input [(ngModel)]="approveForm.employeeCode" placeholder="Auto-generated if blank" />
+            </div>
+
+            <div>
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Date of Joining (DOJ) *</label>
+              <input nz-input type="date" [(ngModel)]="approveForm.doj" />
+            </div>
+
+            <div>
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Father / Husband Name</label>
+              <input nz-input [(ngModel)]="approveForm.fatherHusbandName" placeholder="Father or Husband Name" />
+            </div>
+
+            <div>
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Designation</label>
+              <input nz-input [(ngModel)]="approveForm.designation" placeholder="e.g. Associate" />
+            </div>
+
+            <div>
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Department</label>
+              <input nz-input [(ngModel)]="approveForm.department" placeholder="e.g. Operations" />
+            </div>
+
+            <div style="grid-column: span 2;">
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Process Assigned</label>
+              <input nz-input [(ngModel)]="approveForm.processAssigned" placeholder="e.g. Housing Loan" />
+            </div>
           </div>
         </div>
       </ng-template>
       <ng-template #approveFooter>
         <button nz-button nzType="default" (click)="isApproveModalVisible = false">Cancel</button>
         <button nz-button nzType="primary" (click)="confirmApprove()" [nzLoading]="isApproving">
-          <i nz-icon nzType="check"></i> Approve
+          <i nz-icon nzType="check"></i> Confirm &amp; Approve
         </button>
       </ng-template>
     </nz-modal>
@@ -635,14 +675,38 @@ export class PendingRegistrationsComponent implements OnInit {
     this.isViewModalVisible = true;
   }
 
+  approveForm = {
+    employeeCode: '',
+    doj: '',
+    designation: '',
+    department: '',
+    processAssigned: '',
+    fatherHusbandName: ''
+  };
+
   showApproveModal(reg: PendingRegistration) {
     this.selectedReg = reg;
+    this.approveForm = {
+      employeeCode: '',
+      doj: reg.doj || new Date().toISOString().split('T')[0],
+      designation: reg.designation || '',
+      department: reg.department || '',
+      processAssigned: reg.processAssigned || '',
+      fatherHusbandName: reg.fatherHusbandName || reg.fatherName || ''
+    };
     this.isApproveModalVisible = true;
   }
 
   confirmApprove() {
     this.isApproving = true;
-    this.pendingService.approve(this.selectedReg!.id, undefined).subscribe({
+    this.pendingService.approve(this.selectedReg!.id, {
+      employeeCode: this.approveForm.employeeCode?.trim() || undefined,
+      doj: this.approveForm.doj?.trim() || undefined,
+      designation: this.approveForm.designation?.trim() || undefined,
+      department: this.approveForm.department?.trim() || undefined,
+      processAssigned: this.approveForm.processAssigned?.trim() || undefined,
+      fatherHusbandName: this.approveForm.fatherHusbandName?.trim() || undefined
+    }).subscribe({
       next: (res) => {
         this.isApproving = false;
         this.isApproveModalVisible = false;

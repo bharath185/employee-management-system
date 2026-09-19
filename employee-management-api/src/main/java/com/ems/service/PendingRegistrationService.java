@@ -104,12 +104,17 @@ public class PendingRegistrationService {
         entity.setPanNumber(dto.getPanNumber());
         entity.setHighestQualification(dto.getHighestQualification());
         entity.setDesignation(dto.getDesignation());
+        entity.setDepartment(dto.getDepartment());
+        entity.setProcessAssigned(dto.getProcessAssigned());
         entity.setDoj(parseDate(dto.getDoj()));
         entity.setBankName(dto.getBankName());
         entity.setAccountNumber(dto.getAccountNumber());
         entity.setIfscCode(dto.getIfscCode());
         entity.setBranch(dto.getBranch());
-        entity.setFatherName(dto.getFatherName());
+        entity.setFatherHusbandName(dto.getFatherHusbandName() != null && !dto.getFatherHusbandName().trim().isEmpty() ? dto.getFatherHusbandName().trim() : dto.getFatherName());
+        entity.setFMH(dto.getFMH());
+        entity.setOccupationKin(dto.getOccupationKin());
+        entity.setFatherName(dto.getFatherName() != null && !dto.getFatherName().trim().isEmpty() ? dto.getFatherName().trim() : dto.getFatherHusbandName());
         entity.setFatherPhone(dto.getFatherPhone());
         entity.setMotherName(dto.getMotherName());
         entity.setMotherPhone(dto.getMotherPhone());
@@ -191,11 +196,38 @@ public class PendingRegistrationService {
 
     @Transactional
     public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String username) {
+        return approve(id, employeeCode, null, null, null, null, null, username);
+    }
+
+    @Transactional
+    public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String doj, String designation,
+                                            String department, String processAssigned, String fatherHusbandName,
+                                            String username) {
         PendingRegistration pending = pendingRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Pending registration not found with id: " + id));
 
         if (pending.getStatus() != RegistrationStatus.PENDING) {
             throw new BadRequestException("Registration is already " + pending.getStatus().name().toLowerCase());
+        }
+
+        // Apply any overrides passed at approval time
+        if (doj != null && !doj.trim().isEmpty()) {
+            pending.setDoj(parseDate(doj.trim()));
+        }
+        if (designation != null && !designation.trim().isEmpty()) {
+            pending.setDesignation(designation.trim());
+        }
+        if (department != null && !department.trim().isEmpty()) {
+            pending.setDepartment(department.trim());
+        }
+        if (processAssigned != null && !processAssigned.trim().isEmpty()) {
+            pending.setProcessAssigned(processAssigned.trim());
+        }
+        if (fatherHusbandName != null && !fatherHusbandName.trim().isEmpty()) {
+            pending.setFatherHusbandName(fatherHusbandName.trim());
+            if (pending.getFatherName() == null || pending.getFatherName().trim().isEmpty()) {
+                pending.setFatherName(fatherHusbandName.trim());
+            }
         }
 
         // Use provided employee code or auto-generate one
@@ -209,6 +241,13 @@ public class PendingRegistrationService {
             }
         }
 
+        String resolvedFather = pending.getFatherHusbandName() != null && !pending.getFatherHusbandName().trim().isEmpty()
+            ? pending.getFatherHusbandName().trim()
+            : pending.getFatherName();
+        String resolvedFatherName = pending.getFatherName() != null && !pending.getFatherName().trim().isEmpty()
+            ? pending.getFatherName().trim()
+            : pending.getFatherHusbandName();
+
         // Build EmployeeDTO from pending registration data
         EmployeeDTO employeeDTO = EmployeeDTO.builder()
             .employeeCode(finalEmployeeCode)
@@ -218,6 +257,7 @@ public class PendingRegistrationService {
             .mobile(pending.getMobile())
             .email(pending.getEmail())
             .dob(pending.getDob())
+            .doj(pending.getDoj())
             .gender(pending.getGender())
             .maritalStatus(pending.getMaritalStatus())
             .presentAddress(pending.getPresentAddress())
@@ -226,11 +266,16 @@ public class PendingRegistrationService {
             .panNumber(pending.getPanNumber())
             .highestQualification(pending.getHighestQualification())
             .designation(pending.getDesignation())
+            .department(pending.getDepartment())
+            .processAssigned(pending.getProcessAssigned())
             .bankName(pending.getBankName())
             .accountNumber(pending.getAccountNumber())
             .ifscCode(pending.getIfscCode())
             .branch(pending.getBranch())
-            .fatherName(pending.getFatherName())
+            .fatherHusbandName(resolvedFather)
+            .fMH(pending.getFMH())
+            .occupationKin(pending.getOccupationKin())
+            .fatherName(resolvedFatherName)
             .fatherPhone(pending.getFatherPhone())
             .motherName(pending.getMotherName())
             .motherPhone(pending.getMotherPhone())
