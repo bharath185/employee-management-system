@@ -37,7 +37,7 @@
         </div>
 
         <div class="toolbar-right">
-          <button nz-button nzType="default" (click)="isColumnModalVisible = true" class="action-btn column-btn">
+          <button nz-button nzType="default" (click)="openColumnModal()" class="action-btn column-btn">
             <i nz-icon nzType="setting"></i> Choose Columns
             <nz-badge [nzCount]="selectedColumns.length" [nzStyle]="{ backgroundColor: '#1890ff', marginLeft: '6px' }"></nz-badge>
           </button>
@@ -364,7 +364,7 @@
 <!-- MODAL: COLUMN SELECTOR -->
 <nz-modal [(nzVisible)]="isColumnModalVisible" nzTitle="⚙️ Customize Report Columns & Fields"
   (nzOnCancel)="isColumnModalVisible = false" (nzOnOk)="isColumnModalVisible = false"
-  nzWidth="850px" nzOkText="Apply Columns" nzCancelText="Close">
+  nzWidth="960px" nzOkText="Apply Columns" nzCancelText="Close">
   <ng-container *nzModalContent>
     <div class="column-modal-container">
       <!-- Quick Presets -->
@@ -374,23 +374,27 @@
         <button nz-button nzSize="small" (click)="applyColumnPreset('onboarding')">🚀 New Joinees</button>
         <button nz-button nzSize="small" (click)="applyColumnPreset('payroll')">💰 Bank & Payroll</button>
         <button nz-button nzSize="small" (click)="applyColumnPreset('demographics')">📊 Demographics</button>
+        <button nz-button nzSize="small" (click)="applyColumnPreset('custom')" style="background: #eef2ff; color: #4338ca; border-color: #c7d2fe; font-weight: 600;">✨ Custom Fields</button>
         <button nz-button nzSize="small" nzType="dashed" (click)="applyColumnPreset('all')">Select All</button>
         <button nz-button nzSize="small" nzDanger nzType="dashed" (click)="applyColumnPreset('clear')">Clear All</button>
       </div>
 
       <div class="column-search-bar" style="margin: 12px 0;">
         <nz-input-group [nzPrefix]="prefixColSearch">
-          <input nz-input [(ngModel)]="columnSearch" placeholder="Filter columns by name..." />
+          <input nz-input [(ngModel)]="columnSearch" placeholder="Filter columns by name or key..." />
         </nz-input-group>
         <ng-template #prefixColSearch><i nz-icon nzType="search"></i></ng-template>
       </div>
 
       <!-- Categories Grid -->
       <div class="column-categories-grid">
-        <div *ngFor="let cat of columnCategories" class="column-category-box">
+        <div *ngFor="let cat of columnCategories" class="column-category-box" [class.custom-box]="cat === 'Custom Fields'">
           <div class="category-header">
-            <h4>{{ cat }} Fields</h4>
-            <span class="category-badge">{{ getColumnsByCategory(cat).length }} fields</span>
+            <h4>
+              <i nz-icon [nzType]="cat === 'Custom Fields' ? 'appstore-add' : 'folder'" *ngIf="cat === 'Custom Fields'" style="color: #6366f1; margin-right: 4px;"></i>
+              {{ cat === 'Custom Fields' ? 'Custom Fields' : (cat + ' Fields') }}
+            </h4>
+            <span class="category-badge" [class.custom-badge]="cat === 'Custom Fields'">{{ getColumnsByCategory(cat).length }} fields</span>
           </div>
           <div class="category-items">
             <label nz-checkbox *ngFor="let col of getColumnsByCategory(cat)" [(ngModel)]="col.selected" class="col-checkbox">

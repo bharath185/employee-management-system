@@ -210,22 +210,33 @@ export class ReportsComponent implements OnInit {
     this.loadReportData();
   }
 
+  openColumnModal(): void {
+    this.loadFieldConfigurations();
+    this.isColumnModalVisible = true;
+  }
+
   get selectedColumns(): ReportColumn[] {
     return this.availableColumns.filter(c => c.selected);
   }
 
-  get columnCategories(): ('Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification' | 'Custom Fields')[] {
-    const cats: ('Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification' | 'Custom Fields')[] = [
-      'Personal', 'Employment', 'Demographics', 'Bank', 'Family', 'Verification'
+  get columnCategories(): ('Personal' | 'Employment' | 'Custom Fields' | 'Demographics' | 'Family' | 'Bank' | 'Verification')[] {
+    const cats: ('Personal' | 'Employment' | 'Custom Fields' | 'Demographics' | 'Family' | 'Bank' | 'Verification')[] = [
+      'Personal', 'Employment'
     ];
     if (this.availableColumns.some(c => c.category === 'Custom Fields')) {
       cats.push('Custom Fields');
     }
+    cats.push('Demographics', 'Bank', 'Family', 'Verification');
     return cats;
   }
 
   getColumnsByCategory(category: string): ReportColumn[] {
-    return this.availableColumns.filter(c => c.category === category && (!this.columnSearch || c.label.toLowerCase().includes(this.columnSearch.toLowerCase())));
+    return this.availableColumns.filter(c => {
+      if (c.category !== category) return false;
+      if (!this.columnSearch) return true;
+      const q = this.columnSearch.toLowerCase();
+      return (c.label && c.label.toLowerCase().includes(q)) || (c.key && c.key.toLowerCase().includes(q));
+    });
   }
 
   loadFieldConfigurations(): void {
@@ -233,7 +244,10 @@ export class ReportsComponent implements OnInit {
       next: (configs) => {
         const customConfigs = (configs || []).filter(c => c.isCustom);
         customConfigs.forEach(cfg => {
-          if (!this.availableColumns.some(col => col.key === cfg.fieldKey)) {
+          const existing = this.availableColumns.find(col => col.key === cfg.fieldKey);
+          if (existing) {
+            existing.label = cfg.fieldLabel;
+          } else {
             this.availableColumns.push({
               key: cfg.fieldKey,
               label: cfg.fieldLabel,
@@ -449,7 +463,7 @@ export class ReportsComponent implements OnInit {
   }
 
   // Preset Column Configurations
-  applyColumnPreset(preset: 'standard' | 'onboarding' | 'payroll' | 'demographics' | 'all' | 'clear'): void {
+  applyColumnPreset(preset: 'standard' | 'onboarding' | 'payroll' | 'demographics' | 'custom' | 'all' | 'clear'): void {
     if (preset === 'all') {
       this.availableColumns.forEach(c => c.selected = true);
     } else if (preset === 'clear') {
@@ -471,6 +485,12 @@ export class ReportsComponent implements OnInit {
     } else if (preset === 'demographics') {
       const keys = ['employeeCode', 'fullName', 'gender', 'dob', 'age', 'bloodGroup', 'religion', 'socialCategory', 'socialSubcategory', 'highestQualification', 'presentAddress'];
       this.availableColumns.forEach(c => c.selected = keys.includes(c.key));
+    } else if (preset === 'custom') {
+      this.availableColumns.forEach(c => {
+        if (c.category === 'Custom Fields' || c.isCustom) {
+          c.selected = true;
+        }
+      });
     }
   }
 
