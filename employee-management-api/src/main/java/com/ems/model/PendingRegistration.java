@@ -48,6 +48,9 @@ public class PendingRegistration {
     @Column(name = "languages", length = 500)
     private String languages;
 
+    @Column(name = "custom_fields", columnDefinition = "TEXT")
+    private String customFields;
+
     @Column(name = "prefix", length = 5)
     private String prefix;
 

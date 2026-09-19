@@ -54,6 +54,8 @@ public class SecurityConfig {
                     "/swagger-ui.html", "/api-docs/**").permitAll()
                 .requestMatchers("/photos/**", "/company-uploads/**", "/company/logo", "/company/logo/**", "/public/**", "/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/photos/**").permitAll()
+                .requestMatchers("/api/v1/form-fields/visible", "/form-fields/visible").permitAll()
+                .requestMatchers("/api/v1/form-fields/**", "/form-fields/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/masters/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/dashboard/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/email-config/**").hasAnyRole("ADMIN", "HR")

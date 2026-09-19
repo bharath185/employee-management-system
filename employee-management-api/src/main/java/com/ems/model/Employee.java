@@ -295,6 +295,9 @@ public class Employee {
     @Column(name = "photo_path", length = 255)
     private String photoPath;
 
+    @Column(name = "custom_fields", columnDefinition = "TEXT")
+    private String customFields;
+
     // ========== AUDIT FIELDS ==========
     @CreatedDate
     @Column(name = "created_at", updatable = false)

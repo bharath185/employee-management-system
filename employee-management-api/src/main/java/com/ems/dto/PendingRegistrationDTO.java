@@ -88,6 +88,7 @@ public class PendingRegistrationDTO {
     private LocalDateTime approvedAt;
     private String approvedBy;
     private String languages;
+    private String customFields;
 
     public static PendingRegistrationDTO fromEntity(PendingRegistration entity) {
         PendingRegistrationDTOBuilder builder = PendingRegistrationDTO.builder()
@@ -163,7 +164,8 @@ public class PendingRegistrationDTO {
             .createdAt(entity.getCreatedAt())
             .approvedAt(entity.getApprovedAt())
             .approvedBy(entity.getApprovedBy())
-            .languages(entity.getLanguages());
+            .languages(entity.getLanguages())
+            .customFields(entity.getCustomFields());
         return builder.build();
     }
 }

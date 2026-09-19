@@ -1,3 +1,5 @@
+import { CustomFieldsRendererComponent } from '../../../../shared/components/custom-fields-renderer.component';
+import { FormFieldConfig } from '../../../../core/services/form-field-config.service';
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -19,7 +21,7 @@ import { MasterDataService } from '../../../../core/services/master-data.service
     NzSelectModule,
     NzDatePickerModule,
     NzIconModule
-  ],
+  , CustomFieldsRendererComponent],
   template: `
     <div class="tab-container">
       <h3 class="section-title">Employment Details</h3>
@@ -126,6 +128,9 @@ import { MasterDataService } from '../../../../core/services/master-data.service
   `]
 })
 export class EmploymentTabComponent implements OnInit {
+  @Input() mandatoryMap: Record<string, boolean> = {};
+  @Input() customFields: FormFieldConfig[] = [];
+
   @Input() form: any;
 
   yesNoOptions: { value: string; label: string }[] = [];

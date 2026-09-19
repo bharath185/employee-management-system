@@ -37,6 +37,7 @@ public class DataSeeder implements CommandLineRunner {
     private final DocumentTemplateRepository documentTemplateRepository;
     private final RolePermissionRepository rolePermissionRepository;
     private final EmployeeCodeGenerator employeeCodeGenerator;
+    private final FormFieldConfigRepository formFieldConfigRepository;
 
     private final DataSource dataSource;
 
@@ -59,6 +60,7 @@ public class DataSeeder implements CommandLineRunner {
         }
         seedDocumentTemplates();
         seedPermissions();
+        seedFormFieldConfigs();
     }
 
     private void fixColumnLengths() {
@@ -74,7 +76,9 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE holidays ADD COLUMN IF NOT EXISTS processes VARCHAR(500)",
             "DELETE FROM master_data WHERE category = 'PROCESS' AND code IN ('PROCESS_A', 'PROCESS_B', 'PROCESS_C', 'PROCESS_D')",
             "UPDATE employees SET process_assigned = 'Housing Loan' WHERE process_assigned = 'HOUSING LOAN'",
-            "UPDATE employees SET process_assigned = 'Education Loan' WHERE process_assigned IN ('EDUCATION LOAN', 'Ed+AS217:AU217')"
+            "UPDATE employees SET process_assigned = 'Education Loan' WHERE process_assigned IN ('EDUCATION LOAN', 'Ed+AS217:AU217')",
+            "ALTER TABLE employees ADD COLUMN IF NOT EXISTS custom_fields TEXT",
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS custom_fields TEXT"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {
@@ -658,4 +662,133 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
     }
+
+    private void seedFormFieldConfigs() {
+        if (formFieldConfigRepository.count() > 0) {
+            log.debug("FormFieldConfigs already seeded, skipping");
+            return;
+        }
+
+        Object[][] fields = {
+            // Tab 0: Personal Info
+            {"prefix", "Prefix", "Personal Info", "SELECT", "PREFIX", false, true, 1},
+            {"firstName", "First Name", "Personal Info", "TEXT", null, true, true, 2},
+            {"surname", "Surname", "Personal Info", "TEXT", null, true, true, 3},
+            {"gender", "Gender", "Personal Info", "SELECT", "GENDER", true, true, 4},
+            {"dob", "Date of Birth", "Personal Info", "DATE", null, true, true, 5},
+            {"email", "Email Address", "Personal Info", "TEXT", null, true, true, 6},
+            {"mobile", "Mobile Number", "Personal Info", "TEXT", null, true, true, 7},
+            {"maritalStatus", "Marital Status", "Personal Info", "SELECT", "MARITAL_STATUS", false, true, 8},
+            {"doj", "Date of Joining", "Personal Info", "DATE", null, false, true, 9},
+            {"presentAddress", "Present Address", "Personal Info", "TEXTAREA", null, false, true, 10},
+            {"permanentAddress", "Permanent Address", "Personal Info", "TEXTAREA", null, false, true, 11},
+            {"closeRelativeName", "Emergency Contact Name", "Personal Info", "TEXT", null, false, true, 12},
+            {"closeRelativeMobile", "Emergency Contact Mobile", "Personal Info", "TEXT", null, false, true, 13},
+            {"highestQualification", "Highest Qualification", "Personal Info", "SELECT", "QUALIFICATION", false, true, 14},
+            {"levelOfEducation", "Level of Education", "Personal Info", "SELECT", "EDUCATION_LEVEL", false, true, 15},
+            {"yearOfPassing", "Year of Passing", "Personal Info", "NUMBER", null, false, true, 16},
+            {"percentageMarks", "% of Marks", "Personal Info", "NUMBER", null, false, true, 17},
+
+            // Tab 1: Employment
+            {"employeeCode", "Employee Code", "Employment", "TEXT", null, false, true, 1},
+            {"userRole", "Login Role", "Employment", "SELECT", null, false, true, 2},
+            {"employeeStatus", "Employee Status", "Employment", "SELECT", "EMPLOYEE_STATUS", true, true, 3},
+            {"processAssigned", "Process / Unit", "Employment", "SELECT", "PROCESS", false, true, 4},
+            {"department", "Department", "Employment", "SELECT", "DEPARTMENT", false, true, 5},
+            {"designation", "Designation", "Employment", "SELECT", "DESIGNATION", false, true, 6},
+            {"esicNo", "ESIC Number", "Employment", "TEXT", null, false, true, 7},
+            {"uanNo", "UAN Number", "Employment", "TEXT", null, false, true, 8},
+            {"pfNo", "PF Number", "Employment", "TEXT", null, false, true, 9},
+            {"aadharSeeding", "Aadhar Seeding", "Employment", "SELECT", "YES_NO", false, true, 10},
+            {"uanActivation", "UAN Activation", "Employment", "SELECT", "YES_NO", false, true, 11},
+
+            // Tab 2: Bank & Identity
+            {"bankName", "Bank Name", "Bank & Identity", "SELECT", "BANK_NAME", false, true, 1},
+            {"accountNumber", "Account Number", "Bank & Identity", "TEXT", null, false, true, 2},
+            {"ifscCode", "IFSC Code", "Bank & Identity", "TEXT", null, false, true, 3},
+            {"branch", "Bank Branch", "Bank & Identity", "TEXT", null, false, true, 4},
+            {"bloodGroup", "Blood Group", "Bank & Identity", "SELECT", "BLOOD_GROUP", false, true, 5},
+            {"aadharNumber", "Aadhaar Number", "Bank & Identity", "TEXT", null, false, true, 6},
+            {"panNumber", "PAN Number", "Bank & Identity", "TEXT", null, false, true, 7},
+            {"rationCard", "Ration Card", "Bank & Identity", "TEXT", null, false, true, 8},
+
+            // Tab 3: Education
+            {"sscStatus", "SSC / Std X", "Education", "SELECT", "YES_NO", false, true, 1},
+            {"intermediateStatus", "Intermediate / Std XII", "Education", "SELECT", "YES_NO", false, true, 2},
+            {"bachelorsDegree", "Bachelor's Degree", "Education", "TEXT", null, false, true, 3},
+            {"mastersDegree", "Master's Degree", "Education", "TEXT", null, false, true, 4},
+            {"aadhaarVerification", "Aadhaar Verification", "Education", "SELECT", "YES_NO", false, true, 5},
+            {"panVerification", "PAN Verification", "Education", "SELECT", "YES_NO", false, true, 6},
+            {"osv", "OSV", "Education", "SELECT", "YES_NO", false, true, 7},
+            {"remarks", "Remarks", "Education", "TEXTAREA", null, false, true, 8},
+
+            // Tab 4: Family & Kin
+            {"fatherHusbandName", "Father/Husband Name", "Family & Kin", "TEXT", null, false, true, 1},
+            {"fMH", "Relationship (F/M/H)", "Family & Kin", "SELECT", "F_M_H", false, true, 2},
+            {"fatherName", "Father's Name", "Family & Kin", "TEXT", null, false, true, 3},
+            {"fatherPhone", "Father's Phone", "Family & Kin", "TEXT", null, false, true, 4},
+            {"motherName", "Mother's Name", "Family & Kin", "TEXT", null, false, true, 5},
+            {"motherPhone", "Mother's Phone", "Family & Kin", "TEXT", null, false, true, 6},
+            {"spouseName", "Spouse's Name", "Family & Kin", "TEXT", null, false, true, 7},
+            {"spousePhone", "Spouse's Phone", "Family & Kin", "TEXT", null, false, true, 8},
+            {"occupationKin", "Occupation of Kin", "Family & Kin", "SELECT", "OCCUPATION_KIN", false, true, 9},
+            {"occupationKinSub", "Occupation Subcategory", "Family & Kin", "TEXT", null, false, true, 10},
+
+            // Tab 5: Experience & Ref.
+            {"pastExperience", "Past Experience", "Experience & Ref.", "SELECT", "YES_NO", false, true, 1},
+            {"organizationName", "Previous Organization", "Experience & Ref.", "TEXT", null, false, true, 2},
+            {"periodOfEmployment", "Period of Employment", "Experience & Ref.", "TEXT", null, false, true, 3},
+            {"ref1Name", "Reference 1 Name", "Experience & Ref.", "TEXT", null, false, true, 4},
+            {"ref1Relationship", "Reference 1 Relationship", "Experience & Ref.", "SELECT", "RELATIONSHIP", false, true, 5},
+            {"ref1Address", "Reference 1 Address", "Experience & Ref.", "TEXT", null, false, true, 6},
+            {"ref1Mobile", "Reference 1 Mobile", "Experience & Ref.", "TEXT", null, false, true, 7},
+            {"ref2Name", "Reference 2 Name", "Experience & Ref.", "TEXT", null, false, true, 8},
+            {"ref2Relationship", "Reference 2 Relationship", "Experience & Ref.", "SELECT", "RELATIONSHIP", false, true, 9},
+            {"ref2Address", "Reference 2 Address", "Experience & Ref.", "TEXT", null, false, true, 10},
+            {"ref2Mobile", "Reference 2 Mobile", "Experience & Ref.", "TEXT", null, false, true, 11},
+
+            // Tab 6: Demographics & Assets
+            {"religion", "Religion", "Demographics & Assets", "SELECT", "RELATIONSHIP", false, true, 1},
+            {"socialCategory", "Social Category", "Demographics & Assets", "SELECT", "SOCIAL_CATEGORY", false, true, 2},
+            {"socialSubcategory", "Social Subcategory", "Demographics & Assets", "SELECT", "SOCIAL_SUBCATEGORY", false, true, 3},
+            {"hasTv", "Has TV", "Demographics & Assets", "SELECT", "YES_NO", false, true, 4},
+            {"hasFridge", "Has Fridge", "Demographics & Assets", "SELECT", "YES_NO", false, true, 5},
+            {"hasLaptop", "Has Laptop", "Demographics & Assets", "SELECT", "YES_NO", false, true, 6},
+            {"hasWifi", "Has WiFi", "Demographics & Assets", "SELECT", "YES_NO", false, true, 7},
+            {"has2wheeler", "Has 2-Wheeler", "Demographics & Assets", "SELECT", "YES_NO", false, true, 8},
+            {"has4wheeler", "Has 4-Wheeler", "Demographics & Assets", "SELECT", "YES_NO", false, true, 9},
+
+            // Tab 7: Exit & Docs
+            {"doe", "Date of Exit", "Exit & Docs", "DATE", null, false, true, 1},
+            {"deletionMonth", "Deletion Month (MM/YYYY)", "Exit & Docs", "TEXT", null, false, true, 2},
+            {"exitType", "Exit Type", "Exit & Docs", "SELECT", "EXIT_TYPE", false, true, 3},
+            {"exitReason", "Exit Reason", "Exit & Docs", "TEXTAREA", null, false, true, 4}
+        };
+
+        for (Object[] f : fields) {
+            String key = (String) f[0];
+            String label = (String) f[1];
+            String tab = (String) f[2];
+            String type = (String) f[3];
+            String cat = (String) f[4];
+            Boolean mand = (Boolean) f[5];
+            Boolean vis = (Boolean) f[6];
+            Integer sort = (Integer) f[7];
+
+            FormFieldConfig config = FormFieldConfig.builder()
+                .fieldKey(key)
+                .fieldLabel(label)
+                .tabName(tab)
+                .fieldType(type)
+                .masterCategory(cat)
+                .isMandatory(mand)
+                .isVisible(vis)
+                .isCustom(false)
+                .sortOrder(sort)
+                .build();
+            formFieldConfigRepository.save(config);
+        }
+        log.info("Seeded {} default form field configurations", fields.length);
+    }
+
 }

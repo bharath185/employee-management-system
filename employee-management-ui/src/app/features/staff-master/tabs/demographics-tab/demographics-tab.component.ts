@@ -1,3 +1,5 @@
+import { CustomFieldsRendererComponent } from '../../../../shared/components/custom-fields-renderer.component';
+import { FormFieldConfig } from '../../../../core/services/form-field-config.service';
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -17,7 +19,7 @@ import { MasterDataService } from '../../../../core/services/master-data.service
     NzInputModule,
     NzSelectModule,
     NzIconModule
-  ],
+  , CustomFieldsRendererComponent],
   template: `
     <div class="tab-container">
       <div class="form-section">
@@ -67,6 +69,9 @@ import { MasterDataService } from '../../../../core/services/master-data.service
   `]
 })
 export class DemographicsTabComponent implements OnInit {
+  @Input() mandatoryMap: Record<string, boolean> = {};
+  @Input() customFields: FormFieldConfig[] = [];
+
   @Input() form: any;
 
   religionOptions: { value: string; label: string }[] = [];

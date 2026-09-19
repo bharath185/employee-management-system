@@ -14,8 +14,10 @@ import { NzModalService, NzModalModule } from 'ng-zorro-antd/modal';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 
 import { MasterDataService } from '../../core/services/master-data.service';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { MasterDataItem } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
@@ -28,6 +30,7 @@ interface CategoryInfo {
 }
 
 const MASTER_CATEGORIES: CategoryInfo[] = [
+  { code: 'FIELD_CONFIG', name: 'Employee Form Fields & Mandatory Settings', count: null, icon: 'bi bi-ui-checks-grid' },
   { code: 'GENDER', name: 'Gender', count: null, icon: 'bi bi-gender-female' },
   { code: 'PREFIX', name: 'Prefix', count: null, icon: 'bi bi-person-badge' },
   { code: 'MARITAL_STATUS', name: 'Marital Status', count: null, icon: 'bi bi-heart-half' },
@@ -60,7 +63,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     CommonModule, FormsModule,
     NzCardModule, NzInputModule, NzSelectModule, NzButtonModule,
     NzIconModule, NzTableModule, NzSpinModule, NzModalModule,
-    NzSwitchModule, NzTagModule, NzToolTipModule
+    NzSwitchModule, NzTagModule, NzToolTipModule, NzRadioModule
   ],
   template: `
     <div class="ms-container page-enter">
@@ -78,7 +81,9 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
             <div class="current-cat-info">
               <i [ngClass]="selectedCategoryIcon" class="cat-header-icon"></i>
               <span class="ms-main-title">{{ selectedCategoryName }}</span>
-              <span class="ms-sub-badge">{{ masterData.length }} Values</span>
+              <span class="ms-sub-badge">
+                {{ isFieldConfigMode ? fieldConfigs.length + ' Fields' : masterData.length + ' Values' }}
+              </span>
             </div>
           </div>
         </div>
@@ -98,11 +103,17 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
             </nz-select>
 
             <nz-input-group nzPrefixIcon="search" class="ms-table-search">
-              <input nz-input placeholder="Filter values..." [(ngModel)]="tableSearch" />
+              <input nz-input [placeholder]="isFieldConfigMode ? 'Filter fields by name or tab...' : 'Filter values...'" [(ngModel)]="tableSearch" />
             </nz-input-group>
 
-            <button nz-button class="btn-primary-gradient" (click)="openAddModal()">
+            <!-- Standard Add Value Button -->
+            <button *ngIf="!isFieldConfigMode" nz-button class="btn-primary-gradient" (click)="openAddModal()">
               <i nz-icon nzType="plus"></i> Add Value
+            </button>
+
+            <!-- Field Config Add Custom Field Button -->
+            <button *ngIf="isFieldConfigMode" nz-button class="btn-primary-gradient" (click)="openAddCustomFieldModal()">
+              <i nz-icon nzType="plus-circle"></i> Add Custom Field
             </button>
           </div>
         </div>
@@ -111,14 +122,17 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       <!-- VIEW 1: MASTER CATEGORIES SMALL CARDS GRID -->
       <div *ngIf="!selectedCategory" class="ms-grid-view">
         <div class="ms-cards-grid">
-          <div *ngFor="let cat of filteredCategories" class="ms-mini-card" (click)="selectCategory(cat.code)">
+          <div *ngFor="let cat of filteredCategories" 
+               class="ms-mini-card" 
+               [class.card-featured]="cat.code === 'FIELD_CONFIG'"
+               (click)="selectCategory(cat.code)">
             <div class="card-top-row">
-              <div class="card-icon-box">
+              <div class="card-icon-box" [class.icon-featured]="cat.code === 'FIELD_CONFIG'">
                 <i [ngClass]="cat.icon"></i>
               </div>
-              <span class="card-count-badge">
+              <span class="card-count-badge" [class.badge-featured]="cat.code === 'FIELD_CONFIG'">
                 <ng-container *ngIf="cat.count !== null; else countLoading">
-                  {{ cat.count }} {{ cat.count === 1 ? 'item' : 'items' }}
+                  {{ cat.count }} {{ cat.code === 'FIELD_CONFIG' ? 'fields' : (cat.count === 1 ? 'item' : 'items') }}
                 </ng-container>
                 <ng-template #countLoading><i nz-icon nzType="loading"></i></ng-template>
               </span>
@@ -130,7 +144,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
             </div>
 
             <div class="card-footer">
-              <span class="card-action-hint">Manage Values</span>
+              <span class="card-action-hint">{{ cat.code === 'FIELD_CONFIG' ? 'Configure Mandatory Fields' : 'Manage Values' }}</span>
               <i nz-icon nzType="arrow-right" class="card-arrow"></i>
             </div>
           </div>
@@ -143,8 +157,92 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
         </div>
       </div>
 
-      <!-- VIEW 2: SELECTED MASTER DATA TABLE VIEW -->
-      <div *ngIf="selectedCategory" class="ms-table-view">
+      <!-- VIEW 2: FIELD CONFIGURATION & MANDATORY MANAGER -->
+      <div *ngIf="selectedCategory && isFieldConfigMode" class="ms-table-view">
+        <!-- Section/Tab Filter Pills -->
+        <div class="field-tabs-pills">
+          <button *ngFor="let tab of formTabs" 
+                  class="pill-btn" 
+                  [class.active]="selectedTabFilter === tab" 
+                  (click)="selectedTabFilter = tab">
+            {{ tab }}
+            <span class="pill-count">{{ getTabFieldCount(tab) }}</span>
+          </button>
+        </div>
+
+        <div class="table-container">
+          <nz-table 
+            #fieldTable 
+            [nzData]="filteredFieldConfigs" 
+            [nzFrontPagination]="true" 
+            [nzPageSize]="15"
+            [nzShowSizeChanger]="true" 
+            [nzPageSizeOptions]="[15, 30, 50, 100]"
+            [nzLoading]="isLoading"
+            nzBordered 
+            nzSize="small" 
+            class="theme-table">
+            <thead>
+              <tr>
+                <th class="th-sno">#</th>
+                <th style="min-width: 170px;">Field Label</th>
+                <th style="min-width: 140px;">Field Key</th>
+                <th style="min-width: 130px;">Tab / Section</th>
+                <th style="min-width: 100px;" class="th-center">Data Type</th>
+                <th style="min-width: 130px;" class="th-center">Mandatory Status</th>
+                <th style="min-width: 100px;" class="th-center">Form Visibility</th>
+                <th style="min-width: 90px;" class="th-center">Type</th>
+                <th style="min-width: 80px;" class="th-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let field of fieldTable.data; let i = index">
+                <td class="td-center">{{ i + 1 }}</td>
+                <td>
+                  <strong style="color: #1e293b; font-size: 13px;">{{ field.fieldLabel }}</strong>
+                  <span *ngIf="field.isMandatory" class="mand-star" title="Mandatory Field">*</span>
+                </td>
+                <td><span class="code-chip">{{ field.fieldKey }}</span></td>
+                <td><span class="tab-badge">{{ field.tabName }}</span></td>
+                <td class="td-center">
+                  <span class="type-tag">{{ field.fieldType }}</span>
+                </td>
+                <td class="td-center">
+                  <div class="mand-switch-box">
+                    <nz-switch [(ngModel)]="field.isMandatory" (ngModelChange)="toggleFieldMandatory(field)" class="mand-switch"></nz-switch>
+                    <span [class.text-danger]="field.isMandatory" [class.text-muted]="!field.isMandatory" class="mand-label">
+                      {{ field.isMandatory ? 'Mandatory *' : 'Optional' }}
+                    </span>
+                  </div>
+                </td>
+                <td class="td-center">
+                  <nz-switch [(ngModel)]="field.isVisible" (ngModelChange)="toggleFieldVisibility(field)" class="ms-switch"></nz-switch>
+                </td>
+                <td class="td-center">
+                  <nz-tag [nzColor]="field.isCustom ? 'purple' : 'blue'">{{ field.isCustom ? 'Custom' : 'System' }}</nz-tag>
+                </td>
+                <td class="td-center">
+                  <button *ngIf="field.isCustom" nz-button nzType="link" nzDanger nzSize="small" (click)="deleteCustomField(field)" nz-tooltip="Delete Custom Field">
+                    <i nz-icon nzType="delete"></i>
+                  </button>
+                  <span *ngIf="!field.isCustom" class="text-muted" style="font-size: 11px;">Default</span>
+                </td>
+              </tr>
+              <tr *ngIf="filteredFieldConfigs.length === 0 && !isLoading">
+                <td colspan="9" class="empty-cell">
+                  <div class="empty-table-msg">
+                    <i nz-icon nzType="inbox" style="font-size:24px; color:#cbd5e1; margin-bottom:6px"></i>
+                    <span>No fields match the current filter.</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </nz-table>
+        </div>
+      </div>
+
+      <!-- VIEW 3: STANDARD MASTER DATA TABLE VIEW -->
+      <div *ngIf="selectedCategory && !isFieldConfigMode" class="ms-table-view">
         <div class="table-container">
           <nz-table 
             #dataTable 
@@ -211,7 +309,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       </div>
     </div>
 
-    <!-- Add Modal -->
+    <!-- Standard Master Value Add Modal -->
     <nz-modal [(nzVisible)]="isAddModalVisible" [nzTitle]="'Add ' + selectedCategoryName + ' Value'"
       (nzOnCancel)="closeAddModal()" nzWidth="440px" [nzMaskClosable]="false">
       <ng-template nzModalContent>
@@ -234,6 +332,74 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
         <button nz-button (click)="closeAddModal()">Cancel</button>
         <button nz-button nzType="primary" (click)="submitAddForm()" [nzLoading]="isSaving" [disabled]="!addCode || !addValue">
           <i nz-icon nzType="plus"></i> Add Value
+        </button>
+      </ng-template>
+    </nz-modal>
+
+    <!-- Add Custom Field Modal -->
+    <nz-modal [(nzVisible)]="isAddCustomFieldModalVisible" [nzTitle]="'Add New Custom Employee Field'"
+      (nzOnCancel)="closeAddCustomFieldModal()" nzWidth="520px" [nzMaskClosable]="false">
+      <ng-template nzModalContent>
+        <div class="add-modal-body">
+          <div class="add-field">
+            <label>Field Label <span class="required">*</span></label>
+            <input nz-input [(ngModel)]="customFieldLabel" placeholder="e.g. Passport Expiry Date, PF Nominee Name" />
+          </div>
+
+          <div class="add-field">
+            <label>Section / Tab Placement <span class="required">*</span></label>
+            <nz-select [(ngModel)]="customFieldTab" style="width: 100%;">
+              <nz-option *ngFor="let tab of formPlacementTabs" [nzValue]="tab" [nzLabel]="tab"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="add-field">
+            <label>Field Data Type <span class="required">*</span></label>
+            <nz-select [(ngModel)]="customFieldType" style="width: 100%;">
+              <nz-option nzValue="TEXT" nzLabel="Text Input (Single Line)"></nz-option>
+              <nz-option nzValue="NUMBER" nzLabel="Numeric Value"></nz-option>
+              <nz-option nzValue="DATE" nzLabel="Date Picker"></nz-option>
+              <nz-option nzValue="SELECT" nzLabel="Dropdown / Master List"></nz-option>
+              <nz-option nzValue="TEXTAREA" nzLabel="Text Area (Multi Line)"></nz-option>
+              <nz-option nzValue="BOOLEAN" nzLabel="Yes/No Checkbox"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="add-field" *ngIf="customFieldType === 'SELECT'">
+            <label>Linked Master List (Optional)</label>
+            <nz-select [(ngModel)]="customFieldMasterCategory" nzAllowClear nzPlaceHolder="Select existing master category" style="width: 100%;">
+              <nz-option *ngFor="let cat of regularCategories" [nzValue]="cat.code" [nzLabel]="cat.name"></nz-option>
+            </nz-select>
+          </div>
+
+          <div class="add-field" *ngIf="customFieldType === 'SELECT' && !customFieldMasterCategory">
+            <label>Custom Options (Comma separated)</label>
+            <input nz-input [(ngModel)]="customFieldOptions" placeholder="e.g. Option 1, Option 2, Option 3" />
+          </div>
+
+          <div class="add-field">
+            <label>Placeholder Hint</label>
+            <input nz-input [(ngModel)]="customFieldPlaceholder" placeholder="e.g. Enter details..." />
+          </div>
+
+          <div class="custom-toggles-row">
+            <label class="toggle-item">
+              <nz-switch [(ngModel)]="customFieldIsMandatory" class="mand-switch"></nz-switch>
+              <span [class.text-danger]="customFieldIsMandatory" style="font-weight:600; font-size:12px;">
+                {{ customFieldIsMandatory ? 'Required / Mandatory *' : 'Optional Field' }}
+              </span>
+            </label>
+            <label class="toggle-item">
+              <nz-switch [(ngModel)]="customFieldIsVisible" class="ms-switch"></nz-switch>
+              <span style="font-weight:600; font-size:12px; color:#475569;">Show in Registration & Add Employee</span>
+            </label>
+          </div>
+        </div>
+      </ng-template>
+      <ng-template nzModalFooter>
+        <button nz-button (click)="closeAddCustomFieldModal()">Cancel</button>
+        <button nz-button nzType="primary" (click)="submitCustomField()" [nzLoading]="isSaving" [disabled]="!customFieldLabel">
+          <i nz-icon nzType="plus"></i> Create Field
         </button>
       </ng-template>
     </nz-modal>
@@ -261,26 +427,10 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       border: 1px solid #e0e7ff;
       flex-wrap: wrap;
     }
-    .top-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .ms-title-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .current-cat-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .cat-header-icon {
-      font-size: 16px;
-      color: #2563eb;
-    }
+    .top-left { display: flex; align-items: center; gap: 8px; }
+    .ms-title-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .current-cat-info { display: flex; align-items: center; gap: 8px; }
+    .cat-header-icon { font-size: 16px; color: #2563eb; }
     .ms-main-title {
       font-size: 14px;
       font-weight: 700;
@@ -299,108 +449,80 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       border-radius: 12px;
       border: 1px solid #d1d5db;
     }
-    .btn-back {
-      height: 30px !important;
-      padding: 0 10px !important;
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      border-radius: 6px !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 5px !important;
-      color: #1f3d6e !important;
-    }
 
-    .top-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-left: auto;
-    }
-    .search-wrapper { width: 260px; }
-    .ms-search-input { width: 100%; }
+    .top-right { display: flex; align-items: center; gap: 8px; }
+    .search-wrapper { display: flex; align-items: center; }
+    .ms-search-input { width: 220px; }
     :host ::ng-deep .ms-search-input .ant-input {
+      border-radius: 6px !important;
       height: 30px !important;
       font-size: 12px !important;
-      border-radius: 6px !important;
     }
 
-    .table-actions-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .cat-quick-select { width: 190px; }
+    .table-actions-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .cat-quick-select { width: 200px; }
     :host ::ng-deep .cat-quick-select .ant-select-selector {
       border-radius: 6px !important;
       height: 30px !important;
       font-size: 12px !important;
     }
-    .ms-table-search { width: 180px; }
+    .ms-table-search { width: 190px; }
     :host ::ng-deep .ms-table-search .ant-input {
+      border-radius: 6px !important;
       height: 30px !important;
+      font-size: 12px !important;
+    }
+
+    .btn-back {
+      height: 28px !important;
+      padding: 0 10px !important;
       font-size: 12px !important;
       border-radius: 6px !important;
     }
-
     .btn-primary-gradient {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+      border: none !important;
+      color: #ffffff !important;
       height: 30px !important;
-      padding: 0 14px !important;
+      padding: 0 12px !important;
       font-size: 12px !important;
       font-weight: 600 !important;
-      border: none !important;
       border-radius: 6px !important;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-      color: #fff !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 5px !important;
       box-shadow: 0 2px 6px rgba(37,99,235,0.25) !important;
-      transition: all 0.2s ease !important;
     }
     .btn-primary-gradient:hover {
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 10px rgba(37,99,235,0.35) !important;
+      background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
     }
 
-    /* ── VIEW 1: CARDS GRID ── */
-    .ms-grid-view {
-      margin-top: 4px;
-    }
+    /* ── Grid Cards View ── */
+    .ms-grid-view { width: 100%; }
     .ms-cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
     }
+
     .ms-mini-card {
       background: #ffffff;
       border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
-      min-height: 110px;
     }
     .ms-mini-card:hover {
-      border-color: #3b82f6;
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(37,99,235,0.12);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      border-color: #93c5fd;
     }
-    .ms-mini-card:hover .card-icon-box {
-      background: #2563eb;
-      color: #ffffff;
-    }
-    .ms-mini-card:hover .card-arrow {
-      transform: translateX(3px);
-      color: #2563eb;
+    .card-featured {
+      background: linear-gradient(145deg, #ffffff, #eff6ff);
+      border: 1.5px solid #3b82f6;
     }
     .card-top-row {
       display: flex;
@@ -411,141 +533,191 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .card-icon-box {
       width: 32px;
       height: 32px;
-      border-radius: 8px;
+      border-radius: 6px;
       background: #eff6ff;
       color: #2563eb;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 15px;
-      transition: all 0.2s ease;
+    }
+    .icon-featured {
+      background: #2563eb;
+      color: #ffffff;
     }
     .card-count-badge {
       font-size: 11px;
       font-weight: 600;
-      color: #3b82f6;
-      background: #eff6ff;
-      padding: 2px 7px;
+      color: #6b7280;
+      background: #f3f4f6;
+      padding: 1px 7px;
       border-radius: 10px;
     }
-    .card-body {
-      margin-bottom: 8px;
+    .badge-featured {
+      background: #dbeafe;
+      color: #1e40af;
+      font-weight: 700;
     }
+
+    .card-body { margin-bottom: 8px; }
     .card-name {
       font-size: 13px;
       font-weight: 600;
       color: #1f2937;
-      line-height: 1.3;
       margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .card-code {
-      font-size: 10px;
-      font-weight: 500;
+      font-size: 10.5px;
       color: #9ca3af;
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.3px;
+      font-family: monospace;
     }
+
     .card-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-top: 1px solid #f3f4f6;
       padding-top: 6px;
-      margin-top: auto;
+      border-top: 1px solid #f3f4f6;
     }
     .card-action-hint {
       font-size: 11px;
+      color: #2563eb;
       font-weight: 500;
-      color: #6b7280;
     }
     .card-arrow {
       font-size: 11px;
-      color: #9ca3af;
-      transition: transform 0.2s ease, color 0.2s ease;
+      color: #2563eb;
+      transition: transform 0.2s ease;
     }
+    .ms-mini-card:hover .card-arrow { transform: translateX(3px); }
 
-    .ms-no-results {
+    /* Filter pills */
+    .field-tabs-pills {
       display: flex;
-      flex-direction: column;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+    .pill-btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
+      gap: 6px;
       background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .pill-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .pill-btn.active {
+      background: #1e3a8a;
+      color: #ffffff;
+      border-color: #1e3a8a;
+    }
+    .pill-count {
+      background: rgba(0,0,0,0.06);
+      padding: 1px 5px;
       border-radius: 8px;
-      border: 1px dashed #d1d5db;
-      gap: 10px;
+      font-size: 10.5px;
+      font-weight: 600;
     }
-    .no-res-icon { font-size: 32px; color: #9ca3af; }
-    .no-res-title { font-size: 13px; color: #4b5563; font-weight: 500; }
+    .pill-btn.active .pill-count {
+      background: rgba(255,255,255,0.25);
+      color: #ffffff;
+    }
 
-    /* ── VIEW 2: TABLE VIEW ── */
-    .ms-table-view {
-      margin-top: 4px;
-    }
+    /* ── Table View ── */
+    .ms-table-view { width: 100%; }
     .table-container {
       background: #ffffff;
-      border: 1px solid #e8eaed;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    }
-    :host ::ng-deep .theme-table { width: 100% !important; }
-    :host ::ng-deep .theme-table .ant-table { font-size: 11.5px; }
-    :host ::ng-deep .theme-table .ant-table-thead > tr > th {
-      background: #f8f9fc !important;
-      color: #1f3d6e !important;
-      font-size: 10.5px !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.3px !important;
-      padding: 6px 8px !important;
-      border-bottom: 1px solid #cbd5e1 !important;
-      white-space: nowrap;
-      text-align: center !important;
-    }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
-      padding: 5px 8px !important;
-      border-bottom: 1px solid #f1f5f9 !important;
-      font-size: 11.5px;
-      color: #374151;
-      vertical-align: middle;
-    }
-    :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
-      background: rgba(37,99,235,0.03) !important;
     }
 
-    .th-sno { width: 40px !important; text-align: center !important; }
-    .th-code { width: 160px !important; text-align: center !important; }
-    .th-value { text-align: left !important; }
-    .th-sort { width: 110px !important; text-align: center !important; }
-    .th-status { width: 110px !important; text-align: center !important; }
-    .th-actions { width: 90px !important; text-align: center !important; }
-    .td-center { text-align: center !important; }
-    .td-actions { text-align: center !important; }
+    .th-sno { width: 45px; text-align: center; }
+    .th-code { width: 140px; text-align: center; }
+    .th-sort { width: 90px; text-align: center; }
+    .th-status { width: 90px; text-align: center; }
+    .th-actions { width: 90px; text-align: center; }
+    .th-center { text-align: center; }
+    .td-center { text-align: center; }
 
     .code-chip {
       display: inline-block;
-      background: #f0f4ff;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: #475569;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tab-badge {
+      display: inline-block;
       padding: 2px 7px;
       border-radius: 4px;
-      font-family: 'Courier New', monospace;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      color: #334155;
       font-size: 11px;
-      color: #1f3d6e;
       font-weight: 600;
-      border: 1px solid #dbeafe;
     }
-    .editable-cell { min-height: 24px; display: flex; align-items: center; }
+    .type-tag {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .mand-star {
+      color: #ef4444;
+      font-weight: bold;
+      font-size: 14px;
+      margin-left: 2px;
+    }
+    .mand-switch-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .mand-label {
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .text-danger { color: #dc2626 !important; }
+    .text-muted { color: #94a3b8 !important; }
+
+    .editable-cell { cursor: pointer; min-height: 22px; display: flex; align-items: center; }
     .editable-value {
       padding: 2px 6px;
       border-radius: 4px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.15s ease;
-      font-weight: 500;
+      transition: background 0.15s ease;
+      display: inline-block;
+      width: 100%;
     }
-    .editable-value:hover { background: rgba(37,99,235,0.06); border-color: #bfdbfe; }
-    .edit-inline-wrapper { display: inline-flex; align-items: center; gap: 4px; width: 100%; }
-    :host ::ng-deep .inline-edit-input {
+    .editable-value:hover {
+      background: #eff6ff;
+      outline: 1px dashed #93c5fd;
+    }
+
+    .edit-inline-wrapper { display: flex; align-items: center; gap: 4px; width: 100%; }
+    .inline-edit-input {
       border-radius: 4px !important;
       border-color: #2563eb !important;
       box-shadow: 0 0 0 2px rgba(37,99,235,0.1) !important;
@@ -563,6 +735,8 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
       font-weight: 600;
     }
     :host ::ng-deep .ms-switch.ant-switch-checked { background-color: #2563eb !important; }
+    :host ::ng-deep .mand-switch.ant-switch-checked { background-color: #dc2626 !important; }
+
     .action-btn { padding: 0 4px !important; font-size: 13px !important; }
     .action-edit { color: #2563eb !important; }
     .action-edit:hover { color: #1d4ed8 !important; }
@@ -577,12 +751,29 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
     .add-field label { font-size: 12px; font-weight: 600; color: #374151; }
     .required { color: #ef4444; }
     :host ::ng-deep .add-field .ant-input { height: 32px !important; font-size: 12.5px !important; border-radius: 6px !important; }
+    .custom-toggles-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #f8fafc;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      margin-top: 4px;
+    }
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
   `]
 })
 export class MastersComponent implements OnInit {
   categories = MASTER_CATEGORIES;
   selectedCategory: string = '';
   masterData: MasterDataItem[] = [];
+  fieldConfigs: FormFieldConfig[] = [];
   isLoading = false;
   isSaving = false;
 
@@ -597,8 +788,45 @@ export class MastersComponent implements OnInit {
   addValue = '';
   addSortOrder: number | null = null;
 
+  // Custom Field Form
+  isAddCustomFieldModalVisible = false;
+  customFieldLabel = '';
+  customFieldTab = 'Personal Info';
+  customFieldType = 'TEXT';
+  customFieldMasterCategory = '';
+  customFieldOptions = '';
+  customFieldPlaceholder = '';
+  customFieldIsMandatory = false;
+  customFieldIsVisible = true;
+
+  selectedTabFilter = 'All';
+  readonly formTabs = [
+    'All',
+    'Personal Info',
+    'Employment',
+    'Bank & Identity',
+    'Education',
+    'Family & Kin',
+    'Experience & Ref.',
+    'Demographics & Assets',
+    'Exit & Docs',
+    'Custom Fields'
+  ];
+
+  readonly formPlacementTabs = [
+    'Personal Info',
+    'Employment',
+    'Bank & Identity',
+    'Education',
+    'Family & Kin',
+    'Experience & Ref.',
+    'Demographics & Assets',
+    'Exit & Docs'
+  ];
+
   constructor(
     private masterDataService: MasterDataService,
+    private formFieldConfigService: FormFieldConfigService,
     private http: HttpClient,
     private notification: NzNotificationService,
     private modal: NzModalService
@@ -606,6 +834,14 @@ export class MastersComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategoryCounts();
+  }
+
+  get isFieldConfigMode(): boolean {
+    return this.selectedCategory === 'FIELD_CONFIG';
+  }
+
+  get regularCategories(): CategoryInfo[] {
+    return this.categories.filter(c => c.code !== 'FIELD_CONFIG');
   }
 
   get loadedCount(): number {
@@ -640,6 +876,29 @@ export class MastersComponent implements OnInit {
     );
   }
 
+  get filteredFieldConfigs(): FormFieldConfig[] {
+    let list = this.fieldConfigs;
+    if (this.selectedTabFilter === 'Custom Fields') {
+      list = list.filter(f => f.isCustom);
+    } else if (this.selectedTabFilter !== 'All') {
+      list = list.filter(f => f.tabName === this.selectedTabFilter);
+    }
+    if (!this.tableSearch) return list;
+    const q = this.tableSearch.toLowerCase();
+    return list.filter(f =>
+      f.fieldLabel.toLowerCase().includes(q) ||
+      f.fieldKey.toLowerCase().includes(q) ||
+      f.tabName.toLowerCase().includes(q) ||
+      f.fieldType.toLowerCase().includes(q)
+    );
+  }
+
+  getTabFieldCount(tab: string): number {
+    if (tab === 'All') return this.fieldConfigs.length;
+    if (tab === 'Custom Fields') return this.fieldConfigs.filter(f => f.isCustom).length;
+    return this.fieldConfigs.filter(f => f.tabName === tab).length;
+  }
+
   clearSelectedCategory(): void {
     this.selectedCategory = '';
     this.tableSearch = '';
@@ -652,13 +911,27 @@ export class MastersComponent implements OnInit {
       next: (response: any) => {
         const counts = response.data || response || {};
         this.categories.forEach(cat => {
-          cat.count = counts[cat.code] !== undefined ? counts[cat.code] : (counts[cat.code.toUpperCase()] !== undefined ? counts[cat.code.toUpperCase()] : 0);
+          if (cat.code !== 'FIELD_CONFIG') {
+            cat.count = counts[cat.code] !== undefined ? counts[cat.code] : (counts[cat.code.toUpperCase()] !== undefined ? counts[cat.code.toUpperCase()] : 0);
+          }
         });
       },
       error: () => {
         this.categories.forEach(cat => {
-          if (cat.count === null) cat.count = 0;
+          if (cat.code !== 'FIELD_CONFIG' && cat.count === null) cat.count = 0;
         });
+      }
+    });
+
+    // Load Field Config count
+    this.formFieldConfigService.getAllConfigs().subscribe({
+      next: (configs) => {
+        const fieldCat = this.categories.find(c => c.code === 'FIELD_CONFIG');
+        if (fieldCat) fieldCat.count = configs.length;
+      },
+      error: () => {
+        const fieldCat = this.categories.find(c => c.code === 'FIELD_CONFIG');
+        if (fieldCat) fieldCat.count = 0;
       }
     });
   }
@@ -668,26 +941,138 @@ export class MastersComponent implements OnInit {
     this.cancelEdit();
     this.selectedCategory = category;
     this.tableSearch = '';
+    this.selectedTabFilter = 'All';
     this.loadCategoryData();
   }
 
   private loadCategoryData(): void {
     if (!this.selectedCategory) return;
     this.isLoading = true;
-    this.masterDataService.getByCategory(this.selectedCategory).subscribe({
-      next: (data) => {
-        this.isLoading = false;
-        this.masterData = data;
-        const cat = this.categories.find(c => c.code === this.selectedCategory);
-        if (cat) cat.count = data.length;
+
+    if (this.isFieldConfigMode) {
+      this.formFieldConfigService.getAllConfigs().subscribe({
+        next: (data) => {
+          this.isLoading = false;
+          this.fieldConfigs = data;
+          const cat = this.categories.find(c => c.code === 'FIELD_CONFIG');
+          if (cat) cat.count = data.length;
+        },
+        error: () => {
+          this.isLoading = false;
+          this.notification.error('Error', 'Error loading form field configurations');
+        }
+      });
+    } else {
+      this.masterDataService.getByCategory(this.selectedCategory).subscribe({
+        next: (data) => {
+          this.isLoading = false;
+          this.masterData = data;
+          const cat = this.categories.find(c => c.code === this.selectedCategory);
+          if (cat) cat.count = data.length;
+        },
+        error: () => {
+          this.isLoading = false;
+          this.notification.error('Error', 'Error loading master data');
+        }
+      });
+    }
+  }
+
+  // ========== FIELD CONFIG METHODS ==========
+  toggleFieldMandatory(field: FormFieldConfig): void {
+    if (!field.id) return;
+    this.formFieldConfigService.toggleMandatory(field.id).subscribe({
+      next: (updated) => {
+        field.isMandatory = updated.isMandatory;
+        this.notification.success('Field Updated', `${field.fieldLabel} is now ${field.isMandatory ? 'MANDATORY' : 'OPTIONAL'}`);
       },
       error: () => {
-        this.isLoading = false;
-        this.notification.error('Error', 'Error loading master data');
+        field.isMandatory = !field.isMandatory;
+        this.notification.error('Error', 'Failed to update mandatory status');
       }
     });
   }
 
+  toggleFieldVisibility(field: FormFieldConfig): void {
+    if (!field.id) return;
+    this.formFieldConfigService.toggleVisibility(field.id).subscribe({
+      next: (updated) => {
+        field.isVisible = updated.isVisible;
+        this.notification.success('Field Updated', `${field.fieldLabel} visibility updated`);
+      },
+      error: () => {
+        field.isVisible = !field.isVisible;
+        this.notification.error('Error', 'Failed to update visibility');
+      }
+    });
+  }
+
+  openAddCustomFieldModal(): void {
+    this.customFieldLabel = '';
+    this.customFieldTab = 'Personal Info';
+    this.customFieldType = 'TEXT';
+    this.customFieldMasterCategory = '';
+    this.customFieldOptions = '';
+    this.customFieldPlaceholder = '';
+    this.customFieldIsMandatory = false;
+    this.customFieldIsVisible = true;
+    this.isAddCustomFieldModalVisible = true;
+  }
+
+  closeAddCustomFieldModal(): void {
+    this.isAddCustomFieldModalVisible = false;
+  }
+
+  submitCustomField(): void {
+    if (!this.customFieldLabel.trim()) return;
+    this.isSaving = true;
+    const payload: Partial<FormFieldConfig> = {
+      fieldLabel: this.customFieldLabel.trim(),
+      tabName: this.customFieldTab,
+      fieldType: this.customFieldType,
+      masterCategory: this.customFieldType === 'SELECT' ? this.customFieldMasterCategory : undefined,
+      options: this.customFieldOptions ? this.customFieldOptions.trim() : undefined,
+      placeholder: this.customFieldPlaceholder ? this.customFieldPlaceholder.trim() : undefined,
+      isMandatory: this.customFieldIsMandatory,
+      isVisible: this.customFieldIsVisible
+    };
+
+    this.formFieldConfigService.createCustomField(payload).subscribe({
+      next: (created) => {
+        this.isSaving = false;
+        this.notification.success('Success', `Custom field "${created.fieldLabel}" created successfully`);
+        this.closeAddCustomFieldModal();
+        this.loadCategoryData();
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.notification.error('Error', err.error?.message || 'Failed to create custom field');
+      }
+    });
+  }
+
+  deleteCustomField(field: FormFieldConfig): void {
+    if (!field.id || !field.isCustom) return;
+    this.modal.confirm({
+      nzTitle: 'Delete Custom Field',
+      nzContent: `Are you sure you want to delete custom field "${field.fieldLabel}"? Any saved values for this field will remain in historical records.`,
+      nzOkText: 'Delete',
+      nzOkDanger: true,
+      nzOnOk: () => {
+        this.formFieldConfigService.deleteCustomField(field.id!).subscribe({
+          next: () => {
+            this.notification.success('Success', 'Custom field deleted successfully');
+            this.loadCategoryData();
+          },
+          error: (err) => {
+            this.notification.error('Error', err.error?.message || 'Failed to delete custom field');
+          }
+        });
+      }
+    });
+  }
+
+  // ========== REGULAR MASTER VALUES METHODS ==========
   openAddModal(): void {
     this.addCode = '';
     this.addValue = '';

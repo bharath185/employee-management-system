@@ -1,3 +1,5 @@
+import { CustomFieldsRendererComponent } from '../../../../shared/components/custom-fields-renderer.component';
+import { FormFieldConfig } from '../../../../core/services/form-field-config.service';
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -14,7 +16,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
     NzFormModule,
     NzInputModule,
     NzIconModule
-  ],
+  , CustomFieldsRendererComponent],
   template: `
     <div class="tab-container">
       <h3 class="section-title">Family Details</h3>
@@ -92,5 +94,8 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
   `]
 })
 export class FamilyTabComponent {
+  @Input() mandatoryMap: Record<string, boolean> = {};
+  @Input() customFields: FormFieldConfig[] = [];
+
   @Input() form: any;
 }

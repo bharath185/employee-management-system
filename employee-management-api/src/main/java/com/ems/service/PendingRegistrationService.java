@@ -152,6 +152,7 @@ public class PendingRegistrationService {
         entity.setRef2Address(dto.getRef2Address());
         entity.setRef2Mobile(dto.getRef2Mobile());
         entity.setLanguages(dto.getLanguages());
+        entity.setCustomFields(dto.getCustomFields());
         entity.setStatus(RegistrationStatus.PENDING);
 
         // Handle photo upload
@@ -248,6 +249,7 @@ public class PendingRegistrationService {
             .hasTv(pending.getHasTv())
             .hasFridge(pending.getHasFridge())
             .hasLaptop(pending.getHasLaptop())
+            .customFields(pending.getCustomFields())
             .hasWifi(pending.getHasWifi())
             .has2wheeler(pending.getHas2wheeler())
             .has4wheeler(pending.getHas4wheeler())

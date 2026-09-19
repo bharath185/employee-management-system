@@ -17,6 +17,7 @@ import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -58,7 +59,7 @@ import { environment } from '../../../environments/environment';
                 </nz-select>
               </div>
               <div class="form-group" [class.has-error]="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)">
-                <label>First Name <span class="required">*</span></label>
+                <label>First Name <span class="required" *ngIf="isMandatory('firstName', true)">*</span></label>
                 <input nz-input [(ngModel)]="formData.firstName" name="firstName" required placeholder="Enter first name"
                   #firstNameCtrl="ngModel" [class.input-error]="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)" />
                 <div class="field-error" *ngIf="(firstNameCtrl.invalid || !formData.firstName) && (firstNameCtrl.touched || submitAttempted)">
@@ -70,7 +71,7 @@ import { environment } from '../../../environments/environment';
                 <input nz-input [(ngModel)]="formData.middleName" name="middleName" placeholder="Enter middle name" />
               </div>
               <div class="form-group" [class.has-error]="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)">
-                <label>Surname <span class="required">*</span></label>
+                <label>Surname <span class="required" *ngIf="isMandatory('surname', true)">*</span></label>
                 <input nz-input [(ngModel)]="formData.surname" name="surname" required placeholder="Enter surname"
                   #surnameCtrl="ngModel" [class.input-error]="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)" />
                 <div class="field-error" *ngIf="(surnameCtrl.invalid || !formData.surname) && (surnameCtrl.touched || submitAttempted)">
@@ -81,7 +82,7 @@ import { environment } from '../../../environments/environment';
 
             <div class="form-row">
               <div class="form-group" [class.has-error]="!formData.gender && (genderCtrl.touched || submitAttempted)">
-                <label>Gender <span class="required">*</span></label>
+                <label>Gender <span class="required" *ngIf="isMandatory('gender', true)">*</span></label>
                 <nz-select [(ngModel)]="formData.gender" name="gender" required nzPlaceHolder="Select gender" style="width:100%"
                   #genderCtrl="ngModel" [class.input-error]="!formData.gender && (genderCtrl.touched || submitAttempted)">
                   <nz-option *ngFor="let g of genders" [nzValue]="g.code" [nzLabel]="g.value"></nz-option>
@@ -91,7 +92,7 @@ import { environment } from '../../../environments/environment';
                 </div>
               </div>
               <div class="form-group" [class.has-error]="!formData.dob && (dobCtrl.touched || submitAttempted)">
-                <label>Date of Birth <span class="required">*</span></label>
+                <label>Date of Birth <span class="required" *ngIf="isMandatory('dob', true)">*</span></label>
                 <input nz-input type="date" [(ngModel)]="formData.dob" name="dob" required
                   #dobCtrl="ngModel" [class.input-error]="!formData.dob && (dobCtrl.touched || submitAttempted)" />
                 <div class="field-error" *ngIf="!formData.dob && (dobCtrl.touched || submitAttempted)">
@@ -773,6 +774,8 @@ import { environment } from '../../../environments/environment';
   `]
 })
 export class PublicRegistrationComponent implements OnInit {
+  fieldConfigs: FormFieldConfig[] = [];
+  mandatoryMap: Record<string, boolean> = {};
   formData: any = {};
   selectedPhoto: File | null = null;
   selectedAadharDoc: File | null = null;
@@ -825,6 +828,7 @@ export class PublicRegistrationComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private pendingService: PendingRegistrationService,
+    private formFieldConfigService: FormFieldConfigService,
     private notification: NzNotificationService
   ) {}
 
@@ -851,6 +855,7 @@ export class PublicRegistrationComponent implements OnInit {
       { name: 'LANGUAGE', target: 'languageOptions' }
     ];
 
+    this.loadFieldConfigs();
     let loadedCount = 0;
     categories.forEach(cat => {
       this.http.get<any>(api + '/' + cat.name).subscribe({
@@ -899,28 +904,69 @@ export class PublicRegistrationComponent implements OnInit {
 
   getValidationErrors(): string[] {
     const errors: string[] = [];
-    if (!this.formData.firstName || !this.formData.firstName.trim()) {
+
+    // Personal
+    if (this.isMandatory('firstName', true) && (!this.formData.firstName || !this.formData.firstName.trim())) {
       errors.push('First Name is required');
     }
-    if (!this.formData.surname || !this.formData.surname.trim()) {
+    if (this.isMandatory('surname', true) && (!this.formData.surname || !this.formData.surname.trim())) {
       errors.push('Surname is required');
     }
-    if (!this.formData.gender) {
+    if (this.isMandatory('gender', true) && !this.formData.gender) {
       errors.push('Gender is required');
     }
-    if (!this.formData.dob) {
+    if (this.isMandatory('dob', true) && !this.formData.dob) {
       errors.push('Date of Birth is required');
     }
-    if (!this.formData.mobile || !this.formData.mobile.trim()) {
+    if (this.isMandatory('mobile', true) && (!this.formData.mobile || !this.formData.mobile.trim())) {
       errors.push('Mobile number is required (10 digits)');
-    } else if (!/^[0-9]{10}$/.test(this.formData.mobile.trim())) {
+    } else if (this.formData.mobile && !/^[0-9]{10}$/.test(this.formData.mobile.trim())) {
       errors.push('Mobile number must be exactly 10 digits (e.g. 9876543210)');
     }
-    if (!this.formData.email || !this.formData.email.trim()) {
+    if (this.isMandatory('email', true) && (!this.formData.email || !this.formData.email.trim())) {
       errors.push('Email address is required');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email.trim())) {
-      errors.push('Please enter a valid email address (e.g. name&#64;domain.com)');
+    } else if (this.formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email.trim())) {
+      errors.push('Please enter a valid email address (e.g. name@domain.com)');
     }
+
+    // Dynamic checks for other fields if marked mandatory in master
+    if (this.isMandatory('maritalStatus') && !this.formData.maritalStatus) {
+      errors.push('Marital Status is required');
+    }
+    if (this.isMandatory('presentAddress') && !this.formData.presentAddress) {
+      errors.push('Present Address is required');
+    }
+    if (this.isMandatory('permanentAddress') && !this.formData.permanentAddress) {
+      errors.push('Permanent Address is required');
+    }
+    if (this.isMandatory('highestQualification') && !this.formData.highestQualification) {
+      errors.push('Highest Qualification is required');
+    }
+    if (this.isMandatory('bankName') && !this.formData.bankName) {
+      errors.push('Bank Name is required');
+    }
+    if (this.isMandatory('accountNumber') && !this.formData.accountNumber) {
+      errors.push('Account Number is required');
+    }
+    if (this.isMandatory('ifscCode') && !this.formData.ifscCode) {
+      errors.push('IFSC Code is required');
+    }
+    if (this.isMandatory('aadharNumber') && !this.formData.aadharNumber) {
+      errors.push('Aadhaar Number is required');
+    }
+    if (this.isMandatory('panNumber') && !this.formData.panNumber) {
+      errors.push('PAN Number is required');
+    }
+    if (this.isMandatory('fatherName') && !this.formData.fatherName) {
+      errors.push("Father's Name is required");
+    }
+    if (this.isMandatory('motherName') && !this.formData.motherName) {
+      errors.push("Mother's Name is required");
+    }
+    if (this.isMandatory('bloodGroup') && !this.formData.bloodGroup) {
+      errors.push('Blood Group is required');
+    }
+
     if (!this.selectedPhoto) {
       errors.push('Candidate Photo is required (upload JPG/PNG)');
     }
@@ -1044,4 +1090,30 @@ export class PublicRegistrationComponent implements OnInit {
       }
     });
   }
+
+  loadFieldConfigs(): void {
+    this.formFieldConfigService.getVisibleConfigs().subscribe({
+      next: (configs) => {
+        this.fieldConfigs = configs;
+        const map: Record<string, boolean> = {};
+        configs.forEach(c => map[c.fieldKey] = c.isMandatory);
+        this.mandatoryMap = map;
+      },
+      error: () => {
+        this.mandatoryMap = {
+          firstName: true,
+          surname: true,
+          gender: true,
+          dob: true,
+          mobile: true,
+          email: true
+        };
+      }
+    });
+  }
+
+  isMandatory(key: string, fallback: boolean = false): boolean {
+    return this.mandatoryMap[key] !== undefined ? this.mandatoryMap[key] : fallback;
+  }
+
 }

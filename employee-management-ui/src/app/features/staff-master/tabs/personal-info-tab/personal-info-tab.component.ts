@@ -1,3 +1,5 @@
+import { CustomFieldsRendererComponent } from '../../../../shared/components/custom-fields-renderer.component';
+import { FormFieldConfig } from '../../../../core/services/form-field-config.service';
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -28,7 +30,7 @@ import { EmployeeLanguage } from '../../../../core/models/employee.model';
     NzCheckboxModule,
     NzButtonModule,
     NzTableModule
-  ],
+  , CustomFieldsRendererComponent],
   template: `
     <div class="tab-container">
       <!-- Basic Information -->
@@ -368,6 +370,9 @@ import { EmployeeLanguage } from '../../../../core/models/employee.model';
   `]
 })
 export class PersonalInfoTabComponent implements OnInit {
+  @Input() mandatoryMap: Record<string, boolean> = {};
+  @Input() customFields: FormFieldConfig[] = [];
+
   @Input() form!: any;
   @Input() masterData: any;
   @Input() isEditMode = false;

@@ -16,6 +16,7 @@ import { NzNotificationModule, NzNotificationService } from 'ng-zorro-antd/notif
 import { AuthService } from '../../core/services/auth.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { MasterDataService } from '../../core/services/master-data.service';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { Employee } from '../../core/models/employee.model';
 import { calculateAge, getAgeBracket } from '../../shared/pipes/age.pipe';
 import { OnCanDeactivate } from '../../core/guards/can-deactivate.guard';
@@ -248,7 +249,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Personal Info</span>
               <nz-badge *ngIf="getTabErrorCount(0) > 0" [nzCount]="getTabErrorCount(0)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode" (languagesChange)="onLanguagesChange($event)"></app-personal-info-tab>
+            <app-personal-info-tab [form]="employeeForm" [masterData]="masterData" [isEditMode]="isEditMode" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Personal Info')" (languagesChange)="onLanguagesChange($event)"></app-personal-info-tab>
           </nz-tab>
 
           <!-- Tab 1: Employment -->
@@ -257,7 +258,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Employment</span>
               <nz-badge *ngIf="getTabErrorCount(1) > 0" [nzCount]="getTabErrorCount(1)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-employment-tab [form]="employeeForm"></app-employment-tab>
+            <app-employment-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Employment')"></app-employment-tab>
           </nz-tab>
 
           <!-- Tab 2: Bank & Identity -->
@@ -266,8 +267,8 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Bank & Identity</span>
               <nz-badge *ngIf="getTabErrorCount(2) > 0" [nzCount]="getTabErrorCount(2)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-bank-tab [form]="employeeForm"></app-bank-tab>
-            <app-identity-tab [form]="employeeForm"></app-identity-tab>
+            <app-bank-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Bank & Identity')"></app-bank-tab>
+            <app-identity-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap"></app-identity-tab>
           </nz-tab>
 
           <!-- Tab 3: Education -->
@@ -276,7 +277,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Education</span>
               <nz-badge *ngIf="getTabErrorCount(3) > 0" [nzCount]="getTabErrorCount(3)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-education-tab [form]="employeeForm"></app-education-tab>
+            <app-education-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Education')"></app-education-tab>
           </nz-tab>
 
           <!-- Tab 4: Family & Kin -->
@@ -285,7 +286,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Family & Kin</span>
               <nz-badge *ngIf="getTabErrorCount(4) > 0" [nzCount]="getTabErrorCount(4)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-family-tab [form]="employeeForm"></app-family-tab>
+            <app-family-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Family & Kin')"></app-family-tab>
           </nz-tab>
 
           <!-- Tab 5: Experience & Ref. -->
@@ -294,7 +295,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Experience & Ref.</span>
               <nz-badge *ngIf="getTabErrorCount(5) > 0" [nzCount]="getTabErrorCount(5)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-experience-ref-tab [form]="employeeForm"></app-experience-ref-tab>
+            <app-experience-ref-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Experience & Ref.')"></app-experience-ref-tab>
           </nz-tab>
 
           <!-- Tab 6: Demographics & Assets -->
@@ -303,8 +304,8 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Demographics & Assets</span>
               <nz-badge *ngIf="getTabErrorCount(6) > 0" [nzCount]="getTabErrorCount(6)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-demographics-tab [form]="employeeForm"></app-demographics-tab>
-            <app-assets-tab [form]="employeeForm"></app-assets-tab>
+            <app-demographics-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Demographics & Assets')"></app-demographics-tab>
+            <app-assets-tab [form]="employeeForm" [mandatoryMap]="mandatoryMap"></app-assets-tab>
           </nz-tab>
 
           <!-- Tab 7: Exit & Docs -->
@@ -313,8 +314,7 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
               <span>Exit & Docs</span>
               <nz-badge *ngIf="getTabErrorCount(7) > 0" [nzCount]="getTabErrorCount(7)" [nzStyle]="{ backgroundColor: '#ff4d4f', marginLeft: '6px' }"></nz-badge>
             </ng-template>
-            <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl"
-                               (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
+            <app-exit-docs-tab [form]="employeeForm" [existingPhotoUrl]="existingPhotoUrl" [mandatoryMap]="mandatoryMap" [customFields]="getCustomFieldsForTab('Exit & Docs')" (photoChange)="onPhotoChange($event)"></app-exit-docs-tab>
           </nz-tab>
 
           <!-- Tab 8: Documents -->
@@ -527,6 +527,8 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
   `]
 })
 export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactivate {
+  allFieldConfigs: FormFieldConfig[] = [];
+  mandatoryMap: Record<string, boolean> = {};
   @ViewChild(ExitDocsTabComponent) exitDocsTab!: ExitDocsTabComponent;
 
   employeeForm: FormGroup;
@@ -592,6 +594,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     private fb: FormBuilder,
     private employeeService: EmployeeService,
     private masterDataService: MasterDataService,
+    private formFieldConfigService: FormFieldConfigService,
     private route: ActivatedRoute,
     private router: Router,
     private message: NzMessageService,
@@ -609,6 +612,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       if (user?.id) this.employeeId = user.id;
     }
     this.isEditMode = !!this.employeeId;
+    this.loadFieldConfigurations();
 
     if (this.isEditMode && this.employeeId) {
       this.loadEmployee(this.employeeId);
@@ -1151,4 +1155,46 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       nzOkText: 'Understood'
     });
   }
+
+  getCustomFieldsForTab(tabName: string): FormFieldConfig[] {
+    return this.allFieldConfigs.filter(f => f.isCustom && f.tabName === tabName && f.isVisible);
+  }
+
+  loadFieldConfigurations(): void {
+    this.formFieldConfigService.getVisibleConfigs().subscribe({
+      next: (configs) => {
+        this.allFieldConfigs = configs;
+        this.applyFieldConfigurations(configs);
+      },
+      error: (err) => {
+        console.warn('Could not load field configs, using defaults', err);
+      }
+    });
+  }
+
+  applyFieldConfigurations(configs: FormFieldConfig[]): void {
+    const map: Record<string, boolean> = {};
+    configs.forEach(cfg => {
+      map[cfg.fieldKey] = cfg.isMandatory;
+
+      // Add custom field control if not present
+      if (cfg.isCustom && !this.employeeForm.contains(cfg.fieldKey)) {
+        this.employeeForm.addControl(cfg.fieldKey, this.fb.control('', cfg.isMandatory ? [Validators.required] : []));
+      }
+
+      // Dynamically update validators for control
+      const control = this.employeeForm.get(cfg.fieldKey);
+      if (control) {
+        if (cfg.isMandatory) {
+          control.addValidators(Validators.required);
+        } else {
+          control.removeValidators(Validators.required);
+        }
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    });
+    this.mandatoryMap = map;
+    this.formErrors = this.collectFormErrors();
+  }
+
 }

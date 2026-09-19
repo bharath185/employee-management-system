@@ -1,3 +1,5 @@
+import { CustomFieldsRendererComponent } from '../../../../shared/components/custom-fields-renderer.component';
+import { FormFieldConfig } from '../../../../core/services/form-field-config.service';
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -23,7 +25,7 @@ import { PhotoUploadComponent } from '../../../../shared/components/photo-upload
     NzIconModule,
     NzButtonModule,
     PhotoUploadComponent
-  ],
+  , CustomFieldsRendererComponent],
   template: `
     <div class="tab-container">
       <h3 class="section-title">Exit & Documents</h3>
@@ -97,6 +99,9 @@ import { PhotoUploadComponent } from '../../../../shared/components/photo-upload
   `]
 })
 export class ExitDocsTabComponent implements OnInit {
+  @Input() mandatoryMap: Record<string, boolean> = {};
+  @Input() customFields: FormFieldConfig[] = [];
+
   @Input() form: any;
   @Input() existingPhotoUrl: string = '';
 

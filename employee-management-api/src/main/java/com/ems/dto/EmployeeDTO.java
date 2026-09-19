@@ -116,6 +116,7 @@ public class EmployeeDTO {
     private String exitType;
     private String exitReason;
     private String photoPath;
+    private String customFields;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
@@ -210,6 +211,7 @@ public class EmployeeDTO {
             .exitType(emp.getExitType())
             .exitReason(emp.getExitReason())
             .photoPath(emp.getPhotoPath())
+            .customFields(emp.getCustomFields())
             .createdAt(emp.getCreatedAt())
             .updatedAt(emp.getUpdatedAt())
             .build();
@@ -296,6 +298,7 @@ public class EmployeeDTO {
         emp.setExitType(this.exitType);
         emp.setExitReason(this.exitReason);
         emp.setPhotoPath(this.photoPath);
+        emp.setCustomFields(this.customFields);
         return emp;
     }
 }
