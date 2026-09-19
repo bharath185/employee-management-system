@@ -531,6 +531,71 @@ import { environment } from '../../../environments/environment';
 
             <nz-divider></nz-divider>
 
+            
+            <!-- Additional / Custom Fields Section -->
+            <div *ngIf="customFields.length > 0">
+              <nz-divider></nz-divider>
+              <h3 class="section-title"><i nz-icon nzType="appstore-add" style="margin-right:6px;"></i> Additional Information</h3>
+              <div class="form-row">
+                <ng-container *ngFor="let field of customFields">
+                  <!-- Text Input -->
+                  <div class="form-group" *ngIf="field.fieldType === 'TEXT'" [class.has-error]="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="isMandatory(field.fieldKey)">*</span></label>
+                    <input nz-input [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey" [placeholder]="field.placeholder || 'Enter ' + field.fieldLabel" />
+                    <div class="field-error" *ngIf="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                      <i nz-icon nzType="close-circle"></i> {{ field.fieldLabel }} is required
+                    </div>
+                  </div>
+
+                  <!-- Number Input -->
+                  <div class="form-group" *ngIf="field.fieldType === 'NUMBER'" [class.has-error]="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="isMandatory(field.fieldKey)">*</span></label>
+                    <input nz-input type="number" [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey" [placeholder]="field.placeholder || 'Enter ' + field.fieldLabel" />
+                    <div class="field-error" *ngIf="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                      <i nz-icon nzType="close-circle"></i> {{ field.fieldLabel }} is required
+                    </div>
+                  </div>
+
+                  <!-- Date Picker -->
+                  <div class="form-group" *ngIf="field.fieldType === 'DATE'" [class.has-error]="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="isMandatory(field.fieldKey)">*</span></label>
+                    <input nz-input type="date" [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey" />
+                    <div class="field-error" *ngIf="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                      <i nz-icon nzType="close-circle"></i> {{ field.fieldLabel }} is required
+                    </div>
+                  </div>
+
+                  <!-- Dropdown / Select -->
+                  <div class="form-group" *ngIf="field.fieldType === 'SELECT'" [class.has-error]="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="isMandatory(field.fieldKey)">*</span></label>
+                    <nz-select [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey" [nzPlaceHolder]="field.placeholder || 'Select ' + field.fieldLabel" style="width:100%" nzAllowClear>
+                      <nz-option *ngFor="let opt of getCustomFieldOptions(field)" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+                    </nz-select>
+                    <div class="field-error" *ngIf="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                      <i nz-icon nzType="close-circle"></i> {{ field.fieldLabel }} is required
+                    </div>
+                  </div>
+
+                  <!-- Textarea -->
+                  <div class="form-group full-width" *ngIf="field.fieldType === 'TEXTAREA'" [class.has-error]="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="isMandatory(field.fieldKey)">*</span></label>
+                    <textarea nz-input [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey" rows="2" [placeholder]="field.placeholder || 'Enter ' + field.fieldLabel"></textarea>
+                    <div class="field-error" *ngIf="isMandatory(field.fieldKey) && !formData.customFieldsMap[field.fieldKey] && submitAttempted">
+                      <i nz-icon nzType="close-circle"></i> {{ field.fieldLabel }} is required
+                    </div>
+                  </div>
+
+                  <!-- Checkbox / Boolean -->
+                  <div class="form-group" *ngIf="field.fieldType === 'BOOLEAN'">
+                    <label>{{ field.fieldLabel }}</label>
+                    <label nz-checkbox [(ngModel)]="formData.customFieldsMap[field.fieldKey]" [name]="field.fieldKey">
+                      <span>{{ field.placeholder || 'Yes / Active' }}</span>
+                    </label>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
             <!-- Documents -->
             <h3 class="section-title">Documents</h3>
             <div class="form-row">
@@ -967,6 +1032,13 @@ export class PublicRegistrationComponent implements OnInit {
       errors.push('Blood Group is required');
     }
 
+    // Custom field check
+    this.customFields.forEach(cf => {
+      if (this.isMandatory(cf.fieldKey) && !this.formData.customFieldsMap[cf.fieldKey]) {
+        errors.push(`${cf.fieldLabel} is required`);
+      }
+    });
+
     if (!this.selectedPhoto) {
       errors.push('Candidate Photo is required (upload JPG/PNG)');
     }
@@ -1114,6 +1186,21 @@ export class PublicRegistrationComponent implements OnInit {
 
   isMandatory(key: string, fallback: boolean = false): boolean {
     return this.mandatoryMap[key] !== undefined ? this.mandatoryMap[key] : fallback;
+  }
+
+
+  get customFields(): FormFieldConfig[] {
+    return (this.fieldConfigs || []).filter(f => f.isCustom && f.isVisible);
+  }
+
+  getCustomFieldOptions(field: FormFieldConfig): { label: string; value: string }[] {
+    if (field.options) {
+      return field.options.split(',').map(s => s.trim()).filter(s => !!s).map(s => ({
+        label: s,
+        value: s
+      }));
+    }
+    return [];
   }
 
 }

@@ -346,6 +346,7 @@ import { EmployeeLanguage } from '../../../../core/models/employee.model';
           </tbody>
         </nz-table>
       </div>
+      <app-custom-fields-renderer [form]="form" [fields]="customFields" [title]="'Personal Info'"></app-custom-fields-renderer>
     </div>
   `,
   styles: [`

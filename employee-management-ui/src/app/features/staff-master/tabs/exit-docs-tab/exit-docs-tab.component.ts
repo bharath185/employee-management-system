@@ -85,6 +85,7 @@ import { PhotoUploadComponent } from '../../../../shared/components/photo-upload
           <app-photo-upload [existingPhotoUrl]="existingPhotoUrl" (photoChange)="onPhotoChange($event)"></app-photo-upload>
         </div>
       </div>
+      <app-custom-fields-renderer [form]="form" [fields]="customFields" [title]="'Exit & Documents'"></app-custom-fields-renderer>
     </div>
   `,
   styles: [`

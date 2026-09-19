@@ -59,6 +59,7 @@ import { MasterDataService } from '../../../../core/services/master-data.service
           </nz-form-item>
         </div>
       </div>
+      <app-custom-fields-renderer [form]="form" [fields]="customFields" [title]="'Bank & Identity'"></app-custom-fields-renderer>
     </div>
   `,
   styles: [`

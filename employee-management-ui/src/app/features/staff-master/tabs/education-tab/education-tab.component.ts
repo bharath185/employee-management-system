@@ -106,6 +106,7 @@ import { MasterDataService } from '../../../../core/services/master-data.service
           </nz-form-control>
         </nz-form-item>
       </div>
+      <app-custom-fields-renderer [form]="form" [fields]="customFields" [title]="'Education'"></app-custom-fields-renderer>
     </div>
   `,
   styles: [`

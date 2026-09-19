@@ -80,6 +80,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
           </nz-form-item>
         </div>
       </div>
+      <app-custom-fields-renderer [form]="form" [fields]="customFields" [title]="'Family & Kin'"></app-custom-fields-renderer>
     </div>
   `,
   styles: [`
