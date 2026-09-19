@@ -106,9 +106,6 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
             <button nz-button nzType="default" class="btn-ctrl" [nzLoading]="importLoading" (click)="fileInput.click()" nz-tooltip="Import salary structures from Excel">
               <i nz-icon nzType="upload"></i> Import
             </button>
-            <button nz-button class="btn-ctrl btn-sync" (click)="openSyncModal()" nz-tooltip="Sync Salary Master to monthly payroll and statutory reports">
-              <i nz-icon nzType="sync"></i> Sync to Month
-            </button>
             <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving" [disabled]="!hasChanges">
               <i nz-icon nzType="save"></i> Save <span *ngIf="hasChanges">({{ changedIds.size }})</span>
             </button>
@@ -276,28 +273,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
         </ng-template>
       </nz-modal>
 
-      <!-- ===== SYNC TO MONTH MODAL ===== -->
-      <nz-modal [(nzVisible)]="isSyncModalVisible" nzTitle="Sync Salary Master to Payroll Reports" (nzOnCancel)="isSyncModalVisible = false" (nzOnOk)="executeSync()" [nzOkLoading]="syncLoading">
-        <ng-container *nzModalContent>
-          <p style="color:#4b5563;font-size:13px;line-height:1.6">
-            This will copy all active Salary Master structures into monthly payroll records, allowing immediate generation of <strong>Wages Register</strong>, <strong>Individual Worker Details</strong>, and <strong>Salary Slips</strong> for the selected month.
-          </p>
-          <div style="display:flex;gap:12px;margin-top:16px;">
-            <div style="flex:1">
-              <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#374151">Year</label>
-              <nz-select [(ngModel)]="syncYear" style="width:100%">
-                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-              </nz-select>
-            </div>
-            <div style="flex:1">
-              <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;color:#374151">Month</label>
-              <nz-select [(ngModel)]="syncMonth" style="width:100%">
-                <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-              </nz-select>
-            </div>
-          </div>
-        </ng-container>
-      </nz-modal>
+
 
       <!-- ===== HISTORY DRAWER ===== -->
       <nz-drawer
