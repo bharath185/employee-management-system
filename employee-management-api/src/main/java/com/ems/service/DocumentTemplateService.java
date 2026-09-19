@@ -625,6 +625,29 @@ public class DocumentTemplateService {
                   border-radius: 2px !important;
                   box-sizing: border-box !important;
                 }
+                img {
+                  max-width: 100%;
+                }
+                .header-logo-icon, .crest, .header-logo, .brand-logo, .letterhead-logo {
+                  max-height: 55px !important;
+                  max-width: 200px !important;
+                  display: inline-flex !important;
+                  align-items: center !important;
+                  overflow: hidden !important;
+                }
+                .header-logo-icon img, .crest img, .brand img, .header-logo img, .letterhead-logo img, img.company-logo {
+                  max-height: 52px !important;
+                  max-width: 180px !important;
+                  width: auto !important;
+                  height: auto !important;
+                  object-fit: contain !important;
+                  display: block !important;
+                }
+                .photo-box img, .employee-photo-preview img {
+                  max-width: 100% !important;
+                  max-height: 100% !important;
+                  object-fit: cover !important;
+                }
               }
               @media print {
                 @page {

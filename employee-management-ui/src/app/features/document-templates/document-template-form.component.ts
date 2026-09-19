@@ -161,6 +161,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
     <app-template-preview-modal
       [(visible)]="isPreviewVisible"
       [templateId]="editId"
+      [templateName]="form.templateName"
       [templateContent]="form.content">
     </app-template-preview-modal>
   `,

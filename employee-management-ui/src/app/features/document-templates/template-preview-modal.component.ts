@@ -454,6 +454,11 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
       if (this.employeeId) {
         this.selectedEmployeeId = this.employeeId;
         this.loadPreview();
+      } else if (this.selectedEmployeeId) {
+        this.loadPreview();
+      } else if (this.employeeOptions.length > 0 && this.employeeOptions[0].id) {
+        this.selectedEmployeeId = this.employeeOptions[0].id;
+        this.loadPreview();
       }
     }
   }
@@ -517,6 +522,12 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
             this.employeeOptions = [...this.employeeOptions, ...content];
           } else {
             this.employeeOptions = content;
+            if (!this.selectedEmployeeId && content.length > 0 && content[0].id) {
+              this.selectedEmployeeId = content[0].id;
+              if (this.visible) {
+                this.loadPreview();
+              }
+            }
           }
           this.hasMore = response.data.page < (response.data.totalPages - 1);
         }
