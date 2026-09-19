@@ -144,6 +144,29 @@ public class DocumentTemplateController {
         return ResponseEntity.ok(APIResponse.success(filledHtml));
     }
 
+    @PostMapping("/preview-content")
+    public ResponseEntity<APIResponse<String>> previewContent(
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        String content = (String) body.get("content");
+        String templateName = (String) body.getOrDefault("templateName", "Document Preview");
+        Long employeeId = null;
+        if (body.get("employeeId") != null) {
+            employeeId = Long.valueOf(body.get("employeeId").toString());
+        }
+
+        // EMPLOYEE role can only preview with their own employeeId
+        if (currentUser.getAuthorities().stream()
+                .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_HR"))
+                && employeeId != null && !currentUser.getEmployeeId().equals(employeeId)) {
+            return ResponseEntity.status(403)
+                .body(APIResponse.error("Access denied"));
+        }
+
+        String filledHtml = documentTemplateService.previewRawContent(content, templateName, employeeId);
+        return ResponseEntity.ok(APIResponse.success(filledHtml));
+    }
+
     // ========== DOWNLOAD TRACKING ==========
 
     @GetMapping("/download-logs")

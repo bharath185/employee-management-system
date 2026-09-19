@@ -69,4 +69,12 @@ export class DocumentTemplateService {
       params
     });
   }
+
+  previewContent(content: string, templateName: string, employeeId: number): Observable<APIResponse<string>> {
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/preview-content`, {
+      content,
+      templateName,
+      employeeId
+    });
+  }
 }

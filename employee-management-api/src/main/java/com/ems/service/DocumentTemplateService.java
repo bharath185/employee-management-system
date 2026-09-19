@@ -171,6 +171,30 @@ public class DocumentTemplateService {
     }
 
     /**
+     * Preview raw content directly (for editor / live editing preview).
+     */
+    public String previewRawContent(String rawContent, String templateName, Long employeeId) {
+        if (rawContent == null || rawContent.isEmpty()) {
+            return "";
+        }
+        Employee employee = null;
+        if (employeeId != null) {
+            employee = employeeRepository.findById(employeeId).orElse(null);
+        }
+        Company company = companyService.getCompany();
+
+        String filledContent = TemplateEngine.process(rawContent, employee, company);
+        filledContent = resolveLogoUrl(filledContent, company);
+        if (employee != null) {
+            filledContent = resolveEmployeePhoto(filledContent, employee);
+            filledContent = resolveSalaryPlaceholders(filledContent, employee);
+        }
+        String styledHtml = wrapWithPrintStyles(filledContent, templateName != null ? templateName : "Document");
+        styledHtml = applyA4PreviewFrame(styledHtml);
+        return styledHtml;
+    }
+
+    /**
      * Generate a filled document and log the download.
      */
     @Transactional
@@ -583,7 +607,7 @@ public class DocumentTemplateService {
                 body {
                   background: #525659 !important;
                   margin: 0 !important;
-                  padding: 20px 0 40px !important;
+                  padding: 24px 0 48px !important;
                   display: flex !important;
                   flex-direction: column !important;
                   align-items: center !important;
@@ -591,13 +615,13 @@ public class DocumentTemplateService {
                   box-sizing: border-box !important;
                   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
                 }
-                body > :first-child {
+                body > :first-child, .page, .doc-page-container, .joining-a4 {
                   width: 210mm !important;
                   max-width: 210mm !important;
-                  min-height: 297mm;
+                  min-height: 297mm !important;
                   margin: 0 auto !important;
                   background: #ffffff !important;
-                  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.15) !important;
+                  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.15) !important;
                   border-radius: 2px !important;
                   box-sizing: border-box !important;
                 }
@@ -616,7 +640,7 @@ public class DocumentTemplateService {
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
-                body > :first-child {
+                body > :first-child, .page, .doc-page-container, .joining-a4 {
                   width: 100% !important;
                   max-width: 100% !important;
                   min-height: auto !important;

@@ -544,7 +544,20 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
     this.isLoadingPreview = true;
     this.previewHtml = '';
 
-    if (this.templateId) {
+    if (this.templateContent) {
+      this.templateService.previewContent(this.templateContent, this.templateName || 'Document Preview', this.selectedEmployeeId).subscribe({
+        next: (response) => {
+          this.isLoadingPreview = false;
+          if (response.success) {
+            this.previewHtml = response.data;
+          }
+        },
+        error: () => {
+          this.isLoadingPreview = false;
+          this.message.error('Error generating preview');
+        }
+      });
+    } else if (this.templateId) {
       this.templateService.previewTemplate(this.templateId, this.selectedEmployeeId).subscribe({
         next: (response) => {
           this.isLoadingPreview = false;
@@ -557,38 +570,7 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
           this.message.error('Error generating preview');
         }
       });
-    } else if (this.templateContent) {
-      this.generateLocalPreview();
     }
-  }
-
-  private generateLocalPreview(): void {
-    if (!this.selectedEmployeeId) return;
-
-    this.employeeService.getEmployeeById(this.selectedEmployeeId).subscribe({
-      next: (response) => {
-        this.isLoadingPreview = false;
-        if (response.success && response.data) {
-          const emp = response.data;
-          let html = this.templateContent;
-          html = html.replace(/\{\{employee_name\}\}/g, `${emp.firstName} ${emp.surname}`);
-          html = html.replace(/\{\{employee_code\}\}/g, emp.employeeCode);
-          html = html.replace(/\{\{designation\}\}/g, emp.designation || '');
-          html = html.replace(/\{\{doj\}\}/g, emp.doj || '');
-          html = html.replace(/\{\{doe\}\}/g, emp.doe || '');
-          html = html.replace(/\{\{gender\}\}/g, emp.gender || '');
-          html = html.replace(/\{\{address\}\}/g, emp.presentAddress || '');
-          html = html.replace(/\{\{mobile\}\}/g, emp.mobile || '');
-          html = html.replace(/\{\{email\}\}/g, emp.email || '');
-          html = html.replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString('en-IN'));
-          this.previewHtml = html;
-        }
-      },
-      error: () => {
-        this.isLoadingPreview = false;
-        this.message.error('Error loading employee data for preview');
-      }
-    });
   }
 
   downloadPdf(): void {
@@ -596,6 +578,13 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
       this.message.warning('Select an employee first');
       return;
     }
+
+    if (this.previewHtml) {
+      openDocumentPrintPreview(this.previewHtml);
+      this.message.success('Document ready for Print / Save as PDF');
+      return;
+    }
+
     if (!this.templateId) {
       this.message.warning('Save the template first to enable PDF download');
       return;
