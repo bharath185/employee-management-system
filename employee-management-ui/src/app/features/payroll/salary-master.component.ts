@@ -107,10 +107,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
               <i nz-icon nzType="upload"></i> Import
             </button>
             <button nz-button class="btn-ctrl btn-sync" (click)="openSyncModal()" nz-tooltip="Sync Salary Master to monthly payroll and statutory reports">
-              <i nz-icon nzType="sync"></i> Sync
-            </button>
-            <button nz-button class="btn-ctrl btn-sample" (click)="generateSamples()" [nzLoading]="sampleLoading" nz-tooltip="Auto-generate realistic salary structures for all employees">
-              <i nz-icon nzType="thunderbolt"></i> Auto Samples
+              <i nz-icon nzType="sync"></i> Sync to Month
             </button>
             <button nz-button class="btn-primary-gradient" (click)="saveAll()" [nzLoading]="saving" [disabled]="!hasChanges">
               <i nz-icon nzType="save"></i> Save <span *ngIf="hasChanges">({{ changedIds.size }})</span>
