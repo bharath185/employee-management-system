@@ -18,6 +18,7 @@ import { DocumentTemplateService } from '../../core/services/document-template.s
 import { EmployeeService } from '../../core/services/employee.service';
 import { Employee } from '../../core/models/employee.model';
 import { openDocumentPrintPreview } from '../../shared/utils/print-document';
+import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-template-preview-modal',
@@ -31,7 +32,8 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
     NzSpinModule,
     NzSelectModule,
     NzInputModule,
-    NzToolTipModule
+    NzToolTipModule,
+    SafeHtmlPipe
   ],
   template: `
     <nz-modal [(nzVisible)]="visible" [nzTitle]="modalTitleTpl" nzWidth="1020px"
@@ -107,7 +109,7 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
             [style.transform]="'scale(' + zoomLevel + ')'"
             [style.transformOrigin]="'top center'"
             [style.marginBottom]="getScalerMarginBottom()">
-            <iframe [srcdoc]="previewHtml" class="pdf-document-iframe"
+            <iframe [srcdoc]="previewHtml | safeHtml" class="pdf-document-iframe"
               sandbox="allow-same-origin allow-scripts"></iframe>
           </div>
           <div class="preview-empty-state" *ngIf="!previewHtml">

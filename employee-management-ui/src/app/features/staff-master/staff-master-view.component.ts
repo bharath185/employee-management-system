@@ -31,6 +31,7 @@ import { DownloadTrackingService } from '../../core/services/download-tracking.s
 import { DocumentTemplate, DownloadLog } from '../../core/models/document-template.model';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { openDocumentPrintPreview } from '../../shared/utils/print-document';
+import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
 
 @Component({
   selector: 'app-staff-master-view',
@@ -54,7 +55,8 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
     NzTableModule,
     DateFormatPipe,
     TitleCasePipe,
-    LoadingSpinnerComponent
+    LoadingSpinnerComponent,
+    SafeHtmlPipe
   ],
   template: `
     <div class="pl-container">
@@ -441,7 +443,7 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
             [style.transform]="'scale(' + docZoomLevel + ')'"
             [style.transformOrigin]="'top center'"
             [style.marginBottom]="getDocScalerMarginBottom()">
-            <iframe [srcdoc]="previewHtml" class="pdf-document-iframe"
+            <iframe [srcdoc]="previewHtml | safeHtml" class="pdf-document-iframe"
               sandbox="allow-same-origin allow-scripts"></iframe>
           </div>
         </div>
