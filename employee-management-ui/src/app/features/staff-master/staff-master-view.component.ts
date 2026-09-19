@@ -369,40 +369,95 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
       </div>
     </div>
 
-    <nz-modal [(nzVisible)]="isGenerateModalVisible" nzTitle="Generate Document"
-      (nzOnCancel)="closeGenerateModal()" nzWidth="960px" [nzFooter]="null">
+    <nz-modal [(nzVisible)]="isGenerateModalVisible" [nzTitle]="docModalTitleTpl"
+      (nzOnCancel)="closeGenerateModal()" nzWidth="1020px"
+      [nzBodyStyle]="{ padding: '0', background: '#323639', overflow: 'hidden' }" [nzFooter]="null">
+      
+      <ng-template #docModalTitleTpl>
+        <div class="modal-head-title">
+          <span class="pdf-tag-badge"><i nz-icon nzType="file-pdf" nzTheme="fill"></i> PDF</span>
+          <span class="head-text">Generate Document &bull; {{ employee ? (employee.firstName + ' ' + (employee.surname || '')) : '' }}</span>
+        </div>
+      </ng-template>
+
       <ng-template nzModalContent>
-        <div class="gen-modal-body">
-          <div class="form-group">
-            <label class="form-label">Select Template Type</label>
-            <nz-select [(ngModel)]="selectedTemplateType" nzPlaceHolder="Choose template type"
-              (ngModelChange)="onTemplateTypeChange()" style="width:100%">
-              <nz-option *ngFor="let t of templateTypes" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
-            </nz-select>
-          </div>
-          <div class="form-group" *ngIf="availableTemplates.length > 0">
-            <label class="form-label">Select Template</label>
-            <nz-select [(ngModel)]="selectedTemplateId" nzPlaceHolder="Choose template"
-              (ngModelChange)="onTemplateSelect()" style="width:100%">
-              <nz-option *ngFor="let tpl of availableTemplates" [nzValue]="tpl.id" [nzLabel]="tpl.templateName"></nz-option>
-            </nz-select>
-          </div>
-          <div class="preview-section" *ngIf="previewHtml">
-            <label class="form-label">Preview</label>
-            <div class="preview-frame">
-              <iframe [srcdoc]="previewHtml" class="preview-iframe"
-                sandbox="allow-same-origin allow-scripts"></iframe>
+        <!-- Selection Bar -->
+        <div class="gen-selector-bar">
+          <div class="gen-selector-row">
+            <div class="gen-field">
+              <label class="gen-label">Document Type:</label>
+              <nz-select [(ngModel)]="selectedTemplateType" nzPlaceHolder="Choose template type"
+                (ngModelChange)="onTemplateTypeChange()" class="gen-select">
+                <nz-option *ngFor="let t of templateTypes" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
+              </nz-select>
             </div>
-            <div class="preview-actions">
-              <button nz-button class="btn-primary-gradient" (click)="downloadDocument('pdf')" [nzLoading]="isDownloading">
-                <i class="bi bi-download"></i> Download PDF
-              </button>
+            <div class="gen-field" *ngIf="availableTemplates.length > 0">
+              <label class="gen-label">Template:</label>
+              <nz-select [(ngModel)]="selectedTemplateId" nzPlaceHolder="Choose template"
+                (ngModelChange)="onTemplateSelect()" class="gen-select">
+                <nz-option *ngFor="let tpl of availableTemplates" [nzValue]="tpl.id" [nzLabel]="tpl.templateName"></nz-option>
+              </nz-select>
             </div>
           </div>
-          <div class="preview-empty" *ngIf="!previewHtml && selectedTemplateId">
-            <i class="bi bi-hourglass-split loading-icon"></i>
-            <p>Generating preview...</p>
+        </div>
+
+        <!-- PDF Reader Toolbar -->
+        <div class="pdf-reader-toolbar" *ngIf="previewHtml">
+          <div class="toolbar-left">
+            <span class="doc-badge-pill"><i nz-icon nzType="file-text"></i> A4 Portrait</span>
+            <span class="page-count-pill">{{ getSelectedTemplateName() }}</span>
           </div>
+
+          <div class="toolbar-center">
+            <button type="button" class="pdf-tool-btn" (click)="docZoomOut()" [disabled]="docZoomLevel <= 0.5" nz-tooltip="Zoom Out">
+              <i nz-icon nzType="minus"></i>
+            </button>
+            <span class="zoom-value">{{ getDocZoomPercent() }}%</span>
+            <button type="button" class="pdf-tool-btn" (click)="docZoomIn()" [disabled]="docZoomLevel >= 1.5" nz-tooltip="Zoom In">
+              <i nz-icon nzType="plus"></i>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button type="button" class="pdf-tool-btn text-btn" [class.active-btn]="docZoomLevel === 0.85" (click)="setDocZoom(0.85)" nz-tooltip="Fit Width">
+              Fit Width
+            </button>
+            <button type="button" class="pdf-tool-btn text-btn" [class.active-btn]="docZoomLevel === 1.0" (click)="setDocZoom(1.0)" nz-tooltip="Actual Size (100%)">
+              100%
+            </button>
+          </div>
+
+          <div class="toolbar-right">
+            <button type="button" class="pdf-act-btn print-btn" (click)="printPreviewDocument()" [disabled]="!previewHtml" nz-tooltip="Print Document">
+              <i nz-icon nzType="printer"></i> Print
+            </button>
+            <button type="button" class="pdf-act-btn download-btn" (click)="downloadDocument('pdf')" [disabled]="isDownloading || !selectedTemplateId" nz-tooltip="Save as PDF / Download">
+              <i nz-icon nzType="download"></i> Save as PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- PDF Canvas Viewport -->
+        <div class="pdf-viewport-canvas" *ngIf="previewHtml">
+          <div class="pdf-page-scaler"
+            [style.transform]="'scale(' + docZoomLevel + ')'"
+            [style.transformOrigin]="'top center'"
+            [style.marginBottom]="getDocScalerMarginBottom()">
+            <iframe [srcdoc]="previewHtml" class="pdf-document-iframe"
+              sandbox="allow-same-origin allow-scripts"></iframe>
+          </div>
+        </div>
+
+        <div class="pdf-loading-state" *ngIf="!previewHtml && selectedTemplateId">
+          <i nz-icon nzType="loading" class="pdf-loading-icon"></i>
+          <h4 class="loading-title">Generating PDF Document...</h4>
+          <p class="loading-subtitle">Merging employee data and generating A4 print layout</p>
+        </div>
+
+        <div class="preview-empty-state" *ngIf="!previewHtml && !selectedTemplateId">
+          <div class="empty-icon-box">
+            <i nz-icon nzType="file-pdf" class="empty-pdf-icon"></i>
+          </div>
+          <h4 class="empty-title">Select Document Template</h4>
+          <p class="empty-desc">Choose a document type and template above to generate the PDF preview.</p>
         </div>
       </ng-template>
     </nz-modal>
@@ -618,29 +673,276 @@ import { openDocumentPrintPreview } from '../../shared/utils/print-document';
     .no-history p { font-size: 12px; color: #6c757d; margin: 0; }
 
     :host ::ng-deep .ant-modal-content { background: #ffffff !important; border: 1px solid #e8eaed !important; border-radius: 10px !important; }
-    .gen-modal-body { display: flex; flex-direction: column; gap: 16px; padding: 8px 0; }
-    .form-group { display: flex; flex-direction: column; gap: 4px; }
-    .form-label { font-size: 12px; font-weight: 600; color: #1a1a2e; }
-    .preview-section { display: flex; flex-direction: column; gap: 10px; }
-    .preview-frame {
-      border: 1px solid #e8eaed;
-      border-radius: 8px;
-      overflow: auto;
-      background: #cfd5de;
-      max-height: 78vh;
+    
+    .modal-head-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .preview-iframe {
-      width: 226mm;
-      height: 320mm;
+    .pdf-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #dc2626;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .head-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    /* ── Generator Selector Bar ── */
+    .gen-selector-bar {
+      background: #f8fafc;
+      padding: 10px 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .gen-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .gen-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 240px;
+    }
+    .gen-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      white-space: nowrap;
+    }
+    .gen-select {
+      flex: 1;
+    }
+
+    /* ── PDF Reader Toolbar ── */
+    .pdf-reader-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #202124;
+      border-bottom: 1px solid #17181a;
+      color: #e8eaed;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .doc-badge-pill {
+      font-size: 11px;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .page-count-pill {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .toolbar-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .pdf-tool-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #e8eaed;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .pdf-tool-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+    .pdf-tool-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .pdf-tool-btn.text-btn {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+    }
+    .pdf-tool-btn.text-btn.active-btn {
+      background: rgba(67, 97, 238, 0.4);
+      border-color: #4361ee;
+      color: #ffffff;
+    }
+    .zoom-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #f1f5f9;
+      min-width: 44px;
+      text-align: center;
+      font-family: monospace;
+    }
+    .toolbar-divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.16);
+      margin: 0 4px;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pdf-act-btn {
       border: none;
-      display: block;
-      margin: 0 auto;
-      background: #cfd5de;
+      border-radius: 5px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
     }
-    .preview-actions { display: flex; gap: 8px; }
-    .preview-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px; }
-    .loading-icon { font-size: 28px; color: #4361ee; }
-    .preview-empty p { font-size: 12px; color: #6c757d; margin: 0; }
+    .print-btn {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .print-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .print-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .download-btn {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .download-btn:hover:not(:disabled) {
+      background: #1d4ed8;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+    .download-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── PDF Canvas Viewport ── */
+    .pdf-viewport-canvas {
+      background: #525659;
+      overflow-y: auto;
+      overflow-x: auto;
+      max-height: 72vh;
+      min-height: 520px;
+      padding: 24px 16px 36px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      box-sizing: border-box;
+    }
+    .pdf-page-scaler {
+      transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1);
+      display: inline-block;
+      margin: 0 auto;
+    }
+    .pdf-document-iframe {
+      width: 210mm;
+      min-height: 297mm;
+      height: 310mm;
+      border: none;
+      border-radius: 2px;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.2);
+      background: #ffffff;
+      display: block;
+    }
+
+    /* ── Empty & Loading States ── */
+    .preview-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 90px 24px;
+      color: #cbd5e1;
+      text-align: center;
+      background: #525659;
+      min-height: 480px;
+    }
+    .empty-icon-box {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-pdf-icon {
+      font-size: 32px;
+      color: #f87171;
+    }
+    .empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin: 0;
+    }
+    .empty-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      max-width: 380px;
+      margin: 0;
+    }
+
+    .pdf-loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 110px 24px;
+      background: #525659;
+      min-height: 480px;
+    }
+    .pdf-loading-icon {
+      font-size: 36px;
+      color: #60a5fa;
+    }
+    .loading-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f8fafc;
+      margin: 0;
+    }
+    .loading-subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin: 0;
+    }
 
     @media (max-width: 768px) { .assets-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 480px) { .assets-grid { grid-template-columns: 1fr; } }
@@ -670,6 +972,7 @@ export class StaffMasterViewComponent implements OnInit {
   downloadHistory: DownloadLog[] = [];
 
   isGenerateModalVisible = false;
+  docZoomLevel = 0.85;
   fieldConfigs: FormFieldConfig[] = [];
 
   constructor(
@@ -897,5 +1200,43 @@ export class StaffMasterViewComponent implements OnInit {
         this.message.error('Error generating document');
       }
     });
+  }
+
+  getDocZoomPercent(): number {
+    return Math.round(this.docZoomLevel * 100);
+  }
+
+  docZoomIn(): void {
+    if (this.docZoomLevel < 1.5) {
+      this.docZoomLevel = Math.min(1.5, +(this.docZoomLevel + 0.1).toFixed(2));
+    }
+  }
+
+  docZoomOut(): void {
+    if (this.docZoomLevel > 0.5) {
+      this.docZoomLevel = Math.max(0.5, +(this.docZoomLevel - 0.1).toFixed(2));
+    }
+  }
+
+  setDocZoom(level: number): void {
+    this.docZoomLevel = level;
+  }
+
+  getDocScalerMarginBottom(): string {
+    if (this.docZoomLevel < 1.0) {
+      const heightReduction = (1 - this.docZoomLevel) * 310;
+      return `-${heightReduction * 3.77}px`;
+    }
+    return '0px';
+  }
+
+  printPreviewDocument(): void {
+    if (!this.previewHtml) return;
+    openDocumentPrintPreview(this.previewHtml);
+  }
+
+  getSelectedTemplateName(): string {
+    const t = this.availableTemplates.find(x => x.id === this.selectedTemplateId);
+    return t ? t.templateName : 'Document';
   }
 }

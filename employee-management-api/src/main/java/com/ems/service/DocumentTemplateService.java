@@ -569,24 +569,27 @@ public class DocumentTemplateService {
             <style id="ems-a4-frame">
               @page {
                 size: A4 portrait;
-                margin: 12mm 15mm 12mm 15mm;
+                margin: 10mm 12mm 10mm 12mm;
               }
               *, *::before, *::after {
                 box-sizing: border-box;
               }
               @media screen {
                 html {
-                  background: #cfd5de !important;
+                  background: #525659 !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
                 }
                 body {
-                  background: #cfd5de !important;
+                  background: #525659 !important;
                   margin: 0 !important;
-                  padding: 24px 0 32px !important;
+                  padding: 20px 0 40px !important;
                   display: flex !important;
                   flex-direction: column !important;
                   align-items: center !important;
                   min-height: 100vh !important;
                   box-sizing: border-box !important;
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
                 }
                 body > :first-child {
                   width: 210mm !important;
@@ -594,15 +597,15 @@ public class DocumentTemplateService {
                   min-height: 297mm;
                   margin: 0 auto !important;
                   background: #ffffff !important;
-                  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.18) !important;
-                  border-radius: 4px !important;
+                  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.15) !important;
+                  border-radius: 2px !important;
                   box-sizing: border-box !important;
                 }
               }
               @media print {
                 @page {
                   size: A4 portrait;
-                  margin: 12mm 15mm 12mm 15mm;
+                  margin: 10mm 12mm 10mm 12mm;
                 }
                 html, body {
                   background: #ffffff !important;

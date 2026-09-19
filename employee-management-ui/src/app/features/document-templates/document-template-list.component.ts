@@ -23,6 +23,7 @@ import { DocumentTemplateService } from '../../core/services/document-template.s
 import { DocumentTemplate, DOCUMENT_TEMPLATE_TYPES } from '../../core/models/document-template.model';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
+import { TemplatePreviewModalComponent } from './template-preview-modal.component';
 
 @Component({
   selector: 'app-document-template-list',
@@ -43,7 +44,8 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
     NzSwitchModule,
     NzToolTipModule,
     NzModalModule,
-    DateFormatPipe
+    DateFormatPipe,
+    TemplatePreviewModalComponent
   ],
   template: `
     <div class="template-list-container page-enter">
@@ -164,6 +166,9 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
               </td>
               <td class="td-center" (click)="$event.stopPropagation()">
                 <div class="row-actions-cell">
+                  <button nz-button nzType="text" nz-tooltip="Preview Template (PDF)" (click)="openPreview(tpl)" class="action-btn preview-btn">
+                    <i nz-icon nzType="eye"></i>
+                  </button>
                   <button nz-button nzType="text" nz-tooltip="Edit Template" [routerLink]="['/admin/document-templates', tpl.id, 'edit']" class="action-btn edit-btn">
                     <i nz-icon nzType="edit"></i>
                   </button>
@@ -176,6 +181,14 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
           </tbody>
         </nz-table>
       </div>
+
+      <!-- Preview Modal -->
+      <app-template-preview-modal
+        [(visible)]="isPreviewVisible"
+        [templateId]="selectedPreviewTemplateId"
+        [templateName]="selectedPreviewTemplateName"
+        [templateContent]="selectedPreviewTemplateContent">
+      </app-template-preview-modal>
     </div>
   `,
   styles: [`
@@ -478,6 +491,10 @@ import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
       background: #f0f4ff !important;
       color: #1f3d6e !important;
     }
+    .preview-btn:hover {
+      color: #0284c7 !important;
+      background: #e0f2fe !important;
+    }
     .edit-btn:hover {
       color: #4361ee !important;
     }
@@ -556,6 +573,11 @@ export class DocumentTemplateListComponent implements OnInit, OnDestroy {
   filterType = '';
   filterActive = '';
 
+  isPreviewVisible = false;
+  selectedPreviewTemplateId: number | null = null;
+  selectedPreviewTemplateName: string = '';
+  selectedPreviewTemplateContent: string = '';
+
   typeOptions: {code: string; display: string}[] = [...DOCUMENT_TEMPLATE_TYPES];
 
   private searchSubject = new Subject<string>();
@@ -567,6 +589,13 @@ export class DocumentTemplateListComponent implements OnInit, OnDestroy {
     private message: NzMessageService,
     private modal: NzModalService
   ) {}
+
+  openPreview(tpl: DocumentTemplate): void {
+    this.selectedPreviewTemplateId = tpl.id ?? null;
+    this.selectedPreviewTemplateName = tpl.templateName;
+    this.selectedPreviewTemplateContent = tpl.content || '';
+    this.isPreviewVisible = true;
+  }
 
   get hasActiveFilters(): boolean {
     return !!this.searchTerm || !!this.filterType || !!this.filterActive;
