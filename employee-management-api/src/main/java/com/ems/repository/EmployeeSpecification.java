@@ -21,7 +21,8 @@ public class EmployeeSpecification {
                 cb.like(root.get("mobile"), pattern),
                 cb.like(cb.lower(root.get("designation")), pattern),
                 cb.like(cb.lower(root.get("aadharNumber")), pattern),
-                cb.like(cb.lower(root.get("panNumber")), pattern)
+                cb.like(cb.lower(root.get("panNumber")), pattern),
+                cb.like(cb.lower(root.get("customFields")), pattern)
             );
         };
     }

@@ -28,6 +28,7 @@ import { ReportTemplateService, ReportTemplate } from '../../core/services/repor
 import { DashboardStats } from '../../core/models/api-response.model';
 import { Employee } from '../../core/models/employee.model';
 import { LabourReportsComponent } from '../labour-reports/labour-reports.component';
+import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -35,9 +36,10 @@ import { saveAs } from 'file-saver';
 interface ReportColumn {
   key: string;
   label: string;
-  category: 'Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification';
+  category: 'Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification' | 'Custom Fields';
   selected: boolean;
   width?: number;
+  isCustom?: boolean;
 }
 
 @Component({
@@ -191,6 +193,7 @@ export class ReportsComponent implements OnInit {
     private dashboardService: DashboardService,
     private masterDataService: MasterDataService,
     private templateService: ReportTemplateService,
+    private formFieldConfigService: FormFieldConfigService,
     private notification: NzNotificationService
   ) {}
 
@@ -202,6 +205,7 @@ export class ReportsComponent implements OnInit {
     }
 
     this.loadMasterData();
+    this.loadFieldConfigurations();
     this.loadTemplates();
     this.loadReportData();
   }
@@ -210,12 +214,39 @@ export class ReportsComponent implements OnInit {
     return this.availableColumns.filter(c => c.selected);
   }
 
-  get columnCategories(): ('Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification')[] {
-    return ['Personal', 'Employment', 'Demographics', 'Bank', 'Family', 'Verification'];
+  get columnCategories(): ('Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification' | 'Custom Fields')[] {
+    const cats: ('Personal' | 'Employment' | 'Demographics' | 'Family' | 'Bank' | 'Verification' | 'Custom Fields')[] = [
+      'Personal', 'Employment', 'Demographics', 'Bank', 'Family', 'Verification'
+    ];
+    if (this.availableColumns.some(c => c.category === 'Custom Fields')) {
+      cats.push('Custom Fields');
+    }
+    return cats;
   }
 
   getColumnsByCategory(category: string): ReportColumn[] {
     return this.availableColumns.filter(c => c.category === category && (!this.columnSearch || c.label.toLowerCase().includes(this.columnSearch.toLowerCase())));
+  }
+
+  loadFieldConfigurations(): void {
+    this.formFieldConfigService.getVisibleConfigs().subscribe({
+      next: (configs) => {
+        const customConfigs = (configs || []).filter(c => c.isCustom);
+        customConfigs.forEach(cfg => {
+          if (!this.availableColumns.some(col => col.key === cfg.fieldKey)) {
+            this.availableColumns.push({
+              key: cfg.fieldKey,
+              label: cfg.fieldLabel,
+              category: 'Custom Fields',
+              selected: false,
+              width: 140,
+              isCustom: true
+            });
+          }
+        });
+      },
+      error: () => {}
+    });
   }
 
   loadMasterData(): void {
@@ -391,7 +422,18 @@ export class ReportsComponent implements OnInit {
         return emp.age != null ? emp.age : (emp.dob ? this.calculateAge(emp.dob) : '-');
       default:
         const val = (emp as any)[colKey];
-        return (val !== undefined && val !== null && val !== '') ? val : '-';
+        if (val !== undefined && val !== null && val !== '') {
+          return val;
+        }
+        if (emp.customFields) {
+          try {
+            const parsed = typeof emp.customFields === 'string' ? JSON.parse(emp.customFields) : emp.customFields;
+            if (parsed && parsed[colKey] !== undefined && parsed[colKey] !== null && parsed[colKey] !== '') {
+              return parsed[colKey];
+            }
+          } catch {}
+        }
+        return '-';
     }
   }
 
