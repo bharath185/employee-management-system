@@ -145,7 +145,7 @@ import { Salary } from '../../core/models/payroll.models';
               <div class="form-row">
                 <label>Employee</label>
                 <nz-select [(ngModel)]="form.employeeId" nzPlaceHolder="Select Employee" name="employeeId" [nzDisabled]="!!editingId" class="theme-select">
-                  <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + e.surname"></nz-option>
+                  <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
                 </nz-select>
               </div>
               <div class="form-row">

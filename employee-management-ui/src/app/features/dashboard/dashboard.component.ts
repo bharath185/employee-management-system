@@ -126,9 +126,9 @@ import { StatCardComponent } from '../../shared/components/stat-card/stat-card.c
             </div>
             <div class="dash-team-body">
               <div class="dash-team-row" *ngFor="let emp of recentEmployees.slice(0, 5)" [routerLink]="['/admin/employees', emp.id]">
-                <div class="dash-t-avatar">{{ (emp.firstName.charAt(0) || '') + (emp.surname.charAt(0) || '') }}</div>
+                <div class="dash-t-avatar">{{ (emp.surname?.charAt(0) || '') + (emp.firstName?.charAt(0) || '') }}</div>
                 <div class="dash-t-info">
-                  <div class="dash-t-name">{{ emp.firstName }} {{ emp.surname }}</div>
+                  <div class="dash-t-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.surname ? emp.surname + ' ' : '' }}{{ emp.firstName || '' }}</div>
                   <div class="dash-t-role">{{ emp.designation | titleCase }}</div>
                   <div class="dash-t-code">{{ emp.employeeCode }}</div>
                 </div>
@@ -239,7 +239,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
-      this.currentUserName = user ? `${user.firstName} ${user.surname}` : 'User';
+      this.currentUserName = user ? `${user.surname ? user.surname + ' ' : ''}${user.firstName || ''}`.trim() : 'User';
     });
     this.today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     this.loadDashboard();

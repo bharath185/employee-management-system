@@ -404,7 +404,7 @@ export class LabourReportsComponent implements OnInit {
       next: (res: any) => {
         const list = res.data?.content || res.data || [];
         this.employeeList = list.map((e: any) => ({
-          id: e.id, fullName: e.fullName || (e.firstName + ' ' + e.surname), employeeCode: e.employeeCode
+          id: e.id, fullName: e.fullName || `${e.surname ? e.surname + ' ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}`.trim(), employeeCode: e.employeeCode
         }));
       }
     });

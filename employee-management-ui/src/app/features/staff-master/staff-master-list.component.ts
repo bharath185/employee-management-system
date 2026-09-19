@@ -142,10 +142,10 @@ import * as XLSX from 'xlsx';
               <td class="td-name">
                 <div class="emp-info-cell">
                   <div class="emp-avatar" [style.background]="getAvatarColor(emp.employeeCode)">
-                    {{ (emp.firstName?.charAt(0) || '') + (emp.surname?.charAt(0) || '') }}
+                    {{ (emp.surname?.charAt(0) || '') + (emp.firstName?.charAt(0) || '') }}
                   </div>
                   <div class="emp-name-block">
-                    <span class="emp-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.firstName }} {{ emp.surname }}</span>
+                    <span class="emp-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.surname ? emp.surname + ' ' : '' }}{{ emp.firstName || '' }}{{ emp.middleName ? ' ' + emp.middleName : '' }}</span>
                   </div>
                 </div>
               </td>
@@ -744,7 +744,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   deleteEmployee(emp: Employee): void {
     this.modal.confirm({
       nzTitle: 'Delete Employee',
-      nzContent: `Are you sure you want to delete ${emp.firstName} ${emp.surname} (${emp.employeeCode})?`,
+      nzContent: `Are you sure you want to delete ${emp.surname || ''} ${emp.firstName || ''} (${emp.employeeCode})?`,
       nzOkText: 'Delete',
       nzOkDanger: true,
       nzOnOk: () => {

@@ -57,7 +57,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
               nzShowSearch [nzServerSearch]="true" (nzOnSearch)="onSearchEmployee($event)" (nzScrollToBottom)="loadMoreEmployees()"
               class="emp-select-box" (ngModelChange)="loadPreview()" [nzLoading]="isLoadingEmployees">
               <nz-option *ngFor="let emp of employeeOptions" [nzValue]="emp.id"
-                [nzLabel]="emp.firstName + ' ' + (emp.surname || '') + ' (' + emp.employeeCode + ')'">
+                [nzLabel]="(emp.surname ? emp.surname + ' ' : '') + (emp.firstName || '') + (emp.middleName ? ' ' + emp.middleName : '') + ' (' + emp.employeeCode + ')'">
               </nz-option>
               <nz-option *ngIf="isLoadingMore" nzDisabled nzCustomContent>
                 <div style="text-align:center; padding: 4px;"><i nz-icon nzType="loading"></i> Loading more...</div>
@@ -508,7 +508,7 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
     const params: any = {
       page: this.currentPage,
       size: this.pageSize,
-      sort: 'firstName,asc'
+      sort: 'surname,asc'
     };
     if (this.searchTerm && this.searchTerm.trim()) {
       params.search = this.searchTerm.trim();

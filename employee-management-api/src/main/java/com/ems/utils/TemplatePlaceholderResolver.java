@@ -34,6 +34,7 @@ public final class TemplatePlaceholderResolver {
         values.put("mobile", nullSafe(employee.getMobile()));
         values.put("email", nullSafe(employee.getEmail()));
         values.put("first_name", nullSafe(employee.getFirstName()));
+        values.put("middle_name", nullSafe(employee.getMiddleName()));
         values.put("surname", nullSafe(employee.getSurname()));
         values.put("prefix", nullSafe(employee.getPrefix()));
         values.put("marital_status", nullSafe(employee.getMaritalStatus()));

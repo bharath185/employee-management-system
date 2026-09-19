@@ -87,7 +87,7 @@ import { environment } from '../../../environments/environment';
           <tbody>
             <tr *ngFor="let reg of pendingTable.data">
               <td><strong>{{ reg.registrationCode }}</strong></td>
-              <td>{{ reg.firstName }} {{ reg.middleName ? reg.middleName + ' ' : '' }}{{ reg.surname }}</td>
+              <td>{{ (reg.surname ? reg.surname + ' ' : '') + reg.firstName + (reg.middleName ? ' ' + reg.middleName : '') }}</td>
               <td>{{ reg.mobile }}</td>
               <td>{{ reg.email || '-' }}</td>
               <td>{{ reg.designation || '-' }}</td>
@@ -143,7 +143,7 @@ import { environment } from '../../../environments/environment';
               </tr>
               <tr>
                 <td class="jr-label">Employee Name with Surname</td>
-                <td class="jr-value" colspan="3">{{ selectedReg.prefix || '' }} {{ selectedReg.firstName || '' }} {{ selectedReg.middleName || '' }} {{ selectedReg.surname || '' }}</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.prefix ? selectedReg.prefix + ' ' : '' }}{{ selectedReg.surname ? selectedReg.surname + ' ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }}</td>
               </tr>
               <tr>
                 <td class="jr-label">Date of Birth</td>
@@ -345,7 +345,7 @@ import { environment } from '../../../environments/environment';
         <div class="approve-modal-body" *ngIf="selectedReg">
           <div style="margin-bottom:14px;padding:8px 12px;background:#f0f4ff;border-radius:6px;border:1px solid #d0e1fd;">
             <p style="margin:0;font-weight:600;color:#1f3d6e;">
-              {{ selectedReg.prefix || '' }} {{ selectedReg.firstName }} {{ selectedReg.surname }} ({{ selectedReg.registrationCode }})
+              {{ selectedReg.prefix ? selectedReg.prefix + ' ' : '' }}{{ selectedReg.surname ? selectedReg.surname + ' ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }} ({{ selectedReg.registrationCode }})
             </p>
             <p style="margin:2px 0 0 0;font-size:12px;color:#666;">
               Review or adjust joining details before approving and generating the employee record.

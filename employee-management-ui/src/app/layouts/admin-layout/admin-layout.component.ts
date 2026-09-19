@@ -587,7 +587,7 @@ export class AdminLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
-      this.currentUserName = user ? `${user.firstName} ${user.surname}` : 'User';
+      this.currentUserName = user ? `${user.surname ? user.surname + ' ' : ''}${user.firstName || ''}`.trim() : 'User';
     });
     const role = this.authService.getUserRole() || 'EMPLOYEE';
     this.permService.loadMyPermissions(role).subscribe();

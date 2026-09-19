@@ -48,6 +48,9 @@ public class Employee {
     @Column(name = "first_name", length = 40)
     private String firstName;
 
+    @Column(name = "middle_name", length = 40)
+    private String middleName;
+
     @Column(name = "surname", length = 40)
     private String surname;
 
@@ -344,6 +347,19 @@ public class Employee {
     }
 
     public String getFullName() {
-        return (prefix != null ? prefix + " " : "") + firstName + " " + surname;
+        StringBuilder sb = new StringBuilder();
+        if (prefix != null && !prefix.trim().isEmpty()) {
+            sb.append(prefix.trim()).append(" ");
+        }
+        if (surname != null && !surname.trim().isEmpty()) {
+            sb.append(surname.trim()).append(" ");
+        }
+        if (firstName != null && !firstName.trim().isEmpty()) {
+            sb.append(firstName.trim()).append(" ");
+        }
+        if (middleName != null && !middleName.trim().isEmpty()) {
+            sb.append(middleName.trim()).append(" ");
+        }
+        return sb.toString().trim();
     }
 }

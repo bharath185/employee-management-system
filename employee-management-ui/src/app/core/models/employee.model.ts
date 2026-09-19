@@ -10,7 +10,9 @@ export interface Employee {
   employeeCode: string;
   prefix?: string;
   firstName: string;
+  middleName?: string;
   surname: string;
+  fullName?: string;
   gender: string;
   maritalStatus?: string;
   fatherHusbandName?: string;
@@ -100,7 +102,9 @@ export interface EmployeeListDTO {
   employeeCode: string;
   prefix?: string;
   firstName: string;
+  middleName?: string;
   surname: string;
+  fullName?: string;
   gender: string;
   designation?: string;
   employeeStatus?: string;

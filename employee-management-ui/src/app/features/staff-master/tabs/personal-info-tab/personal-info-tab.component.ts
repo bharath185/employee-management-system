@@ -70,6 +70,13 @@ import { EmployeeLanguage } from '../../../../core/models/employee.model';
           </nz-form-item>
 
           <nz-form-item>
+            <nz-form-label nzRequired>Surname *</nz-form-label>
+            <nz-form-control nzErrorTip="Surname is required">
+              <input nz-input [formControl]="form.get('surname')!" placeholder="Enter surname" maxlength="40">
+            </nz-form-control>
+          </nz-form-item>
+
+          <nz-form-item>
             <nz-form-label nzRequired>First Name *</nz-form-label>
             <nz-form-control nzErrorTip="First name is required">
               <input nz-input [formControl]="form.get('firstName')!" placeholder="Enter first name" maxlength="40">
@@ -77,9 +84,9 @@ import { EmployeeLanguage } from '../../../../core/models/employee.model';
           </nz-form-item>
 
           <nz-form-item>
-            <nz-form-label nzRequired>Surname *</nz-form-label>
-            <nz-form-control nzErrorTip="Surname is required">
-              <input nz-input [formControl]="form.get('surname')!" placeholder="Enter surname" maxlength="40">
+            <nz-form-label>Middle Name</nz-form-label>
+            <nz-form-control>
+              <input nz-input [formControl]="form.get('middleName')!" placeholder="Enter middle name" maxlength="40">
             </nz-form-control>
           </nz-form-item>
 

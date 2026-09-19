@@ -85,11 +85,11 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
           <div class="view-avatar-section">
             <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)">
             <div class="view-avatar" *ngIf="!employee.photoPath">
-              <span class="view-avatar-initials">{{ getInitials(employee.firstName, employee.surname) }}</span>
+              <span class="view-avatar-initials">{{ getInitials(employee.surname, employee.firstName) }}</span>
             </div>
           </div>
           <div class="view-profile-info">
-            <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName }} {{ employee.surname }}</h1>
+            <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.surname ? employee.surname + ' ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}</h1>
             <div class="view-code">{{ employee.employeeCode }}</div>
             <div class="view-meta">
               <span class="view-meta-item"><i class="bi bi-briefcase"></i> {{ employee.designation }}</span>
@@ -110,8 +110,9 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
             <div class="tab-content">
               <nz-descriptions nzTitle="Personal Details" nzBordered [nzColumn]="{ xxl: 3, xl: 3, lg: 2, md: 2, sm: 1, xs: 1 }" class="tab-descriptions">
                 <nz-descriptions-item nzTitle="Prefix">{{ employee.prefix || '-' }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="First Name">{{ employee.firstName }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Surname">{{ employee.surname }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Surname">{{ employee.surname || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="First Name">{{ employee.firstName || '-' }}</nz-descriptions-item>
+                <nz-descriptions-item nzTitle="Middle Name">{{ employee.middleName || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Gender">{{ employee.gender | titleCase }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Marital Status">{{ employee.maritalStatus | titleCase }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Blood Group">
@@ -378,7 +379,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
       <ng-template #docModalTitleTpl>
         <div class="modal-head-title">
           <span class="pdf-tag-badge"><i nz-icon nzType="file-pdf" nzTheme="fill"></i> PDF</span>
-          <span class="head-text">Generate Document &bull; {{ employee ? (employee.firstName + ' ' + (employee.surname || '')) : '' }}</span>
+          <span class="head-text">Generate Document &bull; {{ employee ? ((employee.surname ? employee.surname + ' ' : '') + (employee.firstName || '') + (employee.middleName ? ' ' + employee.middleName : '')) : '' }}</span>
         </div>
       </ng-template>
 
@@ -1091,8 +1092,8 @@ export class StaffMasterViewComponent implements OnInit {
     });
   }
 
-  getInitials(firstName: string, surname: string): string {
-    return (firstName?.charAt(0) || '') + (surname?.charAt(0) || '');
+  getInitials(surname: string, firstName: string): string {
+    return (surname?.charAt(0) || '') + (firstName?.charAt(0) || '');
   }
 
   getAssetValue(key: string): string {

@@ -424,7 +424,7 @@ export class ReportsComponent implements OnInit {
   getCellValue(emp: Employee, colKey: string): any {
     switch (colKey) {
       case 'fullName':
-        return [emp.firstName, emp.surname].filter(Boolean).join(' ') || '-';
+        return [emp.surname, emp.firstName, emp.middleName].filter(Boolean).join(' ') || '-';
       case 'doj':
       case 'dob':
         return (emp as any)[colKey] || '-';

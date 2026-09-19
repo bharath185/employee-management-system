@@ -315,7 +315,7 @@ export class EmployeeLayoutComponent {
     private router: Router
   ) {
     this.authService.currentUser$.subscribe(user => {
-      this.currentUserName = user ? `${user.firstName} ${user.surname}` : 'User';
+      this.currentUserName = user ? `${user.surname ? user.surname + ' ' : ''}${user.firstName || ''}`.trim() : 'User';
     });
   }
 

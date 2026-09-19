@@ -25,7 +25,7 @@ import { saveAs } from 'file-saver';
       <div class="section-toolbar">
         <nz-select [(ngModel)]="employeeFilter" (ngModelChange)="loadCompOffs()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
           <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
+          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
         </nz-select>
         <nz-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()" class="filter-select" nzPlaceHolder="All Statuses" style="width:140px">
           <nz-option [nzValue]="null" nzLabel="All Statuses"></nz-option>

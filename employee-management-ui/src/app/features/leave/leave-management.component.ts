@@ -117,7 +117,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               </nz-select>
               <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px" nzShowSearch nzAllowClear>
                 <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
               </nz-select>
               <nz-input-group [nzPrefix]="searchBalIcon" style="width:220px">
                 <input nz-input [(ngModel)]="balanceSearchText" (ngModelChange)="applyBalanceFilter()" placeholder="Search code / name..." />
@@ -216,7 +216,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
             <div class="form-row">
               <label>Employee</label>
               <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" (ngModelChange)="onEmployeeChanged()" nzPlaceHolder="Select Employee" class="theme-select" nzShowSearch nzAllowClear>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + e.firstName + ' ' + (e.surname || '')"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
               </nz-select>
             </div>
             <div class="form-row">

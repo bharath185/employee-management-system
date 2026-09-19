@@ -253,6 +253,7 @@ public class PendingRegistrationService {
             .employeeCode(finalEmployeeCode)
             .prefix(pending.getPrefix())
             .firstName(pending.getFirstName())
+            .middleName(pending.getMiddleName())
             .surname(pending.getSurname())
             .mobile(pending.getMobile())
             .email(pending.getEmail())

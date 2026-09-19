@@ -27,6 +27,7 @@ public class EmployeeDTO {
     private String employeeCode;
     private String prefix;
     private String firstName;
+    private String middleName;
     private String surname;
     private String gender;
     private String maritalStatus;
@@ -133,6 +134,7 @@ public class EmployeeDTO {
             .employeeCode(emp.getEmployeeCode())
             .prefix(emp.getPrefix())
             .firstName(emp.getFirstName())
+            .middleName(emp.getMiddleName())
             .surname(emp.getSurname())
             .gender(emp.getGender())
             .maritalStatus(emp.getMaritalStatus())
@@ -222,6 +224,7 @@ public class EmployeeDTO {
         emp.setEmployeeCode(this.employeeCode);
         emp.setPrefix(this.prefix);
         emp.setFirstName(this.firstName);
+        emp.setMiddleName(this.middleName);
         emp.setSurname(this.surname);
         emp.setGender(this.gender);
         emp.setMaritalStatus(this.maritalStatus);

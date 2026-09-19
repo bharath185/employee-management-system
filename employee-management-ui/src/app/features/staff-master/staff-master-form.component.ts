@@ -44,9 +44,9 @@ export interface ValidationErrorDetail {
 }
 
 const FIELD_METAS: Record<string, { label: string; tabIndex: number; tabName: string }> = {
-  // Tab 0: Personal Info
-  firstName: { label: 'First Name', tabIndex: 0, tabName: 'Personal Info' },
   surname: { label: 'Surname', tabIndex: 0, tabName: 'Personal Info' },
+  firstName: { label: 'First Name', tabIndex: 0, tabName: 'Personal Info' },
+  middleName: { label: 'Middle Name', tabIndex: 0, tabName: 'Personal Info' },
   gender: { label: 'Gender', tabIndex: 0, tabName: 'Personal Info' },
   dob: { label: 'Date of Birth', tabIndex: 0, tabName: 'Personal Info' },
   email: { label: 'Email Address', tabIndex: 0, tabName: 'Personal Info' },
@@ -654,8 +654,9 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       employeeCode: ['', Validators.pattern('^[A-Za-z0-9]+$')],
       userRole: [''],
       prefix: [''],
-      firstName: ['', [Validators.required, Validators.maxLength(40)]],
       surname: ['', [Validators.required, Validators.maxLength(40)]],
+      firstName: ['', [Validators.required, Validators.maxLength(40)]],
+      middleName: ['', [Validators.maxLength(40)]],
       gender: ['', Validators.required],
       maritalStatus: [''],
       fatherHusbandName: ['', Validators.maxLength(40)],

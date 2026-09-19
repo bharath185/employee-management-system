@@ -13,8 +13,11 @@ import lombok.NoArgsConstructor;
 public class EmployeeBasicDTO {
     private Long id;
     private String employeeCode;
+    private String prefix;
     private String firstName;
+    private String middleName;
     private String surname;
+    private String fullName;
     private String email;
     private String photoPath;
     private String designation;
@@ -25,8 +28,11 @@ public class EmployeeBasicDTO {
         return EmployeeBasicDTO.builder()
             .id(emp.getId())
             .employeeCode(emp.getEmployeeCode())
+            .prefix(emp.getPrefix())
             .firstName(emp.getFirstName())
+            .middleName(emp.getMiddleName())
             .surname(emp.getSurname())
+            .fullName(emp.getFullName())
             .email(emp.getEmail())
             .photoPath(emp.getPhotoPath())
             .designation(emp.getDesignation())
