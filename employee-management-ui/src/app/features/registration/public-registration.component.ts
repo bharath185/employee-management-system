@@ -1,3 +1,5 @@
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -841,7 +843,10 @@ import { environment } from '../../../environments/environment';
 export class PublicRegistrationComponent implements OnInit {
   fieldConfigs: FormFieldConfig[] = [];
   mandatoryMap: Record<string, boolean> = {};
-  formData: any = {};
+  formData: any = {
+    customFieldsMap: {},
+    customFields: ''
+  };
   selectedPhoto: File | null = null;
   selectedAadharDoc: File | null = null;
   selectedPanDoc: File | null = null;
@@ -897,9 +902,10 @@ export class PublicRegistrationComponent implements OnInit {
     private notification: NzNotificationService
   ) {}
 
-  ngOnInit() {
+    ngOnInit() {
     const api = environment.apiUrl + '/public/register/masters';
     this.loading = true;
+    if (!this.formData.customFieldsMap) this.formData.customFieldsMap = {};
 
     const categories = [
       { name: 'PREFIX', target: 'prefixes' },
@@ -920,23 +926,35 @@ export class PublicRegistrationComponent implements OnInit {
       { name: 'LANGUAGE', target: 'languageOptions' }
     ];
 
-    this.loadFieldConfigs();
-    let loadedCount = 0;
+    const requests: Record<string, any> = {
+      formFields: this.formFieldConfigService.getVisibleConfigs().pipe(catchError(() => of([])))
+    };
+
     categories.forEach(cat => {
-      this.http.get<any>(api + '/' + cat.name).subscribe({
-        next: (res) => {
-          (this as any)[cat.target] = res.data || [];
-        },
-        error: () => {
-          (this as any)[cat.target] = [];
-        },
-        complete: () => {
-          loadedCount++;
-          if (loadedCount === categories.length) {
-            this.loading = false;
-          }
-        }
-      });
+      requests[cat.target] = this.http.get<any>(`${api}/${cat.name}`).pipe(
+        catchError(() => of({ data: [] }))
+      );
+    });
+
+    forkJoin(requests).subscribe({
+      next: (results: any) => {
+        // Assign categories
+        categories.forEach(cat => {
+          (this as any)[cat.target] = results[cat.target]?.data || [];
+        });
+
+        // Assign form fields
+        const configs: FormFieldConfig[] = results.formFields || [];
+        this.fieldConfigs = configs;
+        const map: Record<string, boolean> = {};
+        configs.forEach(c => map[c.fieldKey] = c.isMandatory);
+        this.mandatoryMap = map;
+
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
     });
   }
 
@@ -1201,6 +1219,17 @@ export class PublicRegistrationComponent implements OnInit {
       }));
     }
     return [];
+  }
+
+
+  getCustomFieldValue(key: string): any {
+    if (!this.formData.customFieldsMap) this.formData.customFieldsMap = {};
+    return this.formData.customFieldsMap[key];
+  }
+
+  setCustomFieldValue(key: string, val: any): void {
+    if (!this.formData.customFieldsMap) this.formData.customFieldsMap = {};
+    this.formData.customFieldsMap[key] = val;
   }
 
 }
