@@ -20,6 +20,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { CompanyService } from '../../core/services/company.service';
 import { Company, CompanyDocument } from '../../core/models/company.model';
 import { environment } from '../../../environments/environment';
+import { ImageCropModalComponent, CropResult } from '../../shared/components/image-crop-modal/image-crop-modal.component';
 
 @Component({
   selector: 'app-company-setup',
@@ -29,7 +30,7 @@ import { environment } from '../../../environments/environment';
     NzCardModule, NzFormModule, NzInputModule, NzButtonModule,
     NzIconModule, NzSpinModule, NzModalModule, NzTableModule,
     NzTagModule, NzDividerModule, NzSelectModule, NzDatePickerModule,
-    NzToolTipModule
+    NzToolTipModule, ImageCropModalComponent
   ],
   template: `
     <div class="cs-container">
@@ -109,18 +110,25 @@ import { environment } from '../../../environments/environment';
           <div class="cs-right">
             <div class="cs-section-title">Company Logo</div>
             <div class="logo-section">
-              <div class="logo-preview" *ngIf="logoPreviewUrl || companyForm.logoPath">
-                <img [src]="logoPreviewUrl || getLogoUrl()" alt="Logo" class="logo-img" (error)="onLogoError($event)" />
+              <div class="logo-preview-wrap">
+                <div class="logo-preview" *ngIf="logoPreviewUrl || companyForm.logoPath">
+                  <img [src]="logoPreviewUrl || getLogoUrl()" alt="Logo" class="logo-img" (error)="onLogoError($event)" />
+                </div>
+                <div class="logo-placeholder" *ngIf="!logoPreviewUrl && !companyForm.logoPath">
+                  <i nz-icon nzType="bank" class="placeholder-icon"></i>
+                  <p>No logo</p>
+                </div>
               </div>
-              <div class="logo-placeholder" *ngIf="!logoPreviewUrl && !companyForm.logoPath">
-                <i nz-icon nzType="bank" class="placeholder-icon"></i>
-                <p>No logo</p>
+              <input #logoInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onLogoSelected($event)" />
+              <div class="logo-actions-row">
+                <button nz-button nzType="default" (click)="logoInput.click()" class="upload-btn" [nzLoading]="isLogoUploading">
+                  <i nz-icon nzType="upload"></i> {{ isLogoUploading ? 'Uploading...' : 'Upload Logo' }}
+                </button>
+                <button nz-button nzType="default" *ngIf="companyForm.logoPath || logoPreviewUrl" (click)="openLogoCrop()" class="adjust-btn" nz-tooltip="Adjust & Crop Logo">
+                  <i nz-icon nzType="scissor"></i> Adjust
+                </button>
               </div>
-              <input #logoInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)" />
-              <button nz-button nzType="default" (click)="logoInput.click()" class="upload-btn" [nzLoading]="isLogoUploading">
-                <i nz-icon nzType="upload"></i> {{ isLogoUploading ? 'Uploading...' : 'Upload Logo' }}
-              </button>
-              <span class="logo-hint">200x200px, PNG/JPG</span>
+              <span class="logo-hint">JPG, PNG, WebP &bull; Crop &amp; Preview</span>
             </div>
 
             <div class="cs-divider"></div>
@@ -530,28 +538,52 @@ export class CompanySetupComponent implements OnInit {
     });
   }
 
+  // Logo Cropper State
+  isLogoCropModalOpen = false;
+  pendingLogoFile: File | null = null;
+  pendingLogoSrc = '';
+
+  openLogoCrop(): void {
+    if (this.logoPreviewUrl) {
+      this.pendingLogoFile = null;
+      this.pendingLogoSrc = this.logoPreviewUrl;
+      this.isLogoCropModalOpen = true;
+    } else if (this.companyForm.logoPath) {
+      this.pendingLogoFile = null;
+      this.pendingLogoSrc = this.getLogoUrl();
+      this.isLogoCropModalOpen = true;
+    }
+  }
+
+  onLogoCropConfirmed(result: CropResult): void {
+    this.logoPreviewUrl = result.dataUrl;
+    this.isLogoUploading = true;
+    this.companyService.uploadLogo(result.file).subscribe({
+      next: (response) => {
+        this.isLogoUploading = false;
+        if (response.success && response.data) {
+          this.companyForm.logoPath = response.data.logoPath;
+          this.message.success('Company logo updated successfully');
+        }
+      },
+      error: (err) => {
+        this.isLogoUploading = false;
+        this.message.error(err.error?.message || 'Error uploading logo');
+      }
+    });
+  }
+
+  onLogoCropCancelled(): void {
+    this.isLogoCropModalOpen = false;
+  }
+
   onLogoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const file = input.files[0];
-      this.isLogoUploading = true;
-      this.companyService.uploadLogo(file).subscribe({
-        next: (response) => {
-          this.isLogoUploading = false;
-          if (response.success && response.data) {
-            this.companyForm.logoPath = response.data.logoPath;
-            this.logoPreviewUrl = '';
-            this.message.success('Logo uploaded successfully');
-          }
-        },
-        error: (err) => {
-          this.isLogoUploading = false;
-          this.message.error(err.error?.message || 'Error uploading logo');
-        }
-      });
-      const reader = new FileReader();
-      reader.onload = (e) => { this.logoPreviewUrl = e.target?.result as string; };
-      reader.readAsDataURL(file);
+      this.pendingLogoFile = file;
+      this.pendingLogoSrc = '';
+      this.isLogoCropModalOpen = true;
     }
     input.value = '';
   }

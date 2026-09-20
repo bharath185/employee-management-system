@@ -21,6 +21,7 @@ import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { environment } from '../../../environments/environment';
+import { ImageCropModalComponent, CropResult } from '../../shared/components/image-crop-modal/image-crop-modal.component';
 
 @Component({
   selector: 'app-public-registration',
@@ -28,7 +29,7 @@ import { environment } from '../../../environments/environment';
   imports: [
     CommonModule, FormsModule, RouterModule,
     NzButtonModule, NzFormModule, NzInputModule, NzSelectModule,
-    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule
+    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule, ImageCropModalComponent
   ],
   template: `
     <div class="reg-page">
@@ -602,11 +603,19 @@ import { environment } from '../../../environments/environment';
             <h3 class="section-title">Documents</h3>
             <div class="form-row">
               <div class="form-group" [class.has-error]="submitAttempted && !selectedPhoto">
-                <label>Photo <span class="required">*</span></label>
-                <input type="file" accept="image/jpeg,image/png" (change)="onFileChange($event, 'photo')" [class.input-error]="submitAttempted && !selectedPhoto" />
-                <span *ngIf="selectedPhoto" class="file-name" style="color:#52c41a;font-weight:500;">
-                  <i nz-icon nzType="check-circle" nzTheme="fill"></i> {{ selectedPhoto.name }}
-                </span>
+                <label>Candidate Photo <span class="required">*</span></label>
+                <div class="photo-select-row" style="display:flex;align-items:center;gap:12px;">
+                  <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onFileChange($event, 'photo')" />
+                  <button nz-button nzType="default" type="button" (click)="photoInput.click()">
+                    <i nz-icon nzType="camera"></i> {{ selectedPhoto ? 'Change Photo' : 'Upload & Crop Photo' }}
+                  </button>
+                  <div *ngIf="photoPreviewUrl" style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #2563eb;flex-shrink:0;">
+                    <img [src]="photoPreviewUrl" alt="Photo" style="width:100%;height:100%;object-fit:cover;" />
+                  </div>
+                  <span *ngIf="selectedPhoto" class="file-name" style="color:#10b981;font-weight:500;font-size:12px;">
+                    <i nz-icon nzType="check-circle" nzTheme="fill"></i> Ready
+                  </span>
+                </div>
                 <div class="field-error" *ngIf="submitAttempted && !selectedPhoto">
                   <i nz-icon nzType="close-circle"></i> Candidate photo is required (JPG or PNG)
                 </div>
@@ -670,6 +679,15 @@ import { environment } from '../../../environments/environment';
         <div class="reg-footer">
           <p>Already have an account? <a routerLink="/auth/login">Login here</a></p>
         </div>
+        <!-- Image Cropper Modal for Candidate Photo -->
+        <app-image-crop-modal
+          [(isVisible)]="isPhotoCropModalOpen"
+          [imageFile]="pendingPhotoFile"
+          mode="avatar"
+          modalTitle="Adjust & Crop Candidate Photo"
+          (confirmed)="onPhotoCropConfirmed($event)"
+          (cancelled)="onPhotoCropCancelled()"
+        ></app-image-crop-modal>
       </div>
     </div>
   `,
@@ -958,10 +976,29 @@ export class PublicRegistrationComponent implements OnInit {
     });
   }
 
+  // Photo Cropper State
+  isPhotoCropModalOpen = false;
+  pendingPhotoFile: File | null = null;
+  photoPreviewUrl = '';
+
+  onPhotoCropConfirmed(result: CropResult): void {
+    this.selectedPhoto = result.file;
+    this.photoPreviewUrl = result.dataUrl;
+  }
+
+  onPhotoCropCancelled(): void {
+    this.isPhotoCropModalOpen = false;
+  }
+
   onFileChange(event: any, type: string) {
     const file = event.target.files[0];
     if (file) {
-      if (type === 'photo') this.selectedPhoto = file;
+      if (type === 'photo') {
+        this.pendingPhotoFile = file;
+        this.isPhotoCropModalOpen = true;
+        event.target.value = '';
+        return;
+      }
       else if (type === 'aadharDoc') this.selectedAadharDoc = file;
       else if (type === 'panDoc') this.selectedPanDoc = file;
     }
