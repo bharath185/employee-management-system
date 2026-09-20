@@ -66,20 +66,41 @@ import * as XLSX from 'xlsx';
               <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Name, code, email, mobile..." class="search-input">
               <i class="bi bi-x-lg search-clear" *ngIf="searchTerm" (click)="clearSearch()"></i>
             </div>
-            <nz-select [(ngModel)]="filterStatus" (ngModelChange)="loadEmployees()" nzPlaceHolder="Status" class="filter-select">
+            <nz-select [(ngModel)]="currentSort" (ngModelChange)="onSortDropdownChange($event)" nzPlaceHolder="Sort By" class="filter-select sort-select" style="width:210px">
+              <nz-option-group nzLabel="Employee Code">
+                <nz-option nzValue="employeeCode,asc" nzLabel="Code: Ascending (0 → 9)"></nz-option>
+                <nz-option nzValue="employeeCode,desc" nzLabel="Code: Descending (9 → 0)"></nz-option>
+              </nz-option-group>
+              <nz-option-group nzLabel="Employee Name">
+                <nz-option nzValue="surname,asc;firstName,asc" nzLabel="Name: A → Z (Surname)"></nz-option>
+                <nz-option nzValue="surname,desc;firstName,desc" nzLabel="Name: Z → A (Surname)"></nz-option>
+              </nz-option-group>
+              <nz-option-group nzLabel="Date of Joining">
+                <nz-option nzValue="doj,desc" nzLabel="DOJ: Newest First"></nz-option>
+                <nz-option nzValue="doj,asc" nzLabel="DOJ: Oldest First"></nz-option>
+              </nz-option-group>
+              <nz-option-group nzLabel="Status">
+                <nz-option nzValue="employeeStatus,asc;employeeCode,asc" nzLabel="Status: Active First"></nz-option>
+              </nz-option-group>
+            </nz-select>
+            <nz-select [(ngModel)]="filterStatus" (ngModelChange)="loadEmployees()" nzPlaceHolder="Status" class="filter-select" style="width:130px">
               <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
               <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="filterGender" (ngModelChange)="loadEmployees()" nzPlaceHolder="Gender" class="filter-select" style="width:120px">
+              <nz-option nzValue="" nzLabel="All Genders"></nz-option>
+              <nz-option *ngFor="let opt of genderOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
             </nz-select>
             <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="loadEmployees()" nzPlaceHolder="Designation" class="filter-select" style="width:160px">
               <nz-option nzValue="" nzLabel="All Designations"></nz-option>
               <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="filterProcess" (ngModelChange)="loadEmployees()" nzPlaceHolder="Process" class="filter-select" style="width:160px">
+            <nz-select [(ngModel)]="filterProcess" (ngModelChange)="loadEmployees()" nzPlaceHolder="Process" class="filter-select" style="width:150px">
               <nz-option nzValue="" nzLabel="All Processes"></nz-option>
               <nz-option *ngFor="let p of processOptions" [nzValue]="p" [nzLabel]="p"></nz-option>
             </nz-select>
-            <button nz-button class="clear-btn" *ngIf="hasActiveFilters" (click)="clearFilters()">
-              <i class="bi bi-x-circle"></i> Clear
+            <button nz-button class="clear-btn" *ngIf="hasActiveFilters" (click)="clearFilters()" nz-tooltip="Reset search, filters and sort order">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset
             </button>
           </div>
           <div class="pp-actions">
@@ -122,14 +143,14 @@ import * as XLSX from 'xlsx';
           <thead>
             <tr>
               <th class="th-sno">#</th>
-              <th class="th-code">Code</th>
-              <th class="th-name">Employee Name</th>
-              <th class="th-gen">Gender</th>
-              <th class="th-desig">Designation</th>
-              <th class="th-status">Status</th>
+              <th class="th-code" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeCode')" (nzSortOrderChange)="onTableSort('employeeCode', $event)">Code</th>
+              <th class="th-name" [nzShowSort]="true" [nzSortOrder]="getSortOrder('surname')" (nzSortOrderChange)="onTableSort('surname', $event)">Employee Name</th>
+              <th class="th-gen" [nzShowSort]="true" [nzSortOrder]="getSortOrder('gender')" (nzSortOrderChange)="onTableSort('gender', $event)">Gender</th>
+              <th class="th-desig" [nzShowSort]="true" [nzSortOrder]="getSortOrder('designation')" (nzSortOrderChange)="onTableSort('designation', $event)">Designation</th>
+              <th class="th-status" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeStatus')" (nzSortOrderChange)="onTableSort('employeeStatus', $event)">Status</th>
               <th class="th-role">Role</th>
               <th class="th-mob">Mobile</th>
-              <th class="th-doj">DOJ</th>
+              <th class="th-doj" [nzShowSort]="true" [nzSortOrder]="getSortOrder('doj')" (nzSortOrderChange)="onTableSort('doj', $event)">DOJ</th>
               <th class="th-actions">Actions</th>
             </tr>
           </thead>
@@ -330,6 +351,10 @@ import * as XLSX from 'xlsx';
       line-height: 34px !important;
       color: #334155;
     }
+    :host ::ng-deep .sort-select .ant-select-selection-item {
+      font-weight: 600 !important;
+      color: #1f3d6e !important;
+    }
 
     .clear-btn {
       height: 36px !important;
@@ -393,6 +418,15 @@ import * as XLSX from 'xlsx';
       padding: 10px 12px !important;
       border-bottom: 2px solid #1f3d6e !important;
       white-space: nowrap;
+    }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.ant-table-column-has-sorters:hover {
+      background: #edf2f7 !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-column-sorters {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) { border-right: 1px solid #edf2f7; }
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
@@ -598,10 +632,19 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
 
   searchTerm = '';
   filterStatus = '';
+  filterGender = '';
   filterDesignation = '';
   filterProcess = '';
 
+  defaultSort = 'employeeCode,asc';
+  currentSort = 'employeeCode,asc';
+
   statusOptions: { value: string; label: string }[] = [];
+  genderOptions: { value: string; label: string }[] = [
+    { value: 'MALE', label: 'Male' },
+    { value: 'FEMALE', label: 'Female' },
+    { value: 'OTHER', label: 'Other' }
+  ];
   designationOptions: { value: string; label: string }[] = [];
   processOptions: string[] = [];
 
@@ -657,6 +700,11 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     this.masterDataService.getByCategory('EMPLOYEE_STATUS').subscribe(data => {
       this.statusOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
+    this.masterDataService.getByCategory('GENDER').subscribe(data => {
+      if (data && data.length > 0) {
+        this.genderOptions = data.map(i => ({ value: i.code, label: i.value }));
+      }
+    });
     this.masterDataService.getByCategory('DESIGNATION').subscribe(data => {
       this.designationOptions = data.map(i => ({ value: i.code, label: i.value }));
     });
@@ -677,7 +725,12 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   }
 
   get hasActiveFilters(): boolean {
-    return !!this.searchTerm || !!this.filterStatus || !!this.filterDesignation || !!this.filterProcess;
+    return !!this.searchTerm ||
+      !!this.filterStatus ||
+      !!this.filterGender ||
+      !!this.filterDesignation ||
+      !!this.filterProcess ||
+      this.currentSort !== this.defaultSort;
   }
 
   loadEmployees(): void {
@@ -685,10 +738,11 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     const params: any = {
       page: this.pageIndex,
       size: this.pageSize,
-      sort: 'employeeStatus,asc;employeeCode,desc'
+      sort: this.currentSort || this.defaultSort
     };
     if (this.searchTerm) params.search = this.searchTerm;
     if (this.filterStatus) params.employeeStatus = this.filterStatus;
+    if (this.filterGender) params.gender = this.filterGender;
     if (this.filterDesignation) params.designation = this.filterDesignation;
     if (this.filterProcess) params.processAssigned = this.filterProcess;
 
@@ -720,8 +774,10 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.searchTerm = '';
     this.filterStatus = '';
+    this.filterGender = '';
     this.filterDesignation = '';
     this.filterProcess = '';
+    this.currentSort = this.defaultSort;
     this.pageIndex = 0;
     this.loadEmployees();
   }
@@ -737,8 +793,38 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
     this.loadEmployees();
   }
 
-  onSortChange(column: string, direction: string | null): void {
-    // Sorting handled server-side; reserved for future implementation
+  getSortOrder(column: string): 'ascend' | 'descend' | null {
+    if (column === 'surname') {
+      if (this.currentSort.startsWith('surname,asc')) return 'ascend';
+      if (this.currentSort.startsWith('surname,desc')) return 'descend';
+      return null;
+    }
+    if (this.currentSort.startsWith(column + ',asc')) return 'ascend';
+    if (this.currentSort.startsWith(column + ',desc')) return 'descend';
+    return null;
+  }
+
+  onTableSort(column: string, direction: string | null): void {
+    if (!direction) {
+      this.currentSort = this.defaultSort;
+    } else {
+      const dir = direction === 'ascend' ? 'asc' : 'desc';
+      if (column === 'surname') {
+        this.currentSort = `surname,${dir};firstName,${dir}`;
+      } else if (column === 'employeeStatus') {
+        this.currentSort = `employeeStatus,${dir};employeeCode,asc`;
+      } else {
+        this.currentSort = `${column},${dir}`;
+      }
+    }
+    this.pageIndex = 0;
+    this.loadEmployees();
+  }
+
+  onSortDropdownChange(sortVal: string): void {
+    this.currentSort = sortVal;
+    this.pageIndex = 0;
+    this.loadEmployees();
   }
 
   deleteEmployee(emp: Employee): void {
