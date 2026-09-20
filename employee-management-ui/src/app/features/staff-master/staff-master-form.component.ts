@@ -186,6 +186,11 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
         </a>
         <span class="pp-nav-item active">
           <i class="bi bi-pencil-square"></i><span>{{ isEditMode ? 'Edit Employee' : 'New Employee' }}</span>
+          <span class="pp-emp-tag" *ngIf="isEditMode && (currentEmployeeCode || currentEmployeeFullName)">
+            <span class="emp-tag-code" *ngIf="currentEmployeeCode">{{ currentEmployeeCode }}</span>
+            <span class="emp-tag-dot" *ngIf="currentEmployeeCode && currentEmployeeFullName">&bull;</span>
+            <span class="emp-tag-name" *ngIf="currentEmployeeFullName">{{ currentEmployeeFullName }}</span>
+          </span>
         </span>
         <span class="pp-spacer"></span>
 
@@ -354,6 +359,33 @@ import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.compon
     .pp-nav-item i { font-size: 14px; }
     .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
     .pp-nav-item.active { background: #ffffff; color: #1f3d6e; box-shadow: 0 1px 4px rgba(31,61,110,0.1); }
+    .pp-emp-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+      padding: 2px 10px;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #ffffff;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+    }
+    .emp-tag-code {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(255,255,255,0.22);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .emp-tag-dot {
+      opacity: 0.7;
+    }
+    .emp-tag-name {
+      font-weight: 600;
+    }
     .pp-spacer { flex: 1; }
     .pp-tab-progress { display: flex; align-items: center; gap: 8px; margin-right: 8px; }
     .pp-progress-bar { width: 80px; height: 4px; background: #e0e7ff; border-radius: 3px; overflow: hidden; }
@@ -535,6 +567,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   employeeForm: FormGroup;
   isEditMode = false;
   employeeId: number | null = null;
+  loadedEmployee: Employee | null = null;
   isSaving = false;
   submitAttempted = false;
   masterData: any = {};
@@ -546,6 +579,26 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   private previousTabIndex = 0;
   private readonly DRAFT_KEY = 'staff_form_draft';
   private valueChangesSub!: Subscription;
+
+  get currentEmployeeCode(): string {
+    return this.employeeForm.get('employeeCode')?.value || this.loadedEmployee?.employeeCode || '';
+  }
+
+  get currentEmployeeFullName(): string {
+    const prefix = this.employeeForm.get('prefix')?.value || this.loadedEmployee?.prefix || '';
+    const surname = this.employeeForm.get('surname')?.value || this.loadedEmployee?.surname || '';
+    const firstName = this.employeeForm.get('firstName')?.value || this.loadedEmployee?.firstName || '';
+    const middleName = this.employeeForm.get('middleName')?.value || this.loadedEmployee?.middleName || '';
+
+    const parts = [
+      prefix ? prefix.trim() + '.' : '',
+      surname ? surname.trim() : '',
+      firstName ? firstName.trim() : '',
+      middleName ? middleName.trim() : ''
+    ].filter(Boolean);
+
+    return parts.join(' ');
+  }
 
   canDeactivate(): boolean {
     return !this.employeeForm.dirty;
@@ -761,6 +814,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     this.employeeService.getEmployeeById(id).subscribe({
       next: (response) => {
         const emp = response.data;
+        this.loadedEmployee = emp;
         this.employeeForm.patchValue({
           ...emp,
           doj: emp.doj ? new Date(emp.doj) : null,

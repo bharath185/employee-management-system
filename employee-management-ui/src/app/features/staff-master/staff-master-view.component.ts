@@ -66,6 +66,11 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
         </a>
         <span class="pp-nav-item active">
           <i class="bi bi-person-badge"></i><span>Employee Details</span>
+          <span class="pp-emp-tag" *ngIf="employee">
+            <span class="emp-tag-code" *ngIf="employee.employeeCode">{{ employee.employeeCode }}</span>
+            <span class="emp-tag-dot" *ngIf="employee.employeeCode">&bull;</span>
+            <span class="emp-tag-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.surname ? employee.surname + ' ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}</span>
+          </span>
         </span>
         <span class="pp-spacer"></span>
         <span class="view-status-badge" *ngIf="employee" [class.stat-live]="employee.employeeStatus === 'LIVE'" [class.stat-other]="employee.employeeStatus !== 'LIVE'">
@@ -510,6 +515,33 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
       background: #ffffff;
       color: #1f3d6e;
       box-shadow: 0 1px 4px rgba(31,61,110,0.1);
+    }
+    .pp-emp-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+      padding: 2px 10px;
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #ffffff;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+    }
+    .emp-tag-code {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(255,255,255,0.22);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .emp-tag-dot {
+      opacity: 0.7;
+    }
+    .emp-tag-name {
+      font-weight: 600;
     }
     .pp-spacer { flex: 1; }
 
