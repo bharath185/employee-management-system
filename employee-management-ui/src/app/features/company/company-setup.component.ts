@@ -207,6 +207,18 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
         </button>
       </ng-template>
     </nz-modal>
+
+    <!-- Company Logo Crop & Adjustment Modal -->
+    <app-image-crop-modal
+      [isVisible]="isLogoCropModalOpen"
+      [imageFile]="pendingLogoFile"
+      [imageSrc]="pendingLogoSrc"
+      mode="logo"
+      modalTitle="Adjust & Crop Company Logo"
+      (confirmed)="onLogoCropConfirmed($event)"
+      (cancelled)="onLogoCropCancelled()"
+      [(isVisible)]="isLogoCropModalOpen"
+    ></app-image-crop-modal>
   `,
   styles: [`
     :host { display: block; scroll-behavior: smooth; }
@@ -333,6 +345,23 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
     }
     .placeholder-icon { font-size: 32px; color: #9ca3af; opacity: 0.5; }
     .logo-placeholder p { font-size: 10px; color: #9ca3af; margin: 0; }
+    .logo-actions-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .adjust-btn {
+      border-radius: 6px !important;
+      border-color: #64748b !important;
+      color: #334155 !important;
+      height: 32px !important;
+      font-size: 12px !important;
+    }
+    .adjust-btn:hover {
+      border-color: #1f3d6e !important;
+      color: #1f3d6e !important;
+    }
     .upload-btn {
       border-radius: 6px !important;
       border-color: #4361ee !important;
@@ -472,9 +501,11 @@ export class CompanySetupComponent implements OnInit {
     this.loadDocuments();
   }
 
+  logoTimestamp = Date.now();
+
   getLogoUrl(): string {
     if (!this.companyForm.logoPath) return '';
-    return `${environment.apiUrl}/company/logo`;
+    return `${environment.apiUrl}/company/logo?t=${this.logoTimestamp}`;
   }
 
   onLogoError(event: Event): void {
@@ -526,8 +557,7 @@ export class CompanySetupComponent implements OnInit {
         this.isSaving = false;
         if (response.success) {
           this.companyForm = { ...response.data };
-          this.logoPreviewUrl = '';
-          this.selectedLogo = undefined;
+          this.logoTimestamp = Date.now();
           this.message.success(response.message || 'Company updated successfully');
         }
       },
@@ -544,7 +574,11 @@ export class CompanySetupComponent implements OnInit {
   pendingLogoSrc = '';
 
   openLogoCrop(): void {
-    if (this.logoPreviewUrl) {
+    if (this.selectedLogo) {
+      this.pendingLogoFile = this.selectedLogo;
+      this.pendingLogoSrc = '';
+      this.isLogoCropModalOpen = true;
+    } else if (this.logoPreviewUrl) {
       this.pendingLogoFile = null;
       this.pendingLogoSrc = this.logoPreviewUrl;
       this.isLogoCropModalOpen = true;
@@ -556,25 +590,30 @@ export class CompanySetupComponent implements OnInit {
   }
 
   onLogoCropConfirmed(result: CropResult): void {
+    this.isLogoCropModalOpen = false;
     this.logoPreviewUrl = result.dataUrl;
+    this.selectedLogo = result.file;
     this.isLogoUploading = true;
     this.companyService.uploadLogo(result.file).subscribe({
       next: (response) => {
         this.isLogoUploading = false;
         if (response.success && response.data) {
           this.companyForm.logoPath = response.data.logoPath;
-          this.message.success('Company logo updated successfully');
+          this.logoTimestamp = Date.now();
+          this.message.success('Company logo uploaded and updated successfully');
         }
       },
       error: (err) => {
         this.isLogoUploading = false;
-        this.message.error(err.error?.message || 'Error uploading logo');
+        this.message.error(err.error?.message || 'Error uploading company logo');
       }
     });
   }
 
   onLogoCropCancelled(): void {
     this.isLogoCropModalOpen = false;
+    this.pendingLogoFile = null;
+    this.pendingLogoSrc = '';
   }
 
   onLogoSelected(event: Event): void {

@@ -66,9 +66,15 @@ public class CompanyController {
         Resource resource = new FileSystemResource(logoPath);
 
         String contentType = "image/jpeg";
-        String fileName = logoPath.getFileName().toString();
-        if (fileName.toLowerCase().endsWith(".png")) {
+        String fileName = logoPath.getFileName().toString().toLowerCase();
+        if (fileName.endsWith(".png")) {
             contentType = "image/png";
+        } else if (fileName.endsWith(".webp")) {
+            contentType = "image/webp";
+        } else if (fileName.endsWith(".svg")) {
+            contentType = "image/svg+xml";
+        } else if (fileName.endsWith(".gif")) {
+            contentType = "image/gif";
         }
 
         return ResponseEntity.ok()
