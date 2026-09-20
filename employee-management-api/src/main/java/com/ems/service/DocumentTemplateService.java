@@ -550,7 +550,7 @@ public class DocumentTemplateService {
                                 : "image/jpeg";
                         }
                         photoSrc = "data:" + mime + ";base64," + Base64.getEncoder().encodeToString(bytes);
-                        photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"Employee Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+                        photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" onerror=\"this.style.display='none'\" />";
                         break;
                     } catch (Exception e) {
                         log.warn("Could not read employee photo from {}: {}", p, e.getMessage());
@@ -558,9 +558,9 @@ public class DocumentTemplateService {
                 }
             }
 
-            if (photoSrc.isEmpty()) {
-                photoSrc = rawPath.startsWith("/") ? rawPath : "/api/v1/photos/" + fileName;
-                photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"Employee Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+            if (photoSrc.isEmpty() && rawPath.startsWith("data:image/")) {
+                photoSrc = rawPath;
+                photoImgTag = "<img src=\"" + photoSrc + "\" alt=\"\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" onerror=\"this.style.display='none'\" />";
             }
         }
 
@@ -577,6 +577,9 @@ public class DocumentTemplateService {
         // If employee has a photo and template has empty signature-box (<div class="signature-box"></div>), inject the photo
         if (!photoImgTag.isEmpty()) {
             content = content.replaceAll("(<div class=\"signature-box\"[^>]*>)\\s*(</div>)", "$1" + java.util.regex.Matcher.quoteReplacement(photoImgTag) + "$2");
+        } else {
+            // Clean up any broken img tags in signature-box
+            content = content.replaceAll("(<div class=\"signature-box\"[^>]*>)\\s*<img[^>]*>\\s*(</div>)", "$1$2");
         }
 
         return content;

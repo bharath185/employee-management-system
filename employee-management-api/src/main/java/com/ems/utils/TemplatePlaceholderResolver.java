@@ -54,13 +54,14 @@ public final class TemplatePlaceholderResolver {
 
         // Photo fields
         String photo = nullSafe(employee.getPhotoPath());
+        String photoBase64 = resolvePhotoBase64(photo);
         values.put("photo_path", photo);
-        values.put("photo_url", photo);
-        values.put("employee_photo_url", photo);
-        values.put("photo_src", photo);
-        values.put("employee_photo_src", photo);
-        if (!photo.isEmpty()) {
-            String imgTag = "<img src=\"" + photo + "\" alt=\"Photo\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" />";
+        values.put("photo_url", photoBase64);
+        values.put("employee_photo_url", photoBase64);
+        values.put("photo_src", photoBase64);
+        values.put("employee_photo_src", photoBase64);
+        if (!photoBase64.isEmpty()) {
+            String imgTag = "<img src=\"" + photoBase64 + "\" alt=\"\" style=\"width:100%;height:100%;object-fit:cover;border-radius:3px;display:block;\" onerror=\"this.style.display='none'\" />";
             values.put("photo", imgTag);
             values.put("employee_photo", imgTag);
             values.put("photo_img", imgTag);
@@ -227,6 +228,44 @@ public final class TemplatePlaceholderResolver {
         }
 
         return values;
+    }
+
+    private static String resolvePhotoBase64(String photoPath) {
+        if (photoPath == null || photoPath.trim().isEmpty()) {
+            return "";
+        }
+        String raw = photoPath.trim();
+        if (raw.startsWith("data:image/")) {
+            return raw;
+        }
+        String fileName = raw.contains("/") ? raw.substring(raw.lastIndexOf('/') + 1) : raw;
+        if (fileName.contains("\\")) {
+            fileName = fileName.substring(fileName.lastIndexOf('\\') + 1);
+        }
+        java.nio.file.Path[] candidatePaths = new java.nio.file.Path[] {
+            java.nio.file.Paths.get("data/uploads/photos").resolve(fileName),
+            java.nio.file.Paths.get("uploads/photos").resolve(fileName),
+            java.nio.file.Paths.get("data", "uploads", "photos", fileName),
+            java.nio.file.Paths.get("uploads", "photos", fileName),
+            java.nio.file.Paths.get(raw)
+        };
+        for (java.nio.file.Path p : candidatePaths) {
+            if (java.nio.file.Files.exists(p) && java.nio.file.Files.isRegularFile(p)) {
+                try {
+                    byte[] bytes = java.nio.file.Files.readAllBytes(p);
+                    String mime = java.nio.file.Files.probeContentType(p);
+                    if (mime == null || mime.isBlank()) {
+                        String name = p.getFileName().toString().toLowerCase();
+                        mime = name.endsWith(".png") ? "image/png"
+                            : name.endsWith(".gif") ? "image/gif"
+                            : name.endsWith(".webp") ? "image/webp"
+                            : "image/jpeg";
+                    }
+                    return "data:" + mime + ";base64," + java.util.Base64.getEncoder().encodeToString(bytes);
+                } catch (Exception ignored) {}
+            }
+        }
+        return "";
     }
 
     private static String nullSafe(String value) {
