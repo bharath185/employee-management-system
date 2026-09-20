@@ -166,7 +166,8 @@ import * as XLSX from 'xlsx';
               <td class="td-center"><span class="emp-code-badge">{{ emp.employeeCode }}</span></td>
               <td class="td-name">
                 <div class="emp-info-cell">
-                  <div class="emp-avatar" [style.background]="getAvatarColor(emp.employeeCode)">
+                  <img *ngIf="emp.photoPath" [src]="getPhotoUrl(emp.photoPath)" alt="" class="emp-avatar emp-avatar-img" (error)="onAvatarError($event)" />
+                  <div class="emp-avatar" [style.background]="getAvatarColor(emp.employeeCode)" *ngIf="!emp.photoPath">
                     {{ (emp.surname?.charAt(0) || '') + (emp.firstName?.charAt(0) || '') }}
                   </div>
                   <div class="emp-name-block">
@@ -501,6 +502,10 @@ import * as XLSX from 'xlsx';
       color: #fff;
       flex-shrink: 0;
       box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .emp-avatar-img {
+      object-fit: cover;
+      border: 1px solid #e2e5ea;
     }
     .emp-name-block {
       display: flex;
@@ -950,5 +955,20 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
       `,
       nzOkText: 'Close'
     });
+  }
+
+  getPhotoUrl(photoPath?: string): string {
+    if (!photoPath) return '';
+    const raw = photoPath.trim();
+    if (raw.startsWith('data:image/') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    const clean = raw.replace(/\\/g, '/');
+    return clean.startsWith('/') ? clean : '/' + clean;
+  }
+
+  onAvatarError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }

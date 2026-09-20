@@ -88,7 +88,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
       <nz-card class="pl-profile-card" nzSize="small" *ngIf="employee">
         <div class="view-profile-inner">
           <div class="view-avatar-section">
-            <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)">
+            <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)" (load)="onPhotoLoad($event)">
             <div class="view-avatar" *ngIf="!employee.photoPath">
               <span class="view-avatar-initials">{{ getInitials(employee.surname, employee.firstName) }}</span>
             </div>
@@ -1137,9 +1137,19 @@ export class StaffMasterViewComponent implements OnInit {
     img.style.display = 'none';
   }
 
+  onPhotoLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'block';
+  }
+
   get photoUrl(): string {
     if (!this.employee?.photoPath) return '';
-    return environment.apiUrl.replace('/api/v1', '') + this.employee.photoPath;
+    const raw = this.employee.photoPath.trim();
+    if (raw.startsWith('data:image/') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    const clean = raw.replace(/\\/g, '/');
+    return clean.startsWith('/') ? clean : '/' + clean;
   }
 
   showGenerateModal(): void {

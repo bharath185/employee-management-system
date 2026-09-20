@@ -37,14 +37,22 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Serve uploaded photos at /photos/** and /api/v1/photos/**
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        String uploadUri = uploadPath.toUri().toString();
+        if (!uploadUri.endsWith("/")) {
+            uploadUri += "/";
+        }
         registry.addResourceHandler("/photos/**", "/api/v1/photos/**")
-            .addResourceLocations("file:" + uploadPath.toString() + "/")
+            .addResourceLocations(uploadUri, "file:" + uploadPath.toString() + "/")
             .setCachePeriod(3600);
 
         // Serve company uploads at /company-uploads/** and /api/v1/company-uploads/**
         Path companyPath = Paths.get(companyUploadDir).toAbsolutePath().normalize();
+        String companyUri = companyPath.toUri().toString();
+        if (!companyUri.endsWith("/")) {
+            companyUri += "/";
+        }
         registry.addResourceHandler("/company-uploads/**", "/api/v1/company-uploads/**")
-            .addResourceLocations("file:" + companyPath.toString() + "/")
+            .addResourceLocations(companyUri, "file:" + companyPath.toString() + "/")
             .setCachePeriod(3600);
 
         // Serve Angular Static SPA & route fallback to index.html

@@ -112,7 +112,7 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
             <div class="logo-section">
               <div class="logo-preview-wrap">
                 <div class="logo-preview" *ngIf="logoPreviewUrl || companyForm.logoPath">
-                  <img [src]="logoPreviewUrl || getLogoUrl()" alt="Logo" class="logo-img" (error)="onLogoError($event)" />
+                  <img [src]="logoPreviewUrl || getLogoUrl()" alt="Logo" class="logo-img" (error)="onLogoError($event)" (load)="onLogoLoad($event)" />
                 </div>
                 <div class="logo-placeholder" *ngIf="!logoPreviewUrl && !companyForm.logoPath">
                   <i nz-icon nzType="bank" class="placeholder-icon"></i>
@@ -511,6 +511,11 @@ export class CompanySetupComponent implements OnInit {
   onLogoError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  onLogoLoad(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'block';
   }
 
   private loadCompany(): void {

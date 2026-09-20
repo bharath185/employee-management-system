@@ -432,7 +432,12 @@ export class EmployeeDashboardComponent implements OnInit, OnDestroy {
 
   get photoUrl(): string {
     if (!this.employee?.photoPath) return '';
-    return environment.apiUrl.replace('/api/v1', '') + this.employee.photoPath;
+    const raw = this.employee.photoPath.trim();
+    if (raw.startsWith('data:image/') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    const clean = raw.replace(/\\/g, '/');
+    return clean.startsWith('/') ? clean : '/' + clean;
   }
 
   get joinDate(): string {
