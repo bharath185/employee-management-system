@@ -66,21 +66,25 @@ import * as XLSX from 'xlsx';
               <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Name, code, email, mobile..." class="search-input">
               <i class="bi bi-x-lg search-clear" *ngIf="searchTerm" (click)="clearSearch()"></i>
             </div>
-            <nz-select [(ngModel)]="currentSort" (ngModelChange)="onSortDropdownChange($event)" nzPlaceHolder="Sort By" class="filter-select sort-select" style="width:210px">
-              <nz-option-group nzLabel="Employee Code">
+            <nz-select [(ngModel)]="currentSort" (ngModelChange)="onSortDropdownChange($event)" nzPlaceHolder="Sort By" class="filter-select sort-select" style="width:230px">
+              <nz-option-group nzLabel="Status & Code (Default)">
+                <nz-option nzValue="employeeStatus,asc;employeeCode,asc" nzLabel="Live First (Code: 0 → 9) [Default]"></nz-option>
+                <nz-option nzValue="employeeStatus,asc;employeeCode,desc" nzLabel="Live First (Code: 9 → 0)"></nz-option>
+                <nz-option nzValue="employeeStatus,desc;employeeCode,asc" nzLabel="Quit/Left First (Code: 0 → 9)"></nz-option>
+              </nz-option-group>
+              <nz-option-group nzLabel="Employee Code Only">
                 <nz-option nzValue="employeeCode,asc" nzLabel="Code: Ascending (0 → 9)"></nz-option>
                 <nz-option nzValue="employeeCode,desc" nzLabel="Code: Descending (9 → 0)"></nz-option>
               </nz-option-group>
               <nz-option-group nzLabel="Employee Name">
+                <nz-option nzValue="employeeStatus,asc;surname,asc;firstName,asc" nzLabel="Live First (Name: A → Z)"></nz-option>
                 <nz-option nzValue="surname,asc;firstName,asc" nzLabel="Name: A → Z (Surname)"></nz-option>
                 <nz-option nzValue="surname,desc;firstName,desc" nzLabel="Name: Z → A (Surname)"></nz-option>
               </nz-option-group>
               <nz-option-group nzLabel="Date of Joining">
+                <nz-option nzValue="employeeStatus,asc;doj,desc" nzLabel="Live First (DOJ: Newest First)"></nz-option>
                 <nz-option nzValue="doj,desc" nzLabel="DOJ: Newest First"></nz-option>
                 <nz-option nzValue="doj,asc" nzLabel="DOJ: Oldest First"></nz-option>
-              </nz-option-group>
-              <nz-option-group nzLabel="Status">
-                <nz-option nzValue="employeeStatus,asc;employeeCode,asc" nzLabel="Status: Active First"></nz-option>
               </nz-option-group>
             </nz-select>
             <nz-select [(ngModel)]="filterStatus" (ngModelChange)="loadEmployees()" nzPlaceHolder="Status" class="filter-select" style="width:130px">
@@ -636,8 +640,8 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   filterDesignation = '';
   filterProcess = '';
 
-  defaultSort = 'employeeCode,asc';
-  currentSort = 'employeeCode,asc';
+  defaultSort = 'employeeStatus,asc;employeeCode,asc';
+  currentSort = 'employeeStatus,asc;employeeCode,asc';
 
   statusOptions: { value: string; label: string }[] = [];
   genderOptions: { value: string; label: string }[] = [
@@ -794,13 +798,23 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   }
 
   getSortOrder(column: string): 'ascend' | 'descend' | null {
-    if (column === 'surname') {
-      if (this.currentSort.startsWith('surname,asc')) return 'ascend';
-      if (this.currentSort.startsWith('surname,desc')) return 'descend';
+    if (column === 'employeeStatus') {
+      if (this.currentSort.startsWith('employeeStatus,asc') || this.currentSort.startsWith('statusPriority,asc')) return 'ascend';
+      if (this.currentSort.startsWith('employeeStatus,desc') || this.currentSort.startsWith('statusPriority,desc')) return 'descend';
       return null;
     }
-    if (this.currentSort.startsWith(column + ',asc')) return 'ascend';
-    if (this.currentSort.startsWith(column + ',desc')) return 'descend';
+    if (column === 'employeeCode') {
+      if (this.currentSort === 'employeeCode,asc' || this.currentSort === 'employeeStatus,asc;employeeCode,asc') return 'ascend';
+      if (this.currentSort === 'employeeCode,desc' || this.currentSort === 'employeeStatus,asc;employeeCode,desc') return 'descend';
+      return null;
+    }
+    if (column === 'surname') {
+      if (this.currentSort.includes('surname,asc')) return 'ascend';
+      if (this.currentSort.includes('surname,desc')) return 'descend';
+      return null;
+    }
+    if (this.currentSort.includes(column + ',asc')) return 'ascend';
+    if (this.currentSort.includes(column + ',desc')) return 'descend';
     return null;
   }
 
@@ -809,12 +823,16 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
       this.currentSort = this.defaultSort;
     } else {
       const dir = direction === 'ascend' ? 'asc' : 'desc';
-      if (column === 'surname') {
-        this.currentSort = `surname,${dir};firstName,${dir}`;
-      } else if (column === 'employeeStatus') {
+      if (column === 'employeeStatus') {
         this.currentSort = `employeeStatus,${dir};employeeCode,asc`;
+      } else if (column === 'employeeCode') {
+        this.currentSort = `employeeStatus,asc;employeeCode,${dir}`;
+      } else if (column === 'surname') {
+        this.currentSort = `employeeStatus,asc;surname,${dir};firstName,${dir}`;
+      } else if (column === 'doj') {
+        this.currentSort = `employeeStatus,asc;doj,${dir}`;
       } else {
-        this.currentSort = `${column},${dir}`;
+        this.currentSort = `employeeStatus,asc;${column},${dir}`;
       }
     }
     this.pageIndex = 0;

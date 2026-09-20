@@ -198,6 +198,9 @@ public class Employee {
     @Column(name = "employee_status", length = 15)
     private String employeeStatus;
 
+    @org.hibernate.annotations.Formula("CASE WHEN UPPER(employee_status) = 'LIVE' THEN 0 ELSE 1 END")
+    private Integer statusPriority;
+
     @Column(name = "process_assigned", length = 56)
     private String processAssigned;
 

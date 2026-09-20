@@ -72,22 +72,25 @@ public class EmployeeService {
                 String[] fieldAndDir = part.trim().split(",");
                 if (fieldAndDir.length > 0 && !fieldAndDir[0].isBlank()) {
                     String prop = fieldAndDir[0].trim();
+                    if ("employeeStatus".equals(prop)) {
+                        prop = "statusPriority";
+                    }
                     Sort.Direction dir = (fieldAndDir.length > 1 && fieldAndDir[1].trim().equalsIgnoreCase("desc"))
                         ? Sort.Direction.DESC : Sort.Direction.ASC;
                     orders.add(new Sort.Order(dir, prop));
                 }
             }
-            if (orders.stream().anyMatch(o -> o.getProperty().equals("employeeStatus"))
+            if (orders.stream().anyMatch(o -> o.getProperty().equals("statusPriority"))
                 && orders.stream().noneMatch(o -> o.getProperty().equals("employeeCode"))) {
-                orders.add(Sort.Order.desc("employeeCode"));
+                orders.add(Sort.Order.asc("employeeCode"));
             }
             sorting = orders.isEmpty()
-                ? Sort.by(Sort.Order.asc("employeeStatus"), Sort.Order.desc("employeeCode"))
+                ? Sort.by(Sort.Order.asc("statusPriority"), Sort.Order.asc("employeeCode"))
                 : Sort.by(orders);
         } else {
             sorting = Sort.by(
-                Sort.Order.asc("employeeStatus"),
-                Sort.Order.desc("employeeCode")
+                Sort.Order.asc("statusPriority"),
+                Sort.Order.asc("employeeCode")
             );
         }
 

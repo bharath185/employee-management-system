@@ -32,7 +32,7 @@ public class EmployeeController {
     public ResponseEntity<APIResponse<PagedResponse<EmployeeDTO>>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "employeeStatus,asc;employeeCode,desc") String sort,
+            @RequestParam(defaultValue = "statusPriority,asc;employeeCode,asc") String sort,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String employeeCode,
             @RequestParam(required = false) String firstName,
