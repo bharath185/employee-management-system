@@ -82,9 +82,9 @@ def step2_build_backend():
     env["JAVA_HOME"] = JDK_17_DIR
     mvnw_cmd = os.path.join(API_DIR, "mvnw.cmd") if os.name == 'nt' else os.path.join(API_DIR, "mvnw")
     if os.path.exists(mvnw_cmd):
-        res = subprocess.run(f'"{mvnw_cmd}" package -DskipTests', cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
+        res = subprocess.run(f'"{mvnw_cmd}" clean package -DskipTests', cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
     else:
-        res = subprocess.run(["mvn", "package", "-DskipTests"], cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
+        res = subprocess.run(["mvn", "clean", "package", "-DskipTests"], cwd=API_DIR, shell=True, env=env, capture_output=True, text=True)
     if res.returncode != 0:
         print(f"Maven error: {res.stderr}\n{res.stdout}")
         raise RuntimeError("Maven build failed")
@@ -110,14 +110,11 @@ def step3_assemble_package():
     src_jar = os.path.join(API_DIR, "target", "employee-management-api-1.0.0.jar")
     shutil.copy2(src_jar, os.path.join(PKG_DIR, "app", "employee-management-app.jar"))
 
-    # Bundle DB Seed Data directly from docs/production_data_dump.sql
+    # Code-only build: Do NOT bundle seed_data.sql to prevent any database seeding or overwrite
     dst_sql = os.path.join(PKG_DIR, "app", "seed_data.sql")
-    src_dump = os.path.join(DOCS_DIR, "production_data_dump.sql")
-    if os.path.exists(src_dump):
-        shutil.copy2(src_dump, dst_sql)
-        print(f"Production database seed bundled: {round(os.path.getsize(dst_sql)/(1024*1024),2)} MB")
-    else:
-        print("WARNING: production_data_dump.sql not found in docs!")
+    if os.path.exists(dst_sql):
+        os.remove(dst_sql)
+    print("Code-only build mode: Database seed data omitted (no seeding).")
 
     # Copy JRE
     dst_jre = os.path.join(PKG_DIR, "jre")
@@ -131,9 +128,18 @@ def step3_assemble_package():
 
     # Copy PostgreSQL Binaries
     dst_pg = os.path.join(PKG_DIR, "pgsql")
-    pg_src_candidate = PG_17_DIR
-    if not os.path.exists(os.path.join(pg_src_candidate, "bin", "initdb.exe")):
-        pg_src_candidate = r"C:\Users\Bharath\AppData\Local\EMS\pgsql"
+    pg_candidates = [
+        PG_17_DIR,
+        r"C:\Users\Bharath\AppData\Local\PRIGENIX_EMS\pgsql",
+        r"C:\Users\Bharath\AppData\Local\EMS\pgsql"
+    ]
+    pg_src_candidate = None
+    for cand in pg_candidates:
+        if os.path.exists(os.path.join(cand, "bin", "initdb.exe")):
+            pg_src_candidate = cand
+            break
+    if not pg_src_candidate:
+        pg_src_candidate = PG_17_DIR
     for item in ["bin", "lib", "share"]:
         s = os.path.join(pg_src_candidate, item)
         d = os.path.join(dst_pg, item)
