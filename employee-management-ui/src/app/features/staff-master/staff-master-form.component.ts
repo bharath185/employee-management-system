@@ -1081,11 +1081,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
         this.goToField(firstError.tabIndex, firstError.fieldKey);
       }, 100);
 
-      this.notification.error(
-        'Validation Errors Found',
-        `Please correct ${errors.length} field(s) before saving. Click on the error banner or badges to jump directly to invalid fields.`,
-        { nzDuration: 5000 }
-      );
+      this.showErrorsModal();
       return false;
     }
     return true;

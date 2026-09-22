@@ -17,6 +17,7 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
@@ -29,7 +30,7 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
   imports: [
     CommonModule, FormsModule, RouterModule,
     NzButtonModule, NzFormModule, NzInputModule, NzSelectModule,
-    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule, ImageCropModalComponent
+    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule, NzModalModule, ImageCropModalComponent
   ],
   template: `
     <div class="reg-page">
@@ -917,7 +918,8 @@ export class PublicRegistrationComponent implements OnInit {
     private http: HttpClient,
     private pendingService: PendingRegistrationService,
     private formFieldConfigService: FormFieldConfigService,
-    private notification: NzNotificationService
+    private notification: NzNotificationService,
+    private modal: NzModalService
   ) {}
 
     ngOnInit() {
@@ -1113,23 +1115,35 @@ export class PublicRegistrationComponent implements OnInit {
 
     const errors = this.getValidationErrors();
     if (errors.length > 0) {
-      this.notification.error(
-        'Incomplete Registration Form',
-        `Please fix the ${errors.length} highlighted field(s) before submitting.`,
-        { nzDuration: 6000 }
-      );
+      const errorListHtml = '<ul style="margin: 8px 0; padding-left: 20px; color: #dc2626; font-size: 13px; line-height: 1.7;">' +
+        errors.map(err => `<li>${err}</li>`).join('') +
+        '</ul>';
 
-      // Auto scroll to first invalid field
-      setTimeout(() => {
-        const firstInvalid = document.querySelector('.input-error, .has-error, .field-error');
-        if (firstInvalid) {
-          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const focusable = firstInvalid.querySelector('input, select, textarea') || firstInvalid;
-          if (focusable && typeof (focusable as HTMLElement).focus === 'function') {
-            (focusable as HTMLElement).focus();
-          }
+      this.modal.error({
+        nzTitle: `⚠️ ${errors.length} Validation Error${errors.length > 1 ? 's' : ''} in Registration`,
+        nzWidth: 540,
+        nzContent: `
+          <div style="max-height: 350px; overflow-y: auto;">
+            <p style="margin-bottom: 8px; color: #4b5563; font-size: 13px;">
+              Please correct the following field(s) before submitting your registration:
+            </p>
+            ${errorListHtml}
+          </div>
+        `,
+        nzOkText: 'Go to First Error',
+        nzOnOk: () => {
+          setTimeout(() => {
+            const firstInvalid = document.querySelector('.input-error, .has-error, .field-error');
+            if (firstInvalid) {
+              firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              const focusable = firstInvalid.querySelector('input, select, textarea') || firstInvalid;
+              if (focusable && typeof (focusable as HTMLElement).focus === 'function') {
+                (focusable as HTMLElement).focus();
+              }
+            }
+          }, 100);
         }
-      }, 100);
+      });
       return;
     }
 
@@ -1219,9 +1233,19 @@ export class PublicRegistrationComponent implements OnInit {
         this.registrationCode = res.data.registrationCode;
         this.notification.success('Success', 'Registration submitted successfully!');
       },
-      error: () => {
+      error: (err) => {
         this.isSaving = false;
-        this.notification.error('Error', 'Failed to submit registration. Please try again.');
+        let msg = 'Failed to submit registration. Please try again.';
+        if (err?.error?.message) {
+          msg = err.error.message;
+        } else if (typeof err?.error === 'string') {
+          msg = err.error;
+        }
+        this.modal.error({
+          nzTitle: '❌ Registration Failed',
+          nzContent: `<p style="color: #b91c1c; font-size: 13px; font-weight: 500;">${msg}</p>`,
+          nzOkText: 'OK'
+        });
       }
     });
   }
