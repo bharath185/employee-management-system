@@ -676,14 +676,9 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
     // Show validation errors as user types
     this.valueChangesSub = this.employeeForm.valueChanges.subscribe(() => {
-      Object.keys(this.employeeForm.controls).forEach(key => {
-        const control = this.employeeForm.get(key);
-        if (control?.dirty && !control.touched) {
-          control.markAsTouched();
-        }
-      });
-      this.formErrors = this.collectFormErrors();
+      this.refreshValidationErrors();
     });
+    this.refreshValidationErrors();
 
     // Unsaved changes warning on tab/window close
     window.addEventListener('beforeunload', this.beforeUnloadHandler);
@@ -918,57 +913,77 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     return 'Invalid value';
   }
 
-  get validationErrorsList(): ValidationErrorDetail[] {
+  private _cachedValidationErrors: ValidationErrorDetail[] = [];
+  private _tabErrorCounts: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  refreshValidationErrors(): void {
     const list: ValidationErrorDetail[] = [];
-    Object.keys(this.employeeForm.controls).forEach(key => {
-      const control = this.employeeForm.get(key);
-      if (control && control.invalid && control.errors) {
-        const meta = FIELD_METAS[key] || {
-          label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-          tabIndex: 0,
-          tabName: 'Personal Info'
-        };
-        Object.keys(control.errors).forEach(errKey => {
-          list.push({
-            fieldKey: key,
-            fieldLabel: meta.label,
-            tabIndex: meta.tabIndex,
-            tabName: meta.tabName,
-            errorKey: errKey,
-            errorMessage: this.getErrorMessage(key, errKey, control.errors?.[errKey])
+    const counts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+    if (this.employeeForm && this.employeeForm.controls) {
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        if (control && control.invalid && control.errors) {
+          const meta = FIELD_METAS[key] || {
+            label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+            tabIndex: 0,
+            tabName: 'Personal Info'
+          };
+          const tabIdx = Math.min(Math.max(meta.tabIndex, 0), 8);
+          Object.keys(control.errors).forEach(errKey => {
+            list.push({
+              fieldKey: key,
+              fieldLabel: meta.label,
+              tabIndex: meta.tabIndex,
+              tabName: meta.tabName,
+              errorKey: errKey,
+              errorMessage: this.getErrorMessage(key, errKey, control.errors?.[errKey])
+            });
+            counts[tabIdx] = (counts[tabIdx] || 0) + 1;
           });
-        });
-      }
-    });
-    return list;
+        }
+      });
+    }
+    this._cachedValidationErrors = list;
+    this._tabErrorCounts = counts;
+    this.formErrors = list.map(e => `[${e.tabName}] ${e.fieldLabel}: ${e.errorMessage}`);
+  }
+
+  get validationErrorsList(): ValidationErrorDetail[] {
+    return this._cachedValidationErrors;
   }
 
   getTabErrorCount(tabIndex: number): number {
-    return this.validationErrorsList.filter(e => e.tabIndex === tabIndex).length;
+    return this._tabErrorCounts[tabIndex] || 0;
   }
 
   goToField(tabIndex: number, fieldKey: string): void {
     this.selectedTabIndex = tabIndex;
     setTimeout(() => {
-      const control = this.employeeForm.get(fieldKey);
-      if (control) {
-        control.markAsTouched();
-        control.markAsDirty();
-      }
+      try {
+        const control = this.employeeForm.get(fieldKey);
+        if (control) {
+          control.markAsTouched();
+          control.markAsDirty();
+        }
 
-      // Try locating the input element
-      const el = document.querySelector(`[formcontrolname="${fieldKey}"], input[name="${fieldKey}"], select[name="${fieldKey}"], nz-select[formcontrolname="${fieldKey}"]`) as HTMLElement;
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('highlight-pulse');
-        setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
-        el.focus();
+        // Try locating the input element
+        const el = document.querySelector(`[formcontrolname="${fieldKey}"], input[name="${fieldKey}"], select[name="${fieldKey}"], nz-select[formcontrolname="${fieldKey}"]`) as HTMLElement;
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('highlight-pulse');
+          setTimeout(() => el.classList.remove('highlight-pulse'), 2000);
+          if (typeof el.focus === 'function') {
+            el.focus({ preventScroll: true });
+          }
+        }
+      } catch (err) {
+        console.warn('Could not focus field', fieldKey, err);
       }
-    }, 120);
+    }, 200);
   }
 
   showErrorsModal(): void {
-    const errors = this.validationErrorsList;
+    const errors = this._cachedValidationErrors;
     if (errors.length === 0) {
       this.message.success('All required fields are valid!', { nzDuration: 2500 });
       return;
@@ -977,7 +992,7 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
     const errorItemsHtml = errors.map(e => `
       <div style="display:flex; align-items:center; justify-content:space-between; padding: 8px 10px; margin-bottom: 6px; background: #fff5f5; border: 1px solid #fee2e2; border-radius: 6px;">
         <div style="display:flex; align-items:center; gap: 8px;">
-          <span style="font-size:10px; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px;">
+          <span style="font-size:10px; font-weight:700; background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; white-space: nowrap;">
             ${e.tabName}
           </span>
           <span style="font-size:12px; color:#111827;">
@@ -1062,29 +1077,27 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
   validateForm(): boolean {
     this.submitAttempted = true;
 
-    // Touch all controls to show inline field red borders and error tips
-    Object.keys(this.employeeForm.controls).forEach(key => {
-      const control = this.employeeForm.get(key);
-      control?.markAsTouched();
-      control?.markAsDirty();
-      control?.updateValueAndValidity({ onlySelf: true });
-    });
+    try {
+      // Touch all controls to show inline field red borders and error tips
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        control?.markAsTouched();
+        control?.markAsDirty();
+        control?.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+      });
 
-    this.formErrors = this.collectFormErrors();
-    const errors = this.validationErrorsList;
+      this.refreshValidationErrors();
+      const errors = this._cachedValidationErrors;
 
-    if (errors.length > 0) {
-      // Auto-switch to the tab of the first error
-      const firstError = errors[0];
-      this.selectedTabIndex = firstError.tabIndex;
-      setTimeout(() => {
-        this.goToField(firstError.tabIndex, firstError.fieldKey);
-      }, 100);
-
-      this.showErrorsModal();
+      if (errors.length > 0) {
+        this.showErrorsModal();
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Validation error check failed', e);
       return false;
     }
-    return true;
   }
 
   saveDraft(): void {
@@ -1148,33 +1161,39 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       return;
     }
 
-    const employee = this.buildEmployeeData();
-    this.isSaving = true;
+    try {
+      const employee = this.buildEmployeeData();
+      this.isSaving = true;
 
-    const action = this.isEditMode
-      ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
-      : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
+      const action = this.isEditMode
+        ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
+        : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
 
-    action.subscribe({
-      next: (response) => {
-        this.isSaving = false;
-        this.submitAttempted = false;
-        this.clearDraft();
-        this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
-        this.employeeForm.reset();
-        this.employeeForm.get('employeeCode')?.enable();
-        this.selectedFile = null;
-        this.existingPhotoUrl = '';
-        this.employeeForm.markAsPristine();
-        this.isEditMode = false;
-        this.employeeId = null;
-        this.selectedTabIndex = 0;
-      },
-      error: (err) => {
-        this.isSaving = false;
-        this.handleBackendError(err);
-      }
-    });
+      action.subscribe({
+        next: (response) => {
+          this.isSaving = false;
+          this.submitAttempted = false;
+          this.clearDraft();
+          this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
+          this.employeeForm.reset();
+          this.employeeForm.get('employeeCode')?.enable();
+          this.selectedFile = null;
+          this.existingPhotoUrl = '';
+          this.employeeForm.markAsPristine();
+          this.isEditMode = false;
+          this.employeeId = null;
+          this.selectedTabIndex = 0;
+        },
+        error: (err) => {
+          this.isSaving = false;
+          this.handleBackendError(err);
+        }
+      });
+    } catch (e) {
+      this.isSaving = false;
+      console.error('Failed to prepare employee payload', e);
+      this.message.error('Failed to process employee form data. Please check required fields.');
+    }
   }
 
   saveAndClose(): void {
@@ -1182,26 +1201,32 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
       return;
     }
 
-    const employee = this.buildEmployeeData();
-    this.isSaving = true;
+    try {
+      const employee = this.buildEmployeeData();
+      this.isSaving = true;
 
-    const action = this.isEditMode
-      ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
-      : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
+      const action = this.isEditMode
+        ? this.employeeService.updateEmployee(this.employeeId!, employee, this.selectedFile || undefined)
+        : this.employeeService.createEmployee(employee, this.selectedFile || undefined);
 
-    action.subscribe({
-      next: (response) => {
-        this.isSaving = false;
-        this.submitAttempted = false;
-        this.clearDraft();
-        this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
-        this.router.navigate(['/admin/employees']);
-      },
-      error: (err) => {
-        this.isSaving = false;
-        this.handleBackendError(err);
-      }
-    });
+      action.subscribe({
+        next: (response) => {
+          this.isSaving = false;
+          this.submitAttempted = false;
+          this.clearDraft();
+          this.message.success(response.message || 'Employee saved successfully', { nzDuration: 3000 });
+          this.router.navigate(['/admin/employees']);
+        },
+        error: (err) => {
+          this.isSaving = false;
+          this.handleBackendError(err);
+        }
+      });
+    } catch (e) {
+      this.isSaving = false;
+      console.error('Failed to prepare employee payload', e);
+      this.message.error('Failed to process employee form data. Please check required fields.');
+    }
   }
 
   private handleBackendError(err: any): void {
