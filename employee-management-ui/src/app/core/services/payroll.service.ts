@@ -120,6 +120,18 @@ export class PayrollService {
     return this.http.post<APIResponse<SalaryMasterDTO[]>>(`${this.apiUrl}/salary-master/init-all`, {});
   }
 
+  deleteSalaryMaster(id: number): Observable<APIResponse<void>> {
+    return this.http.delete<APIResponse<void>>(`${this.apiUrl}/salary-master/${id}`);
+  }
+
+  deleteSalaryMasterByEmployee(employeeId: number): Observable<APIResponse<void>> {
+    return this.http.delete<APIResponse<void>>(`${this.apiUrl}/salary-master/employee/${employeeId}`);
+  }
+
+  deleteAllSalaryMasters(): Observable<APIResponse<void>> {
+    return this.http.delete<APIResponse<void>>(`${this.apiUrl}/salary-master/all`);
+  }
+
   exportSalaryMasterExcel(): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/salary-master/export`, { responseType: 'blob' });
   }

@@ -44,6 +44,27 @@ public class SalaryMasterController {
         return ResponseEntity.ok(APIResponse.success("Salary master saved", salaryMasterService.saveOrUpdate(dto)));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Void>> deleteById(@PathVariable Long id) {
+        salaryMasterService.deleteById(id);
+        return ResponseEntity.ok(APIResponse.success("Salary master deleted successfully", null));
+    }
+
+    @DeleteMapping("/employee/{employeeId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Void>> deleteByEmployee(@PathVariable Long employeeId) {
+        salaryMasterService.deleteByEmployeeId(employeeId);
+        return ResponseEntity.ok(APIResponse.success("Salary master deleted successfully", null));
+    }
+
+    @DeleteMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<Void>> deleteAll() {
+        salaryMasterService.deleteAll();
+        return ResponseEntity.ok(APIResponse.success("All salary master records deleted successfully", null));
+    }
+
     @PostMapping("/init-all")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public ResponseEntity<APIResponse<List<SalaryMasterDTO>>> initForAll() {

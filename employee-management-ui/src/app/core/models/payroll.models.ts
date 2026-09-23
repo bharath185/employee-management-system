@@ -110,6 +110,7 @@ export interface SalaryMasterDTO {
   employeeName?: string;
   designation?: string;
   department?: string;
+  employeeStatus?: string;
   basic: number;
   hra: number;
   fixedPersonalAllowance: number;

@@ -19,6 +19,7 @@ public class SalaryMasterDTO {
     private String employeeName;
     private String designation;
     private String department;
+    private String employeeStatus;
     private BigDecimal basic;
     private BigDecimal hra;
     private BigDecimal fixedPersonalAllowance;

@@ -134,6 +134,35 @@ public class SalaryMasterService {
         return snapshotRepository.findByEmployeeIdOrderBySnapshotYearDescSnapshotMonthDesc(employeeId);
     }
 
+    @Transactional
+    public void deleteById(Long id) {
+        SalaryMaster master = salaryMasterRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Salary master not found: " + id));
+        Long empId = master.getEmployee().getId();
+        historyRepository.deleteAll(historyRepository.findByEmployeeIdOrderByChangedAtDesc(empId));
+        snapshotRepository.deleteAll(snapshotRepository.findByEmployeeIdOrderBySnapshotYearDescSnapshotMonthDesc(empId));
+        salaryMasterRepository.delete(master);
+        log.info("Deleted salary master id {} for employee {}", id, master.getEmployee().getEmployeeCode());
+    }
+
+    @Transactional
+    public void deleteByEmployeeId(Long employeeId) {
+        SalaryMaster master = salaryMasterRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new ResourceNotFoundException("Salary master not found for employee " + employeeId));
+        historyRepository.deleteAll(historyRepository.findByEmployeeIdOrderByChangedAtDesc(employeeId));
+        snapshotRepository.deleteAll(snapshotRepository.findByEmployeeIdOrderBySnapshotYearDescSnapshotMonthDesc(employeeId));
+        salaryMasterRepository.delete(master);
+        log.info("Deleted salary master for employee id {}", employeeId);
+    }
+
+    @Transactional
+    public void deleteAll() {
+        historyRepository.deleteAll();
+        snapshotRepository.deleteAll();
+        salaryMasterRepository.deleteAll();
+        log.info("Deleted all salary master records, history, and snapshots");
+    }
+
     // =========================================================================
     // EXCEL EXPORT & TEMPLATE
     // =========================================================================
@@ -407,12 +436,6 @@ public class SalaryMasterService {
                 takeSnapshot(master, currentUser);
                 importedCount++;
             }
-
-            // Sync to current month & previous month salaries automatically
-            LocalDate now = LocalDate.now();
-            syncToMonthlySalaries(now.getYear(), now.getMonthValue());
-            syncToMonthlySalaries(now.getYear(), now.minusMonths(1).getMonthValue());
-
         } catch (BadRequestException e) {
             throw e;
         } catch (Exception e) {
@@ -617,6 +640,7 @@ public class SalaryMasterService {
             .employeeName(e.getFullName())
             .designation(e.getDesignation())
             .department(e.getDepartment() != null ? e.getDepartment() : e.getProcessAssigned())
+            .employeeStatus(e.getEmployeeStatus() != null ? e.getEmployeeStatus() : "LIVE")
             .basic(master.getBasic())
             .hra(master.getHra())
             .fixedPersonalAllowance(master.getFixedPersonalAllowance())
