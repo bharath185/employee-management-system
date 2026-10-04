@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -14,11 +15,14 @@ import { NzBadgeModule } from 'ng-zorro-antd/badge';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import * as QRCode from 'qrcode';
 
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { PendingRegistration } from '../../core/models/pending-registration.model';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
+import { MasterDataService } from '../../core/services/master-data.service';
+import { MasterDataItem } from '../../core/models/api-response.model';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -28,7 +32,7 @@ import { environment } from '../../../environments/environment';
     CommonModule, FormsModule, RouterModule,
     NzTableModule, NzButtonModule, NzIconModule, NzModalModule,
     NzTagModule, NzCardModule, NzDescriptionsModule, NzBadgeModule,
-    NzSpinModule, NzInputModule, NzSelectModule
+    NzSpinModule, NzInputModule, NzSelectModule, NzToolTipModule
   ],
   template: `
     <div class="pending-page page-enter">
@@ -70,8 +74,8 @@ import { environment } from '../../../environments/environment';
           </a>
         </div>
 
-        <nz-table #pendingTable [nzData]="registrations" [nzLoading]="loading" nzSize="small"
-          nzShowPagination [nzPageSize]="10" [nzScroll]="{ x: '900px' }">
+        <nz-table #pendingTable [nzData]="registrations" [nzLoading]="loading" nzSize="middle"
+          nzShowPagination [nzPageSize]="10" [nzPageSizeOptions]="[10, 20, 50, 100]" nzShowSizeChanger [nzScroll]="{ x: '900px' }">
           <thead>
             <tr>
               <th>Reg. Code</th>
@@ -87,11 +91,11 @@ import { environment } from '../../../environments/environment';
           <tbody>
             <tr *ngFor="let reg of pendingTable.data">
               <td><strong>{{ reg.registrationCode }}</strong></td>
-              <td>{{ (reg.surname ? reg.surname + ' ' : '') + reg.firstName + (reg.middleName ? ' ' + reg.middleName : '') }}</td>
+              <td>{{ (reg.prefix ? reg.prefix + '. ' : '') + (reg.firstName || '') + (reg.middleName ? ' ' + reg.middleName : '') + (reg.surname ? ' ' + reg.surname : '') }}</td>
               <td>{{ reg.mobile }}</td>
               <td>{{ reg.email || '-' }}</td>
               <td>{{ reg.designation || '-' }}</td>
-              <td>{{ reg.createdAt | date:'short' }}</td>
+              <td>{{ formatDate(reg.createdAt) }}</td>
               <td>
                 <nz-tag [nzColor]="reg.status === 'PENDING' ? 'processing' : reg.status === 'APPROVED' ? 'success' : 'error'">
                   {{ reg.status }}
@@ -139,15 +143,15 @@ import { environment } from '../../../environments/environment';
                 <td class="jr-label">Employee Code</td>
                 <td class="jr-value">{{ selectedReg.registrationCode }}</td>
                 <td class="jr-label">Date of Joining :</td>
-                <td class="jr-value">{{ selectedReg.doj || '-' }}</td>
+                <td class="jr-value">{{ formatDate(selectedReg.doj) }}</td>
               </tr>
               <tr>
                 <td class="jr-label">Employee Name with Surname</td>
-                <td class="jr-value" colspan="3">{{ selectedReg.prefix ? selectedReg.prefix + ' ' : '' }}{{ selectedReg.surname ? selectedReg.surname + ' ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }}</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.prefix ? selectedReg.prefix + '. ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }}{{ selectedReg.surname ? ' ' + selectedReg.surname : '' }}</td>
               </tr>
               <tr>
                 <td class="jr-label">Date of Birth</td>
-                <td class="jr-value">{{ selectedReg.dob || '-' }}</td>
+                <td class="jr-value">{{ formatDate(selectedReg.dob) }}</td>
                 <td class="jr-label">Gender</td>
                 <td class="jr-value">{{ selectedReg.gender || '-' }}</td>
               </tr>
@@ -183,31 +187,37 @@ import { environment } from '../../../environments/environment';
                 <td class="jr-value" colspan="3">{{ selectedReg.email || '-' }}</td>
               </tr>
               <tr class="jr-section">
-                <td colspan="4">Identity Documents</td>
+                <td colspan="4">Uploaded Documents &amp; Verification</td>
               </tr>
               <tr>
-                <td class="jr-label">PAN</td>
-                <td class="jr-value">{{ selectedReg.panNumber || '-' }}</td>
-                <td class="jr-label">PAN Card</td>
+                <td class="jr-label">Photo</td>
                 <td class="jr-value">
-                  <button *ngIf="selectedReg.panDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.panDocUrl)" style="padding:0">View</button>
-                  <span *ngIf="!selectedReg.panDocUrl">-</span>
+                  <button *ngIf="selectedReg.photoUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.photoUrl, 'Candidate Photo')" style="padding:0">View Photo</button>
+                  <span *ngIf="!selectedReg.photoUrl">-</span>
                 </td>
-              </tr>
-              <tr>
-                <td class="jr-label">AADHAR No.</td>
-                <td class="jr-value">{{ selectedReg.aadharNumber || '-' }}</td>
                 <td class="jr-label">Aadhar Card</td>
                 <td class="jr-value">
-                  <button *ngIf="selectedReg.aadharDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.aadharDocUrl)" style="padding:0">View</button>
+                  <button *ngIf="selectedReg.aadharDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.aadharDocUrl, 'Aadhar Card')" style="padding:0">View Aadhar</button>
                   <span *ngIf="!selectedReg.aadharDocUrl">-</span>
                 </td>
               </tr>
               <tr>
-                <td class="jr-label">Photo</td>
-                <td class="jr-value" colspan="3">
-                  <button *ngIf="selectedReg.photoUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.photoUrl)" style="padding:0">View Photo</button>
-                  <span *ngIf="!selectedReg.photoUrl">-</span>
+                <td class="jr-label">PAN Card</td>
+                <td class="jr-value">
+                  <button *ngIf="selectedReg.panDocUrl" nz-button nzType="link" nzSize="small" (click)="viewDoc(selectedReg.panDocUrl, 'PAN Card')" style="padding:0">View PAN</button>
+                  <span *ngIf="!selectedReg.panDocUrl">-</span>
+                </td>
+                <td class="jr-label">Additional Docs</td>
+                <td class="jr-value">
+                  <div *ngIf="getParsedAdditionalDocs(selectedReg).length > 0" style="display:flex; flex-direction:column; gap:4px;">
+                    <div *ngFor="let doc of getParsedAdditionalDocs(selectedReg)">
+                      <nz-tag nzColor="blue">{{ doc.documentType }}</nz-tag>
+                      <button nz-button nzType="link" nzSize="small" (click)="viewDoc(doc.filePath, doc.documentTitle || doc.originalName || 'Document Preview')" style="padding:0; font-size:11px;">
+                        {{ doc.documentTitle || doc.originalName || 'View File' }}
+                      </button>
+                    </div>
+                  </div>
+                  <span *ngIf="getParsedAdditionalDocs(selectedReg).length === 0">-</span>
                 </td>
               </tr>
               <tr class="jr-section">
@@ -215,7 +225,7 @@ import { environment } from '../../../environments/environment';
               </tr>
               <tr>
                 <td class="jr-label">Father Name &amp; Phone</td>
-                <td class="jr-value" colspan="3">{{ selectedReg.fatherName || '-' }} {{ selectedReg.fatherPhone ? '- ' + selectedReg.fatherPhone : '' }}</td>
+                <td class="jr-value" colspan="3">{{ selectedReg.fatherName || selectedReg.fatherHusbandName || '-' }} {{ selectedReg.fatherPhone ? '- ' + selectedReg.fatherPhone : '' }}</td>
               </tr>
               <tr>
                 <td class="jr-label">Mother Name &amp; Phone</td>
@@ -313,12 +323,17 @@ import { environment } from '../../../environments/environment';
       </ng-template>
     </nz-modal>
 
-    <nz-modal [(nzVisible)]="isDocPreviewVisible" nzTitle="Document Preview" (nzOnCancel)="isDocPreviewVisible = false"
-      [nzFooter]="null" nzWidth="700px">
+    <nz-modal [(nzVisible)]="isDocPreviewVisible" [nzTitle]="docPreviewTitle || 'Document Preview'" (nzOnCancel)="isDocPreviewVisible = false"
+      [nzFooter]="docPreviewFooter" nzWidth="850px">
       <ng-template nzModalContent>
         <div class="doc-preview-wrap" *ngIf="docPreviewUrl">
-          <img [src]="docPreviewUrl" style="width:100%;height:auto;border-radius:4px;" />
+          <img *ngIf="!docPreviewIsPdf" [src]="docPreviewUrl" style="max-width:100%;max-height:75vh;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,0.12);" />
+          <iframe *ngIf="docPreviewIsPdf && docPreviewSafeUrl" [src]="docPreviewSafeUrl" style="width:100%;height:580px;border:none;border-radius:6px;"></iframe>
         </div>
+      </ng-template>
+      <ng-template #docPreviewFooter>
+        <a [href]="docPreviewUrl" target="_blank" nz-button nzType="default"><i nz-icon nzType="fullscreen"></i> Open in New Tab</a>
+        <button nz-button nzType="primary" (click)="isDocPreviewVisible = false">Close</button>
       </ng-template>
     </nz-modal>
 
@@ -340,19 +355,19 @@ import { environment } from '../../../environments/environment';
     </nz-modal>
 
     <nz-modal [(nzVisible)]="isApproveModalVisible" nzTitle="Approve Registration"
-      (nzOnCancel)="isApproveModalVisible = false" [nzFooter]="approveFooter" nzWidth="520px" [nzMaskClosable]="false">
+      (nzOnCancel)="isApproveModalVisible = false" [nzFooter]="approveFooter" nzWidth="560px" [nzMaskClosable]="false">
       <ng-template nzModalContent>
         <div class="approve-modal-body" *ngIf="selectedReg">
           <div style="margin-bottom:14px;padding:8px 12px;background:#f0f4ff;border-radius:6px;border:1px solid #d0e1fd;">
             <p style="margin:0;font-weight:600;color:#1f3d6e;">
-              {{ selectedReg.prefix ? selectedReg.prefix + ' ' : '' }}{{ selectedReg.surname ? selectedReg.surname + ' ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }} ({{ selectedReg.registrationCode }})
+              {{ selectedReg.prefix ? selectedReg.prefix + '. ' : '' }}{{ selectedReg.firstName || '' }}{{ selectedReg.middleName ? ' ' + selectedReg.middleName : '' }}{{ selectedReg.surname ? ' ' + selectedReg.surname : '' }} ({{ selectedReg.registrationCode }})
             </p>
             <p style="margin:2px 0 0 0;font-size:12px;color:#666;">
               Review or adjust joining details before approving and generating the employee record.
             </p>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div style="grid-column: span 2;">
               <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Employee Code (leave blank to auto-generate)</label>
               <input nz-input [(ngModel)]="approveForm.employeeCode" placeholder="Auto-generated if blank" />
@@ -364,23 +379,26 @@ import { environment } from '../../../environments/environment';
             </div>
 
             <div>
-              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Father / Husband Name</label>
-              <input nz-input [(ngModel)]="approveForm.fatherHusbandName" placeholder="Father or Husband Name" />
+              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Role *</label>
+              <nz-select [(ngModel)]="approveForm.role" nzPlaceHolder="Select role" style="width:100%">
+                <nz-option nzValue="EMPLOYEE" nzLabel="EMPLOYEE"></nz-option>
+                <nz-option nzValue="HR" nzLabel="HR"></nz-option>
+                <nz-option nzValue="ADMIN" nzLabel="ADMIN"></nz-option>
+              </nz-select>
             </div>
 
             <div>
               <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Designation</label>
-              <input nz-input [(ngModel)]="approveForm.designation" placeholder="e.g. Associate" />
+              <nz-select [(ngModel)]="approveForm.designation" nzPlaceHolder="Select designation" nzShowSearch nzAllowClear style="width:100%">
+                <nz-option *ngFor="let d of designations" [nzValue]="d.value || d.code" [nzLabel]="d.value || d.code"></nz-option>
+              </nz-select>
             </div>
 
             <div>
-              <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Department</label>
-              <input nz-input [(ngModel)]="approveForm.department" placeholder="e.g. Operations" />
-            </div>
-
-            <div style="grid-column: span 2;">
               <label style="font-weight:600;font-size:12px;display:block;margin-bottom:3px;">Process Assigned</label>
-              <input nz-input [(ngModel)]="approveForm.processAssigned" placeholder="e.g. Housing Loan" />
+              <nz-select [(ngModel)]="approveForm.processAssigned" nzPlaceHolder="Select process" nzShowSearch nzAllowClear style="width:100%">
+                <nz-option *ngFor="let p of processes" [nzValue]="p.value || p.code" [nzLabel]="p.value || p.code"></nz-option>
+              </nz-select>
             </div>
           </div>
         </div>
@@ -603,7 +621,14 @@ export class PendingRegistrationsComponent implements OnInit {
   isApproving = false;
   isDocPreviewVisible = false;
   docPreviewUrl = '';
+  docPreviewTitle = 'Document Preview';
+  docPreviewIsPdf = false;
+  docPreviewSafeUrl: SafeResourceUrl | null = null;
   apiBase = environment.apiUrl;
+
+  designations: MasterDataItem[] = [];
+  departments: MasterDataItem[] = [];
+  processes: MasterDataItem[] = [];
 
   isQrModalVisible = false;
   qrDataUrl = '';
@@ -614,6 +639,8 @@ export class PendingRegistrationsComponent implements OnInit {
   constructor(
     private pendingService: PendingRegistrationService,
     private formFieldConfigService: FormFieldConfigService,
+    private masterDataService: MasterDataService,
+    private sanitizer: DomSanitizer,
     private notification: NzNotificationService,
     private modal: NzModalService
   ) {}
@@ -622,7 +649,14 @@ export class PendingRegistrationsComponent implements OnInit {
     this.loadData();
     this.loadPendingCount();
     this.loadFieldConfigs();
+    this.loadMasterData();
     this.registrationUrl = window.location.origin + '/register-new';
+  }
+
+  loadMasterData() {
+    this.masterDataService.getByCategory('DESIGNATION').subscribe(data => this.designations = data || []);
+    this.masterDataService.getByCategory('DEPARTMENT').subscribe(data => this.departments = data || []);
+    this.masterDataService.getByCategory('PROCESS').subscribe(data => this.processes = data || []);
   }
 
   loadFieldConfigs() {
@@ -679,9 +713,8 @@ export class PendingRegistrationsComponent implements OnInit {
     employeeCode: '',
     doj: '',
     designation: '',
-    department: '',
     processAssigned: '',
-    fatherHusbandName: ''
+    role: 'EMPLOYEE'
   };
 
   showApproveModal(reg: PendingRegistration) {
@@ -690,9 +723,8 @@ export class PendingRegistrationsComponent implements OnInit {
       employeeCode: '',
       doj: reg.doj || new Date().toISOString().split('T')[0],
       designation: reg.designation || '',
-      department: reg.department || '',
       processAssigned: reg.processAssigned || '',
-      fatherHusbandName: reg.fatherHusbandName || reg.fatherName || ''
+      role: 'EMPLOYEE'
     };
     this.isApproveModalVisible = true;
   }
@@ -703,9 +735,8 @@ export class PendingRegistrationsComponent implements OnInit {
       employeeCode: this.approveForm.employeeCode?.trim() || undefined,
       doj: this.approveForm.doj?.trim() || undefined,
       designation: this.approveForm.designation?.trim() || undefined,
-      department: this.approveForm.department?.trim() || undefined,
       processAssigned: this.approveForm.processAssigned?.trim() || undefined,
-      fatherHusbandName: this.approveForm.fatherHusbandName?.trim() || undefined
+      role: this.approveForm.role || 'EMPLOYEE'
     }).subscribe({
       next: (res) => {
         this.isApproving = false;
@@ -734,6 +765,19 @@ export class PendingRegistrationsComponent implements OnInit {
     } catch {
       return [];
     }
+  }
+
+  getParsedAdditionalDocs(reg: PendingRegistration | null): any[] {
+    if (!reg) return [];
+    if (reg.additionalDocs && Array.isArray(reg.additionalDocs)) return reg.additionalDocs;
+    if (reg.additionalDocsJson) {
+      try {
+        return JSON.parse(reg.additionalDocsJson);
+      } catch {
+        return [];
+      }
+    }
+    return [];
   }
 
   showRejectModal(reg: PendingRegistration) {
@@ -784,8 +828,33 @@ export class PendingRegistrationsComponent implements OnInit {
     (event.target as HTMLInputElement).select();
   }
 
-  viewDoc(path: string) {
-    this.docPreviewUrl = path.startsWith('http') ? path : this.apiBase + path;
+  formatDate(val: any): string {
+    if (!val) return '-';
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        return `${match[3]}/${match[2]}/${match[1]}`;
+      }
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  viewDoc(path: string, title?: string) {
+    if (!path) return;
+    this.docPreviewTitle = title || 'Document Preview';
+    let fullUrl = path;
+    if (!path.startsWith('http')) {
+      fullUrl = path.startsWith('/') ? path : '/' + path;
+    }
+    this.docPreviewIsPdf = fullUrl.toLowerCase().endsWith('.pdf') || fullUrl.toLowerCase().includes('.pdf');
+    this.docPreviewUrl = fullUrl;
+    this.docPreviewSafeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
     this.isDocPreviewVisible = true;
   }
 }

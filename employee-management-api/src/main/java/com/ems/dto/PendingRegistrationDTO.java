@@ -94,6 +94,8 @@ public class PendingRegistrationDTO {
     private String approvedBy;
     private String languages;
     private String customFields;
+    private String additionalDocsJson;
+    private java.util.List<java.util.Map<String, Object>> additionalDocs;
 
     public static PendingRegistrationDTO fromEntity(PendingRegistration entity) {
         PendingRegistrationDTOBuilder builder = PendingRegistrationDTO.builder()
@@ -175,7 +177,21 @@ public class PendingRegistrationDTO {
             .approvedAt(entity.getApprovedAt())
             .approvedBy(entity.getApprovedBy())
             .languages(entity.getLanguages())
-            .customFields(entity.getCustomFields());
+            .customFields(entity.getCustomFields())
+            .additionalDocsJson(entity.getAdditionalDocsJson());
+
+        if (entity.getAdditionalDocsJson() != null && !entity.getAdditionalDocsJson().trim().isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.List<java.util.Map<String, Object>> docs = mapper.readValue(
+                    entity.getAdditionalDocsJson(),
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String, Object>>>() {}
+                );
+                builder.additionalDocs(docs);
+            } catch (Exception e) {
+                // Ignore parse errors on DTO conversion
+            }
+        }
         return builder.build();
     }
 }

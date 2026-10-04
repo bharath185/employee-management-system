@@ -23,6 +23,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.company.upload-dir:uploads/company}")
     private String companyUploadDir;
 
+    @Value("${app.document.upload-dir:uploads/documents}")
+    private String documentUploadDir;
+
     @Value("${server.servlet.context-path:}")
     private String contextPath;
 
@@ -55,6 +58,26 @@ public class WebConfig implements WebMvcConfigurer {
             .addResourceLocations(companyUri, "file:" + companyPath.toString() + "/")
             .setCachePeriod(3600);
 
+        // Serve pending files at /pending-files/** and /api/v1/pending-files/**
+        Path pendingPath = Paths.get(documentUploadDir).resolve("pending").toAbsolutePath().normalize();
+        String pendingUri = pendingPath.toUri().toString();
+        if (!pendingUri.endsWith("/")) {
+            pendingUri += "/";
+        }
+        registry.addResourceHandler("/pending-files/**", "/api/v1/pending-files/**")
+            .addResourceLocations(pendingUri, "file:" + pendingPath.toString() + "/")
+            .setCachePeriod(3600);
+
+        // Serve document uploads at /documents/** and /api/v1/documents/**
+        Path docPath = Paths.get(documentUploadDir).toAbsolutePath().normalize();
+        String docUri = docPath.toUri().toString();
+        if (!docUri.endsWith("/")) {
+            docUri += "/";
+        }
+        registry.addResourceHandler("/documents/**", "/api/v1/documents/**")
+            .addResourceLocations(docUri, "file:" + docPath.toString() + "/")
+            .setCachePeriod(3600);
+
         // Serve Angular Static SPA & route fallback to index.html
         registry.addResourceHandler("/**")
             .addResourceLocations("classpath:/static/")
@@ -66,7 +89,7 @@ public class WebConfig implements WebMvcConfigurer {
                     if (requestedResource.exists() && requestedResource.isReadable()) {
                         return requestedResource;
                     }
-                    if (resourcePath.startsWith("api/") || resourcePath.startsWith("photos/") || resourcePath.startsWith("company-uploads/")) {
+                    if (resourcePath.startsWith("api/") || resourcePath.startsWith("photos/") || resourcePath.startsWith("company-uploads/") || resourcePath.startsWith("documents/") || resourcePath.startsWith("pending-files/")) {
                         return null;
                     }
                     return new ClassPathResource("/static/index.html");

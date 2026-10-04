@@ -5,14 +5,18 @@ import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { PayrollService } from '../../core/services/payroll.service';
+import { EmployeeService } from '../../core/services/employee.service';
 import { Payslip } from '../../core/models/payroll.models';
+import { Employee } from '../../core/models/employee.model';
 import { environment } from '../../../environments/environment';
 import { saveAs } from 'file-saver';
 
@@ -20,12 +24,24 @@ import { saveAs } from 'file-saver';
   selector: 'app-payslip-list',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
-    NzIconModule, NzTagModule, NzCardModule, NzSpinModule, NzPopconfirmModule,
-    RouterLink, RouterLinkActive
+    CommonModule,
+    FormsModule,
+    NzTableModule,
+    NzButtonModule,
+    NzSelectModule,
+    NzInputModule,
+    NzIconModule,
+    NzTagModule,
+    NzCardModule,
+    NzSpinModule,
+    NzPopconfirmModule,
+    NzToolTipModule,
+    RouterLink,
+    RouterLinkActive
   ],
   template: `
     <div class="pl-container">
+      <!-- ===== SUB NAVIGATION ===== -->
       <div class="pp-sub-nav">
         <a class="pp-nav-item" routerLink="/admin/payroll/salary-master" routerLinkActive="active">
           <i nz-icon nzType="bank"></i><span>Salary Master</span>
@@ -40,17 +56,74 @@ import { saveAs } from 'file-saver';
           <i nz-icon nzType="mail"></i><span>Config</span>
         </a>
       </div>
+
       <!-- ===== CONTROLS CARD ===== -->
       <nz-card class="pl-controls-card" nzSize="small">
         <div class="pl-controls">
           <div class="pl-filters">
-            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="loadData()" nzPlaceHolder="Year" class="filter-select" style="width:110px">
+            <!-- Year Select -->
+            <nz-select [(ngModel)]="selectedYear" (ngModelChange)="loadData()" nzPlaceHolder="Year" class="filter-select" style="width:100px">
               <nz-option *ngFor="let y of yearList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="loadData()" nzPlaceHolder="Month" class="filter-select" style="width:140px">
+
+            <!-- Month Select -->
+            <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="loadData()" nzPlaceHolder="Month" class="filter-select" style="width:120px">
               <nz-option *ngFor="let m of monthList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
             </nz-select>
+
+            <!-- Employee Filter Select -->
+            <nz-select
+              [(ngModel)]="selectedEmployeeId"
+              (ngModelChange)="applyFilters()"
+              nzPlaceHolder="All Employees"
+              nzShowSearch
+              nzAllowClear
+              class="filter-select emp-select"
+              style="width:220px"
+            >
+              <nz-option nzValue="" nzLabel="All Employees"></nz-option>
+              <nz-option
+                *ngFor="let emp of employeeOptions"
+                [nzValue]="emp.id"
+                [nzLabel]="getEmpOptionLabel(emp)"
+              ></nz-option>
+            </nz-select>
+
+            <!-- Process Filter Select -->
+            <nz-select
+              [(ngModel)]="selectedProcess"
+              (ngModelChange)="applyFilters()"
+              nzPlaceHolder="All Processes"
+              nzShowSearch
+              nzAllowClear
+              class="filter-select process-select"
+              style="width:170px"
+            >
+              <nz-option nzValue="" nzLabel="All Processes"></nz-option>
+              <nz-option *ngFor="let proc of processList" [nzValue]="proc" [nzLabel]="proc"></nz-option>
+            </nz-select>
+
+            <!-- Search Box -->
+            <div class="search-box">
+              <i nz-icon nzType="search" class="search-ico"></i>
+              <input
+                type="text"
+                nz-input
+                placeholder="Search name/code..."
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="applyFilters()"
+                class="search-input"
+              />
+              <i nz-icon nzType="close-circle" class="search-clear" *ngIf="searchTerm" (click)="searchTerm = ''; applyFilters()"></i>
+            </div>
+
+            <!-- Reset Filters -->
+            <button nz-button class="clear-btn" *ngIf="hasActiveFilters" (click)="resetFilters()" nz-tooltip="Reset all filters">
+              <i nz-icon nzType="reload"></i> Reset
+            </button>
           </div>
+
+          <!-- Actions -->
           <div class="pp-actions">
             <button nz-button nzType="default" (click)="downloadStatement()" nz-tooltip="Download Salary Statement">
               <i nz-icon nzType="file-excel"></i> Statement
@@ -61,7 +134,7 @@ import { saveAs } from 'file-saver';
             <button nz-button nzType="default" (click)="downloadReport()" nz-tooltip="Download Payroll Report">
               <i nz-icon nzType="bar-chart"></i> Report
             </button>
-             <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
+            <button nz-button class="btn-primary-gradient" (click)="sendAll()" [nzLoading]="sending">
               <i nz-icon nzType="mail"></i> Send All
             </button>
             <button nz-button class="btn-primary-gradient" (click)="sendSelected()"
@@ -76,18 +149,18 @@ import { saveAs } from 'file-saver';
       <nz-card class="pl-stats-card" nzSize="small" *ngIf="stats">
         <div class="stats-bar">
           <div class="stats-item">
-            <span class="stats-label">Employees</span>
-            <span class="stats-value">{{ stats.totalEmployees || 0 }}</span>
+            <span class="stats-label">Filtered Employees</span>
+            <span class="stats-value">{{ filteredPayslips.length }}</span>
           </div>
           <div class="stats-divider"></div>
           <div class="stats-item">
             <span class="stats-label">Total Gross</span>
-            <span class="stats-value stats-currency">&#8377;{{ (stats.totalGross || 0) | number:'1.2-2' }}</span>
+            <span class="stats-value stats-currency">&#8377;{{ computedTotalGross | number:'1.2-2' }}</span>
           </div>
           <div class="stats-divider"></div>
           <div class="stats-item">
             <span class="stats-label">Total Net Pay</span>
-            <span class="stats-value stats-currency stats-net">&#8377;{{ (stats.totalNet || 0) | number:'1.2-2' }}</span>
+            <span class="stats-value stats-currency stats-net">&#8377;{{ computedTotalNet | number:'1.2-2' }}</span>
           </div>
         </div>
       </nz-card>
@@ -95,23 +168,24 @@ import { saveAs } from 'file-saver';
       <!-- ===== PAYSLIP TABLE ===== -->
       <nz-card class="pl-table-card" nzSize="small">
         <nz-table #payslipTable
-          [nzData]="payslips"
+          [nzData]="filteredPayslips"
           [nzLoading]="loading"
           [nzPageSize]="10"
-          [nzPageSizeOptions]="[10, 20, 50]"
+          [nzPageSizeOptions]="[10, 20, 50, 100]"
           [nzShowSizeChanger]="true"
           nzBordered nzSize="small"
           nzShowPagination
           nzFrontPagination
           class="theme-table">
-           <thead>
+          <thead>
             <tr>
               <th class="th-cb">
                 <label class="cb-label"><input type="checkbox" [checked]="allChecked" (change)="toggleSelectAll()" class="cb-all"/></label>
               </th>
               <th class="th-sno">#</th>
               <th class="th-code">Code</th>
-              <th class="th-name">Name</th>
+              <th class="th-name">Employee Name</th>
+              <th class="th-proc">Process</th>
               <th class="th-num">Basic</th>
               <th class="th-num">Gross</th>
               <th class="th-num">PF</th>
@@ -131,7 +205,14 @@ import { saveAs } from 'file-saver';
               </td>
               <td class="td-center">{{ i + 1 }}</td>
               <td class="td-center"><span class="emp-code-text">{{ p.employeeCode }}</span></td>
-              <td class="td-name">{{ p.employeeName }}</td>
+              <td class="td-name">
+                <div class="emp-name-cell">
+                  <span class="emp-name-text">{{ getFormattedEmpName(p) }}</span>
+                </div>
+              </td>
+              <td class="td-center">
+                <span class="process-tag">{{ getProcessForPayslip(p) }}</span>
+              </td>
               <td class="td-right">{{ p.basic | number:'1.0-0' }}</td>
               <td class="td-right"><span class="gross-amount">{{ p.grossSalary | number:'1.0-0' }}</span></td>
               <td class="td-right">{{ p.pfDeduction | number:'1.0-0' }}</td>
@@ -158,8 +239,8 @@ import { saveAs } from 'file-saver';
                 </button>
               </td>
             </tr>
-            <tr *ngIf="payslips.length === 0 && !loading">
-              <td colspan="14" class="empty-cell">No payslips found for the selected period</td>
+            <tr *ngIf="filteredPayslips.length === 0 && !loading">
+              <td colspan="15" class="empty-cell">No payslips found for the selected period / filter criteria</td>
             </tr>
           </tbody>
         </nz-table>
@@ -237,13 +318,16 @@ import { saveAs } from 'file-saver';
     }
     .pl-filters {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
+      flex-wrap: wrap;
+      flex: 1;
     }
     .pp-actions {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
+      margin-left: auto;
     }
     .filter-select {
       width: 120px;
@@ -267,6 +351,47 @@ import { saveAs } from 'file-saver';
       font-size: 12px !important;
       line-height: 28px !important;
     }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: #ffffff;
+      border: 1px solid #e2e5ea;
+      border-radius: 6px;
+      padding: 0 8px;
+      height: 30px;
+      width: 160px;
+      transition: all 0.2s ease;
+    }
+    .search-box:focus-within {
+      border-color: #1f3d6e;
+      box-shadow: 0 0 0 2px rgba(31,61,110,0.1);
+    }
+    .search-ico { font-size: 12px; color: #9ca3af; margin-right: 4px; }
+    .search-input {
+      border: none !important;
+      background: transparent !important;
+      height: 26px;
+      font-size: 12px;
+      padding: 0;
+      outline: none;
+      box-shadow: none !important;
+      flex: 1;
+    }
+    .search-clear { cursor: pointer; font-size: 11px; color: #9ca3af; }
+    .search-clear:hover { color: #ef4444; }
+
+    .clear-btn {
+      height: 30px !important;
+      padding: 0 8px !important;
+      font-size: 12px !important;
+      border-radius: 6px !important;
+      border: 1px solid #e2e5ea !important;
+      color: #64748b !important;
+      background: #f8fafc !important;
+    }
+    .clear-btn:hover { color: #ef4444 !important; border-color: #fca5a5 !important; }
+
     .btn-primary-gradient {
       height: 30px !important;
       padding: 0 14px !important;
@@ -374,10 +499,11 @@ import { saveAs } from 'file-saver';
     .cb-row { width: 14px; height: 14px; cursor: pointer; accent-color: #1a3a6b; }
     .th-code { width: 7% !important; text-align: center !important; }
     .th-name { width: 15% !important; text-align: left !important; }
-    .th-num { width: 9% !important; text-align: right !important; }
-    .th-present { width: 5% !important; text-align: center !important; }
-    .th-status { width: 9% !important; text-align: center !important; }
-    .th-actions { width: 11% !important; text-align: center !important; }
+    .th-proc { width: 9% !important; text-align: center !important; }
+    .th-num { width: 8% !important; text-align: right !important; }
+    .th-present { width: 4% !important; text-align: center !important; }
+    .th-status { width: 8% !important; text-align: center !important; }
+    .th-actions { width: 10% !important; text-align: center !important; }
     .td-center { text-align: center !important; }
     .td-right {
       text-align: right !important;
@@ -397,6 +523,20 @@ import { saveAs } from 'file-saver';
       letter-spacing: 0.3px;
       font-size: 11px;
     }
+    .emp-name-cell { display: flex; flex-direction: column; min-width: 0; }
+    .emp-name-text { font-weight: 600; color: #1e293b; font-size: 11.5px; }
+
+    .process-tag {
+      font-size: 10px;
+      font-weight: 500;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+
     .gross-amount { font-weight: 700; color: #374151; }
     .net-amount { font-weight: 700; color: #059669; }
     .status-tag {
@@ -470,9 +610,23 @@ export class PayslipListComponent implements OnInit {
   sending = false;
   selectedYear: number;
   selectedMonth: number;
+
+  selectedEmployeeId: number | string = '';
+  selectedProcess: string = '';
+  searchTerm: string = '';
+
   payslips: Payslip[] = [];
+  filteredPayslips: Payslip[] = [];
   stats: any = null;
   selectedIds: Set<number> = new Set();
+
+  employeeOptions: Employee[] = [];
+  processList: string[] = [];
+
+  empIdProcessMap = new Map<number, string>();
+  empCodeProcessMap = new Map<string, string>();
+  empIdNameMap = new Map<number, string>();
+  empCodeNameMap = new Map<string, string>();
 
   yearList: number[] = [];
   monthList = [
@@ -486,6 +640,7 @@ export class PayslipListComponent implements OnInit {
 
   constructor(
     private payrollService: PayrollService,
+    private employeeService: EmployeeService,
     private msg: NzMessageService
   ) {
     const now = new Date();
@@ -498,7 +653,57 @@ export class PayslipListComponent implements OnInit {
     for (let y = now.getFullYear() - 2; y <= now.getFullYear() + 1; y++) {
       this.yearList.push(y);
     }
+
+    this.loadMasterOptions();
     this.loadData();
+  }
+
+  private loadMasterOptions(): void {
+    this.employeeService.getAllEmployees().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const list = Array.isArray(res.data) ? res.data : (res.data.content || []);
+          this.employeeOptions = list;
+
+          list.forEach(emp => {
+            const formattedName = [
+              emp.prefix ? emp.prefix + '.' : '',
+              emp.firstName,
+              emp.middleName,
+              emp.surname
+            ].filter(p => !!p && p.trim() !== '').join(' ').trim();
+
+            if (emp.id) {
+              this.empIdProcessMap.set(emp.id, emp.processAssigned || 'General');
+              this.empIdNameMap.set(emp.id, formattedName);
+            }
+            if (emp.employeeCode) {
+              this.empCodeProcessMap.set(emp.employeeCode, emp.processAssigned || 'General');
+              this.empCodeNameMap.set(emp.employeeCode, formattedName);
+            }
+          });
+        }
+      }
+    });
+
+    this.employeeService.getProcessOptions().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.processList = res.data;
+        }
+      }
+    });
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!this.selectedEmployeeId || !!this.selectedProcess || !!this.searchTerm;
+  }
+
+  resetFilters(): void {
+    this.selectedEmployeeId = '';
+    this.selectedProcess = '';
+    this.searchTerm = '';
+    this.applyFilters();
   }
 
   statusColor(status: string): string {
@@ -513,16 +718,91 @@ export class PayslipListComponent implements OnInit {
   loadData(): void {
     this.loading = true;
     this.selectedIds.clear();
+
     this.payrollService.getPayslips(this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
         this.payslips = res.data || [];
+        this.applyFilters();
         this.loading = false;
       },
-      error: () => { this.loading = false; }
+      error: () => {
+        this.loading = false;
+        this.msg.error('Failed to load payslips');
+      }
     });
+
     this.payrollService.getPayslipStats(this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => { this.stats = res.data; }
     });
+  }
+
+  applyFilters(): void {
+    let result = [...this.payslips];
+
+    // Filter by Employee
+    if (this.selectedEmployeeId) {
+      result = result.filter(p => p.employeeId === Number(this.selectedEmployeeId));
+    }
+
+    // Filter by Process
+    if (this.selectedProcess) {
+      const proc = this.selectedProcess.trim().toLowerCase();
+      result = result.filter(p => {
+        const empProc = (this.getProcessForPayslip(p) || '').trim().toLowerCase();
+        return empProc === proc;
+      });
+    }
+
+    // Search query by code or name
+    if (this.searchTerm && this.searchTerm.trim()) {
+      const q = this.searchTerm.trim().toLowerCase();
+      result = result.filter(p => {
+        const code = (p.employeeCode || '').toLowerCase();
+        const name = (p.employeeName || '').toLowerCase();
+        const formatted = (this.getFormattedEmpName(p) || '').toLowerCase();
+        return code.includes(q) || name.includes(q) || formatted.includes(q);
+      });
+    }
+
+    this.filteredPayslips = result;
+  }
+
+  get computedTotalGross(): number {
+    return this.filteredPayslips.reduce((sum, p) => sum + (p.grossSalary || 0), 0);
+  }
+
+  get computedTotalNet(): number {
+    return this.filteredPayslips.reduce((sum, p) => sum + (p.netPay || 0), 0);
+  }
+
+  getEmpOptionLabel(emp: Employee): string {
+    const formatted = [
+      emp.prefix ? emp.prefix + '.' : '',
+      emp.firstName,
+      emp.middleName,
+      emp.surname
+    ].filter(p => !!p && p.trim() !== '').join(' ').trim();
+    return `[${emp.employeeCode}] ${formatted}`;
+  }
+
+  getFormattedEmpName(p: Payslip): string {
+    if (p.employeeId && this.empIdNameMap.has(p.employeeId)) {
+      return this.empIdNameMap.get(p.employeeId)!;
+    }
+    if (p.employeeCode && this.empCodeNameMap.has(p.employeeCode)) {
+      return this.empCodeNameMap.get(p.employeeCode)!;
+    }
+    return p.employeeName || 'N/A';
+  }
+
+  getProcessForPayslip(p: Payslip): string {
+    if (p.employeeId && this.empIdProcessMap.has(p.employeeId)) {
+      return this.empIdProcessMap.get(p.employeeId)!;
+    }
+    if (p.employeeCode && this.empCodeProcessMap.has(p.employeeCode)) {
+      return this.empCodeProcessMap.get(p.employeeCode)!;
+    }
+    return 'General';
   }
 
   viewPayslip(id: number): void {
@@ -530,8 +810,6 @@ export class PayslipListComponent implements OnInit {
       next: (html) => {
         const win = window.open('', '_blank');
         if (win) {
-          // Replace relative logo URL with the full backend URL so it resolves correctly
-          // when the HTML is opened in a new browser window
           const fullLogoUrl = `${environment.apiUrl}/company/logo`;
           const processedHtml = html.replace(/\/api\/v1\/company\/logo/g, fullLogoUrl);
           win.document.write(processedHtml);
@@ -573,12 +851,12 @@ export class PayslipListComponent implements OnInit {
   }
 
   get allChecked(): boolean {
-    return this.payslips.length > 0 && this.selectedIds.size === this.payslips.length;
+    return this.filteredPayslips.length > 0 && this.selectedIds.size === this.filteredPayslips.length;
   }
 
   toggleSelectAll(): void {
     if (this.allChecked) { this.selectedIds.clear(); }
-    else { this.payslips.forEach(p => this.selectedIds.add(p.id)); }
+    else { this.filteredPayslips.forEach(p => this.selectedIds.add(p.id)); }
   }
 
   toggleOne(id: number): void {

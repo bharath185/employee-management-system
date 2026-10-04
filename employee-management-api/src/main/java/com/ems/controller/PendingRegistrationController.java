@@ -42,10 +42,11 @@ public class PendingRegistrationController {
             @RequestParam(value = "designation", required = false) String designation,
             @RequestParam(value = "department", required = false) String department,
             @RequestParam(value = "processAssigned", required = false) String processAssigned,
+            @RequestParam(value = "role", required = false) String role,
             @RequestParam(value = "fatherHusbandName", required = false) String fatherHusbandName,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         APIResponse<EmployeeDTO> response = pendingRegistrationService.approve(
-                id, employeeCode, doj, designation, department, processAssigned, fatherHusbandName, userDetails.getUsername());
+                id, employeeCode, doj, designation, department, processAssigned, role, fatherHusbandName, userDetails.getUsername());
         return ResponseEntity.ok(response);
     }
 

@@ -22,6 +22,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { HolidayService } from '../../core/services/holiday.service';
 import { CompOffService } from '../../core/services/comp-off.service';
 import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/payroll.models';
+import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
 
 @Component({
   selector: 'app-my-leave',
@@ -30,7 +31,8 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
     CommonModule, RouterLink, FormsModule,
     NzCardModule, NzButtonModule, NzIconModule, NzTableModule,
     NzTagModule, NzFormModule, NzSelectModule, NzDatePickerModule,
-    NzInputModule, NzModalModule, NzEmptyModule, NzStatisticModule, NzSkeletonModule
+    NzInputModule, NzModalModule, NzEmptyModule, NzStatisticModule, NzSkeletonModule,
+    DateFormatPipe
   ],
   template: `
     <div class="leave-container">
@@ -170,15 +172,15 @@ import { LeaveBalance, LeaveApplication, LeaveType } from '../../core/models/pay
             <tbody>
               <tr *ngFor="let app of historyTable.data">
                 <td><strong>{{ app.leaveTypeName }}</strong></td>
-                <td>{{ app.fromDate }}</td>
-                <td>{{ app.toDate }}</td>
+                <td>{{ app.fromDate | dateFormat }}</td>
+                <td>{{ app.toDate | dateFormat }}</td>
                 <td class="return-cell">{{ returnDay(app.toDate) }}<span *ngIf="returnBadge(app.toDate)" class="ret-badge holiday-badge" style="margin-left:3px;font-size:9px">{{ returnBadge(app.toDate) }}</span></td>
                 <td>{{ app.days }}</td>
                 <td class="reason-cell">{{ app.reason || '—' }}</td>
                 <td>
                   <nz-tag [nzColor]="statusColor(app.status)">{{ app.status }}</nz-tag>
                 </td>
-                <td>{{ app.appliedDate | date:'dd MMM yyyy' }}</td>
+                <td>{{ app.appliedDate | date:'dd/MM/yyyy' }}</td>
                 <td>
                   <button
                     *ngIf="app.status === 'PENDING'"

@@ -29,7 +29,9 @@ export interface LoginResponse {
   employee: {
     id: number;
     employeeCode: string;
+    prefix?: string;
     firstName: string;
+    middleName?: string;
     surname: string;
     email: string;
     photoPath: string;

@@ -31,16 +31,16 @@ import { saveAs } from 'file-saver';
         <div class="section-toolbar">
           <nz-select [(ngModel)]="employeeFilter" (ngModelChange)="loadEncashments()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
             <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-            <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
+            <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
           </nz-select>
           <button nz-button (click)="showCreateModal()">
             <i nz-icon nzType="plus"></i> New Encashment
           </button>
           <button nz-button nzType="default" nzSize="small" (click)="exportExcel()" [nzLoading]="exporting">
-            <i nz-icon nzType="download"></i> Export
+            <i nz-icon nzType="download"></i> Download
           </button>
           <button nz-button nzType="default" nzSize="small" (click)="importFile.click()" [nzLoading]="importing">
-            <i nz-icon nzType="upload"></i> Import
+            <i nz-icon nzType="upload"></i> Upload
           </button>
           <button nz-button nzType="default" nzSize="small" (click)="downloadSample()">
             <i nz-icon nzType="file"></i> Sample
@@ -100,7 +100,7 @@ import { saveAs } from 'file-saver';
             <div class="form-row">
               <label>Employee</label>
               <nz-select [(ngModel)]="form.employeeId" (ngModelChange)="onEmployeeChange()" nzPlaceHolder="Select Employee" class="theme-select">
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
               </nz-select>
             </div>
             <div class="form-row">

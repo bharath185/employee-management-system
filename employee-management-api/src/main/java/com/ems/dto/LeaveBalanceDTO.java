@@ -23,6 +23,8 @@ public class LeaveBalanceDTO {
     private Integer taken;
     private Integer encashed;
     private Integer balance;
+    private Integer lopDays;
+    private Boolean isLop;
 
     public static LeaveBalanceDTO fromEntity(LeaveBalance lb) {
         if (lb == null) return null;
@@ -46,6 +48,9 @@ public class LeaveBalanceDTO {
             }
         } catch (Exception ignored) {}
 
+        int bal = lb.getBalance() != null ? lb.getBalance() : 0;
+        int lop = bal < 0 ? Math.abs(bal) : 0;
+
         return LeaveBalanceDTO.builder()
             .id(lb.getId())
             .employeeId(empId)
@@ -57,7 +62,9 @@ public class LeaveBalanceDTO {
             .entitled(lb.getEntitled() != null ? lb.getEntitled() : 0)
             .taken(lb.getTaken() != null ? lb.getTaken() : 0)
             .encashed(lb.getEncashed() != null ? lb.getEncashed() : 0)
-            .balance(lb.getBalance() != null ? lb.getBalance() : 0)
+            .balance(bal)
+            .lopDays(lop)
+            .isLop(bal < 0)
             .build();
     }
 }

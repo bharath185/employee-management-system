@@ -33,12 +33,14 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
     NzToolTipModule, ImageCropModalComponent
   ],
   template: `
-    <div class="cs-container">
-      <div class="cs-sub-nav">
-        <span class="cs-nav-title"><i nz-icon nzType="bank"></i> Company Setup</span>
-        <div class="cs-nav-actions">
-          <button nz-button class="btn-primary-gradient" (click)="saveCompany()" [nzLoading]="isSaving" [disabled]="!companyForm.companyName">
-            <i nz-icon nzType="save"></i> Save
+    <div class="cs-container page-enter">
+      <div class="pp-sub-nav">
+        <span class="pp-nav-item active">
+          <i nz-icon nzType="bank"></i><span>Company Setup</span>
+        </span>
+        <div class="pp-sub-nav-actions">
+          <button nz-button nzType="primary" class="btn-primary-gradient" (click)="saveCompany()" [nzLoading]="isSaving" [disabled]="!companyForm.companyName">
+            <i nz-icon nzType="save"></i> Save Changes
           </button>
         </div>
       </div>
@@ -152,7 +154,7 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
                   <tr *ngFor="let doc of docTable.data">
                     <td><nz-tag class="status-tag">{{ doc.documentType }}</nz-tag></td>
                     <td class="doc-filename">{{ doc.fileName }}</td>
-                    <td class="doc-date">{{ doc.uploadedAt | date:'dd/MM/yy' }}</td>
+                    <td class="doc-date">{{ doc.uploadedAt | date:'dd/MM/yyyy' }}</td>
                     <td>
                       <button nz-button nzType="link" nzSize="small" class="action-btn action-delete" (click)="deleteDocument(doc)" nz-tooltip="Delete">
                         <i nz-icon nzType="delete"></i>
@@ -222,27 +224,34 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
   `,
   styles: [`
     :host { display: block; scroll-behavior: smooth; }
-    .cs-sub-nav {
+    .pp-sub-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 2px;
-      margin-bottom: 8px;
+      gap: 8px;
+      margin-bottom: 12px;
       background: #f0f4ff;
       border-radius: 8px;
-      padding: 6px 12px;
+      padding: 6px 14px;
       border: 1px solid #e0e7ff;
     }
-    .cs-nav-title {
-      display: flex;
+    .pp-nav-item.active {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 13px;
       font-weight: 700;
       color: #1f3d6e;
     }
-    .cs-nav-title i { font-size: 16px; }
-    .cs-nav-actions { display: flex; gap: 6px; }
+    .pp-nav-item.active i {
+      font-size: 16px;
+      color: #2563eb;
+    }
+    .pp-sub-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .cs-container {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 8px 12px;

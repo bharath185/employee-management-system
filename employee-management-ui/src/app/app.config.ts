@@ -17,19 +17,22 @@ import {
   DashboardOutline, TeamOutline, SettingOutline, AuditOutline,
   MenuFoldOutline, MenuUnfoldOutline, UserOutline, LogoutOutline,
   BankOutline, PlusOutline, SearchOutline, CloseOutline, ClearOutline,
-  FileTextOutline, DownloadOutline, UploadOutline, EyeOutline, EditOutline,
+  FileTextOutline, FileExcelOutline, DownloadOutline, UploadOutline, EyeOutline, EditOutline,
   DeleteOutline, MoreOutline, ContactsOutline, ToolOutline, CheckCircleOutline,
   PhoneOutline, CalendarOutline, WarningOutline, SaveOutline,
   BarChartOutline, PieChartOutline, HistoryOutline, ArrowRightOutline,
   EyeInvisibleOutline, LoadingOutline, ExclamationCircleOutline,
   TagOutline, HeartOutline, IdcardOutline, GoldOutline, BookOutline,
-  SolutionOutline, ExperimentOutline, FolderOutline, HomeOutline,
+  SolutionOutline, ExperimentOutline, FolderOutline, FolderOpenOutline, HomeOutline,
   CameraOutline, MailOutline, EnvironmentOutline, InfoCircleOutline,
   ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
-  InboxOutline, CheckOutline, StopOutline, SafetyOutline,
+  UsergroupAddOutline, InboxOutline, CheckOutline, StopOutline, SafetyOutline,
   WalletOutline, FileDoneOutline, ArrowLeftOutline, SendOutline,
   ScheduleOutline, LineChartOutline, ThunderboltOutline,
-  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline
+  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline,
+  CloudUploadOutline, FilePdfOutline, FileImageOutline, FileZipOutline,
+  ZoomInOutline, ZoomOutOutline, RedoOutline, CheckSquareOutline, BorderOutline,
+  ScissorOutline, DragOutline, ReloadOutline, CustomerServiceOutline, StarOutline, SafetyCertificateOutline
 } from '@ant-design/icons-angular/icons';
 
 registerLocaleData(en);
@@ -38,19 +41,22 @@ const icons = [
   DashboardOutline, TeamOutline, SettingOutline, AuditOutline,
   MenuFoldOutline, MenuUnfoldOutline, UserOutline, LogoutOutline,
   BankOutline, PlusOutline, SearchOutline, CloseOutline, ClearOutline,
-  FileTextOutline, DownloadOutline, UploadOutline, EyeOutline, EditOutline,
+  FileTextOutline, FileExcelOutline, DownloadOutline, UploadOutline, EyeOutline, EditOutline,
   DeleteOutline, MoreOutline, ContactsOutline, ToolOutline, CheckCircleOutline,
   PhoneOutline, CalendarOutline, WarningOutline, SaveOutline,
   BarChartOutline, PieChartOutline, HistoryOutline, ArrowRightOutline,
   EyeInvisibleOutline, LoadingOutline, ExclamationCircleOutline,
   TagOutline, HeartOutline, IdcardOutline, GoldOutline, BookOutline,
-  SolutionOutline, ExperimentOutline, FolderOutline, HomeOutline,
+  SolutionOutline, ExperimentOutline, FolderOutline, FolderOpenOutline, HomeOutline,
   CameraOutline, MailOutline, EnvironmentOutline, InfoCircleOutline,
   ControlOutline, AppstoreOutline, LockOutline, UserAddOutline, UserDeleteOutline,
-  InboxOutline, CheckOutline, StopOutline, SafetyOutline,
+  UsergroupAddOutline, InboxOutline, CheckOutline, StopOutline, SafetyOutline,
   WalletOutline, FileDoneOutline, ArrowLeftOutline, SendOutline,
   ScheduleOutline, LineChartOutline, ThunderboltOutline,
-  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline
+  MoneyCollectOutline, ClockCircleOutline, CloseCircleOutline, DollarOutline,
+  CloudUploadOutline, FilePdfOutline, FileImageOutline, FileZipOutline,
+  ZoomInOutline, ZoomOutOutline, RedoOutline, CheckSquareOutline, BorderOutline,
+  ScissorOutline, DragOutline, ReloadOutline, CustomerServiceOutline, StarOutline, SafetyCertificateOutline
 ];
 
 export const appConfig: ApplicationConfig = {

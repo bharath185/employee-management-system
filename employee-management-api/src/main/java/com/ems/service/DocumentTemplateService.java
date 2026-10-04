@@ -157,6 +157,10 @@ public class DocumentTemplateService {
         Employee employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
 
+        if (requiresSalaryDetails(template, template.getContent())) {
+            validateEmployeeSalaryConfigured(employee);
+        }
+
         Company company = companyService.getCompany();
 
         String filledContent = TemplateEngine.process(template.getContent(), employee, company);
@@ -181,6 +185,11 @@ public class DocumentTemplateService {
         if (employeeId != null) {
             employee = employeeRepository.findById(employeeId).orElse(null);
         }
+
+        if (employee != null && requiresSalaryDetails(null, rawContent)) {
+            validateEmployeeSalaryConfigured(employee);
+        }
+
         Company company = companyService.getCompany();
 
         String filledContent = TemplateEngine.process(rawContent, employee, company);
@@ -208,6 +217,10 @@ public class DocumentTemplateService {
 
         Employee employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + employeeId));
+
+        if (requiresSalaryDetails(template, template.getContent())) {
+            validateEmployeeSalaryConfigured(employee);
+        }
 
         Company company = companyService.getCompany();
 
@@ -363,9 +376,35 @@ public class DocumentTemplateService {
         }
     }
 
+    private boolean requiresSalaryDetails(DocumentTemplate template, String content) {
+        if (template != null) {
+            String type = template.getTemplateType();
+            if ("APPOINTMENT_LETTER".equalsIgnoreCase(type) || "SALARY_SLIP".equalsIgnoreCase(type)) {
+                return true;
+            }
+            if (template.getVariables() != null && (template.getVariables().contains("basic_pay") || template.getVariables().contains("ctc_monthly"))) {
+                return true;
+            }
+        }
+        if (content != null) {
+            return content.contains("{{basic_pay}}") || content.contains("{{ctc_monthly}}") || content.contains("{{total_monthly}}") || content.contains("{{ctc_annual}}");
+        }
+        return false;
+    }
+
+    private void validateEmployeeSalaryConfigured(Employee employee) {
+        if (employee == null || employee.getId() == null) return;
+        Optional<SalaryMaster> smOpt = salaryMasterRepository.findByEmployeeId(employee.getId());
+        boolean hasSalary = smOpt.isPresent() && smOpt.get().getBasic() != null && smOpt.get().getBasic().compareTo(BigDecimal.ZERO) > 0;
+        if (!hasSalary) {
+            throw new BadRequestException("SALARY_MASTER_NOT_FOUND: Salary Master / CTC details are not configured for employee " 
+                + employee.getFullName() + " (" + employee.getEmployeeCode() + "). Please configure their salary in Salary Master before generating this document.");
+        }
+    }
+
     /**
      * Resolves salary-related placeholders ({{basic_pay}}, {{hra_amount}}, etc.)
-     * using the employee's most recent salary record.
+     * strictly using the employee's Salary Master record.
      */
     private String resolveSalaryPlaceholders(String content, Employee employee) {
         if (employee == null || employee.getId() == null) return content;
@@ -373,101 +412,81 @@ public class DocumentTemplateService {
         Map<String, String> salaryValues = new HashMap<>();
 
         try {
-            BigDecimal basic = BigDecimal.ZERO;
-            BigDecimal hra = BigDecimal.ZERO;
-            BigDecimal fpa = BigDecimal.ZERO;
-            BigDecimal oa = BigDecimal.ZERO;
-            BigDecimal pf = BigDecimal.ZERO;
-            BigDecimal esi = BigDecimal.ZERO;
-            BigDecimal pt = BigDecimal.ZERO;
-            BigDecimal health = BigDecimal.ZERO;
-            boolean found = false;
-
-            // 1. Primary Source: Always check SalaryMaster first (Authoritative master structure for letters & contracts)
+            // Strictly check SalaryMaster (Authoritative master structure for letters & contracts)
             Optional<SalaryMaster> smOpt = salaryMasterRepository.findByEmployeeId(employee.getId());
             if (smOpt.isPresent()) {
                 SalaryMaster sm = smOpt.get();
-                basic = safe(sm.getBasic());
-                hra = safe(sm.getHra());
-                fpa = safe(sm.getFixedPersonalAllowance());
-                oa = safe(sm.getOtherAllowance());
-                pf = safe(sm.getPfDeduction());
-                esi = safe(sm.getEsiDeduction());
-                pt = safe(sm.getPtDeduction());
-                health = safe(sm.getHealthInsurance());
-                if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0 || oa.compareTo(BigDecimal.ZERO) > 0) {
-                    found = true;
-                }
-                if (sm.getWorkingHoursPerDay() != null) {
-                    salaryValues.put("working_hours_per_day", String.valueOf(sm.getWorkingHoursPerDay()));
-                }
-                if (sm.getWeeklyOff() != null) {
-                    salaryValues.put("weekly_off", sm.getWeeklyOff());
-                }
-                if (sm.getWorkerType() != null) {
-                    salaryValues.put("worker_type", sm.getWorkerType());
-                }
-            }
+                BigDecimal basic = safe(sm.getBasic());
+                BigDecimal hra = safe(sm.getHra());
+                BigDecimal fpa = safe(sm.getFixedPersonalAllowance());
+                BigDecimal oa = safe(sm.getOtherAllowance());
+                BigDecimal pf = safe(sm.getPfDeduction());
+                BigDecimal esi = safe(sm.getEsiDeduction());
+                BigDecimal pt = safe(sm.getPtDeduction());
+                BigDecimal health = safe(sm.getHealthInsurance());
 
-            // 2. Secondary Fallback: Recent monthly Salary if SalaryMaster has no data
-            if (!found) {
-                List<Salary> salaries = salaryRepository.findByEmployeeId(employee.getId());
-                if (salaries != null && !salaries.isEmpty()) {
-                    salaries.sort((a, b) -> {
-                        int y = b.getWageYear().compareTo(a.getWageYear());
-                        return y != 0 ? y : b.getWageMonth().compareTo(a.getWageMonth());
-                    });
-                    Salary s = salaries.get(0);
-                    basic = safe(s.getBasic());
-                    hra = safe(s.getHra());
-                    fpa = safe(s.getFixedPersonalAllowance());
-                    oa = safe(s.getOtherAllowance());
-                    pf = safe(s.getPfDeduction());
-                    esi = safe(s.getEsiDeduction());
-                    pt = safe(s.getPtDeduction());
-                    health = safe(s.getHealthInsurance());
-                    if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0) {
-                        found = true;
+                if (basic.compareTo(BigDecimal.ZERO) > 0 || hra.compareTo(BigDecimal.ZERO) > 0 || oa.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal oaTotal = oa.add(fpa);
+                    BigDecimal grossMonthly = basic.add(hra).add(oaTotal);
+                    BigDecimal grossAnnual = grossMonthly.multiply(BigDecimal.valueOf(12));
+                    BigDecimal totalDeductionsMonthly = pf.add(esi).add(pt).add(health);
+                    BigDecimal netMonthly = grossMonthly.subtract(totalDeductionsMonthly);
+                    if (netMonthly.compareTo(BigDecimal.ZERO) < 0) netMonthly = BigDecimal.ZERO;
+                    BigDecimal netAnnual = netMonthly.multiply(BigDecimal.valueOf(12));
+
+                    // Employer PF (12% of basic or sm.getPfDeduction() if > 0)
+                    BigDecimal employerPf = (pf.compareTo(BigDecimal.ZERO) > 0) 
+                        ? pf 
+                        : basic.multiply(new BigDecimal("0.12")).setScale(2, RoundingMode.HALF_UP);
+
+                    // Employer ESIC (3.25% of gross if gross <= 21000)
+                    BigDecimal employerEsi = BigDecimal.ZERO;
+                    if (grossMonthly.compareTo(new BigDecimal("21000")) <= 0 && grossMonthly.compareTo(BigDecimal.ZERO) > 0) {
+                        employerEsi = grossMonthly.multiply(new BigDecimal("0.0325")).setScale(2, RoundingMode.HALF_UP);
+                    } else if (esi.compareTo(BigDecimal.ZERO) > 0) {
+                        employerEsi = esi;
+                    }
+
+                    BigDecimal ctcMonthly = grossMonthly.add(employerPf).add(employerEsi);
+                    BigDecimal ctcAnnual = ctcMonthly.multiply(BigDecimal.valueOf(12));
+
+                    salaryValues.put("basic_pay", fmt(basic));
+                    salaryValues.put("basic_pay_annual", fmt(basic.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("hra_amount", fmt(hra));
+                    salaryValues.put("hra_annual", fmt(hra.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("fixed_personal_allowance", fmt(fpa));
+                    salaryValues.put("fpa_amount", fmt(fpa));
+                    salaryValues.put("other_allowance", fmt(oaTotal));
+                    salaryValues.put("other_allowance_annual", fmt(oaTotal.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("gross_salary", fmt(grossMonthly));
+                    salaryValues.put("gross_salary_annual", fmt(grossAnnual));
+                    salaryValues.put("total_monthly", fmt(grossMonthly));
+                    salaryValues.put("total_annual", fmt(grossAnnual));
+                    salaryValues.put("pf_amount", fmt(employerPf));
+                    salaryValues.put("pf_annual", fmt(employerPf.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("esic_amount", fmt(employerEsi));
+                    salaryValues.put("esic_annual", fmt(employerEsi.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("pt_amount", fmt(pt));
+                    salaryValues.put("pt_annual", fmt(pt.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("health_insurance", fmt(health));
+                    salaryValues.put("health_insurance_annual", fmt(health.multiply(BigDecimal.valueOf(12))));
+                    salaryValues.put("net_pay", fmt(netMonthly));
+                    salaryValues.put("net_salary", fmt(netMonthly));
+                    salaryValues.put("in_hand_salary", fmt(netMonthly));
+                    salaryValues.put("net_pay_annual", fmt(netAnnual));
+                    salaryValues.put("ctc_monthly", fmt(ctcMonthly));
+                    salaryValues.put("ctc_annual", fmt(ctcAnnual));
+
+                    if (sm.getWorkingHoursPerDay() != null) {
+                        salaryValues.put("working_hours_per_day", String.valueOf(sm.getWorkingHoursPerDay()));
+                    }
+                    if (sm.getWeeklyOff() != null) {
+                        salaryValues.put("weekly_off", sm.getWeeklyOff());
+                    }
+                    if (sm.getWorkerType() != null) {
+                        salaryValues.put("worker_type", sm.getWorkerType());
                     }
                 }
-            }
-
-            if (found) {
-                BigDecimal grossMonthly = basic.add(hra).add(fpa).add(oa);
-                BigDecimal grossAnnual = grossMonthly.multiply(BigDecimal.valueOf(12));
-                BigDecimal totalDeductionsMonthly = pf.add(esi).add(pt).add(health);
-                BigDecimal netMonthly = grossMonthly.subtract(totalDeductionsMonthly);
-                if (netMonthly.compareTo(BigDecimal.ZERO) < 0) netMonthly = BigDecimal.ZERO;
-                BigDecimal netAnnual = netMonthly.multiply(BigDecimal.valueOf(12));
-                BigDecimal ctcMonthly = grossMonthly.add(pf).add(esi);
-                BigDecimal ctcAnnual = ctcMonthly.multiply(BigDecimal.valueOf(12));
-
-                salaryValues.put("basic_pay", fmt(basic));
-                salaryValues.put("basic_pay_annual", fmt(basic.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("hra_amount", fmt(hra));
-                salaryValues.put("hra_annual", fmt(hra.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("fixed_personal_allowance", fmt(fpa));
-                salaryValues.put("fpa_amount", fmt(fpa));
-                salaryValues.put("other_allowance", fmt(oa));
-                salaryValues.put("other_allowance_annual", fmt(oa.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("gross_salary", fmt(grossMonthly));
-                salaryValues.put("gross_salary_annual", fmt(grossAnnual));
-                salaryValues.put("total_monthly", fmt(grossMonthly));
-                salaryValues.put("total_annual", fmt(grossAnnual));
-                salaryValues.put("pf_amount", fmt(pf));
-                salaryValues.put("pf_annual", fmt(pf.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("esic_amount", fmt(esi));
-                salaryValues.put("esic_annual", fmt(esi.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("pt_amount", fmt(pt));
-                salaryValues.put("pt_annual", fmt(pt.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("health_insurance", fmt(health));
-                salaryValues.put("health_insurance_annual", fmt(health.multiply(BigDecimal.valueOf(12))));
-                salaryValues.put("net_pay", fmt(netMonthly));
-                salaryValues.put("net_salary", fmt(netMonthly));
-                salaryValues.put("in_hand_salary", fmt(netMonthly));
-                salaryValues.put("net_pay_annual", fmt(netAnnual));
-                salaryValues.put("ctc_monthly", fmt(ctcMonthly));
-                salaryValues.put("ctc_annual", fmt(ctcAnnual));
             }
         } catch (Exception e) {
             log.debug("Could not resolve salary placeholders for employee {}: {}", employee.getId(), e.getMessage());

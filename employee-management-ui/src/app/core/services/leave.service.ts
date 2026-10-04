@@ -21,11 +21,21 @@ export class LeaveService {
     return this.http.post<APIResponse<LeaveType>>(`${this.apiUrl}/types`, leaveType);
   }
 
+  updateLeaveType(id: number, leaveType: Partial<LeaveType>): Observable<APIResponse<LeaveType>> {
+    return this.http.put<APIResponse<LeaveType>>(`${this.apiUrl}/types/${id}`, leaveType);
+  }
+
   getLeaveBalances(employeeId?: number, year?: number): Observable<APIResponse<LeaveBalance[]>> {
     let params = new HttpParams();
     if (employeeId) params = params.set('employeeId', employeeId.toString());
     if (year) params = params.set('year', year.toString());
     return this.http.get<APIResponse<LeaveBalance[]>>(`${this.apiUrl}/balances`, { params });
+  }
+
+  getLopBalances(year?: number): Observable<APIResponse<LeaveBalance[]>> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year.toString());
+    return this.http.get<APIResponse<LeaveBalance[]>>(`${this.apiUrl}/balances/lop`, { params });
   }
 
   initializeBalances(employeeId: number, year: number): Observable<APIResponse<void>> {

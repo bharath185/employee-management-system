@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EmployeeDocumentRepository extends JpaRepository<EmployeeDocument, Long> {
+    List<EmployeeDocument> findAllByOrderByUploadedAtDesc();
     List<EmployeeDocument> findByEmployeeIdOrderByUploadedAtDesc(Long employeeId);
+    List<EmployeeDocument> findByDocumentTypeOrderByUploadedAtDesc(String documentType);
     Optional<EmployeeDocument> findByEmployeeIdAndDocumentType(Long employeeId, String documentType);
     boolean existsByEmployeeIdAndDocumentType(Long employeeId, String documentType);
     void deleteByEmployeeId(Long employeeId);

@@ -60,8 +60,10 @@ public class StatutoryReportController {
 
     @GetMapping("/leave-register")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
-    public ResponseEntity<APIResponse<String>> getLeaveRegister(@RequestParam Integer year) {
-        String html = statutoryReportService.generateLeaveRegister(year);
+    public ResponseEntity<APIResponse<String>> getLeaveRegister(
+            @RequestParam Integer year,
+            @RequestParam(required = false) String employeeIds) {
+        String html = statutoryReportService.generateLeaveRegister(year, employeeIds);
         return ResponseEntity.ok(APIResponse.success(html));
     }
 

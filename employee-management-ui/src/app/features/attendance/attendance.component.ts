@@ -55,10 +55,10 @@ import { saveAs } from 'file-saver';
         </div>
         <div class="toolbar-actions">
           <button nz-button nzType="default" nzSize="small" nz-tooltip="Download Excel" (click)="exportExcel()" [disabled]="loading">
-            <i nz-icon nzType="download"></i> Export
+            <i nz-icon nzType="download"></i> Download
           </button>
-          <button nz-button nzType="default" nzSize="small" nz-tooltip="Import Excel" (click)="importFile.click()" [disabled]="loading || isPastPeriodFrozen">
-            <i nz-icon nzType="upload"></i> Import
+          <button nz-button nzType="default" nzSize="small" nz-tooltip="Upload Excel" (click)="importFile.click()" [disabled]="loading || isPastPeriodFrozen">
+            <i nz-icon nzType="upload"></i> Upload
           </button>
           <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">
           <button nz-button nzType="default" nzSize="small"

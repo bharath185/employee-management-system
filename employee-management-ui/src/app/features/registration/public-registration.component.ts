@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzInputModule } from 'ng-zorro-antd/input';
@@ -18,11 +19,16 @@ import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzTagModule } from 'ng-zorro-antd/tag';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzProgressModule } from 'ng-zorro-antd/progress';
+import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { HttpClient } from '@angular/common/http';
 import { PendingRegistrationService } from '../../core/services/pending-registration.service';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { environment } from '../../../environments/environment';
 import { ImageCropModalComponent, CropResult } from '../../shared/components/image-crop-modal/image-crop-modal.component';
+import { DOCUMENT_CATEGORIES } from '../../core/models/employee-document.model';
 
 @Component({
   selector: 'app-public-registration',
@@ -30,7 +36,9 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
   imports: [
     CommonModule, FormsModule, RouterModule,
     NzButtonModule, NzFormModule, NzInputModule, NzSelectModule,
-    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule, NzTableModule, NzCheckboxModule, NzModalModule, ImageCropModalComponent
+    NzDatePickerModule, NzUploadModule, NzIconModule, NzSpinModule, NzCardModule, NzDividerModule,
+    NzTableModule, NzCheckboxModule, NzModalModule, NzTagModule, NzToolTipModule,
+    NzProgressModule, NzInputNumberModule, ImageCropModalComponent
   ],
   template: `
     <div class="reg-page">
@@ -600,51 +608,114 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
               </div>
             </div>
 
-            <!-- Documents -->
-            <h3 class="section-title">Documents</h3>
-            <div class="form-row">
-              <div class="form-group" [class.has-error]="submitAttempted && !selectedPhoto">
-                <label>Candidate Photo <span class="required">*</span></label>
-                <div class="photo-select-row" style="display:flex;align-items:center;gap:12px;">
-                  <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onFileChange($event, 'photo')" />
-                  <button nz-button nzType="default" type="button" (click)="photoInput.click()">
-                    <i nz-icon nzType="camera"></i> {{ selectedPhoto ? 'Change Photo' : 'Upload & Crop Photo' }}
-                  </button>
-                  <div *ngIf="photoPreviewUrl" style="width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid #2563eb;flex-shrink:0;">
-                    <img [src]="photoPreviewUrl" alt="Photo" style="width:100%;height:100%;object-fit:cover;" />
+            <!-- Documents Section (Aligned with Document Hub Flow) -->
+            <div class="reg-doc-section">
+              <div class="reg-doc-header">
+                <div>
+                  <h3 class="section-title" style="margin-bottom:2px;"><i nz-icon nzType="folder-open" style="color:#2563eb;margin-right:6px;"></i> Upload Documents &amp; Certificates</h3>
+                  <p class="section-desc">Uploaded documents will be directly verified and synced to your official Document Hub repository upon approval.</p>
+                </div>
+              </div>
+
+              <!-- 1. Mandatory Candidate Photo & Unified Document Segregation Hub Row -->
+              <div class="docs-primary-row">
+                <!-- Candidate Photo Card -->
+                <div class="doc-photo-box" [class.has-error]="submitAttempted && !selectedPhoto" [class.box-uploaded]="!!selectedPhoto">
+                  <div class="photo-box-header">
+                    <span class="doc-box-badge badge-photo">
+                      <i nz-icon nzType="camera"></i> Candidate Photo <span class="required">*</span>
+                    </span>
+                    <span *ngIf="selectedPhoto" class="doc-status-ok"><i nz-icon nzType="check-circle" nzTheme="fill"></i> Ready</span>
                   </div>
-                  <span *ngIf="selectedPhoto" class="file-name" style="color:#10b981;font-weight:500;font-size:12px;">
-                    <i nz-icon nzType="check-circle" nzTheme="fill"></i> Ready
-                  </span>
+                  <div class="photo-box-body">
+                    <div class="photo-circle-wrap" (click)="photoInput.click()" nz-tooltip="Click to Upload Photo">
+                      <img *ngIf="photoPreviewUrl" [src]="photoPreviewUrl" alt="Photo" class="avatar-img" />
+                      <div *ngIf="!photoPreviewUrl" class="avatar-placeholder">
+                        <i nz-icon nzType="user"></i>
+                        <span>Upload</span>
+                      </div>
+                    </div>
+                    <div class="photo-actions-wrap">
+                      <input #photoInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onFileChange($event, 'photo')" />
+                      <button nz-button nzType="default" nzSize="small" type="button" class="btn-crop-photo" (click)="photoInput.click()">
+                        <i nz-icon nzType="camera"></i> {{ selectedPhoto ? 'Change Photo' : 'Upload & Crop' }}
+                      </button>
+                      <span class="photo-hint-text">Passport size (JPG/PNG)</span>
+                    </div>
+                  </div>
+                  <div class="field-error" *ngIf="submitAttempted && !selectedPhoto">
+                    <i nz-icon nzType="close-circle"></i> Candidate photo is mandatory
+                  </div>
                 </div>
-                <div class="field-error" *ngIf="submitAttempted && !selectedPhoto">
-                  <i nz-icon nzType="close-circle"></i> Candidate photo is required (JPG or PNG)
+
+                <!-- Unified Document Segregation Popup Action Card -->
+                <div class="dh-launch-card">
+                  <div class="dh-launch-card-content">
+                    <div class="dh-launch-badge">
+                      <i nz-icon nzType="appstore"></i> DOCUMENT HUB WORKSPACE
+                    </div>
+                    <h4 class="dh-launch-title">Identity &amp; Supporting Documents</h4>
+                    <p class="dh-launch-desc">
+                      Upload Aadhar Card, PAN Card, Degree Certificates, Marksheets, Resume &amp; Bank Passbook in one unified workspace. Supports multi-image uploads and single multi-page PDF auto-splitting.
+                    </p>
+                  </div>
+                  <div class="dh-launch-actions">
+                    <button nz-button nzType="primary" nzSize="large" type="button" class="btn-open-segregation-main" (click)="openSegregationModal('images')">
+                      <i nz-icon nzType="cloud-upload"></i> Upload &amp; Segregate Documents
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="form-group">
-                <label>Aadhar Document</label>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileChange($event, 'aadharDoc')" />
-                <span *ngIf="selectedAadharDoc" class="file-name">{{ selectedAadharDoc.name }}</span>
-              </div>
-              <div class="form-group">
-                <label>PAN Document</label>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileChange($event, 'panDoc')" />
-                <span *ngIf="selectedPanDoc" class="file-name">{{ selectedPanDoc.name }}</span>
-              </div>
-            </div>
-            <div class="form-row" style="margin-top:8px;">
-              <div class="form-group">
-                <label>Education Documents</label>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple (change)="onMultiFileChange($event, 'educationDocs')" />
-                <div *ngFor="let f of selectedEducationDocs; let i = index" class="file-name">
-                  {{ f.name }} <button nz-button nzType="text" nzDanger nzSize="small" (click)="removeMultiFile(i, 'educationDocs')"><i nz-icon nzType="close"></i></button>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Personal Documents</label>
-                <input type="file" accept=".pdf,.jpg,.jpeg,.png" multiple (change)="onMultiFileChange($event, 'personalDocs')" />
-                <div *ngFor="let f of selectedPersonalDocs; let i = index" class="file-name">
-                  {{ f.name }} <button nz-button nzType="text" nzDanger nzSize="small" (click)="removeMultiFile(i, 'personalDocs')"><i nz-icon nzType="close"></i></button>
+
+              <!-- 2. Staged Documents Summary Grid (Only displayed after documents are added from popup) -->
+              <div class="dh-workspace-card" *ngIf="additionalUploadedDocs.length > 0">
+                <div class="dh-staged-form-summary">
+                  <div class="summary-bar-header">
+                    <div class="summary-count-badge">
+                      <i nz-icon nzType="check-circle" style="color:#10b981;"></i>
+                      <strong>{{ additionalUploadedDocs.length }}</strong> Document(s) Attached &amp; Segregated
+                    </div>
+                    <button nz-button nzType="primary" nzGhost nzSize="small" type="button" class="link-edit-popup" (click)="openSegregationModal(uploadMode)">
+                      <i nz-icon nzType="edit"></i> Manage in Popup
+                    </button>
+                  </div>
+
+                  <div class="summary-cards-grid">
+                    <div *ngFor="let doc of additionalUploadedDocs; let i = index" class="summary-card-item">
+                      <div class="summary-thumb-col" (click)="openPreviewModal(doc)" nz-tooltip="Click to View Full-Size">
+                        <div class="summary-thumb-box">
+                          <img *ngIf="doc.isImage && doc.previewUrl" [src]="doc.previewUrl" alt="Thumb" class="summary-thumb-img" />
+                          <div *ngIf="doc.isPdf" class="summary-thumb-pdf">
+                            <i nz-icon nzType="file-pdf"></i>
+                            <span class="pdf-pg-label" *ngIf="doc.pageNumber">P.{{ doc.pageNumber }}</span>
+                          </div>
+                          <div *ngIf="!doc.isImage && !doc.isPdf" class="summary-thumb-generic">
+                            <i nz-icon nzType="file-text"></i>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="summary-info-col">
+                        <div class="summary-cat-pill">
+                          <nz-tag [nzColor]="getCategoryBadge(doc.documentType).color">{{ getCategoryBadge(doc.documentType).label }}</nz-tag>
+                          <span class="summary-file-size">{{ formatBytes(doc.file?.size || doc.fileSize) }}</span>
+                        </div>
+                        <div class="summary-title-text" [title]="doc.documentTitle || doc.file?.name">
+                          {{ doc.documentTitle || doc.file?.name }}
+                        </div>
+                        <div class="summary-file-sub" [title]="doc.file?.name">
+                          <i nz-icon nzType="paper-clip"></i> {{ doc.file?.name }}
+                        </div>
+                      </div>
+                      <div class="summary-actions-col">
+                        <button nz-button nzType="text" nzSize="small" type="button" (click)="openPreviewModal(doc)" nz-tooltip="Preview Document">
+                          <i nz-icon nzType="eye" style="color:#2563eb;"></i>
+                        </button>
+                        <button nz-button nzType="text" nzDanger nzSize="small" type="button" (click)="removeAdditionalDoc(i)" nz-tooltip="Remove">
+                          <i nz-icon nzType="delete"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -680,12 +751,300 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
         <div class="reg-footer">
           <p>Already have an account? <a routerLink="/auth/login">Login here</a></p>
         </div>
+
+        <!-- ========================================== -->
+        <!-- DOCUMENT SEGREGATION MODAL (POPUP) -->
+        <!-- ========================================== -->
+        <nz-modal
+          [(nzVisible)]="isSegregationModalVisible"
+          nzTitle="📑 Upload &amp; Segregate Documents"
+          (nzOnCancel)="isSegregationModalVisible = false"
+          [nzWidth]="960"
+          [nzFooter]="segregationModalFooter"
+          nzWrapClassName="dh-segregation-modal">
+          <ng-template nzModalContent>
+            <div class="seg-modal-container">
+              
+              <!-- Hidden File Inputs for Modal -->
+              <input #modalImageFileInput type="file" multiple accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onImagesSelected($event)" />
+              <input #modalPdfFileInput type="file" accept="application/pdf,.pdf" style="display:none" (change)="onPdfSelected($event)" />
+
+              <!-- Upload Mode Switcher (Option 1 vs Option 2) -->
+              <div class="modal-mode-header">
+                <div class="mode-header-label">
+                  <i nz-icon nzType="sliders"></i> Choose Upload Mode:
+                </div>
+                <div class="mode-options-inline">
+                  <!-- Mode 1: Multiple Images -->
+                  <div class="mode-card" [class.active]="uploadMode === 'images'" (click)="setUploadMode('images')">
+                    <div class="mode-radio-circle">
+                      <i nz-icon nzType="check" *ngIf="uploadMode === 'images'"></i>
+                    </div>
+                    <div class="mode-icon-box mode-icon-img">
+                      <i nz-icon nzType="picture"></i>
+                    </div>
+                    <div class="mode-info">
+                      <h4 class="mode-name">Option 1: Multiple Images</h4>
+                      <p class="mode-desc">Photos / Scans (JPEG, PNG, WEBP)</p>
+                    </div>
+                  </div>
+
+                  <!-- Mode 2: Single PDF with Auto Page Split -->
+                  <div class="mode-card" [class.active]="uploadMode === 'pdf_split'" (click)="setUploadMode('pdf_split')">
+                    <div class="mode-radio-circle">
+                      <i nz-icon nzType="check" *ngIf="uploadMode === 'pdf_split'"></i>
+                    </div>
+                    <div class="mode-icon-box mode-icon-pdf">
+                      <i nz-icon nzType="file-pdf"></i>
+                    </div>
+                    <div class="mode-info">
+                      <h4 class="mode-name">Option 2: Single PDF Upload</h4>
+                      <p class="mode-desc">Auto Split Pages into individual docs</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mode 1 Dropzone: Multiple Images -->
+              <div
+                *ngIf="uploadMode === 'images' && stagedModalFiles.length === 0"
+                class="dh-dropzone mode-images-dropzone"
+                (dragover)="$event.preventDefault()"
+                (drop)="onDropImages($event)"
+                (click)="modalImageFileInput.click()">
+                <div class="dropzone-inner">
+                  <div class="dropzone-icon-circle img-circle">
+                    <i nz-icon nzType="picture" class="dropzone-icon"></i>
+                  </div>
+                  <h3 class="dropzone-title">Click or Drag &amp; Drop Multiple Images Here</h3>
+                  <p class="dropzone-subtitle">
+                    Select multiple image files (<strong>JPEG, PNG, WEBP</strong>). Each image will be added as a separate staged page for category assignment.
+                  </p>
+                  <button nz-button nzType="primary" class="btn-browse" (click)="$event.stopPropagation(); modalImageFileInput.click()">
+                    <i nz-icon nzType="folder-add"></i> Choose Image Files
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mode 2 Dropzone: Single Combined PDF with Auto-Split -->
+              <div
+                *ngIf="uploadMode === 'pdf_split' && (stagedModalFiles.length === 0 || isSplittingPdf)"
+                class="dh-dropzone mode-pdf-dropzone"
+                (dragover)="$event.preventDefault()"
+                (drop)="onDropPdf($event)"
+                (click)="!isSplittingPdf && modalPdfFileInput.click()">
+                <div class="dropzone-inner" *ngIf="!isSplittingPdf">
+                  <div class="dropzone-icon-circle pdf-circle">
+                    <i nz-icon nzType="file-pdf" class="dropzone-icon"></i>
+                  </div>
+                  <h3 class="dropzone-title">Click or Drag &amp; Drop Single Combined PDF File Here</h3>
+                  <p class="dropzone-subtitle">
+                    The system will automatically <strong>extract and split each page</strong> into separate document records for categorization.
+                  </p>
+                  <button nz-button nzType="primary" class="btn-browse btn-pdf-browse" (click)="$event.stopPropagation(); modalPdfFileInput.click()">
+                    <i nz-icon nzType="file-pdf"></i> Choose Combined PDF File
+                  </button>
+                </div>
+
+                <!-- PDF Splitting Loading Progress -->
+                <div class="dropzone-inner splitting-progress" *ngIf="isSplittingPdf">
+                  <nz-spin nzSimple nzTip="Extracting &amp; splitting PDF pages into individual documents..."></nz-spin>
+                  <p style="margin-top: 12px; font-weight: 600; color: #1e3a8a;">Please wait while we split and generate previews for each page...</p>
+                </div>
+              </div>
+
+              <!-- Staging Section inside Modal -->
+              <div class="modal-staging-section" *ngIf="stagedModalFiles.length > 0">
+                <div class="staging-header">
+                  <div class="staging-title-wrap">
+                    <h4 class="staging-title">
+                      <i nz-icon nzType="appstore"></i> Staged Document Pages
+                      <span class="staging-count-badge">{{ stagedModalFiles.length }} pages/files</span>
+                    </h4>
+                    <p class="staging-desc">
+                      Assign which page is which document (e.g. <code>Aadhar Front</code>, <code>Aadhar Back</code>, <code>PAN Card</code>, <code>Degree</code>). Click thumbnail to preview full-screen.
+                    </p>
+                  </div>
+                  <div class="staging-actions">
+                    <button nz-button nzType="default" nzSize="small" (click)="uploadMode === 'images' ? modalImageFileInput.click() : modalPdfFileInput.click()">
+                      <i nz-icon nzType="plus"></i> Add More
+                    </button>
+                    <button nz-button nzSize="small" (click)="autoNumberStagedPages()">
+                      <i nz-icon nzType="ordered-list"></i> Auto-Number
+                    </button>
+                    <button nz-button nzSize="small" (click)="openBulkCategoryModal()">
+                      <i nz-icon nzType="tag"></i> Set Category for All
+                    </button>
+                    <button nz-button nzSize="small" nzDanger (click)="clearStagedFiles()">
+                      <i nz-icon nzType="delete"></i> Clear
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Staged Grid Cards -->
+                <div class="staged-compact-grid">
+                  <div class="staged-compact-card" *ngFor="let item of stagedModalFiles; let i = index">
+                    <!-- Left: Mini Thumbnail & Preview -->
+                    <div class="mini-thumb-col" (click)="openPreviewModal(item)" nz-tooltip="Click to Preview Full Page">
+                      <div class="mini-thumb-box">
+                        <img *ngIf="item.isImage && item.previewUrl" [src]="item.previewUrl" alt="Thumb" class="mini-thumb-img" />
+                        <div *ngIf="item.isPdf" class="mini-thumb-pdf">
+                          <i nz-icon nzType="file-pdf" class="mini-pdf-ico"></i>
+                          <span class="mini-pdf-pg">P.{{ item.pageNumber }}</span>
+                        </div>
+                        <div *ngIf="!item.isImage && !item.isPdf" class="mini-thumb-generic">
+                          <i nz-icon nzType="file-text"></i>
+                        </div>
+                      </div>
+                      <button nz-button nzType="link" nzSize="small" class="mini-preview-btn" (click)="$event.stopPropagation(); openPreviewModal(item)">
+                        <i nz-icon nzType="eye"></i> View
+                      </button>
+                    </div>
+
+                    <!-- Middle: Category & Document Title -->
+                    <div class="mini-fields-col">
+                      <div class="fields-top-row">
+                        <div class="field-item cat-select-item">
+                          <nz-select [(ngModel)]="item.documentType" (ngModelChange)="onCategoryChange(item)" nzSize="small" class="w-full" nzPlaceHolder="Select Category" nzAllowClear nzShowSearch>
+                            <nz-option *ngFor="let cat of documentCategories" [nzValue]="cat.code" [nzLabel]="cat.label"></nz-option>
+                          </nz-select>
+                        </div>
+                        <div class="field-item title-input-item">
+                          <input nz-input [(ngModel)]="item.documentTitle" placeholder="Document Title (e.g. Aadhar-1)" nzSize="small" />
+                        </div>
+                      </div>
+
+                      <div class="fields-bottom-row">
+                        <div class="page-badge-item">
+                          <span class="pg-label">Page:</span>
+                          <nz-input-number [(ngModel)]="item.pageNumber" [nzMin]="1" [nzMax]="99" nzSize="small" class="pg-num-input"></nz-input-number>
+                        </div>
+                        <div class="file-name-item" [nz-tooltip]="item.file?.name">
+                          <i nz-icon nzType="paper-clip"></i>
+                          <span class="file-name-text">{{ item.file?.name }}</span>
+                          <span class="file-size-mini">({{ formatBytes(item.fileSize || item.file?.size) }})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Right: Quick Actions (Reorder & Remove) -->
+                    <div class="mini-actions-col">
+                      <div class="mini-reorder-group">
+                        <button nz-button nzType="text" nzSize="small" [disabled]="i === 0" (click)="moveStaged(i, -1)" nz-tooltip="Move Left">
+                          <i nz-icon nzType="arrow-left"></i>
+                        </button>
+                        <button nz-button nzType="text" nzSize="small" [disabled]="i === stagedModalFiles.length - 1" (click)="moveStaged(i, 1)" nz-tooltip="Move Right">
+                          <i nz-icon nzType="arrow-right"></i>
+                        </button>
+                      </div>
+                      <button nz-button nzType="text" nzDanger nzSize="small" class="mini-remove-btn" (click)="removeStaged(i)" nz-tooltip="Remove">
+                        <i nz-icon nzType="delete"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </ng-template>
+
+          <ng-template #segregationModalFooter>
+            <div class="modal-footer-flex">
+              <div class="footer-summary-left">
+                <span *ngIf="stagedModalFiles.length > 0" class="footer-count-text">
+                  <i nz-icon nzType="info-circle" style="color:#2563eb;"></i> Ready to apply <strong>{{ stagedModalFiles.length }}</strong> document(s) to registration form
+                </span>
+              </div>
+              <div class="footer-btns-right">
+                <button nz-button nzType="default" (click)="isSegregationModalVisible = false">Cancel</button>
+                <button nz-button nzType="primary" class="btn-apply-docs" (click)="applyStagedToForm()" [disabled]="stagedModalFiles.length === 0">
+                  <i nz-icon nzType="check-circle"></i> Apply Documents to Form ({{ stagedModalFiles.length }})
+                </button>
+              </div>
+            </div>
+          </ng-template>
+        </nz-modal>
+
+        <!-- ========================================== -->
+        <!-- LIGHTBOX PREVIEW MODAL (IMAGE & PDF) -->
+        <!-- ========================================== -->
+        <nz-modal
+          [(nzVisible)]="isPreviewModalVisible"
+          [nzTitle]="previewModalTitle"
+          (nzOnCancel)="closePreviewModal()"
+          [nzWidth]="900"
+          [nzFooter]="previewModalFooter">
+          <ng-template nzModalContent>
+            <div class="preview-modal-body">
+              <!-- Image High-Res Preview -->
+              <div *ngIf="previewIsImage && previewUrl" class="preview-img-container">
+                <img [src]="previewUrl" alt="Document Preview" class="preview-modal-img" [style.transform]="'rotate(' + previewRotation + 'deg) scale(' + previewZoom + ')'" />
+              </div>
+
+              <!-- PDF Viewer Iframe -->
+              <div *ngIf="previewIsPdf && previewUrlSafe" class="preview-pdf-container">
+                <iframe [src]="previewUrlSafe" class="preview-pdf-iframe" title="PDF Preview"></iframe>
+              </div>
+
+              <!-- Generic Preview fallback -->
+              <div *ngIf="!previewIsImage && !previewIsPdf" class="preview-generic-box">
+                <i nz-icon nzType="file-text" style="font-size: 48px; color: #94a3b8;"></i>
+                <p style="margin-top: 12px; font-weight: 500;">Document file attached.</p>
+              </div>
+            </div>
+          </ng-template>
+
+          <ng-template #previewModalFooter>
+            <div class="preview-footer-wrap">
+              <div class="preview-toolbar" *ngIf="previewIsImage">
+                <button nz-button nzType="default" nzSize="small" (click)="previewZoom = previewZoom + 0.2">
+                  <i nz-icon nzType="zoom-in"></i> Zoom In
+                </button>
+                <button nz-button nzType="default" nzSize="small" (click)="previewZoom = Math.max(0.4, previewZoom - 0.2)">
+                  <i nz-icon nzType="zoom-out"></i> Zoom Out
+                </button>
+                <button nz-button nzType="default" nzSize="small" (click)="previewRotation = (previewRotation + 90) % 360">
+                  <i nz-icon nzType="redo"></i> Rotate
+                </button>
+                <button nz-button nzType="default" nzSize="small" (click)="previewZoom = 1; previewRotation = 0">
+                  Reset
+                </button>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button nz-button nzType="default" (click)="closePreviewModal()">Close</button>
+              </div>
+            </div>
+          </ng-template>
+        </nz-modal>
+
+        <!-- ========================================== -->
+        <!-- BULK CATEGORY MODAL -->
+        <!-- ========================================== -->
+        <nz-modal
+          [(nzVisible)]="isBulkCategoryModalVisible"
+          nzTitle="Set Category for All Staged Documents"
+          (nzOnCancel)="isBulkCategoryModalVisible = false"
+          (nzOnOk)="applyBulkCategory()"
+          nzWidth="460px">
+          <ng-template nzModalContent>
+            <div>
+              <label class="dh-field-label">Select Category to apply to all {{ stagedModalFiles.length }} staged files:</label>
+              <nz-select [(ngModel)]="bulkSelectedCategory" class="w-full" nzSize="large" style="width:100%;margin-top:8px;">
+                <nz-option *ngFor="let cat of documentCategories" [nzValue]="cat.code" [nzLabel]="cat.label"></nz-option>
+              </nz-select>
+              <p style="margin-top: 12px; font-size: 12px; color: #64748b;">
+                This will update the category and auto-generate sequential names (e.g. <code>Aadhar Card Front</code>, <code>Aadhar Card Back</code>).
+              </p>
+            </div>
+          </ng-template>
+        </nz-modal>
+
         <!-- Image Cropper Modal for Candidate Photo -->
         <app-image-crop-modal
           [(isVisible)]="isPhotoCropModalOpen"
           [imageFile]="pendingPhotoFile"
           mode="avatar"
-          modalTitle="Adjust & Crop Candidate Photo"
+          modalTitle="Adjust &amp; Crop Candidate Photo"
           (confirmed)="onPhotoCropConfirmed($event)"
           (cancelled)="onPhotoCropCancelled()"
         ></app-image-crop-modal>
@@ -853,6 +1212,609 @@ import { ImageCropModalComponent, CropResult } from '../../shared/components/ima
     .lang-section { padding: 8px 0; }
     nz-table { margin-top: 8px; }
 
+    /* ── Document Hub Synced Upload Section ── */
+    .reg-doc-section {
+      margin-top: 10px;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+    }
+    .reg-doc-header {
+      margin-bottom: 14px;
+    }
+    .section-desc {
+      font-size: 11.5px;
+      color: #64748b;
+      margin: 2px 0 0;
+    }
+    .docs-primary-row {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: stretch;
+    }
+    @media (max-width: 860px) {
+      .docs-primary-row { grid-template-columns: 1fr; }
+    }
+    .doc-photo-box {
+      background: #ffffff;
+      border: 1px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .doc-photo-box:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.06);
+    }
+    .doc-photo-box.box-uploaded {
+      border: 1px solid #86efac;
+      background: #f0fdf4;
+    }
+    .doc-photo-box.has-error {
+      border-color: #ff4d4f !important;
+      background: #fff2f0;
+    }
+    .photo-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .doc-box-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-photo { background: #f3e8ff; color: #7e22ce; }
+    .doc-status-ok {
+      font-size: 11px;
+      font-weight: 600;
+      color: #16a34a;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .photo-box-body {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .photo-circle-wrap {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+      background: #f1f5f9;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .photo-circle-wrap:hover {
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 10px;
+      color: #64748b;
+    }
+    .avatar-placeholder i { font-size: 18px; color: #94a3b8; }
+    .photo-actions-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .btn-crop-photo {
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+    }
+    .photo-hint-text {
+      font-size: 10px;
+      color: #94a3b8;
+    }
+
+    /* Unified Document Hub Launch Card */
+    .dh-launch-card {
+      background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+      border: 1.5px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.05);
+      flex-wrap: wrap;
+    }
+    .dh-launch-card-content {
+      flex: 1;
+      min-width: 260px;
+    }
+    .dh-launch-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #2563eb;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #ffffff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #dbeafe;
+      margin-bottom: 6px;
+    }
+    .dh-launch-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 4px;
+    }
+    .dh-launch-desc {
+      font-size: 11.5px;
+      color: #475569;
+      margin: 0;
+      line-height: 1.45;
+    }
+    .dh-launch-actions {
+      display: flex;
+      align-items: center;
+    }
+    .btn-open-segregation-main {
+      font-size: 13.5px !important;
+      font-weight: 700 !important;
+      height: 42px !important;
+      padding: 0 20px !important;
+      border-radius: 8px !important;
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 3px 10px rgba(37,99,235,0.3) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      transition: all 0.2s ease !important;
+    }
+    .btn-open-segregation-main:hover {
+      background: #1d4ed8 !important;
+      border-color: #1d4ed8 !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.4) !important;
+    }
+
+    /* Interactive Document Workspace Card (Glassy) */
+    .dh-workspace-card {
+      background: #ffffff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(37,99,235,0.04);
+    }
+    .dh-workspace-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .dh-workspace-title-wrap { flex: 1; min-width: 260px; }
+    .dh-hub-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #2563eb;
+      letter-spacing: 0.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #eff6ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .dh-workspace-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 2px;
+    }
+    .dh-workspace-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin: 0;
+    }
+    .dh-workspace-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-open-segregation {
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+    }
+    .btn-pdf-open {
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      background: #dc2626 !important;
+      border-color: #dc2626 !important;
+    }
+    .btn-pdf-open:hover { background: #b91c1c !important; }
+    .btn-open-popup {
+      font-weight: 600 !important;
+      border-radius: 6px !important;
+      border-color: #93c5fd !important;
+      color: #1e40af !important;
+    }
+
+    /* Workspace Empty Banner */
+    .dh-workspace-empty-banner {
+      border: 1.5px dashed #93c5fd;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .dh-workspace-empty-banner:hover {
+      background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+      border-color: #2563eb;
+      transform: translateY(-1px);
+    }
+    .empty-banner-icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+    }
+    .empty-banner-text { flex: 1; min-width: 0; }
+    .empty-main-text { display: block; font-size: 13px; font-weight: 700; color: #1e3a8a; }
+    .empty-sub-text { display: block; font-size: 11.5px; color: #475569; margin-top: 2px; }
+    .btn-banner-action { font-weight: 600 !important; border-radius: 6px !important; }
+
+    /* Staged Form Summary Cards */
+    .dh-staged-form-summary { margin-top: 6px; }
+    .summary-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .summary-count-badge {
+      font-size: 12px;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .link-edit-popup {
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      color: #2563eb !important;
+    }
+    .summary-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .summary-card-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .summary-card-item:hover {
+      border-color: #93c5fd;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.06);
+    }
+    .summary-thumb-col { cursor: pointer; flex-shrink: 0; }
+    .summary-thumb-box {
+      width: 40px;
+      height: 44px;
+      border-radius: 6px;
+      background: #eff6ff;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .summary-thumb-img { width: 100%; height: 100%; object-fit: cover; }
+    .summary-thumb-pdf {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 14px;
+      color: #dc2626;
+    }
+    .pdf-pg-label { font-size: 8px; font-weight: 800; color: #dc2626; margin-top: -2px; }
+    .summary-thumb-generic { font-size: 16px; color: #64748b; }
+    .summary-info-col { flex: 1; min-width: 0; }
+    .summary-cat-pill { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .summary-file-size { font-size: 10px; color: #64748b; font-weight: 500; }
+    .summary-title-text { font-size: 11.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-file-sub { font-size: 10px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-actions-col { display: flex; align-items: center; gap: 2px; }
+
+    /* Modal Styling */
+    .modal-mode-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .mode-header-label { font-size: 12.5px; font-weight: 700; color: #1e3a8a; display: flex; align-items: center; gap: 6px; }
+    .mode-options-inline { display: flex; gap: 10px; flex-wrap: wrap; }
+    .mode-card {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 12px;
+      background: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .mode-card:hover { border-color: #93c5fd; background: #eff6ff; }
+    .mode-card.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 2px 6px rgba(37,99,235,0.12); }
+    .mode-radio-circle {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 9px;
+      flex-shrink: 0;
+    }
+    .mode-card.active .mode-radio-circle { background: #2563eb; border-color: #2563eb; }
+    .mode-icon-box {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .mode-icon-img { background: #dbeafe; color: #2563eb; }
+    .mode-icon-pdf { background: #fee2e2; color: #dc2626; }
+    .mode-info { min-width: 0; }
+    .mode-name { font-size: 11.5px; font-weight: 700; color: #0f172a; margin: 0; }
+    .mode-desc { font-size: 9.5px; color: #64748b; margin: 0; }
+
+    /* Dropzones */
+    .dh-dropzone {
+      border: 2px dashed #93c5fd;
+      border-radius: 10px;
+      background: #f0f7ff;
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 16px;
+    }
+    .dh-dropzone:hover {
+      border-color: #2563eb;
+      background: #e0f2fe;
+    }
+    .mode-pdf-dropzone {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+    .mode-pdf-dropzone:hover {
+      border-color: #ef4444;
+      background: #fee2e2;
+    }
+    .dropzone-icon-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      font-size: 22px;
+    }
+    .img-circle { background: #dbeafe; color: #2563eb; }
+    .pdf-circle { background: #fee2e2; color: #dc2626; }
+    .dropzone-title { font-size: 13.5px; font-weight: 700; color: #1e3a8a; margin-bottom: 3px; }
+    .mode-pdf-dropzone .dropzone-title { color: #991b1b; }
+    .dropzone-subtitle { font-size: 11.5px; color: #64748b; margin-bottom: 10px; max-width: 580px; margin-left: auto; margin-right: auto; }
+    .btn-browse { font-weight: 600 !important; border-radius: 6px !important; }
+    .btn-pdf-browse { background: #dc2626 !important; border-color: #dc2626 !important; }
+
+    /* Modal Staging Grid */
+    .modal-staging-section { margin-top: 10px; }
+    .staging-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .staging-title { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .staging-count-badge { background: #dbeafe; color: #1e40af; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+    .staging-desc { font-size: 11px; color: #64748b; margin: 2px 0 0; }
+    .staging-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .staged-compact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .staged-compact-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .staged-compact-card:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+    }
+    .mini-thumb-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .mini-thumb-box {
+      width: 44px;
+      height: 48px;
+      border-radius: 6px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mini-thumb-img { width: 100%; height: 100%; object-fit: cover; }
+    .mini-thumb-pdf {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 16px;
+      color: #dc2626;
+    }
+    .mini-pdf-pg { font-size: 8px; font-weight: 800; color: #dc2626; margin-top: -2px; }
+    .mini-thumb-generic { font-size: 18px; color: #64748b; }
+    .mini-preview-btn { font-size: 10.5px !important; padding: 0 !important; height: auto !important; }
+    .mini-fields-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .fields-top-row { display: flex; gap: 6px; }
+    .cat-select-item { flex: 1; }
+    .title-input-item { flex: 1; }
+    .fields-bottom-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+    .page-badge-item { display: flex; align-items: center; gap: 4px; }
+    .pg-label { font-size: 10px; color: #64748b; font-weight: 600; }
+    .pg-num-input { width: 56px !important; }
+    .file-name-item { font-size: 10.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right; }
+    .file-name-text { max-width: 120px; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+    .file-size-mini { font-size: 9.5px; color: #94a3b8; margin-left: 2px; }
+    .mini-actions-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .mini-reorder-group { display: flex; }
+    .mini-remove-btn { font-size: 13px !important; }
+
+    /* Modal Footer */
+    .modal-footer-flex { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+    .footer-count-text { font-size: 12.5px; color: #1e3a8a; }
+    .footer-btns-right { display: flex; gap: 8px; }
+    .btn-apply-docs {
+      font-weight: 600 !important;
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+      border-radius: 6px !important;
+    }
+    .btn-apply-docs:hover { background: #059669 !important; }
+
+    /* Lightbox Preview Modal */
+    .preview-modal-body {
+      min-height: 480px;
+      max-height: 680px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .preview-img-container {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    }
+    .preview-modal-img {
+      max-width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+    .preview-pdf-container {
+      width: 100%;
+      height: 600px;
+    }
+    .preview-pdf-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .preview-generic-box {
+      text-align: center;
+      color: #fff;
+    }
+    .preview-footer-wrap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+    .preview-toolbar { display: flex; gap: 6px; }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-6px); }
       to { opacity: 1; transform: translateY(0); }
@@ -871,6 +1833,54 @@ export class PublicRegistrationComponent implements OnInit {
   selectedPanDoc: File | null = null;
   selectedEducationDocs: File[] = [];
   selectedPersonalDocs: File[] = [];
+
+  documentCategories = DOCUMENT_CATEGORIES;
+
+  additionalUploadedDocs: Array<{
+    uid?: string;
+    file: File;
+    documentType: string;
+    documentTitle: string;
+    isPdf: boolean;
+    isImage: boolean;
+    fileSize?: number;
+    pageNumber?: number;
+    previewUrl?: string;
+    notes?: string;
+  }> = [];
+
+  // Segregation Modal States
+  isSegregationModalVisible = false;
+  uploadMode: 'images' | 'pdf_split' = 'images';
+  isSplittingPdf = false;
+  stagedModalFiles: Array<{
+    uid: string;
+    file: File;
+    previewUrl?: string;
+    isImage: boolean;
+    isPdf: boolean;
+    fileSize: number;
+    documentType: string;
+    documentTitle: string;
+    pageNumber: number;
+    notes?: string;
+  }> = [];
+
+  // Lightbox Preview Modal States
+  isPreviewModalVisible = false;
+  previewModalTitle = '';
+  previewIsImage = false;
+  previewIsPdf = false;
+  previewUrl: string | null = null;
+  previewUrlSafe: SafeResourceUrl | null = null;
+  previewZoom = 1;
+  previewRotation = 0;
+
+  // Bulk Category Modal State
+  isBulkCategoryModalVisible = false;
+  bulkSelectedCategory = 'AADHAR_CARD';
+  Math = Math;
+
   isSaving = false;
   submitted = false;
   submitAttempted = false;
@@ -919,10 +1929,11 @@ export class PublicRegistrationComponent implements OnInit {
     private pendingService: PendingRegistrationService,
     private formFieldConfigService: FormFieldConfigService,
     private notification: NzNotificationService,
-    private modal: NzModalService
+    private modal: NzModalService,
+    private sanitizer: DomSanitizer
   ) {}
 
-    ngOnInit() {
+  ngOnInit() {
     const api = environment.apiUrl + '/public/register/masters';
     this.loading = true;
     if (!this.formData.customFieldsMap) this.formData.customFieldsMap = {};
@@ -958,12 +1969,10 @@ export class PublicRegistrationComponent implements OnInit {
 
     forkJoin(requests).subscribe({
       next: (results: any) => {
-        // Assign categories
         categories.forEach(cat => {
           (this as any)[cat.target] = results[cat.target]?.data || [];
         });
 
-        // Assign form fields
         const configs: FormFieldConfig[] = results.formFields || [];
         this.fieldConfigs = configs;
         const map: Record<string, boolean> = {};
@@ -1022,6 +2031,321 @@ export class PublicRegistrationComponent implements OnInit {
     } else if (type === 'personalDocs') {
       this.selectedPersonalDocs.splice(index, 1);
     }
+  }
+
+  // ================= SEGREGATION MODAL METHODS =================
+  openSegregationModal(mode: 'images' | 'pdf_split' = 'images'): void {
+    this.uploadMode = mode;
+    this.stagedModalFiles = this.additionalUploadedDocs.map(d => ({
+      uid: d.uid || `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      file: d.file,
+      previewUrl: d.previewUrl,
+      isImage: d.isImage,
+      isPdf: d.isPdf,
+      fileSize: d.fileSize || d.file?.size || 0,
+      documentType: d.documentType || '',
+      documentTitle: d.documentTitle || '',
+      pageNumber: d.pageNumber || 1,
+      notes: d.notes
+    }));
+    this.isSegregationModalVisible = true;
+  }
+
+  setUploadMode(mode: 'images' | 'pdf_split'): void {
+    this.uploadMode = mode;
+  }
+
+  onDropImages(e: DragEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer && e.dataTransfer.files) {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (files.length > 0) {
+        this.addImagesToStaging(files);
+      } else {
+        this.notification.warning('Format Notice', 'Please drop image files (PNG, JPG, WEBP) in this mode.');
+      }
+    }
+  }
+
+  onImagesSelected(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.addImagesToStaging(Array.from(input.files));
+      input.value = '';
+    }
+  }
+
+  addImagesToStaging(files: File[]): void {
+    files.forEach(file => {
+      const isImg = file.type.startsWith('image/');
+      const previewUrl = isImg ? URL.createObjectURL(file) : '';
+
+      const item = {
+        uid: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        file: file,
+        previewUrl: previewUrl,
+        isImage: isImg,
+        isPdf: false,
+        fileSize: file.size,
+        documentType: '',
+        documentTitle: '',
+        pageNumber: 1
+      };
+      this.stagedModalFiles.push(item);
+    });
+    this.notification.success('Images Added', `Added ${files.length} image(s) to staging. Please select a category for each.`);
+  }
+
+  onDropPdf(e: DragEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        this.processCombinedPdf(file);
+      } else {
+        this.notification.warning('Invalid File', 'Please upload a valid PDF document.');
+      }
+    }
+  }
+
+  onPdfSelected(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      this.processCombinedPdf(file);
+      input.value = '';
+    }
+  }
+
+  processCombinedPdf(file: File): void {
+    this.isSplittingPdf = true;
+    this.pendingService.splitPdf(file).subscribe({
+      next: (res) => {
+        this.isSplittingPdf = false;
+        if (res.success && res.data && res.data.length > 0) {
+          const splitPages = res.data;
+          const baseName = file.name.replace(/\.[^/.]+$/, '');
+
+          splitPages.forEach((pageData, index) => {
+            const byteCharacters = atob(pageData.base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const pageBlob = new Blob([byteArray], { type: 'application/pdf' });
+            const pageFileName = `${baseName}_Page_${pageData.pageNumber}.pdf`;
+            const pageFile = new File([pageBlob], pageFileName, { type: 'application/pdf' });
+            const pageBlobUrl = URL.createObjectURL(pageBlob);
+
+            const item = {
+              uid: `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+              file: pageFile,
+              previewUrl: pageBlobUrl,
+              isImage: false,
+              isPdf: true,
+              fileSize: pageFile.size,
+              documentType: '',
+              documentTitle: '',
+              pageNumber: index + 1,
+              notes: `Extracted from ${file.name} (Page ${pageData.pageNumber} of ${pageData.totalPages})`
+            };
+            this.stagedModalFiles.push(item);
+          });
+          this.notification.success('PDF Split Success', `Split PDF into ${splitPages.length} individual document page(s). Please select a category for each.`);
+        } else {
+          this.notification.error('Error', res.message || 'Failed to split PDF');
+        }
+      },
+      error: () => {
+        this.isSplittingPdf = false;
+        this.notification.error('Error', 'Failed to split PDF pages.');
+      }
+    });
+  }
+
+  onCategoryChange(item?: any): void {
+    this.autoNumberStagedPages();
+  }
+
+  autoNumberStagedPages(): void {
+    const categoryCounts: Record<string, number> = {};
+    const categoryTotals: Record<string, number> = {};
+
+    this.stagedModalFiles.forEach(item => {
+      if (item.documentType) {
+        categoryTotals[item.documentType] = (categoryTotals[item.documentType] || 0) + 1;
+      }
+    });
+
+    this.stagedModalFiles.forEach(item => {
+      const cat = item.documentType;
+      if (!cat) {
+        if (!item.documentTitle || item.documentTitle.startsWith('Document')) {
+          item.documentTitle = '';
+        }
+        return;
+      }
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      const count = categoryCounts[cat];
+      item.pageNumber = count;
+
+      const catObj = this.documentCategories.find(c => c.code === cat);
+      const catLabel = catObj ? catObj.label : 'Document';
+      if (categoryTotals[cat] > 1) {
+        item.documentTitle = `${catLabel}-${count}`;
+      } else {
+        item.documentTitle = `${catLabel}`;
+      }
+    });
+  }
+
+  openBulkCategoryModal(): void {
+    if (this.stagedModalFiles.length === 0) {
+      this.notification.info('Info', 'No staged files to categorize.');
+      return;
+    }
+    this.isBulkCategoryModalVisible = true;
+  }
+
+  applyBulkCategory(): void {
+    this.stagedModalFiles.forEach(item => {
+      item.documentType = this.bulkSelectedCategory;
+    });
+    this.autoNumberStagedPages();
+    this.isBulkCategoryModalVisible = false;
+    this.notification.success('Category Updated', `Updated category for all ${this.stagedModalFiles.length} files.`);
+  }
+
+  moveStaged(index: number, direction: -1 | 1): void {
+    const newIdx = index + direction;
+    if (newIdx < 0 || newIdx >= this.stagedModalFiles.length) return;
+    const temp = this.stagedModalFiles[index];
+    this.stagedModalFiles[index] = this.stagedModalFiles[newIdx];
+    this.stagedModalFiles[newIdx] = temp;
+    this.autoNumberStagedPages();
+  }
+
+  removeStaged(index: number): void {
+    const item = this.stagedModalFiles[index];
+    if (item && item.previewUrl && item.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.previewUrl);
+    }
+    this.stagedModalFiles.splice(index, 1);
+    this.autoNumberStagedPages();
+  }
+
+  clearStagedFiles(): void {
+    this.stagedModalFiles.forEach(item => {
+      if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+    });
+    this.stagedModalFiles = [];
+  }
+
+  applyStagedToForm(): void {
+    this.additionalUploadedDocs = this.stagedModalFiles.map(d => ({
+      ...d,
+      documentType: d.documentType || 'OTHER',
+      documentTitle: d.documentTitle || d.file?.name || 'Document'
+    }));
+
+    const aadharItem = this.additionalUploadedDocs.find(d => d.documentType === 'AADHAR_CARD');
+    this.selectedAadharDoc = aadharItem ? aadharItem.file : null;
+
+    const panItem = this.additionalUploadedDocs.find(d => d.documentType === 'PAN_CARD');
+    this.selectedPanDoc = panItem ? panItem.file : null;
+
+    this.isSegregationModalVisible = false;
+    this.notification.success('Documents Synced', `Applied ${this.additionalUploadedDocs.length} document(s) to registration form.`);
+  }
+
+  openPreviewModal(item: any): void {
+    this.previewModalTitle = `${item.documentTitle || item.file?.name || 'Document'} (Preview)`;
+    this.previewIsImage = item.isImage || (item.file && item.file.type.startsWith('image/'));
+    this.previewIsPdf = item.isPdf || (item.file && (item.file.type === 'application/pdf' || item.file.name.toLowerCase().endsWith('.pdf')));
+    this.previewZoom = 1;
+    this.previewRotation = 0;
+
+    if (item.isImage && item.previewUrl) {
+      this.previewUrl = item.previewUrl;
+      this.previewUrlSafe = null;
+    } else if (item.isPdf && item.previewUrl) {
+      this.previewUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(item.previewUrl);
+      this.previewUrl = null;
+    } else if (item.file) {
+      const url = URL.createObjectURL(item.file);
+      if (item.isPdf || item.file.type === 'application/pdf') {
+        this.previewIsPdf = true;
+        this.previewUrlSafe = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+        this.previewUrl = null;
+      } else {
+        this.previewIsImage = true;
+        this.previewUrl = url;
+        this.previewUrlSafe = null;
+      }
+    }
+    this.isPreviewModalVisible = true;
+  }
+
+  closePreviewModal(): void {
+    this.isPreviewModalVisible = false;
+  }
+
+  getCategoryBadge(code: string): { label: string; color: string } {
+    const cat = this.documentCategories.find(c => c.code === code);
+    return cat ? { label: cat.label, color: cat.color } : { label: code || 'Other', color: '#8c8c8c' };
+  }
+
+  onAdditionalFilesSelected(event: any, defaultType?: string) {
+    const files = Array.from(event.target.files || []) as File[];
+    files.forEach(file => {
+      const type = defaultType || 'OTHER';
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+      const isImg = file.type.startsWith('image/');
+      let previewUrl = '';
+      if (isImg) {
+        previewUrl = URL.createObjectURL(file);
+      }
+      this.additionalUploadedDocs.push({
+        file: file,
+        documentType: type,
+        documentTitle: file.name.replace(/\.[^/.]+$/, ''),
+        isPdf: isPdf,
+        isImage: isImg,
+        fileSize: file.size,
+        pageNumber: 1,
+        previewUrl: previewUrl
+      });
+    });
+    event.target.value = '';
+  }
+
+  removeAdditionalDoc(index: number) {
+    const item = this.additionalUploadedDocs[index];
+    if (item && item.previewUrl && item.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(item.previewUrl);
+    }
+    this.additionalUploadedDocs.splice(index, 1);
+
+    // Keep primary aadhar and pan in sync
+    const aadharItem = this.additionalUploadedDocs.find(d => d.documentType === 'AADHAR_CARD');
+    this.selectedAadharDoc = aadharItem ? aadharItem.file : null;
+
+    const panItem = this.additionalUploadedDocs.find(d => d.documentType === 'PAN_CARD');
+    this.selectedPanDoc = panItem ? panItem.file : null;
+  }
+
+  formatBytes(bytes?: number, decimals = 1): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 
   getValidationErrors(): string[] {
@@ -1104,6 +2428,15 @@ export class PublicRegistrationComponent implements OnInit {
 
   onSubmit(form?: NgForm) {
     this.submitAttempted = true;
+
+    if (!this.selectedAadharDoc) {
+      const aadharItem = this.additionalUploadedDocs.find(d => d.documentType === 'AADHAR_CARD');
+      if (aadharItem) this.selectedAadharDoc = aadharItem.file;
+    }
+    if (!this.selectedPanDoc) {
+      const panItem = this.additionalUploadedDocs.find(d => d.documentType === 'PAN_CARD');
+      if (panItem) this.selectedPanDoc = panItem.file;
+    }
 
     if (form) {
       Object.values(form.controls).forEach(control => {
@@ -1225,6 +2558,17 @@ export class PublicRegistrationComponent implements OnInit {
     if (this.selectedPhoto) fd.append('photo', this.selectedPhoto);
     if (this.selectedAadharDoc) fd.append('aadharDoc', this.selectedAadharDoc);
     if (this.selectedPanDoc) fd.append('panDoc', this.selectedPanDoc);
+
+    // Support education and personal files
+    this.selectedEducationDocs.forEach(f => fd.append('educationDocs', f));
+    this.selectedPersonalDocs.forEach(f => fd.append('personalDocs', f));
+
+    // Support categorized additional documents
+    this.additionalUploadedDocs.forEach(doc => {
+      fd.append('additionalDocs', doc.file);
+      fd.append('additionalDocTypes', doc.documentType);
+      fd.append('additionalDocTitles', doc.documentTitle || doc.file.name);
+    });
 
     this.pendingService.submitRegistration(fd).subscribe({
       next: (res) => {

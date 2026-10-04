@@ -27,6 +27,12 @@ public class EmployeeDocument {
     @Column(name = "document_type", length = 50, nullable = false)
     private String documentType;
 
+    @Column(name = "document_title", length = 200)
+    private String documentTitle;
+
+    @Column(name = "page_number")
+    private Integer pageNumber;
+
     @Column(name = "file_name", length = 200, nullable = false)
     private String fileName;
 
@@ -41,6 +47,9 @@ public class EmployeeDocument {
 
     @Column(name = "content_type", length = 100)
     private String contentType;
+
+    @Column(name = "notes", length = 500)
+    private String notes;
 
     @Column(name = "uploaded_at", nullable = false)
     private LocalDateTime uploadedAt;

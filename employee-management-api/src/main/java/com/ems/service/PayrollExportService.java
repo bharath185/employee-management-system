@@ -4,7 +4,10 @@ import com.ems.model.Company;
 import com.ems.model.Employee;
 import com.ems.model.Payslip;
 import com.ems.model.Salary;
+import com.ems.model.SalaryMaster;
+import com.ems.repository.EmployeeRepository;
 import com.ems.repository.PayslipRepository;
+import com.ems.repository.SalaryMasterRepository;
 import com.ems.repository.SalaryRepository;
 import com.ems.utils.BankFileExportHelper;
 import com.ems.utils.PayrollReportExportHelper;
@@ -34,6 +37,8 @@ public class PayrollExportService {
 
     private final PayslipRepository payslipRepository;
     private final SalaryRepository salaryRepository;
+    private final EmployeeRepository employeeRepository;
+    private final SalaryMasterRepository salaryMasterRepository;
     private final CompanyService companyService;
     private final BankFileExportHelper bankFileExportHelper;
     private final PayrollReportExportHelper payrollReportExportHelper;
@@ -317,6 +322,51 @@ public class PayrollExportService {
     public ResponseEntity<byte[]> generateSampleStatement() {
         String filename = "Salary_Statement_Sample.xlsx";
 
+        Company company = companyService.getCompany();
+        String companyName = company != null && company.getCompanyName() != null && !company.getCompanyName().isBlank()
+            ? company.getCompanyName() : "Company Name";
+        String companyAddr = company != null && company.getAddress() != null && !company.getAddress().isBlank()
+            ? company.getAddress() : "Company Address";
+        String regNo = company != null && company.getGstNumber() != null && !company.getGstNumber().isBlank()
+            ? company.getGstNumber() : "GST/Reg No";
+
+        List<Employee> employees = employeeRepository.findAllLiveEmployees();
+        Employee sampleEmp = (employees != null && !employees.isEmpty()) ? employees.get(0) : null;
+        String sampleCode = sampleEmp != null && sampleEmp.getEmployeeCode() != null ? sampleEmp.getEmployeeCode() : "PARI0001";
+        String sampleName = sampleEmp != null ? safeStr(sampleEmp.getFullName()) : "Sample Employee";
+        String sampleDoj = sampleEmp != null && sampleEmp.getDoj() != null
+            ? sampleEmp.getDoj().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "01/01/2026";
+
+        SalaryMaster sm = (sampleEmp != null) ? salaryMasterRepository.findByEmployeeId(sampleEmp.getId()).orElse(null) : null;
+
+        BigDecimal basic = (sm != null && sm.getBasic() != null && sm.getBasic().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getBasic() : new BigDecimal("25000.00");
+        BigDecimal hra = (sm != null && sm.getHra() != null && sm.getHra().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getHra() : new BigDecimal("5000.00");
+        BigDecimal fpa = (sm != null && sm.getFixedPersonalAllowance() != null && sm.getFixedPersonalAllowance().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getFixedPersonalAllowance() : new BigDecimal("3000.00");
+        BigDecimal oa = (sm != null && sm.getOtherAllowance() != null && sm.getOtherAllowance().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getOtherAllowance() : new BigDecimal("2000.00");
+        BigDecimal rateGross = basic.add(hra).add(fpa).add(oa);
+
+        BigDecimal ot = (sm != null && sm.getOvertimeWages() != null) ? sm.getOvertimeWages() : BigDecimal.ZERO;
+        BigDecimal grossPayable = rateGross.add(ot);
+
+        BigDecimal pf = (sm != null && sm.getPfDeduction() != null && sm.getPfDeduction().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getPfDeduction() : new BigDecimal("1800.00");
+        BigDecimal esi = (sm != null && sm.getEsiDeduction() != null && sm.getEsiDeduction().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getEsiDeduction() : new BigDecimal("187.50");
+        BigDecimal pt = (sm != null && sm.getPtDeduction() != null && sm.getPtDeduction().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getPtDeduction() : new BigDecimal("200.00");
+        BigDecimal hi = (sm != null && sm.getHealthInsurance() != null && sm.getHealthInsurance().compareTo(BigDecimal.ZERO) > 0)
+            ? sm.getHealthInsurance() : BigDecimal.ZERO;
+        BigDecimal totalDed = pf.add(esi).add(pt).add(hi);
+        BigDecimal netPay = grossPayable.subtract(totalDed);
+
+        String paymentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String periodLabel = Month.of(LocalDate.now().getMonthValue()).name().charAt(0)
+            + Month.of(LocalDate.now().getMonthValue()).name().substring(1).toLowerCase() + " " + LocalDate.now().getYear();
+
         try (Workbook wb = new XSSFWorkbook()) {
             Sheet sheet = wb.createSheet("Sheet1");
 
@@ -359,21 +409,21 @@ public class PayrollExportService {
             // Row 1: Company name
             Row r1 = sheet.createRow(0);
             setCell(r1, 0, "Name of the Establishment :", boldStyle);
-            setCell(r1, 2, "[Enter Company Name]", dataStyle);
+            setCell(r1, 2, companyName, dataStyle);
 
             // Row 2: Address
             Row r2 = sheet.createRow(1);
             setCell(r2, 0, "Address :", boldStyle);
-            setCell(r2, 2, "[Enter Company Address]", dataStyle);
+            setCell(r2, 2, companyAddr, dataStyle);
 
             // Row 4: Registration No
             Row r4 = sheet.createRow(3);
             setCell(r4, 0, "Registration No", boldStyle);
-            setCell(r4, 1, "[Enter Registration No]", dataStyle);
+            setCell(r4, 1, regNo, dataStyle);
 
             // Row 6: Wages period
             Row r6 = sheet.createRow(5);
-            setCell(r6, 0, "Wages period - [Month Year]", boldStyle);
+            setCell(r6, 0, "Wages period - " + periodLabel, boldStyle);
 
             // Row 7-8: Headers
             Row r7 = sheet.createRow(6);
@@ -401,51 +451,49 @@ public class PayrollExportService {
 
             // Rows 9-11: empty
 
-            // Demo data rows with yellow highlight
+            // Exactly 1 demo data row with live employee info highlighted in yellow
             int rowIdx = 11;
-            Object[][] sampleData = {
-                {1, "John Doe", "EMP001", "01/01/2020",
-                    25000.00, 5000.00, 3000.00, 2000.00, 35000.00,
-                    25000.00, 5000.00, 3000.00, 2000.00, 35000.00,
-                    26, 0, 26, 0.00, 35000.00,
-                    3000.00, 187.50, 200.00, 0.00, 31612.50,
-                    "25/07/2026", "", ""},
-                {2, "Jane Smith", "EMP002", "15/03/2019",
-                    18000.00, 3600.00, 2000.00, 1000.00, 24600.00,
-                    18000.00, 3600.00, 2000.00, 1000.00, 24600.00,
-                    25, 1, 24, 500.00, 25100.00,
-                    2160.00, 135.00, 200.00, 0.00, 22605.00,
-                    "25/07/2026", "", ""},
-                {3, "Bob Johnson", "EMP003", "10/06/2021",
-                    35000.00, 7000.00, 4000.00, 3000.00, 49000.00,
-                    35000.00, 7000.00, 4000.00, 3000.00, 49000.00,
-                    26, 0, 26, 0.00, 49000.00,
-                    4200.00, 0.00, 200.00, 0.00, 44600.00,
-                    "25/07/2026", "", ""}
-            };
+            Row row = sheet.createRow(rowIdx++);
+            int col = 0;
+            setCell(row, col++, "1", demoStyle);
+            setCell(row, col++, sampleName, demoStyle);
+            setCell(row, col++, sampleCode, demoStyle);
+            setCell(row, col++, sampleDoj, demoStyle);
 
-            for (Object[] rowData : sampleData) {
-                Row row = sheet.createRow(rowIdx++);
-                int col = 0;
-                setCell(row, col++, String.valueOf(rowData[0]), demoStyle);
-                setCell(row, col++, (String) rowData[1], demoStyle);
-                setCell(row, col++, (String) rowData[2], demoStyle);
-                setCell(row, col++, (String) rowData[3], demoStyle);
-                for (int c = 4; c <= 13; c++) {
-                    setNumCell(row, c, BigDecimal.valueOf((Double) rowData[c]), demoStyle);
-                }
-                setCell(row, 14, String.valueOf(rowData[14]), demoStyle);
-                setCell(row, 15, String.valueOf(rowData[15]), demoStyle);
-                setCell(row, 16, String.valueOf(rowData[16]), demoStyle);
-                setNumCell(row, 17, BigDecimal.valueOf((Double) rowData[17]), demoStyle);
-                setNumCell(row, 18, BigDecimal.valueOf((Double) rowData[18]), demoStyle);
-                for (int c = 19; c <= 23; c++) {
-                    setNumCell(row, c, BigDecimal.valueOf((Double) rowData[c]), demoStyle);
-                }
-                setCell(row, 24, (String) rowData[24], demoStyle);
-                setCell(row, 25, "", demoStyle);
-                setCell(row, 26, "", demoStyle);
-            }
+            // Rate of wages (Basic, HRA, FPA, OA, Gross)
+            setNumCell(row, col++, basic, demoStyle);
+            setNumCell(row, col++, hra, demoStyle);
+            setNumCell(row, col++, fpa, demoStyle);
+            setNumCell(row, col++, oa, demoStyle);
+            setNumCell(row, col++, rateGross, demoStyle);
+
+            // Normal wages earned (Basic, HRA, FPA, OA, Gross)
+            setNumCell(row, col++, basic, demoStyle);
+            setNumCell(row, col++, hra, demoStyle);
+            setNumCell(row, col++, fpa, demoStyle);
+            setNumCell(row, col++, oa, demoStyle);
+            setNumCell(row, col++, rateGross, demoStyle);
+
+            // No of working days, LOP, Effective workdays
+            setCell(row, col++, "26", demoStyle);
+            setCell(row, col++, "0", demoStyle);
+            setCell(row, col++, "26", demoStyle);
+
+            // Overtime, Gross Wages Payable
+            setNumCell(row, col++, ot, demoStyle);
+            setNumCell(row, col++, grossPayable, demoStyle);
+
+            // Deductions: PF, ESI, PT, Health Insurance
+            setNumCell(row, col++, pf, demoStyle);
+            setNumCell(row, col++, esi, demoStyle);
+            setNumCell(row, col++, pt, demoStyle);
+            setNumCell(row, col++, hi, demoStyle);
+
+            // Actual wages paid, Date of payment, Sign, Remarks
+            setNumCell(row, col++, netPay, demoStyle);
+            setCell(row, col++, paymentDate, demoStyle);
+            setCell(row, col++, "", demoStyle);
+            setCell(row, col++, "", demoStyle);
 
             // Note row
             Row noteRow = sheet.createRow(rowIdx + 1);
@@ -454,7 +502,7 @@ public class PayrollExportService {
             italicFont.setItalic(true);
             italicFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
             noteStyle.setFont(italicFont);
-            setCell(noteRow, 0, "Note: Rows highlighted in yellow are sample data — replace with your actual employee data before uploading.", noteStyle);
+            setCell(noteRow, 0, "Note: Rows highlighted in yellow are sample live employee data — update values or add more employees as needed before uploading.", noteStyle);
 
             for (int c = 0; c < 27; c++) {
                 sheet.autoSizeColumn(c);

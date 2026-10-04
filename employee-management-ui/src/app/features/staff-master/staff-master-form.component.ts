@@ -69,7 +69,6 @@ const FIELD_METAS: Record<string, { label: string; tabIndex: number; tabName: st
   userRole: { label: 'Login Role', tabIndex: 1, tabName: 'Employment' },
   employeeStatus: { label: 'Employee Status', tabIndex: 1, tabName: 'Employment' },
   processAssigned: { label: 'Process / Unit', tabIndex: 1, tabName: 'Employment' },
-  department: { label: 'Department', tabIndex: 1, tabName: 'Employment' },
   designation: { label: 'Designation', tabIndex: 1, tabName: 'Employment' },
   esicNo: { label: 'ESIC Number', tabIndex: 1, tabName: 'Employment' },
   uanNo: { label: 'UAN Number', tabIndex: 1, tabName: 'Employment' },
@@ -586,15 +585,15 @@ export class StaffMasterFormComponent implements OnInit, OnDestroy, OnCanDeactiv
 
   get currentEmployeeFullName(): string {
     const prefix = this.employeeForm.get('prefix')?.value || this.loadedEmployee?.prefix || '';
-    const surname = this.employeeForm.get('surname')?.value || this.loadedEmployee?.surname || '';
     const firstName = this.employeeForm.get('firstName')?.value || this.loadedEmployee?.firstName || '';
     const middleName = this.employeeForm.get('middleName')?.value || this.loadedEmployee?.middleName || '';
+    const surname = this.employeeForm.get('surname')?.value || this.loadedEmployee?.surname || '';
 
     const parts = [
-      prefix ? prefix.trim() + '.' : '',
-      surname ? surname.trim() : '',
+      prefix ? (prefix.trim().endsWith('.') ? prefix.trim() : prefix.trim() + '.') : '',
       firstName ? firstName.trim() : '',
-      middleName ? middleName.trim() : ''
+      middleName ? middleName.trim() : '',
+      surname ? surname.trim() : ''
     ].filter(Boolean);
 
     return parts.join(' ');

@@ -22,10 +22,8 @@ import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 
 import { EmployeeService } from '../../core/services/employee.service';
-import { DashboardService } from '../../core/services/dashboard.service';
 import { MasterDataService } from '../../core/services/master-data.service';
 import { ReportTemplateService, ReportTemplate } from '../../core/services/report-template.service';
-import { DashboardStats } from '../../core/models/api-response.model';
 import { Employee } from '../../core/models/employee.model';
 import { LabourReportsComponent } from '../labour-reports/labour-reports.component';
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
@@ -42,6 +40,8 @@ interface ReportColumn {
   isCustom?: boolean;
 }
 
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+
 @Component({
   selector: 'app-reports',
   standalone: true,
@@ -49,20 +49,99 @@ interface ReportColumn {
     CommonModule, FormsModule, NzCardModule, NzButtonModule, NzIconModule,
     NzSelectModule, NzInputModule, NzDatePickerModule, NzCheckboxModule, NzRadioModule,
     NzSpinModule, NzGridModule, NzTabsModule, NzTableModule, NzTagModule, NzBadgeModule,
-    NzDividerModule, NzModalModule, NzPopconfirmModule,
+    NzDividerModule, NzModalModule, NzPopconfirmModule, NzToolTipModule,
     LabourReportsComponent
   ],
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss']
 })
 export class ReportsComponent implements OnInit {
-  activeSection: 'custom' | 'stats' | 'labour' = 'custom';
+  Math = Math;
+  activeSection: 'custom' | 'labour' = 'custom';
+  isFiltersCollapsed = false;
+  isAdvancedFiltersOpen = false;
 
   // State
   isLoading = false;
   isExporting = false;
   employees: Employee[] = [];
   filteredEmployees: Employee[] = [];
+
+  private avatarColors: string[] = [
+    'linear-gradient(135deg, #1f3d6e, #2a5298)',
+    'linear-gradient(135deg, #2e7d32, #43a047)',
+    'linear-gradient(135deg, #c62828, #e53935)',
+    'linear-gradient(135deg, #e65100, #ff6d00)',
+    'linear-gradient(135deg, #4a148c, #7b1fa2)',
+    'linear-gradient(135deg, #004d40, #00897b)',
+    'linear-gradient(135deg, #0d47a1, #1976d2)',
+    'linear-gradient(135deg, #880e4f, #c2185b)',
+    'linear-gradient(135deg, #3e2723, #5d4037)',
+    'linear-gradient(135deg, #37474f, #607d8b)'
+  ];
+
+  getAvatarColor(code?: string): string {
+    const index = (code?.length || 0) % this.avatarColors.length;
+    return this.avatarColors[index];
+  }
+
+  getPhotoUrl(photoPath?: string): string {
+    if (!photoPath) return '';
+    const raw = photoPath.trim();
+    if (raw.startsWith('data:image/') || raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+    const clean = raw.replace(/\\/g, '/');
+    return clean.startsWith('/') ? clean : '/' + clean;
+  }
+
+  onAvatarError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+  }
+
+  get advancedFilterCount(): number {
+    let count = 0;
+    if (this.filterDesignation) count++;
+    if (this.filterGender) count++;
+    if (this.filterBloodGroup) count++;
+    if (this.filterSocialCategory) count++;
+    if (this.filterSocialSubcategory) count++;
+    if (this.filterReligion) count++;
+    if (this.filterQualification) count++;
+    if (this.filterAadhaarVerification) count++;
+    if (this.filterPanVerification) count++;
+    if (this.dojFilterMode !== 'ALL') count++;
+    return count;
+  }
+
+  get activeFilterCount(): number {
+    let count = 0;
+    if (this.searchTerm) count++;
+    if (this.filterProcess) count++;
+    if (this.filterStatus) count++;
+    return count + this.advancedFilterCount;
+  }
+
+  clearFilter(filterKey: string): void {
+    if (filterKey === 'search') this.searchTerm = '';
+    if (filterKey === 'process') this.filterProcess = '';
+    if (filterKey === 'status') this.filterStatus = '';
+    if (filterKey === 'doj') {
+      this.dojFilterMode = 'ALL';
+      this.dateRange = [null, null];
+    }
+    if (filterKey === 'designation') this.filterDesignation = '';
+    if (filterKey === 'gender') this.filterGender = '';
+    if (filterKey === 'bloodGroup') this.filterBloodGroup = '';
+    if (filterKey === 'socialCategory') this.filterSocialCategory = '';
+    if (filterKey === 'socialSubcategory') this.filterSocialSubcategory = '';
+    if (filterKey === 'religion') this.filterReligion = '';
+    if (filterKey === 'qualification') this.filterQualification = '';
+    if (filterKey === 'aadhaar') this.filterAadhaarVerification = '';
+    if (filterKey === 'pan') this.filterPanVerification = '';
+    this.applyFilters();
+  }
 
   // Quick Filter & Search State
   searchTerm = '';
@@ -74,7 +153,6 @@ export class ReportsComponent implements OnInit {
   // Multi-Criteria Filters
   filterStatus = '';
   filterDesignation = '';
-  filterDepartment = '';
   filterProcess = '';
   filterGender = '';
   filterBloodGroup = '';
@@ -86,7 +164,7 @@ export class ReportsComponent implements OnInit {
   filterPanVerification = '';
 
   // Sorting
-  sortBy: 'employeeCodeNumeric' | 'doj' | 'name' | 'department' | 'designation' | 'status' | 'dob' = 'employeeCodeNumeric';
+  sortBy: 'employeeCodeNumeric' | 'doj' | 'name' | 'designation' | 'status' | 'dob' = 'employeeCodeNumeric';
   sortDirection: 'asc' | 'desc' = 'asc';
 
   // Options Dropdowns
@@ -98,7 +176,6 @@ export class ReportsComponent implements OnInit {
   socialCategoryOptions: { value: string; label: string }[] = [];
   qualificationOptions: { value: string; label: string }[] = [];
   processOptions: string[] = [];
-  departmentOptions: string[] = [];
 
   yearsList: number[] = [];
   monthsList = [
@@ -114,61 +191,65 @@ export class ReportsComponent implements OnInit {
   availableColumns: ReportColumn[] = [
     // Personal
     { key: 'employeeCode', label: 'Emp Code', category: 'Personal', selected: true, width: 110 },
-    { key: 'fullName', label: 'Full Name', category: 'Personal', selected: true, width: 170 },
+    { key: 'fullName', label: 'Full Name', category: 'Personal', selected: true, width: 240 },
     { key: 'gender', label: 'Gender', category: 'Personal', selected: true, width: 90 },
-    { key: 'dob', label: 'Date of Birth', category: 'Personal', selected: false, width: 110 },
-    { key: 'age', label: 'Age', category: 'Personal', selected: false, width: 70 },
-    { key: 'mobile', label: 'Mobile', category: 'Personal', selected: true, width: 120 },
-    { key: 'email', label: 'Email', category: 'Personal', selected: true, width: 180 },
-    { key: 'presentAddress', label: 'Present Address', category: 'Personal', selected: false, width: 200 },
-    { key: 'permanentAddress', label: 'Permanent Address', category: 'Personal', selected: false, width: 200 },
-    { key: 'closeRelativeName', label: 'Emergency Contact Name', category: 'Personal', selected: false, width: 150 },
-    { key: 'closeRelativeMobile', label: 'Emergency Contact Mobile', category: 'Personal', selected: false, width: 130 },
+    { key: 'dob', label: 'Date of Birth', category: 'Personal', selected: false, width: 120 },
+    { key: 'age', label: 'Age', category: 'Personal', selected: false, width: 80 },
+    { key: 'mobile', label: 'Mobile', category: 'Personal', selected: true, width: 130 },
+    { key: 'email', label: 'Email', category: 'Personal', selected: true, width: 220 },
+    { key: 'presentAddress', label: 'Present Address', category: 'Personal', selected: false, width: 240 },
+    { key: 'permanentAddress', label: 'Permanent Address', category: 'Personal', selected: false, width: 240 },
+    { key: 'closeRelativeName', label: 'Emergency Contact Name', category: 'Personal', selected: false, width: 190 },
+    { key: 'closeRelativeMobile', label: 'Emergency Contact Mobile', category: 'Personal', selected: false, width: 150 },
 
     // Employment
     { key: 'doj', label: 'Date of Joining', category: 'Employment', selected: true, width: 120 },
     { key: 'employeeStatus', label: 'Status', category: 'Employment', selected: true, width: 110 },
-    { key: 'designation', label: 'Designation', category: 'Employment', selected: true, width: 150 },
-    { key: 'department', label: 'Department', category: 'Employment', selected: true, width: 140 },
-    { key: 'processAssigned', label: 'Process / Unit', category: 'Employment', selected: true, width: 140 },
-    { key: 'highestQualification', label: 'Qualification', category: 'Employment', selected: false, width: 130 },
-    { key: 'levelOfEducation', label: 'Education Level', category: 'Employment', selected: false, width: 130 },
-    { key: 'yearOfPassing', label: 'Year of Passing', category: 'Employment', selected: false, width: 100 },
-    { key: 'percentageMarks', label: '% of Marks', category: 'Employment', selected: false, width: 90 },
-    { key: 'pastExperience', label: 'Past Experience', category: 'Employment', selected: false, width: 110 },
+    { key: 'designation', label: 'Designation', category: 'Employment', selected: true, width: 180 },
+    { key: 'processAssigned', label: 'Process / Unit', category: 'Employment', selected: true, width: 160 },
+    { key: 'highestQualification', label: 'Qualification', category: 'Employment', selected: false, width: 160 },
+    { key: 'levelOfEducation', label: 'Education Level', category: 'Employment', selected: false, width: 160 },
+    { key: 'yearOfPassing', label: 'Year of Passing', category: 'Employment', selected: false, width: 130 },
+    { key: 'percentageMarks', label: '% of Marks', category: 'Employment', selected: false, width: 110 },
+    { key: 'pastExperience', label: 'Past Experience', category: 'Employment', selected: false, width: 150 },
 
     // Demographics
-    { key: 'aadharNumber', label: 'Aadhar Number', category: 'Demographics', selected: false, width: 130 },
-    { key: 'panNumber', label: 'PAN Number', category: 'Demographics', selected: false, width: 110 },
-    { key: 'bloodGroup', label: 'Blood Group', category: 'Demographics', selected: false, width: 90 },
-    { key: 'religion', label: 'Religion', category: 'Demographics', selected: false, width: 100 },
-    { key: 'socialCategory', label: 'Social Category', category: 'Demographics', selected: false, width: 120 },
-    { key: 'socialSubcategory', label: 'Subcategory', category: 'Demographics', selected: false, width: 120 },
-    { key: 'rationCard', label: 'Ration Card', category: 'Demographics', selected: false, width: 90 },
+    { key: 'aadharNumber', label: 'Aadhar Number', category: 'Demographics', selected: false, width: 150 },
+    { key: 'panNumber', label: 'PAN Number', category: 'Demographics', selected: false, width: 130 },
+    { key: 'bloodGroup', label: 'Blood Group', category: 'Demographics', selected: false, width: 110 },
+    { key: 'religion', label: 'Religion', category: 'Demographics', selected: false, width: 120 },
+    { key: 'socialCategory', label: 'Social Category', category: 'Demographics', selected: false, width: 140 },
+    { key: 'socialSubcategory', label: 'Subcategory', category: 'Demographics', selected: false, width: 140 },
+    { key: 'rationCard', label: 'Ration Card', category: 'Demographics', selected: false, width: 120 },
 
     // Family
-    { key: 'fatherHusbandName', label: 'Father / Husband Name', category: 'Family', selected: false, width: 160 },
-    { key: 'fatherName', label: "Father's Name", category: 'Family', selected: false, width: 150 },
-    { key: 'fatherPhone', label: "Father's Phone", category: 'Family', selected: false, width: 120 },
-    { key: 'motherName', label: "Mother's Name", category: 'Family', selected: false, width: 150 },
-    { key: 'motherPhone', label: "Mother's Phone", category: 'Family', selected: false, width: 120 },
-    { key: 'spouseName', label: 'Spouse Name', category: 'Family', selected: false, width: 150 },
-    { key: 'spousePhone', label: 'Spouse Phone', category: 'Family', selected: false, width: 120 },
+    { key: 'fatherHusbandName', label: 'Father / Husband Name', category: 'Family', selected: false, width: 190 },
+    { key: 'fatherName', label: "Father's Name", category: 'Family', selected: false, width: 180 },
+    { key: 'fatherPhone', label: "Father's Phone", category: 'Family', selected: false, width: 140 },
+    { key: 'motherName', label: "Mother's Name", category: 'Family', selected: false, width: 180 },
+    { key: 'motherPhone', label: "Mother's Phone", category: 'Family', selected: false, width: 140 },
+    { key: 'spouseName', label: 'Spouse Name', category: 'Family', selected: false, width: 180 },
+    { key: 'spousePhone', label: 'Spouse Phone', category: 'Family', selected: false, width: 140 },
 
     // Bank & Payroll
-    { key: 'bankName', label: 'Bank Name', category: 'Bank', selected: false, width: 140 },
-    { key: 'accountNumber', label: 'Account Number', category: 'Bank', selected: false, width: 140 },
-    { key: 'ifscCode', label: 'IFSC Code', category: 'Bank', selected: false, width: 110 },
-    { key: 'branch', label: 'Branch', category: 'Bank', selected: false, width: 130 },
-    { key: 'basicSalary', label: 'Basic Salary (₹)', category: 'Bank', selected: false, width: 120 },
-    { key: 'grossSalary', label: 'Gross Salary (₹)', category: 'Bank', selected: false, width: 120 },
+    { key: 'bankName', label: 'Bank Name', category: 'Bank', selected: false, width: 170 },
+    { key: 'accountNumber', label: 'Account Number', category: 'Bank', selected: false, width: 170 },
+    { key: 'ifscCode', label: 'IFSC Code', category: 'Bank', selected: false, width: 130 },
+    { key: 'branch', label: 'Branch', category: 'Bank', selected: false, width: 150 },
+    { key: 'basicSalary', label: 'Basic Salary (₹)', category: 'Bank', selected: false, width: 140 },
+    { key: 'grossSalary', label: 'Gross Salary (₹)', category: 'Bank', selected: false, width: 140 },
 
     // Verification
-    { key: 'aadhaarVerification', label: 'Aadhaar Verified', category: 'Verification', selected: false, width: 120 },
-    { key: 'panVerification', label: 'PAN Verified', category: 'Verification', selected: false, width: 120 },
-    { key: 'osv', label: 'OSV', category: 'Verification', selected: false, width: 80 },
-    { key: 'remarks', label: 'Remarks', category: 'Verification', selected: false, width: 160 }
+    { key: 'aadhaarVerification', label: 'Aadhaar Verified', category: 'Verification', selected: false, width: 150 },
+    { key: 'panVerification', label: 'PAN Verified', category: 'Verification', selected: false, width: 140 },
+    { key: 'osv', label: 'OSV', category: 'Verification', selected: false, width: 100 },
+    { key: 'remarks', label: 'Remarks', category: 'Verification', selected: false, width: 190 }
   ];
+
+  get tableScrollWidth(): string {
+    const colsWidth = this.selectedColumns.reduce((sum, c) => sum + (c.width || 150), 0);
+    return Math.max(colsWidth + 120, 1200) + 'px';
+  }
 
   // Templates Management
   savedTemplates: ReportTemplate[] = [];
@@ -179,18 +260,11 @@ export class ReportsComponent implements OnInit {
 
   // Pagination
   pageIndex = 1;
-  pageSize = 25;
-  pageSizeOptions = [10, 25, 50, 100, 500];
-
-  // Statistics & Demographics Tab State
-  statsLoading = false;
-  stats: DashboardStats | null = null;
-  analytics: any = null;
-  demographics: any = null;
+  pageSize = 10;
+  pageSizeOptions = [10, 20, 50, 100, 500];
 
   constructor(
     private employeeService: EmployeeService,
-    private dashboardService: DashboardService,
     private masterDataService: MasterDataService,
     private templateService: ReportTemplateService,
     private formFieldConfigService: FormFieldConfigService,
@@ -305,7 +379,6 @@ export class ReportsComponent implements OnInit {
       search: this.searchTerm || undefined,
       employeeStatus: this.filterStatus || undefined,
       designation: this.filterDesignation || undefined,
-      department: this.filterDepartment || undefined,
       processAssigned: this.filterProcess || undefined,
       gender: this.filterGender || undefined,
       bloodGroup: this.filterBloodGroup || undefined,
@@ -326,8 +399,8 @@ export class ReportsComponent implements OnInit {
     } else if (this.dojFilterMode === 'YEAR') {
       params.dojYear = this.selectedYear;
     } else if (this.dojFilterMode === 'RANGE' && this.dateRange && this.dateRange[0] && this.dateRange[1]) {
-      params.dojFrom = this.formatDate(this.dateRange[0]);
-      params.dojTo = this.formatDate(this.dateRange[1]);
+      params.dojFrom = this.toIsoDateString(this.dateRange[0]);
+      params.dojTo = this.toIsoDateString(this.dateRange[1]);
     } else if (this.dojFilterMode === 'THIS_MONTH') {
       const now = new Date();
       params.dojYear = now.getFullYear();
@@ -342,7 +415,6 @@ export class ReportsComponent implements OnInit {
         if (res?.data) {
           this.employees = res.data;
           this.filteredEmployees = res.data;
-          this.extractDistinctDepartments();
         } else {
           this.employees = [];
           this.filteredEmployees = [];
@@ -355,17 +427,7 @@ export class ReportsComponent implements OnInit {
     });
   }
 
-  private extractDistinctDepartments(): void {
-    const depts = new Set<string>();
-    this.employees.forEach(e => {
-      if (e.department && e.department.trim()) {
-        depts.add(e.department.trim());
-      }
-    });
-    this.departmentOptions = Array.from(depts).sort();
-  }
-
-  formatDate(d: Date): string {
+  toIsoDateString(d: Date): string {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -385,7 +447,6 @@ export class ReportsComponent implements OnInit {
     this.dateRange = [null, null];
     this.filterStatus = '';
     this.filterDesignation = '';
-    this.filterDepartment = '';
     this.filterProcess = '';
     this.filterGender = '';
     this.filterBloodGroup = '';
@@ -401,6 +462,11 @@ export class ReportsComponent implements OnInit {
 
     this.applyFilters();
     this.notification.info('Filters Reset', 'All report filters have been reset to default.');
+  }
+
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    this.applyFilters();
   }
 
   // Quick Stats KPI
@@ -424,10 +490,11 @@ export class ReportsComponent implements OnInit {
   getCellValue(emp: Employee, colKey: string): any {
     switch (colKey) {
       case 'fullName':
-        return [emp.surname, emp.firstName, emp.middleName].filter(Boolean).join(' ') || '-';
+        return [emp.firstName, emp.middleName, emp.surname].filter(Boolean).join(' ') || '-';
       case 'doj':
       case 'dob':
-        return (emp as any)[colKey] || '-';
+      case 'doe':
+        return this.formatDate((emp as any)[colKey]);
       case 'basicSalary':
         return (emp as any).basicSalary ? '₹' + Number((emp as any).basicSalary).toLocaleString('en-IN') : '-';
       case 'grossSalary':
@@ -449,6 +516,23 @@ export class ReportsComponent implements OnInit {
         }
         return '-';
     }
+  }
+
+  formatDate(val: any): string {
+    if (!val) return '-';
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        return `${match[3]}/${match[2]}/${match[1]}`;
+      }
+    }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   private calculateAge(dobStr: string): number | string {
@@ -474,13 +558,13 @@ export class ReportsComponent implements OnInit {
       const name = this.availableColumns.find(c => c.key === 'fullName');
       if (name) name.selected = true;
     } else if (preset === 'standard') {
-      const keys = ['employeeCode', 'fullName', 'gender', 'mobile', 'email', 'doj', 'employeeStatus', 'designation', 'department', 'processAssigned'];
+      const keys = ['employeeCode', 'fullName', 'gender', 'mobile', 'email', 'doj', 'employeeStatus', 'designation', 'processAssigned'];
       this.availableColumns.forEach(c => c.selected = keys.includes(c.key));
     } else if (preset === 'onboarding') {
       const keys = ['employeeCode', 'fullName', 'gender', 'doj', 'designation', 'processAssigned', 'mobile', 'email', 'aadharNumber', 'bankName', 'accountNumber', 'employeeStatus'];
       this.availableColumns.forEach(c => c.selected = keys.includes(c.key));
     } else if (preset === 'payroll') {
-      const keys = ['employeeCode', 'fullName', 'designation', 'department', 'bankName', 'accountNumber', 'ifscCode', 'branch', 'basicSalary', 'grossSalary', 'employeeStatus'];
+      const keys = ['employeeCode', 'fullName', 'designation', 'bankName', 'accountNumber', 'ifscCode', 'branch', 'basicSalary', 'grossSalary', 'employeeStatus'];
       this.availableColumns.forEach(c => c.selected = keys.includes(c.key));
     } else if (preset === 'demographics') {
       const keys = ['employeeCode', 'fullName', 'gender', 'dob', 'age', 'bloodGroup', 'religion', 'socialCategory', 'socialSubcategory', 'highestQualification', 'presentAddress'];
@@ -515,7 +599,6 @@ export class ReportsComponent implements OnInit {
       dateRange: this.dateRange,
       filterStatus: this.filterStatus,
       filterDesignation: this.filterDesignation,
-      filterDepartment: this.filterDepartment,
       filterProcess: this.filterProcess,
       filterGender: this.filterGender,
       filterBloodGroup: this.filterBloodGroup,
@@ -571,7 +654,6 @@ export class ReportsComponent implements OnInit {
         }
         this.filterStatus = filters.filterStatus || '';
         this.filterDesignation = filters.filterDesignation || '';
-        this.filterDepartment = filters.filterDepartment || '';
         this.filterProcess = filters.filterProcess || '';
         this.filterGender = filters.filterGender || '';
         this.filterBloodGroup = filters.filterBloodGroup || '';
@@ -704,34 +786,170 @@ export class ReportsComponent implements OnInit {
     window.print();
   }
 
-  // Legacy Stats Tab Loading
-  getStatValue(key: string): number {
-    if (!this.stats) return 0;
-    return (this.stats as any)[key] || 0;
+  // Graphical Analytics Dashboard State
+  isAnalyticsModalVisible = false;
+
+  openAnalyticsDashboard(): void {
+    if (this.filteredEmployees.length === 0) {
+      this.notification.warning('No Data', 'No filtered records available to generate visual analytics.');
+      return;
+    }
+    this.isAnalyticsModalVisible = true;
   }
 
-  loadStats(): void {
-    this.statsLoading = true;
-    this.dashboardService.getStats().subscribe({
-      next: (response) => {
-        this.statsLoading = false;
-        if (response.success) {
-          this.stats = response.data;
-        }
-      },
-      error: () => {
-        this.statsLoading = false;
-        this.notification.error('Error', 'Error loading statistics');
+  closeAnalyticsDashboard(): void {
+    this.isAnalyticsModalVisible = false;
+  }
+
+  // Dashboard Summary Metrics
+  get analyticsTotalCount(): number {
+    return this.filteredEmployees.length;
+  }
+
+  get analyticsLiveCount(): number {
+    return this.filteredEmployees.filter(e => (e.employeeStatus || '').toUpperCase() === 'LIVE').length;
+  }
+
+  get analyticsLivePercent(): number {
+    return this.analyticsTotalCount ? Math.round((this.analyticsLiveCount / this.analyticsTotalCount) * 100) : 0;
+  }
+
+  get analyticsMaleCount(): number {
+    return this.filteredEmployees.filter(e => (e.gender || '').toUpperCase() === 'MALE' || (e.gender || '').toUpperCase() === 'M').length;
+  }
+
+  get analyticsFemaleCount(): number {
+    return this.filteredEmployees.filter(e => (e.gender || '').toUpperCase() === 'FEMALE' || (e.gender || '').toUpperCase() === 'F').length;
+  }
+
+  get analyticsOtherGenderCount(): number {
+    return this.analyticsTotalCount - (this.analyticsMaleCount + this.analyticsFemaleCount);
+  }
+
+  get analyticsMalePercent(): number {
+    return this.analyticsTotalCount ? Math.round((this.analyticsMaleCount / this.analyticsTotalCount) * 100) : 0;
+  }
+
+  get analyticsFemalePercent(): number {
+    return this.analyticsTotalCount ? Math.round((this.analyticsFemaleCount / this.analyticsTotalCount) * 100) : 0;
+  }
+
+  get analyticsOtherGenderPercent(): number {
+    return Math.max(0, 100 - (this.analyticsMalePercent + this.analyticsFemalePercent));
+  }
+
+  // Status Distribution
+  get analyticsStatusBreakdown(): { label: string; count: number; percent: number; color: string; bg: string }[] {
+    const total = this.analyticsTotalCount || 1;
+    const map = new Map<string, number>();
+    this.filteredEmployees.forEach(e => {
+      const st = (e.employeeStatus || 'UNSPECIFIED').toUpperCase();
+      map.set(st, (map.get(st) || 0) + 1);
+    });
+
+    const colorMap: { [key: string]: { label: string; color: string; bg: string } } = {
+      'LIVE': { label: 'Live Staff', color: '#10b981', bg: '#ecfdf5' },
+      'QUIT': { label: 'Quit', color: '#f59e0b', bg: '#fffbe6' },
+      'ASKED_TO_GO': { label: 'Asked To Go', color: '#f97316', bg: '#fff7ed' },
+      'STOPPED_COMING': { label: 'Stopped Coming', color: '#64748b', bg: '#f8fafc' },
+      'TERMINATED': { label: 'Terminated', color: '#ef4444', bg: '#fef2f2' }
+    };
+
+    const result: { label: string; count: number; percent: number; color: string; bg: string }[] = [];
+    map.forEach((count, key) => {
+      const meta = colorMap[key] || { label: key, color: '#6366f1', bg: '#e0e7ff' };
+      result.push({
+        label: meta.label,
+        count,
+        percent: Math.round((count / total) * 100),
+        color: meta.color,
+        bg: meta.bg
+      });
+    });
+
+    return result.sort((a, b) => b.count - a.count);
+  }
+
+  // Designation Distribution (Top 8)
+  get analyticsDesignationBreakdown(): { label: string; count: number; percent: number }[] {
+    const total = this.analyticsTotalCount || 1;
+    const map = new Map<string, number>();
+    this.filteredEmployees.forEach(e => {
+      const des = (e.designation || 'Unassigned').trim();
+      map.set(des, (map.get(des) || 0) + 1);
+    });
+
+    const items: { label: string; count: number; percent: number }[] = [];
+    map.forEach((count, label) => {
+      items.push({ label, count, percent: Math.round((count / total) * 100) });
+    });
+
+    items.sort((a, b) => b.count - a.count);
+    return items.slice(0, 8);
+  }
+
+  // Process / Unit Distribution
+  get analyticsProcessBreakdown(): { label: string; count: number; percent: number; color: string }[] {
+    const total = this.analyticsTotalCount || 1;
+    const map = new Map<string, number>();
+    this.filteredEmployees.forEach(e => {
+      const proc = (e.processAssigned || 'General / Unassigned').trim();
+      map.set(proc, (map.get(proc) || 0) + 1);
+    });
+
+    const colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+    const items: { label: string; count: number; percent: number; color: string }[] = [];
+    let idx = 0;
+    map.forEach((count, label) => {
+      items.push({
+        label,
+        count,
+        percent: Math.round((count / total) * 100),
+        color: colors[idx % colors.length]
+      });
+      idx++;
+    });
+
+    return items.sort((a, b) => b.count - a.count);
+  }
+
+  // Joining Trend (Yearly Bar Heights)
+  get analyticsJoiningTrend(): { year: string; count: number; heightPercent: number }[] {
+    const map = new Map<string, number>();
+    this.filteredEmployees.forEach(e => {
+      let yr = 'Unknown';
+      if (e.doj) {
+        const match = String(e.doj).match(/^(\d{4})/);
+        if (match) yr = match[1];
       }
+      map.set(yr, (map.get(yr) || 0) + 1);
+    });
+
+    const sortedYears = Array.from(map.keys()).sort();
+    let maxCount = 1;
+    map.forEach(c => { if (c > maxCount) maxCount = c; });
+
+    return sortedYears.map(year => {
+      const count = map.get(year) || 0;
+      return {
+        year,
+        count,
+        heightPercent: Math.max(15, Math.round((count / maxCount) * 100))
+      };
     });
   }
 
-  statItems = [
-    { key: 'totalEmployees', label: 'Total Employees', icon: 'team' },
-    { key: 'activeEmployees', label: 'Active Employees', icon: 'check-circle' },
-    { key: 'maleCount', label: 'Male', icon: 'man' },
-    { key: 'femaleCount', label: 'Female', icon: 'woman' },
-    { key: 'exitedEmployees', label: 'Exited', icon: 'logout' },
-    { key: 'newThisMonth', label: 'New This Month', icon: 'user-add' },
-  ];
+  // Active Filter Summary Labels for Dashboard Header
+  get analyticsActiveFilterSummary(): string[] {
+    const summary: string[] = [];
+    if (this.searchTerm) summary.push(`Search: "${this.searchTerm}"`);
+    if (this.filterStatus) summary.push(`Status: ${this.filterStatus}`);
+    if (this.filterGender) summary.push(`Gender: ${this.filterGender}`);
+    if (this.filterDesignation) summary.push(`Designation: ${this.filterDesignation}`);
+    if (this.filterProcess) summary.push(`Process: ${this.filterProcess}`);
+    if (this.dojFilterMode !== 'ALL') summary.push(`DOJ Filter Active`);
+    if (summary.length === 0) summary.push('All Records (Unfiltered)');
+    return summary;
+  }
 }
+

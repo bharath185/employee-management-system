@@ -3,6 +3,8 @@ package com.ems.controller;
 import com.ems.dto.APIResponse;
 import com.ems.dto.MasterDataDTO;
 import com.ems.dto.PendingRegistrationDTO;
+import com.ems.dto.SplitPdfPageDTO;
+import com.ems.service.DocumentService;
 import com.ems.service.MasterDataService;
 import com.ems.service.PendingRegistrationService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,14 @@ public class PublicRegistrationController {
 
     private final PendingRegistrationService pendingRegistrationService;
     private final MasterDataService masterDataService;
+    private final DocumentService documentService;
+
+    @PostMapping(value = "/split-pdf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<APIResponse<List<SplitPdfPageDTO>>> splitPdf(
+            @RequestParam("file") MultipartFile file) {
+        List<SplitPdfPageDTO> pages = documentService.splitPdfPages(file);
+        return ResponseEntity.ok(APIResponse.success("PDF split into pages successfully", pages));
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<APIResponse<PendingRegistrationDTO>> submitRegistration(
@@ -94,7 +104,12 @@ public class PublicRegistrationController {
             @RequestParam(value = "customFields", required = false) String customFields,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
             @RequestParam(value = "aadharDoc", required = false) MultipartFile aadharDoc,
-            @RequestParam(value = "panDoc", required = false) MultipartFile panDoc) {
+            @RequestParam(value = "panDoc", required = false) MultipartFile panDoc,
+            @RequestParam(value = "educationDocs", required = false) List<MultipartFile> educationDocs,
+            @RequestParam(value = "personalDocs", required = false) List<MultipartFile> personalDocs,
+            @RequestParam(value = "additionalDocs", required = false) List<MultipartFile> additionalDocs,
+            @RequestParam(value = "additionalDocTypes", required = false) List<String> additionalDocTypes,
+            @RequestParam(value = "additionalDocTitles", required = false) List<String> additionalDocTitles) {
 
         PendingRegistrationDTO dto = PendingRegistrationDTO.builder()
             .firstName(firstName)
@@ -168,7 +183,8 @@ public class PublicRegistrationController {
             .customFields(customFields)
             .build();
 
-        PendingRegistrationDTO created = pendingRegistrationService.create(dto, photo, aadharDoc, panDoc);
+        PendingRegistrationDTO created = pendingRegistrationService.create(
+                dto, photo, aadharDoc, panDoc, educationDocs, personalDocs, additionalDocs, additionalDocTypes, additionalDocTitles);
         return ResponseEntity.ok(APIResponse.success("Registration submitted successfully", created));
     }
 

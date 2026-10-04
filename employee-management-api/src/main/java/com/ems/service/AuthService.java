@@ -50,14 +50,7 @@ public class AuthService {
                 var empOpt = employeeRepository.findById(userDetails.getEmployeeId());
                 if (empOpt.isPresent()) {
                     var emp = empOpt.get();
-                    employeeBasic = EmployeeBasicDTO.builder()
-                        .id(emp.getId())
-                        .employeeCode(emp.getEmployeeCode())
-                        .firstName(emp.getFirstName())
-                        .surname(emp.getSurname())
-                        .email(emp.getEmail())
-                        .photoPath(emp.getPhotoPath())
-                        .build();
+                    employeeBasic = EmployeeBasicDTO.fromEntity(emp);
                 }
             } catch (Exception e) {
                 // Employee may not exist yet for admin accounts

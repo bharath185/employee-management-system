@@ -35,6 +35,7 @@ export class PendingRegistrationService {
       designation?: string;
       department?: string;
       processAssigned?: string;
+      role?: string;
       fatherHusbandName?: string;
     }
   ): Observable<APIResponse<any>> {
@@ -44,6 +45,7 @@ export class PendingRegistrationService {
     if (options?.designation) params = params.set('designation', options.designation);
     if (options?.department) params = params.set('department', options.department);
     if (options?.processAssigned) params = params.set('processAssigned', options.processAssigned);
+    if (options?.role) params = params.set('role', options.role);
     if (options?.fatherHusbandName) params = params.set('fatherHusbandName', options.fatherHusbandName);
     return this.http.post<APIResponse<any>>(`${this.adminUrl}/${id}/approve`, {}, { params });
   }
@@ -60,5 +62,11 @@ export class PendingRegistrationService {
 
   getQrData(): Observable<APIResponse<string>> {
     return this.http.get<APIResponse<string>>(`${this.baseUrl}/qr-data`);
+  }
+
+  splitPdf(file: File): Observable<APIResponse<{ pageNumber: number; totalPages: number; fileName: string; fileSize: number; base64Data: string }[]>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<APIResponse<{ pageNumber: number; totalPages: number; fileName: string; fileSize: number; base64Data: string }[]>>(`${this.baseUrl}/split-pdf`, formData);
   }
 }

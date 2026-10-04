@@ -50,6 +50,10 @@ export class EmployeeService {
     });
   }
 
+  getAllEmployees(): Observable<APIResponse<PagedResponse<Employee>>> {
+    return this.getEmployees({ page: 0, size: 5000 });
+  }
+
   getEmployeeById(id: number): Observable<APIResponse<Employee>> {
     return this.http.get<APIResponse<Employee>>(`${this.apiUrl}/${id}`);
   }

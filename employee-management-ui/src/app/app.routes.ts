@@ -79,6 +79,14 @@ export const routes: Routes = [
         data: { role: 'ADMIN' }
       },
       {
+        path: 'documents',
+        loadComponent: () => import('./features/document-hub/document-hub.component')
+          .then(m => m.DocumentHubComponent),
+        title: 'Document Hub',
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'HR'] }
+      },
+      {
         path: 'document-templates',
         loadComponent: () => import('./features/document-templates/document-template-list.component')
           .then(m => m.DocumentTemplateListComponent),

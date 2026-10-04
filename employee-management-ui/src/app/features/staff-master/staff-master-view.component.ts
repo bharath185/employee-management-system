@@ -32,6 +32,7 @@ import { DocumentTemplate, DownloadLog } from '../../core/models/document-templa
 import { FormFieldConfigService, FormFieldConfig } from '../../core/services/form-field-config.service';
 import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
+import { DocumentsTabComponent } from './tabs/documents-tab/documents-tab.component';
 
 @Component({
   selector: 'app-staff-master-view',
@@ -56,7 +57,8 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
     DateFormatPipe,
     TitleCasePipe,
     LoadingSpinnerComponent,
-    SafeHtmlPipe
+    SafeHtmlPipe,
+    DocumentsTabComponent
   ],
   template: `
     <div class="pl-container">
@@ -69,7 +71,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
           <span class="pp-emp-tag" *ngIf="employee">
             <span class="emp-tag-code" *ngIf="employee.employeeCode">{{ employee.employeeCode }}</span>
             <span class="emp-tag-dot" *ngIf="employee.employeeCode">&bull;</span>
-            <span class="emp-tag-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.surname ? employee.surname + ' ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}</span>
+            <span class="emp-tag-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}{{ employee.surname ? ' ' + employee.surname : '' }}</span>
           </span>
         </span>
         <span class="pp-spacer"></span>
@@ -90,11 +92,11 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
           <div class="view-avatar-section">
             <img [src]="photoUrl" alt="Photo" class="view-avatar-img" *ngIf="employee.photoPath" (error)="onPhotoError($event)" (load)="onPhotoLoad($event)">
             <div class="view-avatar" *ngIf="!employee.photoPath">
-              <span class="view-avatar-initials">{{ getInitials(employee.surname, employee.firstName) }}</span>
+              <span class="view-avatar-initials">{{ getInitials(employee.firstName, employee.surname) }}</span>
             </div>
           </div>
           <div class="view-profile-info">
-            <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.surname ? employee.surname + ' ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}</h1>
+            <h1 class="view-name">{{ employee.prefix ? employee.prefix + '. ' : '' }}{{ employee.firstName || '' }}{{ employee.middleName ? ' ' + employee.middleName : '' }}{{ employee.surname ? ' ' + employee.surname : '' }}</h1>
             <div class="view-code">{{ employee.employeeCode }}</div>
             <div class="view-meta">
               <span class="view-meta-item"><i class="bi bi-briefcase"></i> {{ employee.designation }}</span>
@@ -171,7 +173,6 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
                   <span class="emp-code-badge">{{ employee.employeeCode }}</span>
                 </nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Designation">{{ employee.designation | titleCase }}</nz-descriptions-item>
-                <nz-descriptions-item nzTitle="Department">{{ employee.department || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Process Assigned">{{ employee.processAssigned || '-' }}</nz-descriptions-item>
                 <nz-descriptions-item nzTitle="Employment Status">
                   <nz-tag [nzColor]="employee.employeeStatus === 'LIVE' ? 'green' : 'default'">{{ employee.employeeStatus }}</nz-tag>
@@ -338,14 +339,19 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
           <!-- 8. DOCUMENTS TAB -->
           <nz-tab nzTitle="Documents">
             <div class="tab-content">
+              <!-- Uploaded Documents Repository -->
+              <app-documents-tab [employeeId]="employee.id" [hideUpload]="true" [isEditMode]="false"></app-documents-tab>
+
+              <nz-divider nzText="Document Generation" nzOrientation="left" style="margin-top: 24px; margin-bottom: 16px;"></nz-divider>
+
               <div class="documents-tab-header">
-                <h3 class="documents-tab-title">Generate Documents</h3>
+                <h3 class="documents-tab-title">Generate Official Documents</h3>
                 <button nz-button class="btn-primary-gradient" (click)="showGenerateModal()">
                   <i class="bi bi-file-earmark-text"></i> Generate Document
                 </button>
               </div>
-              <nz-divider></nz-divider>
-              <h4 class="doc-history-title">Recent Downloads</h4>
+              
+              <h4 class="doc-history-title" style="margin-top: 14px;">Recent Downloads</h4>
               <nz-table #historyTable [nzData]="downloadHistory" [nzFrontPagination]="true" [nzPageSize]="5"
                 nzSize="small" [nzNoResult]="noHistory" class="theme-table">
                 <thead>
@@ -384,7 +390,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
       <ng-template #docModalTitleTpl>
         <div class="modal-head-title">
           <span class="pdf-tag-badge"><i nz-icon nzType="file-pdf" nzTheme="fill"></i> PDF</span>
-          <span class="head-text">Generate Document &bull; {{ employee ? ((employee.surname ? employee.surname + ' ' : '') + (employee.firstName || '') + (employee.middleName ? ' ' + employee.middleName : '')) : '' }}</span>
+          <span class="head-text">Generate Document &bull; {{ employee ? ((employee.prefix ? employee.prefix + '. ' : '') + (employee.firstName || '') + (employee.middleName ? ' ' + employee.middleName : '') + (employee.surname ? ' ' + employee.surname : '')) : '' }}</span>
         </div>
       </ng-template>
 
@@ -1124,8 +1130,8 @@ export class StaffMasterViewComponent implements OnInit {
     });
   }
 
-  getInitials(surname: string, firstName: string): string {
-    return (surname?.charAt(0) || '') + (firstName?.charAt(0) || '');
+  getInitials(firstName?: string, surname?: string): string {
+    return (firstName?.charAt(0) || '') + (surname?.charAt(0) || '');
   }
 
   getAssetValue(key: string): string {
@@ -1183,6 +1189,32 @@ export class StaffMasterViewComponent implements OnInit {
     });
   }
 
+  private handleSalaryError(err: any): boolean {
+    const msg = err?.error?.message || err?.message || '';
+    if (msg.includes('SALARY_MASTER_NOT_FOUND') || msg.toLowerCase().includes('salary master') || msg.toLowerCase().includes('ctc')) {
+      const empCode = this.employee?.employeeCode || '';
+      const empName = this.employee?.fullName || '';
+
+      this.modal.confirm({
+        nzTitle: '<span style="color:#e11d48;font-weight:700;"><i class="anticon anticon-warning"></i> Salary Master / CTC Required</span>',
+        nzContent: `<div style="font-size:13px;color:#334155;line-height:1.6;">
+          <p style="margin-bottom:8px;"><strong>Salary Master / CTC details are not configured for ${empName ? empName + ' (' + empCode + ')' : 'this employee'}.</strong></p>
+          <p style="color:#64748b;margin-bottom:8px;">The Appointment Letter and compensation annexure require configured CTC components in Salary Master (Basic, HRA, Allowances, etc.).</p>
+          <p style="font-weight:600;color:#1e293b;margin:0;">Would you like to navigate to Salary Master now to add this employee's salary?</p>
+        </div>`,
+        nzOkText: 'Go to Salary Master',
+        nzOkType: 'primary',
+        nzCancelText: 'Cancel',
+        nzOnOk: () => {
+          this.closeGenerateModal();
+          this.router.navigate(['/admin/payroll/salary-master'], { queryParams: { search: empCode } });
+        }
+      });
+      return true;
+    }
+    return false;
+  }
+
   onTemplateSelect(): void {
     if (!this.selectedTemplateId || !this.employeeId) return;
     this.previewHtml = '';
@@ -1193,8 +1225,10 @@ export class StaffMasterViewComponent implements OnInit {
           this.previewHtml = response.data;
         }
       },
-      error: () => {
-        this.message.error('Error generating preview');
+      error: (err) => {
+        if (!this.handleSalaryError(err)) {
+          this.message.error(err?.error?.message || 'Error generating preview');
+        }
       }
     });
   }
@@ -1239,10 +1273,12 @@ export class StaffMasterViewComponent implements OnInit {
           this.message.error('Error generating document');
         }
       },
-      error: () => {
+      error: (err) => {
         this.isDownloading = false;
         printWindow?.close();
-        this.message.error('Error generating document');
+        if (!this.handleSalaryError(err)) {
+          this.message.error(err?.error?.message || 'Error generating document');
+        }
       }
     });
   }

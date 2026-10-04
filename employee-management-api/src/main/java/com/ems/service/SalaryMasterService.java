@@ -263,16 +263,11 @@ public class SalaryMasterService {
             CellStyle headerStyle = createHeaderStyle(wb);
             CellStyle dataStyle = createDataStyle(wb);
             CellStyle currencyStyle = createCurrencyStyle(wb);
-            CellStyle hintStyle = wb.createCellStyle();
-            Font hintFont = wb.createFont();
-            hintFont.setItalic(true);
-            hintFont.setColor(IndexedColors.GREY_50_PERCENT.getIndex());
-            hintStyle.setFont(hintFont);
 
             int r = 0;
             Row titleRow = sheet.createRow(r++);
-            createCell(titleRow, 0, "INSTRUCTIONS: Fill Employee Code and Salary components. Columns marked with * are required.", titleStyle);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 15));
+            createCell(titleRow, 0, "INSTRUCTIONS: Update salary components for live employees and upload back. Columns marked with * are required.", titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 18));
 
             Row hRow = sheet.createRow(r++);
             String[] headers = {
@@ -287,12 +282,38 @@ public class SalaryMasterService {
                 createCell(hRow, i, headers[i], headerStyle);
             }
 
-            // Pre-populate with exactly 1 sample reference record
+            // Pre-populate template with exactly 1 live employee for testing and reference
             Employee sampleEmp = (employees != null && !employees.isEmpty()) ? employees.get(0) : null;
             String sampleCode = sampleEmp != null && sampleEmp.getEmployeeCode() != null ? sampleEmp.getEmployeeCode() : "PARI0001";
-            String sampleName = sampleEmp != null && sampleEmp.getFullName() != null ? sampleEmp.getFullName() : "Sample Employee";
+            String sampleName = sampleEmp != null ? safeStr(sampleEmp.getFullName()) : "Sample Employee";
             String sampleDesig = sampleEmp != null ? safeStr(sampleEmp.getDesignation()) : "Executive";
             String sampleDept = sampleEmp != null ? safeStr(sampleEmp.getDepartment() != null ? sampleEmp.getDepartment() : sampleEmp.getProcessAssigned()) : "Operations";
+
+            SalaryMaster existingSm = (sampleEmp != null) ? salaryMasterRepository.findByEmployeeId(sampleEmp.getId()).orElse(null) : null;
+
+            BigDecimal basic = (existingSm != null && existingSm.getBasic() != null && existingSm.getBasic().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getBasic() : new BigDecimal("15000.00");
+            BigDecimal hra = (existingSm != null && existingSm.getHra() != null && existingSm.getHra().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getHra() : new BigDecimal("6000.00");
+            BigDecimal fpa = (existingSm != null && existingSm.getFixedPersonalAllowance() != null && existingSm.getFixedPersonalAllowance().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getFixedPersonalAllowance() : new BigDecimal("3000.00");
+            BigDecimal other = (existingSm != null && existingSm.getOtherAllowance() != null && existingSm.getOtherAllowance().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getOtherAllowance() : new BigDecimal("1000.00");
+            BigDecimal bonus = (existingSm != null && existingSm.getBonus() != null) ? existingSm.getBonus() : BigDecimal.ZERO;
+            BigDecimal appraisal = (existingSm != null && existingSm.getAppraisalAmount() != null) ? existingSm.getAppraisalAmount() : BigDecimal.ZERO;
+            BigDecimal lateSitting = (existingSm != null && existingSm.getLateSittingAmount() != null) ? existingSm.getLateSittingAmount() : BigDecimal.ZERO;
+            BigDecimal pf = (existingSm != null && existingSm.getPfDeduction() != null && existingSm.getPfDeduction().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getPfDeduction() : new BigDecimal("1800.00");
+            BigDecimal esi = (existingSm != null && existingSm.getEsiDeduction() != null && existingSm.getEsiDeduction().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getEsiDeduction() : new BigDecimal("187.50");
+            BigDecimal pt = (existingSm != null && existingSm.getPtDeduction() != null && existingSm.getPtDeduction().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getPtDeduction() : new BigDecimal("200.00");
+            BigDecimal health = (existingSm != null && existingSm.getHealthInsurance() != null && existingSm.getHealthInsurance().compareTo(BigDecimal.ZERO) > 0)
+                ? existingSm.getHealthInsurance() : new BigDecimal("500.00");
+            BigDecimal ot = (existingSm != null && existingSm.getOvertimeWages() != null) ? existingSm.getOvertimeWages() : BigDecimal.ZERO;
+            int wh = (existingSm != null && existingSm.getWorkingHoursPerDay() != null) ? existingSm.getWorkingHoursPerDay() : 8;
+            String wo = (existingSm != null && existingSm.getWeeklyOff() != null) ? existingSm.getWeeklyOff() : "Allowed";
+            String wt = (existingSm != null && existingSm.getWorkerType() != null) ? existingSm.getWorkerType() : "Permanent";
 
             Row row = sheet.createRow(r++);
             int c = 0;
@@ -301,31 +322,21 @@ public class SalaryMasterService {
             createCell(row, c++, sampleDesig, dataStyle);
             createCell(row, c++, sampleDept, dataStyle);
 
-            // Sample base calculations
-            BigDecimal basic = new BigDecimal("15000.00");
-            BigDecimal hra = new BigDecimal("6000.00");
-            BigDecimal fpa = new BigDecimal("3000.00");
-            BigDecimal other = new BigDecimal("1000.00");
-            BigDecimal pf = new BigDecimal("1800.00");
-            BigDecimal esi = new BigDecimal("187.50");
-            BigDecimal pt = new BigDecimal("200.00");
-            BigDecimal health = new BigDecimal("500.00");
-
             createCell(row, c++, basic, currencyStyle);
             createCell(row, c++, hra, currencyStyle);
             createCell(row, c++, fpa, currencyStyle);
             createCell(row, c++, other, currencyStyle);
-            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
+            createCell(row, c++, bonus, currencyStyle);
+            createCell(row, c++, appraisal, currencyStyle);
+            createCell(row, c++, lateSitting, currencyStyle);
             createCell(row, c++, pf, currencyStyle);
             createCell(row, c++, esi, currencyStyle);
             createCell(row, c++, pt, currencyStyle);
             createCell(row, c++, health, currencyStyle);
-            createCell(row, c++, BigDecimal.ZERO, currencyStyle);
-            createCell(row, c++, 8, dataStyle);
-            createCell(row, c++, "Allowed", dataStyle);
-            createCell(row, c++, "Permanent", dataStyle);
+            createCell(row, c++, ot, currencyStyle);
+            createCell(row, c++, wh, dataStyle);
+            createCell(row, c++, wo, dataStyle);
+            createCell(row, c++, wt, dataStyle);
 
             for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
             wb.write(out);
@@ -343,67 +354,187 @@ public class SalaryMasterService {
         }
 
         int importedCount = 0;
+        int updatedCount = 0;
         int skippedCount = 0;
         List<String> errors = new ArrayList<>();
         String currentUser = getCurrentUser();
 
         try (InputStream is = file.getInputStream(); Workbook wb = WorkbookFactory.create(is)) {
+            FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
             Sheet sheet = wb.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
+            int totalRows = sheet.getLastRowNum();
+            if (totalRows < 0) {
+                throw new BadRequestException("The uploaded Excel file is empty.");
+            }
 
             int headerRowIdx = -1;
             Map<String, Integer> colMap = new HashMap<>();
+            String empCodeKey = null;
 
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
+            // Search first 20 rows for the header row
+            for (int r = 0; r <= Math.min(20, totalRows); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                Map<String, Integer> tempMap = new HashMap<>();
+                String foundEmpKey = null;
+
                 for (Cell cell : row) {
-                    String val = getCellString(cell).trim().toLowerCase();
-                    if (val.contains("emp") && val.contains("code")) {
-                        headerRowIdx = row.getRowNum();
-                        break;
+                    String raw = getCellString(cell, evaluator).trim().toLowerCase();
+                    String clean = raw.replaceAll("[^a-z0-9]", "");
+                    if (clean.isEmpty()) continue;
+
+                    tempMap.put(clean, cell.getColumnIndex());
+
+                    if (foundEmpKey == null && (
+                        clean.equals("employeecode") || clean.equals("empcode") || clean.equals("ecode") ||
+                        clean.equals("employeeno") || clean.equals("empno") || clean.equals("employeenumber") ||
+                        clean.equals("empid") || clean.equals("employeeid") || clean.equals("staffcode") ||
+                        clean.equals("staffid") || clean.equals("paricode") || clean.equals("staffno") ||
+                        clean.equals("code") || (raw.contains("emp") && raw.contains("code")) ||
+                        (raw.contains("staff") && raw.contains("code")) || (raw.contains("employee") && raw.contains("code"))
+                    )) {
+                        foundEmpKey = clean;
                     }
                 }
-                if (headerRowIdx != -1) {
-                    for (Cell cell : row) {
-                        String name = getCellString(cell).trim().toLowerCase().replaceAll("[^a-z0-9]", "");
-                        colMap.put(name, cell.getColumnIndex());
-                    }
+
+                if (foundEmpKey != null) {
+                    headerRowIdx = r;
+                    colMap = tempMap;
+                    empCodeKey = foundEmpKey;
                     break;
                 }
             }
 
-            if (headerRowIdx == -1 || !colMap.containsKey("employeecode")) {
-                throw new BadRequestException("Could not find 'Employee Code' column header in the uploaded Excel file.");
+            // Fallback: If no explicit header matched, scan rows for first column containing PARI... or alphanumeric code pattern
+            if (headerRowIdx == -1 || empCodeKey == null) {
+                for (int r = 0; r <= Math.min(20, totalRows); r++) {
+                    Row row = sheet.getRow(r);
+                    if (row == null) continue;
+                    for (Cell cell : row) {
+                        String raw = getCellString(cell, evaluator).trim().toUpperCase();
+                        if (raw.startsWith("PARI") || (raw.length() >= 3 && raw.matches("^[A-Z0-9_-]+$") && employeeRepository.findByEmployeeCodeIgnoreCase(raw).isPresent())) {
+                            headerRowIdx = Math.max(0, r - 1);
+                            Row hRow = sheet.getRow(headerRowIdx);
+                            if (hRow != null) {
+                                for (Cell hc : hRow) {
+                                    String clean = getCellString(hc, evaluator).trim().toLowerCase().replaceAll("[^a-z0-9]", "");
+                                    if (!clean.isEmpty()) colMap.put(clean, hc.getColumnIndex());
+                                }
+                            }
+                            empCodeKey = "auto_emp_code";
+                            colMap.put(empCodeKey, cell.getColumnIndex());
+                            break;
+                        }
+                    }
+                    if (empCodeKey != null) break;
+                }
             }
 
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-                String empCode = getCellString(row.getCell(colMap.get("employeecode"))).trim();
-                if (empCode.isEmpty()) continue;
+            if (headerRowIdx == -1 || empCodeKey == null || !colMap.containsKey(empCodeKey)) {
+                throw new BadRequestException("Could not find 'Employee Code' or 'Emp Code' column in the uploaded Excel file. Please ensure the column header is present.");
+            }
 
-                Optional<Employee> empOpt = employeeRepository.findByEmployeeCode(empCode);
+            int empColIdx = colMap.get(empCodeKey);
+            log.info("Starting Salary Master Excel import: headerRowIdx={}, colMap={}", headerRowIdx, colMap);
+
+            for (int r = headerRowIdx + 1; r <= totalRows; r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+
+                String empCode = getCellString(row.getCell(empColIdx), evaluator).trim();
+                String empName = getFirstMatchingString(row, colMap, evaluator, "employeename", "empname", "name", "fullname", "staffname");
+                if (empName == null) empName = "";
+                empName = empName.trim();
+
+                String cleanEmpCode = empCode.replaceAll("[^a-zA-Z0-9_-]", "");
+                if (cleanEmpCode.isEmpty()) continue;
+
+                String lowerCode = empCode.toLowerCase();
+                // Skip summary/total/header-repeat rows
+                if (lowerCode.equals("total") || lowerCode.startsWith("total") || lowerCode.contains("subtotal") ||
+                    lowerCode.contains("grand total") || lowerCode.contains("employee code") || lowerCode.contains("emp code") ||
+                    lowerCode.contains("instructions") || lowerCode.contains("columns marked") || lowerCode.equals("s.no") ||
+                    lowerCode.equals("sl.no") || lowerCode.equals("sno") || lowerCode.equals("slno")) {
+                    continue;
+                }
+
+                // Match employee by code (case-insensitive & variations)
+                Optional<Employee> empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(cleanEmpCode);
+                if (empOpt.isEmpty() && !cleanEmpCode.equalsIgnoreCase(empCode)) {
+                    empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(empCode);
+                }
+                if (empOpt.isEmpty() && cleanEmpCode.matches("^[0-9]+$")) {
+                    int num = Integer.parseInt(cleanEmpCode);
+                    empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(String.format("PARI%04d", num));
+                    if (empOpt.isEmpty()) {
+                        empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(String.format("PARI%03d", num));
+                    }
+                    if (empOpt.isEmpty()) {
+                        empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(String.format("PARI%02d", num));
+                    }
+                }
+                if (empOpt.isEmpty() && cleanEmpCode.toUpperCase().startsWith("PARI")) {
+                    String numPart = cleanEmpCode.substring(4).replaceAll("[^0-9]", "");
+                    if (!numPart.isEmpty()) {
+                        int num = Integer.parseInt(numPart);
+                        empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(String.format("PARI%04d", num));
+                        if (empOpt.isEmpty()) {
+                            empOpt = employeeRepository.findByEmployeeCodeIgnoreCase(String.format("PARI%03d", num));
+                        }
+                    }
+                }
+
+                // Fallback: match by employee name if employee code was not found
+                if (empOpt.isEmpty() && !empName.isEmpty() && !empName.equalsIgnoreCase("sample employee")) {
+                    List<Employee> liveEmps = employeeRepository.findAllLiveEmployees();
+                    String searchNameClean = empName.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                    for (Employee le : liveEmps) {
+                        String leNameClean = safeStr(le.getFullName()).replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                        String leFirstLastClean = (safeStr(le.getFirstName()) + safeStr(le.getSurname())).replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                        String leLastFirstClean = (safeStr(le.getSurname()) + safeStr(le.getFirstName())).replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+                        if (leNameClean.equals(searchNameClean) || leFirstLastClean.equals(searchNameClean) || leLastFirstClean.equals(searchNameClean)) {
+                            empOpt = Optional.of(le);
+                            break;
+                        }
+                    }
+                }
+
+                // If still not found
                 if (empOpt.isEmpty()) {
+                    // Silently ignore dummy template placeholder rows
+                    if (lowerCode.contains("sample") || empName.toLowerCase().contains("sample") ||
+                        (cleanEmpCode.equalsIgnoreCase("PARI0001") && (empName.isEmpty() || empName.toLowerCase().contains("sample")))) {
+                        continue;
+                    }
+
                     skippedCount++;
-                    errors.add("Employee code not found: " + empCode);
+                    if (errors.size() < 20) {
+                        String desc = "Row " + (r + 1) + ": Employee code '" + empCode + "'";
+                        if (!empName.isEmpty()) desc += " (" + empName + ")";
+                        desc += " was not found in active staff";
+                        errors.add(desc);
+                    }
                     continue;
                 }
 
                 Employee emp = empOpt.get();
+                boolean isNew = !salaryMasterRepository.existsByEmployeeId(emp.getId());
                 SalaryMaster master = salaryMasterRepository.findByEmployeeId(emp.getId())
                     .orElseGet(() -> SalaryMaster.builder().employee(emp).build());
 
-                BigDecimal basic = getCellDecimal(row, colMap, "basic");
-                BigDecimal hra = getCellDecimal(row, colMap, "hra");
-                BigDecimal fpa = getCellDecimal(row, colMap, "fixedpersonalallowance", "fpa", "personalallowance");
-                BigDecimal other = getCellDecimal(row, colMap, "otherallowance", "other", "othallowance");
-                BigDecimal bonus = getCellDecimal(row, colMap, "bonus");
-                BigDecimal appraisal = getCellDecimal(row, colMap, "appraisalamount", "appraisal");
-                BigDecimal lateSitting = getCellDecimal(row, colMap, "latesittingamount", "latesitting");
-                BigDecimal pf = getCellDecimal(row, colMap, "pfdeduction", "pf");
-                BigDecimal esi = getCellDecimal(row, colMap, "esideduction", "esi", "esic");
-                BigDecimal pt = getCellDecimal(row, colMap, "ptdeduction", "pt");
-                BigDecimal health = getCellDecimal(row, colMap, "healthinsurance", "health", "insurance");
-                BigDecimal ot = getCellDecimal(row, colMap, "overtimewages", "ot", "overtime");
+                BigDecimal basic = getCellDecimal(row, colMap, evaluator, "basic", "basicpay", "basicsalary", "basicwages");
+                BigDecimal hra = getCellDecimal(row, colMap, evaluator, "hra", "houserentallowance", "houserent");
+                BigDecimal fpa = getCellDecimal(row, colMap, evaluator, "fixedpersonalallowance", "fpa", "personalallowance", "fixedallowance");
+                BigDecimal other = getCellDecimal(row, colMap, evaluator, "otherallowance", "othallowance", "other", "specialallowance", "splallowance", "allowance");
+                BigDecimal bonus = getCellDecimal(row, colMap, evaluator, "bonus", "bonusamount", "annualbonus", "incentive");
+                BigDecimal appraisal = getCellDecimal(row, colMap, evaluator, "appraisalamount", "appraisal", "increment");
+                BigDecimal lateSitting = getCellDecimal(row, colMap, evaluator, "latesittingamount", "latesitting", "late");
+                BigDecimal pf = getCellDecimal(row, colMap, evaluator, "pfdeduction", "pf", "providentfund", "epf");
+                BigDecimal esi = getCellDecimal(row, colMap, evaluator, "esideduction", "esi", "esic");
+                BigDecimal pt = getCellDecimal(row, colMap, evaluator, "ptdeduction", "pt", "professionaltax", "proftax");
+                BigDecimal health = getCellDecimal(row, colMap, evaluator, "healthinsurance", "health", "insurance", "mediclaim", "medicalinsurance");
+                BigDecimal ot = getCellDecimal(row, colMap, evaluator, "overtimewages", "ot", "overtime", "otwages");
 
                 master.setBasic(basic);
                 master.setHra(hra);
@@ -418,24 +549,27 @@ public class SalaryMasterService {
                 master.setHealthInsurance(health);
                 master.setOvertimeWages(ot);
 
-                if (colMap.containsKey("workinghours")) {
-                    String wh = getCellString(row.getCell(colMap.get("workinghours")));
-                    try { master.setWorkingHoursPerDay(Integer.parseInt(wh)); } catch (Exception ignored) {}
+                String wh = getFirstMatchingString(row, colMap, evaluator, "workinghours", "workinghoursperday", "workhours", "hours");
+                if (wh != null && !wh.isEmpty()) {
+                    try { master.setWorkingHoursPerDay((int) Double.parseDouble(wh)); } catch (Exception ignored) {}
                 }
-                if (colMap.containsKey("weeklyoff")) {
-                    String wo = getCellString(row.getCell(colMap.get("weeklyoff")));
-                    if (!wo.isEmpty()) master.setWeeklyOff(wo);
-                }
-                if (colMap.containsKey("workertype")) {
-                    String wt = getCellString(row.getCell(colMap.get("workertype")));
-                    if (!wt.isEmpty()) master.setWorkerType(wt);
-                }
+
+                String wo = getFirstMatchingString(row, colMap, evaluator, "weeklyoff", "weekoff", "offday");
+                if (wo != null && !wo.isEmpty()) master.setWeeklyOff(wo);
+
+                String wt = getFirstMatchingString(row, colMap, evaluator, "workertype", "employmenttype", "worker", "type", "stafftype");
+                if (wt != null && !wt.isEmpty()) master.setWorkerType(wt);
 
                 master.setUpdatedBy(currentUser);
                 salaryMasterRepository.save(master);
                 takeSnapshot(master, currentUser);
-                importedCount++;
+
+                log.info("Saved Salary Master row {}: Emp={}, Basic={}, Gross={}, Net={}", r + 1, emp.getEmployeeCode(), basic, master.getGrossSalary(), master.getNetPay());
+
+                if (isNew) importedCount++;
+                else updatedCount++;
             }
+
         } catch (BadRequestException e) {
             throw e;
         } catch (Exception e) {
@@ -445,6 +579,8 @@ public class SalaryMasterService {
 
         Map<String, Object> result = new HashMap<>();
         result.put("importedCount", importedCount);
+        result.put("updatedCount", updatedCount);
+        result.put("totalProcessed", importedCount + updatedCount);
         result.put("skippedCount", skippedCount);
         result.put("errors", errors);
         return result;
@@ -679,36 +815,104 @@ public class SalaryMasterService {
         return auth != null ? auth.getName() : "system";
     }
 
-    private BigDecimal getCellDecimal(Row row, Map<String, Integer> colMap, String... keys) {
-        for (String key : keys) {
-            Integer col = colMap.get(key);
-            if (col != null) {
-                Cell cell = row.getCell(col);
-                if (cell != null) {
-                    if (cell.getCellType() == CellType.NUMERIC) {
-                        return BigDecimal.valueOf(cell.getNumericCellValue()).setScale(2, java.math.RoundingMode.HALF_UP);
-                    } else if (cell.getCellType() == CellType.STRING) {
-                        try {
-                            String clean = cell.getStringCellValue().replaceAll("[^0-9.]", "").trim();
-                            if (!clean.isEmpty()) return new BigDecimal(clean).setScale(2, java.math.RoundingMode.HALF_UP);
-                        } catch (Exception ignored) {}
-                    }
+    private Integer findColIndex(Map<String, Integer> colMap, String... keywords) {
+        if (colMap == null || colMap.isEmpty() || keywords == null) return null;
+
+        // 1. Exact match
+        for (String kw : keywords) {
+            String cleanKw = kw.toLowerCase().replaceAll("[^a-z0-9]", "");
+            if (colMap.containsKey(cleanKw)) {
+                return colMap.get(cleanKw);
+            }
+        }
+
+        // 2. Prefix / Contains match
+        for (String kw : keywords) {
+            String cleanKw = kw.toLowerCase().replaceAll("[^a-z0-9]", "");
+            if (cleanKw.length() < 3) continue;
+            for (Map.Entry<String, Integer> entry : colMap.entrySet()) {
+                String key = entry.getKey();
+                if (key.startsWith(cleanKw) || key.contains(cleanKw) || cleanKw.contains(key)) {
+                    return entry.getValue();
                 }
             }
         }
+        return null;
+    }
+
+    private BigDecimal getCellDecimal(Row row, Map<String, Integer> colMap, FormulaEvaluator evaluator, String... keys) {
+        Integer col = findColIndex(colMap, keys);
+        if (col == null) return BigDecimal.ZERO;
+        Cell cell = row.getCell(col);
+        if (cell == null) return BigDecimal.ZERO;
+
+        try {
+            CellType type = cell.getCellType();
+            if (type == CellType.FORMULA) {
+                if (evaluator != null) {
+                    try {
+                        CellValue cv = evaluator.evaluate(cell);
+                        if (cv != null) {
+                            if (cv.getCellType() == CellType.NUMERIC) {
+                                return BigDecimal.valueOf(cv.getNumberValue()).setScale(2, java.math.RoundingMode.HALF_UP);
+                            } else if (cv.getCellType() == CellType.STRING) {
+                                String clean = cv.getStringValue().replaceAll("[^0-9.]", "").trim();
+                                if (!clean.isEmpty()) return new BigDecimal(clean).setScale(2, java.math.RoundingMode.HALF_UP);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+                type = cell.getCachedFormulaResultType();
+            }
+
+            if (type == CellType.NUMERIC) {
+                return BigDecimal.valueOf(cell.getNumericCellValue()).setScale(2, java.math.RoundingMode.HALF_UP);
+            } else if (type == CellType.STRING) {
+                String clean = cell.getStringCellValue().replaceAll("[^0-9.]", "").trim();
+                if (!clean.isEmpty()) return new BigDecimal(clean).setScale(2, java.math.RoundingMode.HALF_UP);
+            } else if (type == CellType.BOOLEAN) {
+                return cell.getBooleanCellValue() ? BigDecimal.ONE : BigDecimal.ZERO;
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback with DataFormatter
+        try {
+            DataFormatter df = new DataFormatter();
+            String val = df.formatCellValue(cell, evaluator);
+            if (val != null) {
+                String clean = val.replaceAll("[^0-9.]", "").trim();
+                if (!clean.isEmpty()) return new BigDecimal(clean).setScale(2, java.math.RoundingMode.HALF_UP);
+            }
+        } catch (Exception ignored) {}
+
         return BigDecimal.ZERO;
     }
 
-    private String getCellString(Cell cell) {
+    private String getFirstMatchingString(Row row, Map<String, Integer> colMap, FormulaEvaluator evaluator, String... keys) {
+        Integer col = findColIndex(colMap, keys);
+        if (col == null) return null;
+        Cell cell = row.getCell(col);
+        if (cell == null) return null;
+        String val = getCellString(cell, evaluator);
+        return val != null && !val.trim().isEmpty() ? val.trim() : null;
+    }
+
+    private String getCellString(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return "";
-        if (cell.getCellType() == CellType.STRING) return cell.getStringCellValue().trim();
-        if (cell.getCellType() == CellType.NUMERIC) {
-            if (DateUtil.isCellDateFormatted(cell)) return cell.getLocalDateTimeCellValue().toLocalDate().toString();
-            double d = cell.getNumericCellValue();
-            if (d == (long) d) return String.valueOf((long) d);
-            return String.valueOf(d);
+        try {
+            DataFormatter df = new DataFormatter();
+            return df.formatCellValue(cell, evaluator).trim();
+        } catch (Exception e) {
+            try {
+                if (cell.getCellType() == CellType.STRING) return cell.getStringCellValue().trim();
+                if (cell.getCellType() == CellType.NUMERIC) {
+                    if (DateUtil.isCellDateFormatted(cell)) return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                    double d = cell.getNumericCellValue();
+                    if (d == (long) d) return String.valueOf((long) d);
+                    return String.valueOf(d);
+                }
+            } catch (Exception ignored) {}
         }
-        if (cell.getCellType() == CellType.BOOLEAN) return String.valueOf(cell.getBooleanCellValue());
         return "";
     }
 

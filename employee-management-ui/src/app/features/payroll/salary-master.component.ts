@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -23,8 +23,6 @@ import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { PayrollService } from '../../core/services/payroll.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
-import { DocumentTemplateService } from '../../core/services/document-template.service';
-import { openDocumentPrintPreview } from '../../shared/utils/print-document';
 import { SalaryMasterDTO } from '../../core/models/payroll.models';
 
 @Component({
@@ -109,15 +107,15 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
             <button nz-button nzType="default" class="btn-ctrl" (click)="initForAll()" [nzLoading]="initLoading" nz-tooltip="Initialize salary master for missing live employees">
               <i nz-icon nzType="usergroup-add"></i> Sync Live Staff
             </button>
-            <button nz-button nzType="default" class="btn-ctrl" (click)="downloadTemplate()" [nzLoading]="templateLoading" nz-tooltip="Download Excel import template with employee codes">
-              <i nz-icon nzType="download"></i> Template
+            <button nz-button nzType="default" class="btn-ctrl" (click)="downloadTemplate()" [nzLoading]="templateLoading" nz-tooltip="Download Sample Excel file for testing and reference">
+              <i nz-icon nzType="file-text"></i> Sample
             </button>
-            <button nz-button nzType="default" class="btn-ctrl" (click)="exportExcel()" [nzLoading]="exportLoading" nz-tooltip="Export salary master records to Excel">
-              <i nz-icon nzType="file-excel"></i> Export
+            <button nz-button nzType="default" class="btn-ctrl" (click)="exportExcel()" [nzLoading]="exportLoading" nz-tooltip="Download salary master records to Excel">
+              <i nz-icon nzType="download"></i> Download
             </button>
             <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx, .xls" style="display:none;" />
-            <button nz-button nzType="default" class="btn-ctrl" [nzLoading]="importLoading" (click)="fileInput.click()" nz-tooltip="Load fresh / update salary master from Excel file">
-              <i nz-icon nzType="upload"></i> Import Excel
+            <button nz-button nzType="default" class="btn-ctrl" [nzLoading]="importLoading" (click)="fileInput.click()" nz-tooltip="Upload fresh / update salary master from Excel file">
+              <i nz-icon nzType="upload"></i> Upload
             </button>
             <button nz-button nzDanger class="btn-ctrl" (click)="deleteAllPrompt()" [disabled]="masters.length === 0" nz-tooltip="Clear all salary master records to load fresh data">
               <i nz-icon nzType="delete"></i> Delete All
@@ -255,9 +253,6 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
                   <button nz-button nzType="link" nzSize="small" (click)="openEditModal(m)" nz-tooltip="Edit all components" style="color:#2563eb;padding:0 2px;">
                     <i nz-icon nzType="edit"></i>
                   </button>
-                  <button nz-button nzType="link" nzSize="small" (click)="openAppointmentLetter(m)" nz-tooltip="Appointment Letter" style="color:#4f46e5;padding:0 2px;">
-                    <i nz-icon nzType="file-done"></i>
-                  </button>
                   <button nz-button nzType="link" nzSize="small" (click)="showHistory(m)" nz-tooltip="History & Snapshots" style="padding:0 2px;">
                     <i nz-icon nzType="clock-circle"></i>
                   </button>
@@ -271,13 +266,13 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
               <td colspan="17" class="empty-cell">
                 <div style="padding:20px;">
                   <p style="margin-bottom:8px;font-weight:500;">No salary master records found.</p>
-                  <p style="color:#6b7280;font-size:12px;margin-bottom:12px;">You can import fresh salary records from Excel or initialize live staff.</p>
+                  <p style="color:#6b7280;font-size:12px;margin-bottom:12px;">You can upload fresh salary records from Excel or initialize live staff.</p>
                   <div style="display:flex;gap:8px;justify-content:center;">
                     <button nz-button nzType="primary" nzSize="small" (click)="initForAll()">
                       <i nz-icon nzType="usergroup-add"></i> Initialize Live Staff
                     </button>
                     <button nz-button nzSize="small" (click)="fileInput.click()">
-                      <i nz-icon nzType="upload"></i> Import from Excel
+                      <i nz-icon nzType="upload"></i> Upload Excel
                     </button>
                   </div>
                 </div>
@@ -407,34 +402,6 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
         </ng-template>
       </nz-modal>
 
-      <!-- ===== APPOINTMENT LETTER PREVIEW MODAL ===== -->
-      <nz-modal [(nzVisible)]="isLetterModalVisible" [nzTitle]="letterModalTitle" (nzOnCancel)="isLetterModalVisible = false" nzWidth="920px" [nzFooter]="letterModalFooter">
-        <ng-template nzModalContent>
-          <div *ngIf="letterLoading" style="text-align:center;padding:50px 0;">
-            <nz-spin nzSimple nzTip="Generating Appointment Letter from Salary Master..."></nz-spin>
-          </div>
-          <div *ngIf="!letterLoading && letterPreviewHtml" style="max-height:72vh;overflow-y:auto;border:1px solid #e2e8f0;border-radius:6px;background:#fff;padding:8px;">
-            <iframe [srcdoc]="letterPreviewHtml" style="width:100%;height:68vh;border:none;" sandbox="allow-same-origin allow-scripts"></iframe>
-          </div>
-          <div *ngIf="!letterLoading && !letterPreviewHtml" style="text-align:center;padding:40px;color:#94a3b8;">
-            No preview available.
-          </div>
-        </ng-template>
-        <ng-template #letterModalFooter>
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:12px;color:#64748b;">
-              Salary structure taken directly from <strong>Salary Master</strong>.
-            </span>
-            <div style="display:flex;gap:8px;">
-              <button nz-button nzType="default" (click)="isLetterModalVisible = false">Close</button>
-              <button nz-button nzType="primary" (click)="downloadAppointmentLetter()" [nzLoading]="isLetterDownloading" [disabled]="!letterPreviewHtml">
-                <i nz-icon nzType="printer"></i> Print / Save PDF
-              </button>
-            </div>
-          </div>
-        </ng-template>
-      </nz-modal>
-
       <!-- ===== HISTORY DRAWER ===== -->
       <nz-drawer
         [nzVisible]="historyDrawer"
@@ -473,7 +440,7 @@ import { SalaryMasterDTO } from '../../core/models/payroll.models';
               <div *ngIf="historyLoading" style="text-align:center;padding:40px"><i nz-icon nzType="loading" style="font-size:24px"></i></div>
               <nz-timeline *ngIf="!historyLoading && historyItems.length > 0">
                 <nz-timeline-item *ngFor="let h of historyItems">
-                  <span style="font-size:12px;color:#6c757d">{{ h.changedAt | date:'dd MMM yyyy HH:mm' }}</span>
+                  <span style="font-size:12px;color:#6c757d">{{ h.changedAt | date:'dd/MM/yyyy HH:mm' }}</span>
                   <br/>
                   <span style="font-size:13px"><strong>{{ h.fieldName }}</strong>: {{ h.oldValue || '—' }} → {{ h.newValue }}</span>
                   <br/>
@@ -866,25 +833,20 @@ export class SalaryMasterComponent implements OnInit {
   historyLoading = false;
   snapshots: any[] = [];
   snapshotsLoading = false;
-
-  isLetterModalVisible = false;
-  letterLoading = false;
-  isLetterDownloading = false;
-  letterModalTitle = 'Appointment Letter';
-  letterPreviewHtml = '';
-  selectedEmployeeForLetter: SalaryMasterDTO | null = null;
-  appointmentTemplateId: number | null = null;
-
   constructor(
+    private route: ActivatedRoute,
     private payrollService: PayrollService,
     private employeeService: EmployeeService,
-    private docTemplateService: DocumentTemplateService,
     public authService: AuthService,
     private msg: NzMessageService,
     private modal: NzModalService
   ) {}
 
   ngOnInit(): void {
+    const qSearch = this.route.snapshot.queryParams['search'] || this.route.snapshot.queryParams['employeeCode'];
+    if (qSearch) {
+      this.searchText = qSearch;
+    }
     this.loadMasters();
   }
 
@@ -1116,13 +1078,13 @@ export class SalaryMasterComponent implements OnInit {
     this.templateLoading = true;
     this.payrollService.downloadSalaryMasterTemplate().subscribe({
       next: (blob) => {
-        this.saveBlob(blob, 'Salary_Master_Import_Template.xlsx');
+        this.saveBlob(blob, 'Salary_Master_Sample.xlsx');
         this.templateLoading = false;
-        this.msg.success('Salary Master template downloaded');
+        this.msg.success('Salary Master sample downloaded');
       },
       error: () => {
         this.templateLoading = false;
-        this.msg.error('Failed to download template');
+        this.msg.error('Failed to download sample');
       }
     });
   }
@@ -1131,13 +1093,13 @@ export class SalaryMasterComponent implements OnInit {
     this.exportLoading = true;
     this.payrollService.exportSalaryMasterExcel().subscribe({
       next: (blob) => {
-        this.saveBlob(blob, 'Salary_Master_Export.xlsx');
+        this.saveBlob(blob, 'Salary_Master_Download.xlsx');
         this.exportLoading = false;
-        this.msg.success('Salary Master directory exported');
+        this.msg.success('Salary Master directory downloaded');
       },
       error: () => {
         this.exportLoading = false;
-        this.msg.error('Failed to export Excel');
+        this.msg.error('Failed to download Excel');
       }
     });
   }
@@ -1151,14 +1113,39 @@ export class SalaryMasterComponent implements OnInit {
       next: (res) => {
         this.importLoading = false;
         const imported = res.data?.importedCount || 0;
+        const updated = res.data?.updatedCount || 0;
+        const total = res.data?.totalProcessed || (imported + updated);
         const skipped = res.data?.skippedCount || 0;
-        this.msg.success(`Imported/updated ${imported} employee salary structures (${skipped} skipped)`);
+        const errors: string[] = res.data?.errors || [];
+
+        if (total > 0 && skipped === 0) {
+          this.msg.success(`Successfully uploaded/updated ${total} employee salary structure(s)`);
+        } else if (total > 0 && skipped > 0) {
+          this.msg.warning(`Processed ${total} employee(s) (${imported} new, ${updated} updated). ${skipped} row(s) skipped.`);
+          if (errors.length > 0) {
+            this.modal.info({
+              nzTitle: 'Excel Upload Notice',
+              nzContent: `<div style="max-height:240px;overflow-y:auto;"><p><strong>${total}</strong> records processed successfully. The following <strong>${skipped}</strong> row(s) were skipped:</p><ul style="padding-left:18px;color:#dc2626;">${errors.map((e: string) => `<li>${e}</li>`).join('')}</ul></div>`
+            });
+          }
+        } else if (total === 0 && skipped > 0) {
+          this.msg.error(`No records were uploaded. ${skipped} row(s) were skipped.`);
+          if (errors.length > 0) {
+            this.modal.error({
+              nzTitle: 'Excel Upload Failed',
+              nzContent: `<div style="max-height:240px;overflow-y:auto;"><p>None of the rows could be matched to active employees:</p><ul style="padding-left:18px;color:#dc2626;">${errors.map((e: string) => `<li>${e}</li>`).join('')}</ul></div>`
+            });
+          }
+        } else {
+          this.msg.info('No salary records found in the uploaded file.');
+        }
+
         this.loadMasters();
         event.target.value = '';
       },
       error: (err) => {
         this.importLoading = false;
-        this.msg.error(err.error?.message || 'Failed to import Excel file');
+        this.msg.error(err.error?.message || 'Failed to upload Excel file');
         event.target.value = '';
       }
     });
@@ -1228,99 +1215,6 @@ export class SalaryMasterComponent implements OnInit {
   getMonthName(m: number): string {
     const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return names[m - 1] || '';
-  }
-
-  openAppointmentLetter(m: SalaryMasterDTO): void {
-    if (!m.employeeId) return;
-    this.selectedEmployeeForLetter = m;
-    this.letterModalTitle = `Appointment Letter — ${m.employeeCode || ''} (${m.employeeName || ''})`;
-    this.isLetterModalVisible = true;
-    this.letterLoading = true;
-    this.letterPreviewHtml = '';
-
-    if (this.appointmentTemplateId) {
-      this.fetchAppointmentLetterPreview(this.appointmentTemplateId, m.employeeId);
-    } else {
-      this.docTemplateService.getTemplates({ templateType: 'APPOINTMENT_LETTER', active: true, size: 10 }).subscribe({
-        next: (res) => {
-          const list = res.data?.content || [];
-          const tpl = list.length > 0 ? list[0] : null;
-          if (tpl && tpl.id) {
-            this.appointmentTemplateId = tpl.id;
-            this.fetchAppointmentLetterPreview(tpl.id, m.employeeId!);
-          } else {
-            this.letterLoading = false;
-            this.msg.error('Appointment Letter template not found or inactive');
-          }
-        },
-        error: () => {
-          this.letterLoading = false;
-          this.msg.error('Failed to load Appointment Letter template');
-        }
-      });
-    }
-  }
-
-  private fetchAppointmentLetterPreview(templateId: number, employeeId: number): void {
-    this.docTemplateService.previewTemplate(templateId, employeeId).subscribe({
-      next: (res) => {
-        this.letterLoading = false;
-        if (res.success && res.data) {
-          this.letterPreviewHtml = res.data;
-        } else {
-          this.msg.error(res.message || 'Could not generate appointment letter preview');
-        }
-      },
-      error: (err) => {
-        this.letterLoading = false;
-        this.msg.error(err.error?.message || 'Error generating preview');
-      }
-    });
-  }
-
-  downloadAppointmentLetter(): void {
-    if (!this.appointmentTemplateId || !this.selectedEmployeeForLetter?.employeeId) return;
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      try {
-        printWindow.document.open();
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head><title>Generating Appointment Letter...</title></head>
-          <body style="font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafc;color:#334155;">
-            <div style="text-align:center;">
-              <div style="font-size:28px;margin-bottom:12px;">📄</div>
-              <div style="font-size:16px;font-weight:600;">Preparing Appointment Letter...</div>
-              <div style="font-size:13px;color:#64748b;margin-top:4px;">Print / Save as PDF will open in a moment</div>
-            </div>
-          </body>
-          </html>
-        `);
-        printWindow.document.close();
-      } catch (e) {
-        console.warn('Could not write placeholder to print window', e);
-      }
-    }
-
-    this.isLetterDownloading = true;
-    this.docTemplateService.generateDocument(this.appointmentTemplateId, this.selectedEmployeeForLetter.employeeId, 'pdf').subscribe({
-      next: (response) => {
-        this.isLetterDownloading = false;
-        if (response.success && response.data?.html) {
-          openDocumentPrintPreview(response.data.html, printWindow);
-          this.msg.success('Appointment Letter ready for Print / Save as PDF');
-        } else {
-          if (printWindow) printWindow.close();
-          this.msg.error(response.message || 'Failed to generate document');
-        }
-      },
-      error: (err) => {
-        this.isLetterDownloading = false;
-        if (printWindow) printWindow.close();
-        this.msg.error(err.error?.message || 'Failed to generate document');
-      }
-    });
   }
 
   private saveBlob(blob: Blob, filename: string): void {

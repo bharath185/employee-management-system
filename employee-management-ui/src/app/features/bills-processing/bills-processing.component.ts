@@ -92,8 +92,8 @@ import { Bill } from '../../core/models/bill.model';
               <td class="td-vendor">{{ bill.vendorName }}</td>
               <td class="td-center"><nz-tag class="status-tag">{{ bill.billType }}</nz-tag></td>
               <td class="td-right"><span class="gross-amount">{{ bill.amount | number:'1.0-0' }}</span></td>
-              <td class="td-center">{{ bill.billDate | date:'dd/MM/yy' }}</td>
-              <td class="td-center">{{ bill.dueDate ? (bill.dueDate | date:'dd/MM/yy') : '-' }}</td>
+              <td class="td-center">{{ bill.billDate | date:'dd/MM/yyyy' }}</td>
+              <td class="td-center">{{ bill.dueDate ? (bill.dueDate | date:'dd/MM/yyyy') : '-' }}</td>
               <td class="td-center">
                 <nz-tag [nzColor]="bill.isProcessed ? 'green' : 'orange'" class="status-tag">
                   {{ bill.isProcessed ? 'Processed' : 'Pending' }}

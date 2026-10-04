@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { NzModalModule } from 'ng-zorro-antd/modal';
+import { Router } from '@angular/router';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
@@ -57,7 +58,7 @@ import { SafeHtmlPipe } from '../../shared/pipes/safe-html.pipe';
               nzShowSearch [nzServerSearch]="true" (nzOnSearch)="onSearchEmployee($event)" (nzScrollToBottom)="loadMoreEmployees()"
               class="emp-select-box" (ngModelChange)="loadPreview()" [nzLoading]="isLoadingEmployees">
               <nz-option *ngFor="let emp of employeeOptions" [nzValue]="emp.id"
-                [nzLabel]="(emp.surname ? emp.surname + ' ' : '') + (emp.firstName || '') + (emp.middleName ? ' ' + emp.middleName : '') + ' (' + emp.employeeCode + ')'">
+                [nzLabel]="(emp.firstName || '') + (emp.middleName ? ' ' + emp.middleName : '') + (emp.surname ? ' ' + emp.surname : '') + ' (' + emp.employeeCode + ')'">
               </nz-option>
               <nz-option *ngIf="isLoadingMore" nzDisabled nzCustomContent>
                 <div style="text-align:center; padding: 4px;"><i nz-icon nzType="loading"></i> Loading more...</div>
@@ -432,6 +433,8 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
   constructor(
     private templateService: DocumentTemplateService,
     private employeeService: EmployeeService,
+    private router: Router,
+    private modal: NzModalService,
     private message: NzMessageService
   ) {}
 
@@ -463,6 +466,33 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
         this.loadPreview();
       }
     }
+  }
+
+  private handleSalaryError(err: any): boolean {
+    const msg = err?.error?.message || err?.message || '';
+    if (msg.includes('SALARY_MASTER_NOT_FOUND') || msg.toLowerCase().includes('salary master') || msg.toLowerCase().includes('ctc')) {
+      const selectedEmp = this.employeeOptions.find(e => e.id === this.selectedEmployeeId);
+      const empCode = selectedEmp?.employeeCode || '';
+      const empName = ((selectedEmp?.prefix ? selectedEmp.prefix + '. ' : '') + (selectedEmp?.firstName || '') + (selectedEmp?.middleName ? ' ' + selectedEmp.middleName : '') + (selectedEmp?.surname ? ' ' + selectedEmp.surname : '')).trim();
+
+      this.modal.confirm({
+        nzTitle: '<span style="color:#e11d48;font-weight:700;"><i class="anticon anticon-warning"></i> Salary Master / CTC Required</span>',
+        nzContent: `<div style="font-size:13px;color:#334155;line-height:1.6;">
+          <p style="margin-bottom:8px;"><strong>Salary Master / CTC details are not configured for ${empName ? empName + ' (' + empCode + ')' : 'this employee'}.</strong></p>
+          <p style="color:#64748b;margin-bottom:8px;">The Appointment Letter and compensation annexure require configured CTC components in Salary Master (Basic, HRA, Allowances, etc.).</p>
+          <p style="font-weight:600;color:#1e293b;margin:0;">Would you like to navigate to Salary Master now to add this employee's salary?</p>
+        </div>`,
+        nzOkText: 'Go to Salary Master',
+        nzOkType: 'primary',
+        nzCancelText: 'Cancel',
+        nzOnOk: () => {
+          this.close();
+          this.router.navigate(['/admin/payroll/salary-master'], { queryParams: { search: empCode } });
+        }
+      });
+      return true;
+    }
+    return false;
   }
 
   getZoomPercent(): number {
@@ -565,9 +595,11 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
             this.previewHtml = response.data;
           }
         },
-        error: () => {
+        error: (err) => {
           this.isLoadingPreview = false;
-          this.message.error('Error generating preview');
+          if (!this.handleSalaryError(err)) {
+            this.message.error(err?.error?.message || 'Error generating preview');
+          }
         }
       });
     } else if (this.templateId) {
@@ -578,9 +610,11 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
             this.previewHtml = response.data;
           }
         },
-        error: () => {
+        error: (err) => {
           this.isLoadingPreview = false;
-          this.message.error('Error generating preview');
+          if (!this.handleSalaryError(err)) {
+            this.message.error(err?.error?.message || 'Error generating preview');
+          }
         }
       });
     }
@@ -636,9 +670,11 @@ export class TemplatePreviewModalComponent implements OnInit, OnChanges, OnDestr
           this.message.error('Error generating document');
         }
       },
-      error: () => {
+      error: (err) => {
         printWindow?.close();
-        this.message.error('Error generating document');
+        if (!this.handleSalaryError(err)) {
+          this.message.error(err?.error?.message || 'Error generating document');
+        }
       }
     });
   }

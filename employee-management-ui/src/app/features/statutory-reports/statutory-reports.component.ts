@@ -249,7 +249,7 @@ export class StatutoryReportsComponent implements OnInit {
         const list = res.data?.content || res.data || [];
         this.employeeList = list.map((e: any) => ({
           id: e.id,
-          fullName: e.fullName || `${e.surname ? e.surname + ' ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}`.trim(),
+          fullName: e.fullName || `${e.prefix ? e.prefix + '. ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}${e.surname ? ' ' + e.surname : ''}`.trim(),
           employeeCode: e.employeeCode
         }));
       }

@@ -25,7 +25,7 @@ import { saveAs } from 'file-saver';
       <div class="section-toolbar">
         <nz-select [(ngModel)]="employeeFilter" (ngModelChange)="loadCompOffs()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px">
           <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
+          <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
         </nz-select>
         <nz-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()" class="filter-select" nzPlaceHolder="All Statuses" style="width:140px">
           <nz-option [nzValue]="null" nzLabel="All Statuses"></nz-option>
@@ -38,12 +38,12 @@ import { saveAs } from 'file-saver';
         <ng-template #searchIcon><i nz-icon nzType="search"></i></ng-template>
 
         <button nz-button nzType="default" nzSize="small" (click)="exportExcel()" [nzLoading]="exporting" nz-tooltip="Download Excel">
-          <i nz-icon nzType="download"></i> Export
+          <i nz-icon nzType="download"></i> Download
         </button>
-        <button nz-button nzType="default" nzSize="small" (click)="importFile.click()" [nzLoading]="importing" nz-tooltip="Import Excel by Employee Code">
-          <i nz-icon nzType="upload"></i> Import
+        <button nz-button nzType="default" nzSize="small" (click)="importFile.click()" [nzLoading]="importing" nz-tooltip="Upload Excel by Employee Code">
+          <i nz-icon nzType="upload"></i> Upload
         </button>
-        <button nz-button nzType="default" nzSize="small" (click)="downloadSample()" nz-tooltip="Download sample Excel template">
+        <button nz-button nzType="default" nzSize="small" (click)="downloadSample()" nz-tooltip="Download sample Excel file">
           <i nz-icon nzType="file"></i> Sample
         </button>
         <input #importFile type="file" accept=".xlsx" style="display:none" (change)="importExcel($event)">

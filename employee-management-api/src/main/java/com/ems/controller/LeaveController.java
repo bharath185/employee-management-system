@@ -44,6 +44,14 @@ public class LeaveController {
         return ResponseEntity.ok(APIResponse.success("Leave type created", leaveService.createLeaveType(leaveType)));
     }
 
+    @PutMapping("/types/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<LeaveType>> updateLeaveType(
+            @PathVariable Long id,
+            @RequestBody LeaveType leaveType) {
+        return ResponseEntity.ok(APIResponse.success("Leave type updated", leaveService.updateLeaveType(id, leaveType)));
+    }
+
     @GetMapping("/balances")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<APIResponse<List<LeaveBalanceDTO>>> getLeaveBalances(
@@ -57,6 +65,12 @@ public class LeaveController {
             }
         }
         return ResponseEntity.ok(APIResponse.success(leaveService.getLeaveBalances(employeeId, year)));
+    }
+
+    @GetMapping("/balances/lop")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<List<LeaveBalanceDTO>>> getLopBalances(@RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(APIResponse.success(leaveService.getLopBalances(year)));
     }
 
     @PostMapping("/balances/init/{employeeId}")

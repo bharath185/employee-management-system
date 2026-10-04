@@ -32,6 +32,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.ems.model.EmployeeDocument;
+import com.ems.repository.EmployeeDocumentRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class PendingRegistrationService {
@@ -40,9 +49,11 @@ public class PendingRegistrationService {
 
     private final PendingRegistrationRepository pendingRepository;
     private final EmployeeRepository employeeRepository;
+    private final EmployeeDocumentRepository employeeDocumentRepository;
     private final EmployeeService employeeService;
     private final EmployeeCodeGenerator codeGenerator;
     private final PhotoUtils photoUtils;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.photo.upload-dir}")
     private String photoUploadDir;
@@ -77,6 +88,21 @@ public class PendingRegistrationService {
     @Transactional
     public PendingRegistrationDTO create(PendingRegistrationDTO dto, MultipartFile photo,
                                           MultipartFile aadharDoc, MultipartFile panDoc) {
+        return create(dto, photo, aadharDoc, panDoc, null, null, null, null, null);
+    }
+
+    @Transactional
+    public PendingRegistrationDTO create(
+            PendingRegistrationDTO dto,
+            MultipartFile photo,
+            MultipartFile aadharDoc,
+            MultipartFile panDoc,
+            List<MultipartFile> educationDocs,
+            List<MultipartFile> personalDocs,
+            List<MultipartFile> additionalDocs,
+            List<String> additionalDocTypes,
+            List<String> additionalDocTitles) {
+
         if (dto.getFirstName() == null || dto.getFirstName().trim().isEmpty()) {
             throw new BadRequestException("First name is required");
         }
@@ -160,6 +186,8 @@ public class PendingRegistrationService {
         entity.setCustomFields(dto.getCustomFields());
         entity.setStatus(RegistrationStatus.PENDING);
 
+        List<Map<String, Object>> additionalList = new ArrayList<>();
+
         // Handle photo upload
         if (photo != null && !photo.isEmpty()) {
             try {
@@ -173,7 +201,7 @@ public class PendingRegistrationService {
         // Handle AADHAR document upload
         if (aadharDoc != null && !aadharDoc.isEmpty()) {
             try {
-                String docPath = savePendingFile(aadharDoc, entity.getRegistrationCode(), "AADHAR");
+                String docPath = savePendingFile(aadharDoc, entity.getRegistrationCode(), "AADHAR_CARD");
                 entity.setAadharDocPath(docPath);
             } catch (Exception e) {
                 log.error("Failed to upload AADHAR for registration {}", entity.getRegistrationCode(), e);
@@ -183,10 +211,88 @@ public class PendingRegistrationService {
         // Handle PAN document upload
         if (panDoc != null && !panDoc.isEmpty()) {
             try {
-                String docPath = savePendingFile(panDoc, entity.getRegistrationCode(), "PAN");
+                String docPath = savePendingFile(panDoc, entity.getRegistrationCode(), "PAN_CARD");
                 entity.setPanDocPath(docPath);
             } catch (Exception e) {
                 log.error("Failed to upload PAN for registration {}", entity.getRegistrationCode(), e);
+            }
+        }
+
+        // Handle Education Documents
+        if (educationDocs != null && !educationDocs.isEmpty()) {
+            for (int i = 0; i < educationDocs.size(); i++) {
+                MultipartFile ef = educationDocs.get(i);
+                if (ef != null && !ef.isEmpty()) {
+                    try {
+                        String docPath = savePendingFile(ef, entity.getRegistrationCode(), "EDU_" + (i + 1));
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("documentType", "10TH_12TH_MARKSHEET");
+                        map.put("documentTitle", ef.getOriginalFilename() != null ? ef.getOriginalFilename() : "Education Document " + (i + 1));
+                        map.put("filePath", docPath);
+                        map.put("originalName", ef.getOriginalFilename());
+                        map.put("fileSize", ef.getSize());
+                        map.put("contentType", ef.getContentType());
+                        additionalList.add(map);
+                    } catch (Exception e) {
+                        log.error("Failed to upload education doc for registration {}", entity.getRegistrationCode(), e);
+                    }
+                }
+            }
+        }
+
+        // Handle Personal Documents
+        if (personalDocs != null && !personalDocs.isEmpty()) {
+            for (int i = 0; i < personalDocs.size(); i++) {
+                MultipartFile pf = personalDocs.get(i);
+                if (pf != null && !pf.isEmpty()) {
+                    try {
+                        String docPath = savePendingFile(pf, entity.getRegistrationCode(), "PERSONAL_" + (i + 1));
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("documentType", "OTHER");
+                        map.put("documentTitle", pf.getOriginalFilename() != null ? pf.getOriginalFilename() : "Personal Document " + (i + 1));
+                        map.put("filePath", docPath);
+                        map.put("originalName", pf.getOriginalFilename());
+                        map.put("fileSize", pf.getSize());
+                        map.put("contentType", pf.getContentType());
+                        additionalList.add(map);
+                    } catch (Exception e) {
+                        log.error("Failed to upload personal doc for registration {}", entity.getRegistrationCode(), e);
+                    }
+                }
+            }
+        }
+
+        // Handle generic Additional Documents with custom Types & Titles
+        if (additionalDocs != null && !additionalDocs.isEmpty()) {
+            for (int i = 0; i < additionalDocs.size(); i++) {
+                MultipartFile af = additionalDocs.get(i);
+                if (af != null && !af.isEmpty()) {
+                    try {
+                        String docType = (additionalDocTypes != null && i < additionalDocTypes.size()) ? additionalDocTypes.get(i) : "OTHER";
+                        String docTitle = (additionalDocTitles != null && i < additionalDocTitles.size()) ? additionalDocTitles.get(i) : af.getOriginalFilename();
+                        String safeType = docType.trim().replaceAll("[^a-zA-Z0-9_\\-]", "_");
+                        String docPath = savePendingFile(af, entity.getRegistrationCode(), safeType + "_" + (i + 1));
+
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("documentType", docType);
+                        map.put("documentTitle", docTitle);
+                        map.put("filePath", docPath);
+                        map.put("originalName", af.getOriginalFilename());
+                        map.put("fileSize", af.getSize());
+                        map.put("contentType", af.getContentType());
+                        additionalList.add(map);
+                    } catch (Exception e) {
+                        log.error("Failed to upload additional doc for registration {}", entity.getRegistrationCode(), e);
+                    }
+                }
+            }
+        }
+
+        if (!additionalList.isEmpty()) {
+            try {
+                entity.setAdditionalDocsJson(objectMapper.writeValueAsString(additionalList));
+            } catch (Exception e) {
+                log.error("Failed to serialize additionalDocsJson for registration {}", entity.getRegistrationCode(), e);
             }
         }
 
@@ -196,13 +302,20 @@ public class PendingRegistrationService {
 
     @Transactional
     public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String username) {
-        return approve(id, employeeCode, null, null, null, null, null, username);
+        return approve(id, employeeCode, null, null, null, null, "EMPLOYEE", null, username);
     }
 
     @Transactional
     public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String doj, String designation,
                                             String department, String processAssigned, String fatherHusbandName,
                                             String username) {
+        return approve(id, employeeCode, doj, designation, department, processAssigned, "EMPLOYEE", fatherHusbandName, username);
+    }
+
+    @Transactional
+    public APIResponse<EmployeeDTO> approve(Long id, String employeeCode, String doj, String designation,
+                                            String department, String processAssigned, String role,
+                                            String fatherHusbandName, String username) {
         PendingRegistration pending = pendingRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Pending registration not found with id: " + id));
 
@@ -251,6 +364,7 @@ public class PendingRegistrationService {
         // Build EmployeeDTO from pending registration data
         EmployeeDTO employeeDTO = EmployeeDTO.builder()
             .employeeCode(finalEmployeeCode)
+            .userRole(role != null && !role.trim().isEmpty() ? role.trim() : "EMPLOYEE")
             .prefix(pending.getPrefix())
             .firstName(pending.getFirstName())
             .middleName(pending.getMiddleName())
@@ -339,30 +453,75 @@ public class PendingRegistrationService {
             }
         }
 
-        // Copy photo to employee directory
+        // Copy photo to employee directory and register in Document Hub
         if (pending.getPhotoPath() != null) {
             try {
                 String newPhotoPath = copyFileToEmployee(pending.getPhotoPath(), finalEmployeeCode, "photos");
                 employeeService.updateEmployeePhoto(created.getId(), newPhotoPath);
                 created.setPhotoPath(newPhotoPath);
+
+                Path photoDiskPath = Paths.get(photoUploadDir).toAbsolutePath().normalize()
+                    .resolve(finalEmployeeCode + (newPhotoPath.contains(".") ? newPhotoPath.substring(newPhotoPath.lastIndexOf('.')) : ".jpg"));
+                if (Files.exists(photoDiskPath)) {
+                    Employee empEntity = employeeRepository.findById(created.getId()).orElse(null);
+                    if (empEntity != null) {
+                        EmployeeDocument photoDoc = EmployeeDocument.builder()
+                            .employee(empEntity)
+                            .documentType("PASSPORT_PHOTO")
+                            .documentTitle("Candidate Photo")
+                            .pageNumber(1)
+                            .fileName(photoDiskPath.getFileName().toString())
+                            .originalName("Candidate_Photo_" + finalEmployeeCode + ".jpg")
+                            .filePath(photoDiskPath.toString())
+                            .fileSize(Files.size(photoDiskPath))
+                            .contentType("image/jpeg")
+                            .uploadedAt(LocalDateTime.now())
+                            .uploadedBy("Registration (" + pending.getRegistrationCode() + ")")
+                            .build();
+                        employeeDocumentRepository.save(photoDoc);
+                        log.info("Registered Candidate Photo in Document Hub for employee {}", finalEmployeeCode);
+                    }
+                }
             } catch (Exception e) {
-                log.error("Failed to copy photo for employee {}", finalEmployeeCode, e);
+                log.error("Failed to copy/register photo for employee {}", finalEmployeeCode, e);
             }
         }
 
-        // Copy documents
+        // Copy and register Aadhar document in Document Hub
         if (pending.getAadharDocPath() != null) {
             try {
-                copyFileToEmployee(pending.getAadharDocPath(), finalEmployeeCode, "documents");
+                registerPendingDocToEmployee(pending.getAadharDocPath(), created.getId(), finalEmployeeCode, "AADHAR_CARD", "Aadhar Card", pending.getRegistrationCode());
             } catch (Exception e) {
-                log.error("Failed to copy AADHAR for employee {}", finalEmployeeCode, e);
+                log.error("Failed to copy/register AADHAR for employee {}", finalEmployeeCode, e);
             }
         }
+
+        // Copy and register PAN document in Document Hub
         if (pending.getPanDocPath() != null) {
             try {
-                copyFileToEmployee(pending.getPanDocPath(), finalEmployeeCode, "documents");
+                registerPendingDocToEmployee(pending.getPanDocPath(), created.getId(), finalEmployeeCode, "PAN_CARD", "PAN Card", pending.getRegistrationCode());
             } catch (Exception e) {
-                log.error("Failed to copy PAN for employee {}", finalEmployeeCode, e);
+                log.error("Failed to copy/register PAN for employee {}", finalEmployeeCode, e);
+            }
+        }
+
+        // Copy and register all Additional Documents in Document Hub
+        if (pending.getAdditionalDocsJson() != null && !pending.getAdditionalDocsJson().trim().isEmpty()) {
+            try {
+                java.util.List<java.util.Map<String, Object>> docsList = objectMapper.readValue(
+                    pending.getAdditionalDocsJson(),
+                    new com.fasterxml.jackson.core.type.TypeReference<java.util.List<java.util.Map<String, Object>>>() {}
+                );
+                for (java.util.Map<String, Object> docItem : docsList) {
+                    String pendingUrl = (String) docItem.get("filePath");
+                    String docType = (String) docItem.get("documentType");
+                    String docTitle = (String) docItem.get("documentTitle");
+                    if (pendingUrl != null && !pendingUrl.isEmpty()) {
+                        registerPendingDocToEmployee(pendingUrl, created.getId(), finalEmployeeCode, docType, docTitle, pending.getRegistrationCode());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to copy/register additional documents for employee {}", finalEmployeeCode, e);
             }
         }
 
@@ -372,7 +531,7 @@ public class PendingRegistrationService {
         pending.setApprovedBy(username);
         pendingRepository.save(pending);
 
-        log.info("Pending registration {} approved as employee {}", pending.getRegistrationCode(), finalEmployeeCode);
+        log.info("Pending registration {} approved as employee {} with full Document Hub synchronization", pending.getRegistrationCode(), finalEmployeeCode);
         return APIResponse.success("Registration approved successfully. Employee code: " + finalEmployeeCode, created);
     }
 
@@ -455,6 +614,61 @@ public class PendingRegistrationService {
             }
         }
         return null;
+    }
+
+    private void registerPendingDocToEmployee(String pendingFilePath, Long employeeId, String employeeCode, String documentType, String documentTitle, String regCode) {
+        try {
+            String fileName = pendingFilePath.substring(pendingFilePath.lastIndexOf('/') + 1);
+            String regFromPath = pendingFilePath.substring(
+                pendingFilePath.lastIndexOf('/', pendingFilePath.lastIndexOf('/') - 1) + 1,
+                pendingFilePath.lastIndexOf('/'));
+
+            Path sourceDir = Paths.get(documentUploadDir).toAbsolutePath().normalize()
+                .resolve("pending").resolve(regFromPath);
+            Path sourceFile = sourceDir.resolve(fileName);
+
+            if (Files.exists(sourceFile)) {
+                Path targetDir = Paths.get(documentUploadDir).toAbsolutePath().normalize().resolve(employeeCode);
+                Files.createDirectories(targetDir);
+
+                String ext = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')) : "";
+                String safeType = (documentType != null && !documentType.trim().isEmpty()) ? documentType.trim().toUpperCase() : "OTHER";
+                String newFileName = employeeCode + "_" + safeType + "_" + System.currentTimeMillis() + ext;
+                Path targetFile = targetDir.resolve(newFileName);
+                Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+
+                Employee emp = employeeRepository.findById(employeeId).orElse(null);
+                if (emp != null) {
+                    String title = (documentTitle != null && !documentTitle.trim().isEmpty())
+                        ? documentTitle.trim()
+                        : safeType.replace('_', ' ');
+
+                    String contentType = Files.probeContentType(targetFile);
+                    if (contentType == null) {
+                        contentType = ext.equalsIgnoreCase(".pdf") ? "application/pdf" : "application/octet-stream";
+                    }
+
+                    EmployeeDocument doc = EmployeeDocument.builder()
+                        .employee(emp)
+                        .documentType(safeType)
+                        .documentTitle(title)
+                        .pageNumber(1)
+                        .fileName(newFileName)
+                        .originalName(fileName)
+                        .filePath(targetFile.toString())
+                        .fileSize(Files.size(targetFile))
+                        .contentType(contentType)
+                        .uploadedAt(LocalDateTime.now())
+                        .uploadedBy("Registration (" + regCode + ")")
+                        .build();
+
+                    employeeDocumentRepository.save(doc);
+                    log.info("Registered document {} ({}) for employee {} in Document Hub", newFileName, title, employeeCode);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to copy/register document {} for employee {}", documentType, employeeCode, e);
+        }
     }
 
     public long countPending() {

@@ -56,35 +56,35 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
           </div>
           <nav class="side-nav-scroll">
             <ul nz-menu nzTheme="dark" nzMode="inline" class="side-nav-menu">
-              <li nz-menu-item routerLink="/admin/dashboard"
+              <li nz-menu-item routerLink="/admin/dashboard" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('dashboard')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="dashboard"></i>
                 <span *ngIf="!isCollapsed()">Dashboard</span>
               </li>
-              <li nz-menu-item routerLink="/admin/employees"
+              <li nz-menu-item routerLink="/admin/employees" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('staff_master')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="team"></i>
                 <span *ngIf="!isCollapsed()">Employees</span>
               </li>
-              <li nz-menu-item routerLink="/admin/masters"
+              <li nz-menu-item routerLink="/admin/masters" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('masters')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="setting"></i>
                 <span *ngIf="!isCollapsed()">Master Data</span>
               </li>
-              <li nz-menu-item routerLink="/admin/company"
+              <li nz-menu-item routerLink="/admin/company" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('company')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="bank"></i>
                 <span *ngIf="!isCollapsed()">Company Setup</span>
               </li>
-              <li nz-menu-item routerLink="/admin/document-templates"
-                  *ngIf="can('doc_templates')"
+              <li nz-menu-item routerLink="/admin/documents" routerLinkActive="ant-menu-item-selected"
+                  *ngIf="can('staff_master') || can('doc_templates')"
                   (click)="closeDrawerOnMobile()">
-                <i nz-icon nzType="file-text"></i>
-                <span *ngIf="!isCollapsed()">Documents</span>
+                <i nz-icon nzType="folder-open"></i>
+                <span *ngIf="!isCollapsed()">Document Hub</span>
               </li>
 
               <li class="side-nav-separator" *ngIf="!isCollapsed()"><span></span></li>
@@ -95,7 +95,7 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
                 <i nz-icon nzType="money-collect"></i>
                 <span *ngIf="!isCollapsed()">Payroll</span>
               </li>
-              <li nz-menu-item routerLink="/admin/bills"
+              <li nz-menu-item routerLink="/admin/bills" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('bills')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="audit"></i>
@@ -131,13 +131,13 @@ import { ChatWidgetComponent } from '../../features/chat-widget/chat-widget.comp
 
 
 
-              <li nz-menu-item routerLink="/admin/pending-registrations"
+              <li nz-menu-item routerLink="/admin/pending-registrations" routerLinkActive="ant-menu-item-selected"
                   *ngIf="can('registrations')"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="audit"></i>
                 <span *ngIf="!isCollapsed()">Registrations</span>
               </li>
-              <li nz-menu-item routerLink="/admin/access-control"
+              <li nz-menu-item routerLink="/admin/access-control" routerLinkActive="ant-menu-item-selected"
                   *ngIf="authService.isAdmin()"
                   (click)="closeDrawerOnMobile()">
                 <i nz-icon nzType="safety"></i>
@@ -587,7 +587,7 @@ export class AdminLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
-      this.currentUserName = user ? `${user.surname ? user.surname + ' ' : ''}${user.firstName || ''}`.trim() : 'User';
+      this.currentUserName = user ? `${user.firstName || ''}${user.middleName ? ' ' + user.middleName : ''}${user.surname ? ' ' + user.surname : ''}`.trim() : 'User';
     });
     const role = this.authService.getUserRole() || 'EMPLOYEE';
     this.permService.loadMyPermissions(role).subscribe();

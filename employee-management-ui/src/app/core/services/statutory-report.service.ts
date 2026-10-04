@@ -22,8 +22,11 @@ export class StatutoryReportService {
     return this.http.get<APIResponse<string>>(`${this.apiUrl}/wages-register`, { params });
   }
 
-  getLeaveRegister(year: number): Observable<APIResponse<string>> {
-    const params = new HttpParams().set('year', year.toString());
+  getLeaveRegister(year: number, employeeIds: number[] = []): Observable<APIResponse<string>> {
+    let params = new HttpParams().set('year', year.toString());
+    if (employeeIds && employeeIds.length > 0) {
+      params = params.set('employeeIds', employeeIds.join(','));
+    }
     return this.http.get<APIResponse<string>>(`${this.apiUrl}/leave-register`, { params });
   }
 

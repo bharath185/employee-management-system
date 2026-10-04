@@ -54,7 +54,7 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <i nz-icon nzType="eye"></i> Preview
               </button>
               <button nz-button nzType="default" (click)="downloadExcel('worker-details')" [nzLoading]="excelLoading1">
-                <i nz-icon nzType="download"></i> Export
+                <i nz-icon nzType="download"></i> Download
               </button>
             </div>
           </nz-card>
@@ -80,7 +80,7 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <i nz-icon nzType="eye"></i> Preview
               </button>
               <button nz-button nzType="default" (click)="downloadExcel('wages-register')" [nzLoading]="excelLoading2">
-                <i nz-icon nzType="download"></i> Export
+                <i nz-icon nzType="download"></i> Download
               </button>
             </div>
           </nz-card>
@@ -106,7 +106,7 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <i nz-icon nzType="eye"></i> Preview
               </button>
               <button nz-button nzType="default" (click)="downloadExcel('leave-register')" [nzLoading]="excelLoading3">
-                <i nz-icon nzType="download"></i> Export
+                <i nz-icon nzType="download"></i> Download
               </button>
             </div>
           </nz-card>
@@ -132,7 +132,7 @@ import { EmployeeService } from '../../core/services/employee.service';
                 <i nz-icon nzType="eye"></i> Preview
               </button>
               <button nz-button nzType="default" (click)="downloadExcel('attendance-register')" [nzLoading]="excelLoading4">
-                <i nz-icon nzType="download"></i> Export
+                <i nz-icon nzType="download"></i> Download
               </button>
             </div>
           </nz-card>
@@ -215,7 +215,7 @@ import { EmployeeService } from '../../core/services/employee.service';
               <nz-table #otTbl [nzData]="otData" [nzLoading]="otLoading" nzSize="small" [nzPageSize]="20" [nzShowPagination]="otData.length > 20">
                 <thead>
                   <tr>
-                    <th>Emp Code</th><th>Name</th><th>Designation</th><th>Department</th>
+                    <th>Emp Code</th><th>Name</th><th>Designation</th><th>Process / Unit</th>
                     <th class="th-right">OT Hours</th><th class="th-right">OT Amount</th>
                   </tr>
                 </thead>
@@ -224,7 +224,7 @@ import { EmployeeService } from '../../core/services/employee.service';
                     <td><span class="emp-cell">{{ r.employeeCode }}</span></td>
                     <td>{{ r.employeeName }}</td>
                     <td>{{ r.designation }}</td>
-                    <td>{{ r.department }}</td>
+                    <td>{{ r.processAssigned || r.department || '-' }}</td>
                     <td class="td-right">{{ r.overtimeHours }}</td>
                     <td class="td-right">{{ r.overtimeAmount }}</td>
                   </tr>
@@ -363,7 +363,7 @@ import { EmployeeService } from '../../core/services/employee.service';
   `]
 })
 export class LabourReportsComponent implements OnInit {
-  @Input() showHeader = true;
+  @Input() showHeader = false;
   years: number[] = [];
   months = [
     { value: 1, label: 'January' }, { value: 2, label: 'February' },
@@ -404,7 +404,7 @@ export class LabourReportsComponent implements OnInit {
       next: (res: any) => {
         const list = res.data?.content || res.data || [];
         this.employeeList = list.map((e: any) => ({
-          id: e.id, fullName: e.fullName || `${e.surname ? e.surname + ' ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}`.trim(), employeeCode: e.employeeCode
+          id: e.id, fullName: e.fullName || `${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}${e.surname ? ' ' + e.surname : ''}`.trim(), employeeCode: e.employeeCode
         }));
       }
     });
@@ -438,7 +438,7 @@ export class LabourReportsComponent implements OnInit {
     if (type === 'worker-details') obs = this.reportService.getIndividualWorkerDetails(this.selectedYear, this.selectedMonth);
     else if (type === 'wages-register') obs = this.reportService.getWagesRegister(this.selectedYear2, this.selectedMonth2);
     else if (type === 'attendance-register') obs = this.reportService.getAttendanceRegister(this.selectedYear4, this.selectedMonth4);
-    else obs = this.reportService.getLeaveRegister(this.selectedYear3);
+    else obs = this.reportService.getLeaveRegister(this.selectedYear3, this.selectedEmployees3);
 
     obs.subscribe({
       next: (res: any) => {

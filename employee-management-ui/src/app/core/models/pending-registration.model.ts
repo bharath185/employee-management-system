@@ -78,4 +78,13 @@ export interface PendingRegistration {
   approvedBy?: string;
   languages?: string;
   customFields?: string;
+  additionalDocsJson?: string;
+  additionalDocs?: Array<{
+    documentType: string;
+    documentTitle: string;
+    filePath: string;
+    originalName?: string;
+    fileSize?: number;
+    contentType?: string;
+  }>;
 }

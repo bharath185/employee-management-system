@@ -15,6 +15,8 @@ public interface EmployeeRepository
 
     Optional<Employee> findByEmployeeCode(String employeeCode);
 
+    Optional<Employee> findByEmployeeCodeIgnoreCase(String employeeCode);
+
     boolean existsByEmployeeCode(String employeeCode);
 
     @Query(value = "SELECT COUNT(*) > 0 FROM employees WHERE employee_code = ?1", nativeQuery = true)

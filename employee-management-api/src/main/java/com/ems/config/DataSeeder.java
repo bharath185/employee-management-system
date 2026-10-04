@@ -82,7 +82,10 @@ public class DataSeeder implements CommandLineRunner {
             "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS f_m_h VARCHAR(10)",
             "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS occupation_kin VARCHAR(30)",
             "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS department VARCHAR(56)",
-            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS process_assigned VARCHAR(56)"
+            "ALTER TABLE pending_registrations ADD COLUMN IF NOT EXISTS process_assigned VARCHAR(56)",
+            "ALTER TABLE employee_documents ADD COLUMN IF NOT EXISTS document_title VARCHAR(200)",
+            "ALTER TABLE employee_documents ADD COLUMN IF NOT EXISTS page_number INTEGER",
+            "ALTER TABLE employee_documents ADD COLUMN IF NOT EXISTS notes VARCHAR(500)"
         };
         for (String sql : stmts) {
             try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) {

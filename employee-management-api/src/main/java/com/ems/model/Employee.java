@@ -354,14 +354,14 @@ public class Employee {
         if (prefix != null && !prefix.trim().isEmpty()) {
             sb.append(prefix.trim()).append(" ");
         }
-        if (surname != null && !surname.trim().isEmpty()) {
-            sb.append(surname.trim()).append(" ");
-        }
         if (firstName != null && !firstName.trim().isEmpty()) {
             sb.append(firstName.trim()).append(" ");
         }
         if (middleName != null && !middleName.trim().isEmpty()) {
             sb.append(middleName.trim()).append(" ");
+        }
+        if (surname != null && !surname.trim().isEmpty()) {
+            sb.append(surname.trim()).append(" ");
         }
         return sb.toString().trim();
     }

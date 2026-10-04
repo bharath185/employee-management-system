@@ -15,6 +15,9 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+
 import { LeaveService } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -24,6 +27,8 @@ import { HolidayListComponent } from './holiday-list.component';
 import { CompOffTrackingComponent } from './comp-off-tracking.component';
 import { EncashmentComponent } from './encashment.component';
 import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/payroll.models';
+import { DateFormatPipe } from '../../shared/pipes/date-format.pipe';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-leave-management',
@@ -32,7 +37,9 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzInputModule, NzInputNumberModule, NzDatePickerModule,
     NzTabsModule, NzCardModule, NzTagModule, NzPopconfirmModule, NzSpinModule,
-    HolidayListComponent, CompOffTrackingComponent, EncashmentComponent
+    NzToolTipModule, NzModalModule,
+    HolidayListComponent, CompOffTrackingComponent, EncashmentComponent,
+    DateFormatPipe
   ],
   template: `
     <div class="leave-container page-enter">
@@ -66,10 +73,10 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                 <tr>
                   <th>Employee</th>
                   <th>Leave Type</th>
-                   <th>From</th>
-                   <th>To</th>
-                   <th>Return</th>
-                   <th>Days</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Return</th>
+                  <th>Days</th>
                   <th>Reason</th>
                   <th>Status</th>
                   <th class="th-actions">Actions</th>
@@ -79,8 +86,8 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                 <tr *ngFor="let app of appTable.data">
                   <td><span class="emp-cell">{{ app.employeeCode }} - {{ app.employeeName }}</span></td>
                   <td>{{ app.leaveTypeName }}</td>
-                  <td>{{ app.fromDate }}</td>
-                  <td>{{ app.toDate }}</td>
+                  <td>{{ app.fromDate | dateFormat }}</td>
+                  <td>{{ app.toDate | dateFormat }}</td>
                   <td class="td-center return-cell">{{ returnDay(app.toDate) }}<span *ngIf="returnBadge(app.toDate)" class="ret-badge holiday-badge" style="margin-left:3px;font-size:9px">{{ returnBadge(app.toDate) }}</span></td>
                   <td class="td-center"><span class="days-badge">{{ app.days }}</span></td>
                   <td><span class="reason-text">{{ app.reason }}</span></td>
@@ -91,7 +98,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                   </td>
                   <td class="td-actions">
                     <ng-container *ngIf="app.status === 'PENDING' && authService.canManageStaff()">
-                      <button nz-button nzType="link" nzSize="small" class="action-btn action-approve" (click)="approve(app.id)" nz-tooltip="Approve">
+                      <button nz-button nzType="link" nzSize="small" class="action-btn action-approve" (click)="approve(app.id)" nz-tooltip="Approve & Deduct Balance">
                         <i nz-icon nzType="check-circle"></i>
                       </button>
                       <button nz-button nzType="link" nzSize="small" class="action-btn action-reject" (click)="reject(app.id)" nz-tooltip="Reject">
@@ -117,30 +124,40 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               </nz-select>
               <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px" nzShowSearch nzAllowClear>
                 <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.prefix ? e.prefix + '. ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
               </nz-select>
-              <nz-input-group [nzPrefix]="searchBalIcon" style="width:220px">
+              <nz-input-group [nzPrefix]="searchBalIcon" style="width:200px">
                 <input nz-input [(ngModel)]="balanceSearchText" (ngModelChange)="applyBalanceFilter()" placeholder="Search code / name..." />
               </nz-input-group>
               <ng-template #searchBalIcon><i nz-icon nzType="search"></i></ng-template>
+              
+              <button nz-button [class.btn-danger-active]="showOnlyLop" class="filter-action-btn" (click)="toggleShowOnlyLop()" nz-tooltip="Filter Loss of Pay (LOP) Employees">
+                <i nz-icon nzType="warning" style="color:#ef4444;"></i>
+                <span [style.color]="showOnlyLop ? '#ef4444' : 'inherit'">LOP Only ({{ lopCount }})</span>
+              </button>
+
               <button nz-button class="filter-action-btn" (click)="fileInput.click()" [nzLoading]="uploading"
                       *ngIf="authService.canManageStaff()" nz-tooltip="Upload Excel file and sync to database">
-                <i nz-icon nzType="upload"></i> Import Excel
+                <i nz-icon nzType="upload"></i> Upload Excel
               </button>
               <input #fileInput type="file" accept=".xlsx" (change)="onFileSelected($event)" style="display:none">
               <button nz-button class="filter-action-btn" (click)="exportToExcel()" [nzLoading]="exporting"
                       *ngIf="authService.canManageStaff()" nz-tooltip="Download Excel with current data">
-                <i nz-icon nzType="download"></i> Export Excel
+                <i nz-icon nzType="download"></i> Download Excel
               </button>
               <button nz-button class="filter-action-btn" (click)="downloadSample()" [nzLoading]="sampling"
-                      *ngIf="authService.canManageStaff()" nz-tooltip="Download sample Excel template">
-                <i nz-icon nzType="file"></i> Sample Excel
+                      *ngIf="authService.canManageStaff()" nz-tooltip="Download sample Excel file">
+                <i nz-icon nzType="file"></i> Sample
               </button>
-              <button nz-button class="filter-action-btn filter-action-btn-danger"
-                      nz-popconfirm nzPopconfirmTitle="Delete all leave balance records?"
-                      (nzOnConfirm)="clearAllBalances()" [nzLoading]="clearing"
-                      *ngIf="authService.canManageStaff()" nz-tooltip="Delete all leave balance records">
-                <i nz-icon nzType="delete"></i> Clear All
+            </div>
+
+            <!-- LOP Summary Warning Banner -->
+            <div *ngIf="lopCount > 0" style="margin-bottom:12px; padding:10px 14px; background:#fff2f0; border:1px solid #ffccc7; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
+              <span style="color:#cf1322; font-weight:600; font-size:13px;">
+                <i nz-icon nzType="warning"></i> Attention HR: <strong>{{ lopCount }} Employee Record(s)</strong> currently have <strong>Loss of Pay (LOP)</strong> totaling {{ totalLopDays }} day(s).
+              </span>
+              <button nz-button nzSize="small" nzType="primary" nzDanger (click)="toggleShowOnlyLop()">
+                {{ showOnlyLop ? 'Show All Balances' : 'View LOP Records' }}
               </button>
             </div>
 
@@ -168,7 +185,10 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
                   <td class="td-center">{{ b.taken }}</td>
                   <td class="td-center">{{ b.encashed || 0 }}</td>
                   <td class="td-center">
-                    <span class="balance-badge" [class.balance-low]="b.balance <= 2">{{ b.balance }}</span>
+                    <nz-tag nzColor="error" *ngIf="b.balance < 0" style="font-weight:700;">
+                      <i nz-icon nzType="warning"></i> LOP ({{ mathAbs(b.balance) }})
+                    </nz-tag>
+                    <span *ngIf="b.balance >= 0" class="balance-badge" [class.balance-low]="b.balance <= 2">{{ b.balance }}</span>
                   </td>
                   <td class="td-actions">
                     <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editBalance(b)" *ngIf="authService.canManageStaff()" nz-tooltip="Edit Balance">
@@ -184,19 +204,66 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
             </nz-table>
           </div>
         </nz-tab>
+
         <nz-tab nzTitle="Holiday List">
           <div class="leave-card">
             <app-holiday-list></app-holiday-list>
           </div>
         </nz-tab>
+
         <nz-tab nzTitle="Comp Off Tracking">
           <div class="leave-card">
             <app-comp-off-tracking></app-comp-off-tracking>
           </div>
         </nz-tab>
+
         <nz-tab nzTitle="Leave Encashment">
           <div class="leave-card">
             <app-encashment></app-encashment>
+          </div>
+        </nz-tab>
+
+        <nz-tab nzTitle="Leave Priority Settings">
+          <div class="leave-card">
+            <div class="priority-banner">
+              <i nz-icon nzType="info-circle" class="banner-icon"></i>
+              <div>
+                <div class="banner-title">Auto Leave Deduction Priority Rules</div>
+                <div class="banner-sub">
+                  When attendance status is set to <strong>L (Leave)</strong>, a pending leave application is automatically generated.
+                  Upon HR approval, the leave days are deducted from the employee's available leave balance according to the <strong>Priority Order</strong> set below (Priority 1 is considered first, e.g. CL → Comp-Off → PL → SL).
+                </div>
+              </div>
+            </div>
+
+            <nz-table #priorityTable [nzData]="leaveTypes" class="theme-table" nzSize="small">
+              <thead>
+                <tr>
+                  <th class="td-center" style="width:120px">Priority Order</th>
+                  <th>Leave Type Code</th>
+                  <th>Description</th>
+                  <th class="td-center" style="width:140px">Annual Entitlement</th>
+                  <th class="td-center" style="width:130px">Carry Forward</th>
+                  <th class="td-center" style="width:120px">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let lt of priorityTable.data">
+                  <td class="td-center">
+                    <span class="priority-badge">#{{ lt.priority || 1 }}</span>
+                  </td>
+                  <td><strong>{{ lt.name }}</strong></td>
+                  <td>{{ lt.description }}</td>
+                  <td class="td-center">{{ lt.name === 'CO' ? 'N/A (Comp Off)' : (lt.annualEntitlement + ' days') }}</td>
+                  <td class="td-center">{{ lt.isCarryForward ? 'Yes' : 'No' }}</td>
+                  <td class="td-center">
+                    <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editLeaveTypePriority(lt)" *ngIf="authService.canManageStaff()" nz-tooltip="Set Deduction Priority">
+                      <i nz-icon nzType="edit"></i> Edit Priority
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
           </div>
         </nz-tab>
 
@@ -216,7 +283,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
             <div class="form-row">
               <label>Employee</label>
               <nz-select [(ngModel)]="applyForm.employeeId" name="employeeId" (ngModelChange)="onEmployeeChanged()" nzPlaceHolder="Select Employee" class="theme-select" nzShowSearch nzAllowClear>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.surname ? e.surname + ' ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '')"></nz-option>
+                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.prefix ? e.prefix + '. ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
               </nz-select>
             </div>
             <div class="form-row">
@@ -239,7 +306,7 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
               <label></label>
               <div class="leave-days-info">
                 <span class="days-count">{{ leaveDays }} day{{ leaveDays > 1 ? 's' : '' }}</span>
-                <span class="return-on">Return on: <strong>{{ returnOnLabel }}</strong><span *ngIf="showReturnBadge" class="ret-badge holiday-badge">{{ returnBadgeText }}</span></span>
+                <span class="return-on">Return on: <strong>{{ returnOnLabel }}</strong><span *ngIf="showReturnBadge" class="ret-badge holiday-badge" style="margin-left:3px">{{ returnBadgeText }}</span></span>
               </div>
             </div>
             <div class="form-row">
@@ -291,6 +358,36 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
           </div>
         </div>
       </div>
+
+      <!-- ===== EDIT PRIORITY MODAL ===== -->
+      <div class="modal-overlay" *ngIf="editPriorityVisible" (click)="editPriorityVisible = false">
+        <div class="modal-box" style="width:400px" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <div class="modal-header-left">
+              <div class="modal-header-icon"><i nz-icon nzType="setting"></i></div>
+              <span>Edit Leave Priority ({{ editPriorityData.name }})</span>
+            </div>
+            <button class="modal-close" (click)="editPriorityVisible = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="edit-balance-info" style="margin-bottom:12px; font-weight:600; color:#1f3d6e;">
+              {{ editPriorityData.name }} — {{ editPriorityData.description }}
+            </div>
+            <div class="form-row">
+              <label>Deduction Priority</label>
+              <nz-input-number [(ngModel)]="editPriorityData.priority" name="priority" [nzMin]="1" [nzMax]="10" class="theme-input-number"></nz-input-number>
+            </div>
+            <div class="form-row" *ngIf="editPriorityData.name !== 'CO'">
+              <label>Annual Entitlement</label>
+              <nz-input-number [(ngModel)]="editPriorityData.annualEntitlement" name="annualEntitlement" [nzMin]="0" [nzMax]="365" class="theme-input-number"></nz-input-number>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button nz-button class="btn-cancel" (click)="editPriorityVisible = false">Cancel</button>
+            <button nz-button class="btn-primary-gradient" [nzLoading]="savingPriority" (click)="saveLeaveTypePriority()">Save</button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
@@ -315,76 +412,56 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       border-radius: 10px;
       padding: 4px;
       border: 1px solid #e0e7ff;
-      display: flex;
       gap: 2px;
     }
     :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab {
-      font-size: 13px !important;
-      padding: 8px 16px !important;
+      padding: 6px 16px !important;
       margin: 0 !important;
-      color: #6c757d !important;
-      font-weight: 600 !important;
       border-radius: 8px !important;
+      transition: all 0.2s ease !important;
       border: none !important;
-      background: transparent !important;
-      transition: all 0.2s ease;
+      background: transparent;
     }
-    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab.ant-tabs-tab-active {
-      background: #ffffff !important;
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      color: #6c757d !important;
+      letter-spacing: 0.2px;
+    }
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn {
       color: #1f3d6e !important;
-      box-shadow: 0 2px 8px rgba(31,61,110,0.1) !important;
+    }
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab-active {
+      background: #ffffff !important;
+      box-shadow: 0 2px 8px rgba(31,61,110,0.12) !important;
+    }
+    :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn {
+      color: #1f3d6e !important;
+      font-weight: 700 !important;
     }
     :host ::ng-deep .employee-tabs > .ant-tabs-nav .ant-tabs-ink-bar {
       display: none !important;
     }
-    :host ::ng-deep .employee-tabs > .ant-tabs-content-holder {
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-      box-shadow: none !important;
-    }
 
-    /* Wrap table/filters in card */
+    /* Card wrapping each tab content */
     .leave-card {
-      background: #fff;
-      border: 1px solid #e8ecf3;
-      border-radius: 8px;
+      background: #ffffff;
+      border-radius: 10px;
+      border: 1px solid #e8eaed;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.04);
       padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
-
-    .apply-leave-btn {
-      height: 32px !important;
-      padding: 0 14px !important;
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      border-radius: 8px !important;
-      background: #1f3d6e !important;
-      color: #fff !important;
-      border: none !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 5px;
-      white-space: nowrap;
-      transition: all 0.2s;
-      margin-left: auto;
-    }
-    .apply-leave-btn:hover {
-      background: #2a4a8a !important;
-      color: #fff !important;
-    }
-
-    /* ===== TAB FILTERS ===== */
+    /* Filters inside tabs */
     .tab-filters {
       display: flex;
       gap: 10px;
-      margin-bottom: 14px;
       align-items: center;
+      margin-bottom: 14px;
       flex-wrap: wrap;
     }
     .filter-select {
-      width: 170px;
+      width: 140px;
     }
     :host ::ng-deep .filter-select .ant-select-selector {
       border-radius: 8px !important;
@@ -392,37 +469,49 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       height: 34px !important;
       padding: 0 8px !important;
       box-shadow: none !important;
-      transition: all 0.2s ease !important;
-    }
-    :host ::ng-deep .filter-select .ant-select-selector:hover {
-      border-color: #1f3d6e !important;
-    }
-    :host ::ng-deep .filter-select.ant-select-focused .ant-select-selector {
-      border-color: #1f3d6e !important;
-      box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
     }
     :host ::ng-deep .filter-select .ant-select-selection-item {
       font-size: 13px !important;
       line-height: 32px !important;
     }
-    .filter-action-btn {
+    .apply-leave-btn {
+      margin-left: auto;
       height: 34px !important;
-      padding: 0 14px !important;
-      font-size: 12px !important;
+      padding: 0 16px !important;
+      font-size: 13px !important;
       font-weight: 600 !important;
+      border: none !important;
       border-radius: 8px !important;
-      border: 1px solid #e2e5ea !important;
-      background: #fff !important;
-      color: #1f3d6e !important;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      color: #fff !important;
       display: inline-flex !important;
       align-items: center !important;
       gap: 6px !important;
+      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
+      transition: all 0.2s ease !important;
+    }
+    .apply-leave-btn:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+    }
+
+    .filter-action-btn {
+      height: 34px !important;
+      padding: 0 12px !important;
+      font-size: 12.5px !important;
+      border-radius: 8px !important;
+      border: 1px solid #e2e5ea !important;
+      color: #374151 !important;
+      background: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
       transition: all 0.2s ease !important;
     }
     .filter-action-btn:hover {
       border-color: #1f3d6e !important;
       color: #1f3d6e !important;
-      background: rgba(31,61,110,0.04) !important;
+      background: #f0f4ff !important;
     }
     .filter-action-btn-danger {
       border-color: #fca5a5 !important;
@@ -432,6 +521,31 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       border-color: #dc2626 !important;
       color: #fff !important;
       background: #dc2626 !important;
+    }
+
+    /* Priority Rules Banner */
+    .priority-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+    }
+    .banner-icon { font-size: 20px; color: #2563eb; margin-top: 2px; }
+    .banner-title { font-size: 14px; font-weight: 700; color: #1e40af; margin-bottom: 2px; }
+    .banner-sub { font-size: 12.5px; color: #1e3a8a; line-height: 1.4; }
+    .priority-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: #1e40af;
+      background: #dbeafe;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #93c5fd;
+      display: inline-block;
     }
 
     /* ===== THEME TABLE ===== */
@@ -476,71 +590,63 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
     .td-center {
       text-align: center !important;
     }
-    .return-cell {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6b7280;
-      white-space: nowrap;
-    }
-    .th-actions {
-      text-align: center !important;
-      width: 100px;
-    }
-    .td-actions {
+    .th-actions, .td-actions {
       text-align: center !important;
       white-space: nowrap;
     }
+
     .emp-cell {
-      font-weight: 500;
+      font-weight: 600;
       color: #1f3d6e;
     }
     .emp-code-text {
+      font-family: 'Courier New', monospace;
       font-weight: 600;
       color: #1f3d6e;
-      letter-spacing: 0.3px;
-    }
-    .reason-text {
-      display: block;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #6c757d;
       font-size: 12px;
     }
     .days-badge {
       display: inline-block;
-      min-width: 26px;
       padding: 1px 8px;
       border-radius: 10px;
-      background: #eef2ff;
+      background: #f0f4ff;
       color: #1f3d6e;
       font-weight: 700;
       font-size: 12px;
-      text-align: center;
     }
-    .balance-badge {
-      font-weight: 700;
-      color: #10b981;
-      font-size: 14px;
-    }
-    .balance-badge.balance-low {
-      color: #ef4444;
+    .reason-text {
+      color: #6c757d;
+      font-size: 12px;
+      max-width: 200px;
+      display: inline-block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .status-tag {
-      font-size: 11px !important;
-      font-weight: 600 !important;
-      padding: 0 8px !important;
-      line-height: 20px !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      padding: 1px 8px !important;
       border-radius: 4px !important;
+      letter-spacing: 0.3px;
     }
-    .text-muted {
-      color: #d1d5db;
+    .balance-badge {
       font-size: 13px;
+      font-weight: 700;
+      color: #059669;
     }
+    .balance-badge.balance-low {
+      color: #dc2626;
+    }
+    .return-cell {
+      font-size: 12px;
+      color: #4b5563;
+      white-space: nowrap;
+    }
+
     .empty-cell {
       text-align: center !important;
-      padding: 28px !important;
+      padding: 24px !important;
       color: #9ca3af !important;
       font-size: 13px;
       font-style: italic;
@@ -646,11 +752,9 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       padding: 0 6px;
       line-height: 1;
       transition: all 0.2s;
-      border-radius: 4px;
     }
     .modal-close:hover {
-      color: #374151;
-      background: rgba(0,0,0,0.05);
+      color: #ef4444;
     }
     .modal-body {
       padding: 20px;
@@ -658,42 +762,36 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       flex: 1;
     }
     .modal-footer {
-      padding: 12px 20px;
-      border-top: 1px solid #e8eaed;
       display: flex;
       justify-content: flex-end;
       gap: 10px;
-      background: #fafbfc;
+      padding: 12px 20px;
+      border-top: 1px solid #e8eaed;
+      background: #f8fafc;
       border-radius: 0 0 12px 12px;
     }
 
-    /* Edit balance info */
-    .edit-balance-info {
-      margin-bottom: 14px;
-      padding: 10px 14px;
-      background: #f0f4ff;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #1f3d6e;
-      font-weight: 500;
-      border-left: 3px solid #1f3d6e;
-    }
-
-    /* Form rows */
+    /* Modal form fields */
     .form-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
       margin-bottom: 14px;
-    }
-    .form-row:last-child {
-      margin-bottom: 0;
     }
     .form-row label {
-      display: block;
+      font-size: 12.5px;
       font-weight: 600;
-      margin-bottom: 5px;
-      font-size: 12px;
       color: #374151;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
+    }
+    .edit-balance-info {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f3d6e;
+      padding: 8px 12px;
+      background: #f0f4ff;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border: 1px solid #e0e7ff;
     }
 
     .leave-days-info {
@@ -758,7 +856,8 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       border-color: #1f3d6e !important;
       box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
     }
-    .theme-input {
+    .theme-input,
+    :host ::ng-deep .theme-input {
       border-radius: 8px !important;
       border: 1px solid #e2e5ea !important;
       padding: 8px 12px !important;
@@ -766,12 +865,15 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       transition: all 0.2s ease !important;
     }
     .theme-input:hover,
-    .theme-input:focus {
+    :host ::ng-deep .theme-input:hover {
+      border-color: #1f3d6e !important;
+    }
+    .theme-input:focus,
+    :host ::ng-deep .theme-input:focus {
       border-color: #1f3d6e !important;
       box-shadow: 0 0 0 2px rgba(31,61,110,0.1) !important;
     }
 
-    /* Input number styling */
     .theme-input-number,
     :host ::ng-deep .theme-input-number {
       width: 100% !important;
@@ -837,73 +939,6 @@ import { LeaveType, LeaveBalance, LeaveApplication } from '../../core/models/pay
       background: #f9fafb !important;
       color: #374151 !important;
     }
-
-    /* ===== SCROLLBAR ===== */
-    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-track {
-      background: #f1f3f5;
-      border-radius: 3px;
-    }
-    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-thumb {
-      background: #c4c9d4;
-      border-radius: 10px;
-    }
-    :host ::ng-deep .ant-tabs-tabpane::-webkit-scrollbar-thumb:hover {
-      background: #a0a8b7;
-    }
-    .modal-body::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
-    }
-    .modal-body::-webkit-scrollbar-track {
-      background: #f1f3f5;
-      border-radius: 3px;
-    }
-    .modal-body::-webkit-scrollbar-thumb {
-      background: #c4c9d4;
-      border-radius: 10px;
-    }
-    .modal-body::-webkit-scrollbar-thumb:hover {
-      background: #a0a8b7;
-    }
-
-    /* ===== SELECT DROPDOWN THEME ===== */
-    :host ::ng-deep .ant-select-dropdown {
-      border-radius: 8px !important;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.12) !important;
-      border: 1px solid #e8eaed !important;
-      padding: 4px !important;
-    }
-    :host ::ng-deep .ant-select-item-option {
-      border-radius: 6px !important;
-      padding: 6px 12px !important;
-      font-size: 13px !important;
-    }
-    :host ::ng-deep .ant-select-item-option-active {
-      background: rgba(31,61,110,0.06) !important;
-    }
-    :host ::ng-deep .ant-select-item-option-selected {
-      background: rgba(31,61,110,0.1) !important;
-      color: #1f3d6e !important;
-      font-weight: 600 !important;
-    }
-
-    /* ===== PICKER DROPDOWN ===== */
-    :host ::ng-deep .ant-picker-dropdown {
-      border-radius: 8px !important;
-    }
-    :host ::ng-deep .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
-      background: #1f3d6e !important;
-    }
-    :host ::ng-deep .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
-      border-color: #1f3d6e !important;
-    }
-    :host ::ng-deep .ant-picker-today-btn {
-      color: #1f3d6e !important;
-    }
   `]
 })
 export class LeaveManagementComponent implements OnInit {
@@ -921,6 +956,11 @@ export class LeaveManagementComponent implements OnInit {
   applyModalVisible = false;
   editBalanceVisible = false;
   savingBalance = false;
+
+  editPriorityVisible = false;
+  savingPriority = false;
+  editPriorityData: any = { id: 0, name: '', description: '', priority: 1, annualEntitlement: 0 };
+
   statusFilter = '';
   appPage = 0;
   appSize = 12;
@@ -945,13 +985,19 @@ export class LeaveManagementComponent implements OnInit {
   showReturnBadge = false;
   returnBadgeText = '';
 
+  showOnlyLop = false;
+  lopCount = 0;
+  totalLopDays = 0;
+  mathAbs = Math.abs;
+
   constructor(
     private leaveService: LeaveService,
     private employeeService: EmployeeService,
     private holidayService: HolidayService,
     private compOffService: CompOffService,
     public authService: AuthService,
-    private msg: NzMessageService
+    private msg: NzMessageService,
+    private modalService: NzModalService
   ) {}
 
   ngOnInit(): void {
@@ -975,15 +1021,37 @@ export class LeaveManagementComponent implements OnInit {
 
   loadLeaveTypes(): void {
     this.leaveService.getLeaveTypes().subscribe({
-      next: (res) => { this.leaveTypes = res.data || []; }
+      next: (res) => {
+        this.leaveTypes = res.data || [];
+      }
     });
   }
 
   loadEmployees(): void {
-    this.employeeService.getEmployees({ size: 1000, employeeStatus: 'LIVE', sort: 'employeeCode,desc' }).subscribe({
+    this.employeeService.getAllEmployees().subscribe({
       next: (res) => {
-        if (res.success && res.data) this.employees = res.data.content || [];
+        if (res.success && res.data) {
+          this.employees = Array.isArray(res.data) ? res.data : (res.data.content || []);
+        }
       }
+    });
+  }
+
+  loadApplications(): void {
+    this.loadingApps = true;
+    this.leaveService.getApplications({
+      status: this.statusFilter || undefined,
+      page: this.appPage,
+      size: this.appSize
+    }).subscribe({
+      next: (res) => {
+        this.loadingApps = false;
+        if (res.success && res.data) {
+          this.applications = res.data.content || [];
+          this.appTotal = res.data.totalElements || 0;
+        }
+      },
+      error: () => { this.loadingApps = false; }
     });
   }
 
@@ -992,23 +1060,8 @@ export class LeaveManagementComponent implements OnInit {
     this.loadApplications();
   }
 
-   loadApplications(): void {
-    this.loadingApps = true;
-    this.leaveService.getApplications({ status: this.statusFilter || undefined, page: this.appPage, size: this.appSize }).subscribe({
-      next: (res) => {
-        const raw = res.data?.content || [];
-        this.applications = [...raw].sort((a: any, b: any) => {
-          return new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime();
-        });
-        this.appTotal = res.data?.totalElements || 0;
-        this.loadingApps = false;
-      },
-      error: () => { this.loadingApps = false; }
-    });
-  }
-
-  onAppPageChange(index: number): void {
-    this.appPage = index - 1;
+  onAppPageChange(page: number): void {
+    this.appPage = page - 1;
     this.loadApplications();
   }
 
@@ -1018,50 +1071,43 @@ export class LeaveManagementComponent implements OnInit {
     this.loadApplications();
   }
 
-  returnDay(toDate: string): string {
-    const d = new Date(toDate + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
-  }
-
-  returnBadge(toDate: string): string {
-    const d = new Date(toDate + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() === 0) return 'Sunday';
-    const retStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    return this.holidayDates.has(retStr) ? 'Holiday' : '';
-  }
-
   loadBalances(): void {
     this.loadingBals = true;
     this.leaveService.getLeaveBalances(this.balanceEmployeeId || undefined, this.balanceYear).subscribe({
       next: (res) => {
-        this.balances = res.data || [];
-        this.applyBalanceFilter();
         this.loadingBals = false;
+        if (res.success) {
+          this.balances = res.data || [];
+          this.applyBalanceFilter();
+        }
       },
-      error: () => {
-        this.loadingBals = false;
-        this.balances = [];
-        this.filteredBalances = [];
-      }
+      error: () => { this.loadingBals = false; }
     });
   }
 
   applyBalanceFilter(): void {
-    if (!this.balanceSearchText || !this.balanceSearchText.trim()) {
-      this.filteredBalances = [...this.balances];
-    } else {
-      const q = this.balanceSearchText.trim().toLowerCase();
-      this.filteredBalances = this.balances.filter(b =>
-        (b.employeeCode && b.employeeCode.toLowerCase().includes(q)) ||
-        (b.employeeName && b.employeeName.toLowerCase().includes(q)) ||
-        (b.leaveTypeName && b.leaveTypeName.toLowerCase().includes(q))
+    let list = [...this.balances];
+    this.lopCount = this.balances.filter(b => b.balance < 0).length;
+    this.totalLopDays = this.balances.filter(b => b.balance < 0).reduce((sum, b) => sum + Math.abs(b.balance), 0);
+
+    if (this.balanceSearchText && this.balanceSearchText.trim()) {
+      const txt = this.balanceSearchText.toLowerCase().trim();
+      list = list.filter(b =>
+        (b.employeeCode || '').toLowerCase().includes(txt) ||
+        (b.employeeName || '').toLowerCase().includes(txt) ||
+        (b.leaveTypeName || '').toLowerCase().includes(txt)
       );
     }
-    this.balPageIndex = 1;
+
+    if (this.showOnlyLop) {
+      list = list.filter(b => b.balance < 0);
+    }
+    this.filteredBalances = list;
+  }
+
+  toggleShowOnlyLop(): void {
+    this.showOnlyLop = !this.showOnlyLop;
+    this.applyBalanceFilter();
   }
 
   showApplyModal(): void {
@@ -1069,164 +1115,186 @@ export class LeaveManagementComponent implements OnInit {
     this.leaveDays = 0;
     this.returnOnLabel = '';
     this.showReturnBadge = false;
-    this.returnBadgeText = '';
     this.compOffAvailable = 0;
     this.applyModalVisible = true;
   }
 
   onEmployeeChanged(): void {
-    this.compOffAvailable = 0;
-    const eid = this.applyForm.employeeId;
-    if (!eid) return;
-    this.compOffService.getAvailableCount(eid).subscribe({
-      next: (res) => { this.compOffAvailable = (res as any)?.data ?? 0; }
-    });
+    if (this.applyForm.employeeId) {
+      this.compOffService.getAvailableCount(this.applyForm.employeeId).subscribe({
+        next: (res: any) => {
+          if (res && res.success) {
+            this.compOffAvailable = res.data || 0;
+          }
+        }
+      });
+    } else {
+      this.compOffAvailable = 0;
+    }
+  }
+
+  getSelectedTypeBalance(): number {
+    if (!this.applyForm.employeeId || !this.applyForm.leaveTypeId) return 0;
+    const lt = this.leaveTypes.find(t => t.id === this.applyForm.leaveTypeId);
+    if (lt && lt.name === 'CO') {
+      return this.compOffAvailable;
+    }
+    const bal = this.balances.find(b => b.employeeId === this.applyForm.employeeId && b.leaveTypeId === this.applyForm.leaveTypeId);
+    return bal ? bal.balance : 0;
   }
 
   computeLeaveDays(): void {
-    const fd = this.applyForm.fromDate;
-    const td = this.applyForm.toDate;
-    if (!fd || !td) { this.leaveDays = 0; this.returnOnLabel = ''; this.showReturnBadge = false; return; }
-    const from = new Date(fd); from.setHours(0, 0, 0, 0);
-    const to = new Date(td); to.setHours(0, 0, 0, 0);
-    const diff = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
-    this.leaveDays = diff >= 0 ? diff + 1 : 0;
+    if (!this.applyForm.fromDate || !this.applyForm.toDate) {
+      this.leaveDays = 0;
+      this.returnOnLabel = '';
+      this.showReturnBadge = false;
+      return;
+    }
+    const from = new Date(this.applyForm.fromDate);
+    const to = new Date(this.applyForm.toDate);
+    if (from > to) {
+      this.leaveDays = 0;
+      this.returnOnLabel = '';
+      this.showReturnBadge = false;
+      return;
+    }
+    const diffTime = Math.abs(to.getTime() - from.getTime());
+    this.leaveDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const retDate = new Date(to);
+    retDate.setDate(retDate.getDate() + 1);
+
+    const year = retDate.getFullYear();
+    const month = String(retDate.getMonth() + 1).padStart(2, '0');
+    const day = String(retDate.getDate()).padStart(2, '0');
+    const isoDateStr = `${year}-${month}-${day}`;
+
+    const isSunday = retDate.getDay() === 0;
+    const isHoliday = this.holidayDates.has(isoDateStr);
+
+    this.returnOnLabel = retDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    this.showReturnBadge = isSunday || isHoliday;
+    this.returnBadgeText = isSunday ? 'Sunday' : isHoliday ? 'Holiday' : '';
+  }
+
+  returnDay(toDateStr: string): string {
+    if (!toDateStr) return '';
+    const to = new Date(toDateStr);
     const ret = new Date(to);
     ret.setDate(ret.getDate() + 1);
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const retStr = `${ret.getFullYear()}-${String(ret.getMonth() + 1).padStart(2, '0')}-${String(ret.getDate()).padStart(2, '0')}`;
-    const isSun = ret.getDay() === 0;
-    const isHoliday = this.holidayDates.has(retStr);
-    this.showReturnBadge = isSun || isHoliday;
-    this.returnBadgeText = isSun ? 'Sunday' : isHoliday ? 'Holiday' : '';
-    this.returnOnLabel = `${days[ret.getDay()]}, ${ret.getDate()} ${months[ret.getMonth()]} ${ret.getFullYear()}`;
+    return ret.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  returnBadge(toDateStr: string): string {
+    if (!toDateStr) return '';
+    const to = new Date(toDateStr);
+    const ret = new Date(to);
+    ret.setDate(ret.getDate() + 1);
+    const year = ret.getFullYear();
+    const month = String(ret.getMonth() + 1).padStart(2, '0');
+    const day = String(ret.getDate()).padStart(2, '0');
+    const isoStr = `${year}-${month}-${day}`;
+    if (ret.getDay() === 0) return 'Sun';
+    if (this.holidayDates.has(isoStr)) return 'Holiday';
+    return '';
   }
 
   applyLeave(): void {
-    this.savingApp = true;
-    const fd = this.applyForm.fromDate;
-    const td = this.applyForm.toDate;
-    const fmt = (d: Date) => {
-      const m = d.getMonth() + 1;
-      const day = d.getDate();
-      return `${d.getFullYear()}-${m < 10 ? '0' + m : m}-${day < 10 ? '0' + day : day}`;
-    };
-    if (this.applyForm.leaveTypeId === -1) {
+    if (!this.applyForm.employeeId || !this.applyForm.leaveTypeId || !this.applyForm.fromDate || !this.applyForm.toDate) {
+      this.msg.warning('Please fill in all required fields');
       return;
     }
 
-    this.leaveService.applyLeave(this.applyForm).subscribe({
-        next: () => {
-          this.msg.success('Leave applied');
+    const avail = this.getSelectedTypeBalance();
+    if (avail < (this.leaveDays || 1)) {
+      this.modalService.confirm({
+        nzTitle: '⚠️ No Leave Available - Process as Loss of Pay (LOP)?',
+        nzContent: `The requested leave period (${this.leaveDays} day(s)) exceeds the available leave balance (${avail} day(s)). Submitting this application will process this leave as <strong>Loss of Pay (LOP / Negative Balance)</strong>. Do you want to proceed?`,
+        nzOkText: 'Yes, Apply as LOP',
+        nzOkDanger: true,
+        nzCancelText: 'Cancel',
+        nzOnOk: () => {
+          this.executeApplyLeave(true);
+        }
+      });
+    } else {
+      this.executeApplyLeave(false);
+    }
+  }
+
+  executeApplyLeave(allowLop: boolean): void {
+    this.savingApp = true;
+    let reasonText = this.applyForm.reason || '';
+    if (allowLop && !reasonText.includes('[ALLOW_LOP]')) {
+      reasonText = (reasonText + ' [ALLOW_LOP]').trim();
+    }
+    const dto = {
+      employeeId: this.applyForm.employeeId,
+      leaveTypeId: this.applyForm.leaveTypeId,
+      fromDate: this.formatDate(this.applyForm.fromDate),
+      toDate: this.formatDate(this.applyForm.toDate),
+      reason: reasonText
+    };
+    this.leaveService.applyLeave(dto as any).subscribe({
+      next: (res) => {
+        this.savingApp = false;
+        if (res.success) {
+          this.msg.success(allowLop ? 'Leave applied as Loss of Pay (LOP)' : 'Leave application submitted successfully');
           this.applyModalVisible = false;
           this.loadApplications();
           this.loadBalances();
-          this.savingApp = false;
-        },
-        error: (err) => {
-          this.msg.error(err.error?.message || 'Failed to apply leave');
-          this.savingApp = false;
         }
-      });
+      },
+      error: (err) => {
+        this.savingApp = false;
+        const rawErr = err.error?.message || 'Error submitting leave application';
+        if (rawErr.includes('NO_LEAVE_AVAILABLE')) {
+          const cleanMsg = rawErr.replace('NO_LEAVE_AVAILABLE:', '').trim();
+          this.modalService.error({
+            nzTitle: 'No Leave Available!',
+            nzContent: cleanMsg
+          });
+        } else {
+          this.msg.error(rawErr);
+        }
+      }
+    });
   }
 
   approve(id: number): void {
     this.leaveService.approveLeave(id).subscribe({
-      next: () => {
-        this.msg.success('Leave approved');
-        this.loadApplications();
-        this.loadBalances();
-      }
+      next: (res) => {
+        if (res.success) {
+          this.msg.success('Leave application approved & balance deducted');
+          this.loadApplications();
+          this.loadBalances();
+        }
+      },
+      error: (err) => this.msg.error(err.error?.message || 'Error approving leave')
     });
   }
 
   reject(id: number): void {
     this.leaveService.rejectLeave(id).subscribe({
-      next: () => {
-        this.msg.success('Leave rejected');
-        this.loadApplications();
-      }
-    });
-  }
-
-  onFileSelected(event: any): void {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    this.uploading = true;
-    const now = new Date();
-    this.leaveService.uploadExcel(file, now.getMonth() + 1, now.getFullYear()).subscribe({
       next: (res) => {
-        this.msg.success(res.message || 'Excel uploaded and synced');
-        this.loadBalances();
-        this.uploading = false;
+        if (res.success) {
+          this.msg.success('Leave application rejected');
+          this.loadApplications();
+        }
       },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to upload Excel');
-        this.uploading = false;
-      }
-    });
-    event.target.value = '';
-  }
-
-  exportToExcel(): void {
-    this.exporting = true;
-    const now = new Date();
-    const params = new HttpParams().set('month', (now.getMonth() + 1).toString()).set('year', now.getFullYear().toString());
-    this.leaveService.exportExcelBlob(params).subscribe({
-      next: (blob: Blob) => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Leve_details_format_${now.toISOString().slice(0, 7)}.xlsx`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        this.msg.success('Excel downloaded');
-        this.exporting = false;
-      },
-      error: (err) => {
-        this.msg.error('Failed to export Excel');
-        this.exporting = false;
-      }
+      error: (err) => this.msg.error(err.error?.message || 'Error rejecting leave')
     });
   }
 
-  downloadSample(): void {
-    this.sampling = true;
-    const now = new Date();
-    this.leaveService.downloadSampleExcel(now.getMonth() + 1, now.getFullYear()).subscribe({
-      next: (blob: Blob) => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'Leave_Sample_Format.xlsx';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        this.msg.success('Sample Excel downloaded');
-        this.sampling = false;
-      },
-      error: (err) => {
-        this.msg.error('Failed to download sample');
-        this.sampling = false;
-      }
-    });
-  }
-
-  clearAllBalances(): void {
-    this.clearing = true;
-    this.leaveService.clearAllBalances().subscribe({
-      next: (res) => {
-        this.msg.success(res.message || 'All balances cleared');
-        this.clearing = false;
-        this.loadBalances();
-      },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to clear balances');
-        this.clearing = false;
-      }
-    });
-  }
-
-  editBalance(b: any): void {
-    this.editBalanceData = { id: b.id, employeeName: b.employeeName, leaveTypeName: b.leaveTypeName, entitled: b.entitled, taken: b.taken, encashed: b.encashed || 0 };
+  editBalance(b: LeaveBalance): void {
+    this.editBalanceData = {
+      id: b.id,
+      employeeName: b.employeeName,
+      leaveTypeName: b.leaveTypeName,
+      entitled: b.entitled,
+      taken: b.taken,
+      encashed: b.encashed || 0
+    };
     this.editBalanceVisible = true;
   }
 
@@ -1236,16 +1304,115 @@ export class LeaveManagementComponent implements OnInit {
       entitled: this.editBalanceData.entitled,
       taken: this.editBalanceData.taken
     }).subscribe({
-      next: () => {
-        this.msg.success('Balance updated');
-        this.editBalanceVisible = false;
-        this.loadBalances();
+      next: (res) => {
         this.savingBalance = false;
+        if (res.success) {
+          this.msg.success('Balance updated successfully');
+          this.editBalanceVisible = false;
+          this.loadBalances();
+        }
       },
-      error: (err) => {
-        this.msg.error(err.error?.message || 'Failed to update');
+      error: () => {
         this.savingBalance = false;
+        this.msg.error('Error updating balance');
       }
     });
+  }
+
+  editLeaveTypePriority(lt: LeaveType): void {
+    this.editPriorityData = { ...lt };
+    this.editPriorityVisible = true;
+  }
+
+  saveLeaveTypePriority(): void {
+    if (!this.editPriorityData.id) return;
+    this.savingPriority = true;
+    this.leaveService.updateLeaveType(this.editPriorityData.id, {
+      priority: this.editPriorityData.priority,
+      annualEntitlement: this.editPriorityData.annualEntitlement
+    }).subscribe({
+      next: (res) => {
+        this.savingPriority = false;
+        this.msg.success('Leave priority updated successfully');
+        this.editPriorityVisible = false;
+        this.loadLeaveTypes();
+      },
+      error: () => {
+        this.savingPriority = false;
+        this.msg.error('Failed to update leave priority');
+      }
+    });
+  }
+
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.uploading = true;
+      this.leaveService.importBalances(file, this.balanceYear).subscribe({
+        next: (res) => {
+          this.uploading = false;
+          if (res.success) {
+            this.msg.success('Excel imported successfully');
+            this.loadBalances();
+          }
+        },
+        error: () => {
+          this.uploading = false;
+          this.msg.error('Error importing Excel');
+        }
+      });
+    }
+  }
+
+  exportToExcel(): void {
+    this.exporting = true;
+    this.leaveService.exportBalances(this.balanceYear).subscribe({
+      next: (blob) => {
+        this.exporting = false;
+        saveAs(blob, `leave_balances_${this.balanceYear}.xlsx`);
+      },
+      error: () => {
+        this.exporting = false;
+        this.msg.error('Error exporting balances');
+      }
+    });
+  }
+
+  downloadSample(): void {
+    this.sampling = true;
+    this.leaveService.downloadSampleBalances(this.balanceYear).subscribe({
+      next: (blob) => {
+        this.sampling = false;
+        saveAs(blob, `leave_balances_sample_${this.balanceYear}.xlsx`);
+      },
+      error: () => {
+        this.sampling = false;
+        this.msg.error('Error downloading sample');
+      }
+    });
+  }
+
+  clearAllBalances(): void {
+    this.clearing = true;
+    this.leaveService.clearAllBalances().subscribe({
+      next: () => {
+        this.clearing = false;
+        this.msg.success('All leave balances cleared');
+        this.loadBalances();
+      },
+      error: () => {
+        this.clearing = false;
+        this.msg.error('Error clearing balances');
+      }
+    });
+  }
+
+  private formatDate(date: any): string {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

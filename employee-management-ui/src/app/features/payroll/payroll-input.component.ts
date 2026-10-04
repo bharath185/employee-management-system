@@ -523,7 +523,7 @@ export class PayrollInputComponent implements OnInit {
           empMap.set(e.id, {
             employeeId: e.id,
             employeeCode: e.employeeCode,
-            employeeName: `${e.surname ? e.surname + ' ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}`.trim(),
+            employeeName: `${e.prefix ? e.prefix + '. ' : ''}${e.firstName || ''}${e.middleName ? ' ' + e.middleName : ''}${e.surname ? ' ' + e.surname : ''}`.trim(),
             basic: 0, hra: 0, fixedPersonalAllowance: 0, otherAllowance: 0,
             pfDeduction: 0, esiDeduction: 0, ptDeduction: 0,
             overtimeWages: 0, bonus: 0, appraisalAmount: 0, lateSittingAmount: 0,

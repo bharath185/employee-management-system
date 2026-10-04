@@ -50,6 +50,8 @@ public class AttendanceService {
     private final CompOffRepository compOffRepository;
     private final CompOffService compOffService;
     private final MasterDataRepository masterDataRepository;
+    @org.springframework.context.annotation.Lazy
+    private final LeaveService leaveService;
 
     /**
      * Mark live employees Present for today if not already marked.
@@ -169,19 +171,20 @@ public class AttendanceService {
                     .attendanceDate(date)
                     .build());
 
-            if (record.getId() != null && Boolean.TRUE.equals(record.getLocked())) {
-                // Protect leave-synced locked record
-                continue;
-            }
-
             String oldStatus = record.getId() != null ? record.getStatus() : null;
             String newStatus = status != null ? status.toUpperCase().trim() : null;
 
             if (!Objects.equals(oldStatus, newStatus)) {
                 handleCompOffTransition(emp, date, oldStatus, newStatus);
+                if ("L".equals(newStatus)) {
+                    leaveService.autoApplyLeaveForAttendance(emp, date);
+                } else if ("L".equalsIgnoreCase(oldStatus) || "ML".equalsIgnoreCase(oldStatus) || "COT".equalsIgnoreCase(oldStatus) || Boolean.TRUE.equals(record.getLocked())) {
+                    leaveService.handleAttendanceEditToNonLeave(emp, date, newStatus);
+                }
             }
 
             record.setStatus(newStatus);
+            record.setLocked(false);
             record.setEmployee(emp);
             toSave.add(record);
             count++;
@@ -326,15 +329,16 @@ public class AttendanceService {
             int p = 0, l = 0, ml = 0, r = 0;
             for (int i = 0; i < numDays; i++) {
                 LocalDate d = monthStart.plusDays(i);
+                boolean hasExplicitRecord = empDayMap.containsKey(i);
                 String status = empDayMap.getOrDefault(i, "");
-                if (status == null || status.isBlank()) {
+                if (!hasExplicitRecord && (status == null || status.isBlank())) {
                     if (isHolidayForEmployee(d, emp.getProcessAssigned(), holidaysInRange)) {
                         status = "H";
                     } else if (i == todayIndex) {
                         status = "P";
                     }
                 }
-                days.add(status);
+                days.add(status != null ? status : "");
                 lockedDays.add(empLockMap.getOrDefault(i, false));
                 switch (status) {
                     case "P" -> p++;
@@ -403,25 +407,22 @@ public class AttendanceService {
                     .attendanceDate(dto.getDate())
                     .build());
 
-            if (record.getId() != null && Boolean.TRUE.equals(record.getLocked())
-                && !dto.getStatus().equals(record.getStatus())) {
-                blocked.add(employee.getEmployeeCode() + " on " + dto.getDate());
-                continue;
-            }
-
             String oldStatus = record.getId() != null ? record.getStatus() : null;
             String newStatus = dto.getStatus().toUpperCase().trim();
 
             if (!Objects.equals(oldStatus, newStatus)) {
                 handleCompOffTransition(employee, dto.getDate(), oldStatus, newStatus);
+                if ("L".equals(newStatus)) {
+                    leaveService.autoApplyLeaveForAttendance(employee, dto.getDate());
+                } else if ("L".equalsIgnoreCase(oldStatus) || "ML".equalsIgnoreCase(oldStatus) || "COT".equalsIgnoreCase(oldStatus) || Boolean.TRUE.equals(record.getLocked())) {
+                    leaveService.handleAttendanceEditToNonLeave(employee, dto.getDate(), newStatus);
+                }
             }
 
             record.setStatus(newStatus);
+            record.setLocked(false);
             record.setEmployee(employee);
             attendanceRepository.save(record);
-        }
-        if (!blocked.isEmpty()) {
-            log.warn("Blocked override of {} leave-synced/frozen attendance record(s): {}", blocked.size(), blocked);
         }
         log.info("Attendance bulk upsert: {} records", records.size());
     }
@@ -607,6 +608,9 @@ public class AttendanceService {
                     String oldStatus = existingOpt.map(AttendanceRecord::getStatus).orElse(null);
                     if (!status.equals(oldStatus)) {
                         handleCompOffTransition(emp, date, oldStatus, status);
+                        if ("L".equals(status)) {
+                            leaveService.autoApplyLeaveForAttendance(emp, date);
+                        }
                     }
 
                     AttendanceRecord record = existingOpt

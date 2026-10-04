@@ -50,108 +50,143 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   ],
   template: `
     <div class="template-form-container page-enter">
-      <div class="form-header-bar">
-        <button nz-button routerLink="/admin/document-templates" class="back-link-btn">
-          <i nz-icon nzType="arrow-left"></i> Back to Templates
-        </button>
-        <span class="form-title">{{ isEditMode ? 'Edit Template' : 'New Document Template' }}</span>
+      <!-- Standard Sub Navigation Bar -->
+      <div class="pp-sub-nav">
+        <a class="pp-nav-item" [routerLink]="['/admin/documents']" [queryParams]="{ tab: 'templates' }">
+          <i nz-icon nzType="arrow-left"></i><span>Back to Document Hub (Templates)</span>
+        </a>
+        <span class="pp-nav-item active">
+          <i nz-icon nzType="file-text"></i><span>{{ isEditMode ? 'Edit Letter Template' : 'New Letter Template' }}</span>
+        </span>
       </div>
 
-      <div nz-row nzGutter="20">
-        <div nz-col nzXs="24" nzLg="16">
+      <div nz-row nzGutter="12" class="form-main-row">
+        <!-- LEFT COLUMN: TEMPLATE DETAILS & CODE EDITOR -->
+        <div nz-col nzXs="24" nzLg="16" class="form-col-left">
           <!-- Main Form Card -->
-          <nz-card class="form-card" nzBorderless>
-            <div class="card-body">
-              <div nz-row nzGutter="16">
-                <div nz-col nzXs="24" nzMd="12">
-                  <div class="form-group">
-                    <label class="form-label">Template Name <span class="required">*</span></label>
-                    <input nz-input [(ngModel)]="form.templateName" placeholder="e.g. Offer Letter" class="form-input" />
+          <nz-card class="form-card main-editor-card" [nzTitle]="formCardTitle" nzSize="small">
+            <ng-template #formCardTitle>
+              <div class="card-header-flex">
+                <span class="card-title-text"><i nz-icon nzType="edit"></i> Template Details & Letter Editor</span>
+                <span class="card-sub-tag" *ngIf="isEditMode">ID #{{ editId }}</span>
+              </div>
+            </ng-template>
+
+            <div class="form-card-inner">
+              <!-- Top Metadata Row -->
+              <div nz-row nzGutter="10" class="meta-row">
+                <div nz-col nzXs="24" nzMd="14">
+                  <div class="form-group-compact">
+                    <label class="dh-field-label">Template Name <span class="required">*</span></label>
+                    <input nz-input [(ngModel)]="form.templateName" placeholder="e.g. Standard Offer Letter" class="form-input-compact" />
                   </div>
                 </div>
-                <div nz-col nzXs="24" nzMd="12">
-                  <div class="form-group">
-                    <label class="form-label">Template Type <span class="required">*</span></label>
-                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Search or select type" nzShowSearch class="form-select" style="width:100%">
+                <div nz-col nzXs="24" nzMd="10">
+                  <div class="form-group-compact">
+                    <label class="dh-field-label">Template Type <span class="required">*</span></label>
+                    <nz-select [(ngModel)]="form.templateType" nzPlaceHolder="Select letter type" nzShowSearch class="form-select-compact" style="width:100%">
                       <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
                     </nz-select>
                   </div>
                 </div>
                 <div nz-col nzSpan="24">
-                  <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea nz-input [(ngModel)]="form.description" placeholder="Brief description of this template"
-                      rows="2" class="form-textarea"></textarea>
+                  <div class="form-group-compact">
+                    <label class="dh-field-label">Description</label>
+                    <input nz-input [(ngModel)]="form.description" placeholder="Brief description of this letter template..." class="form-input-compact" />
                   </div>
                 </div>
-                <div nz-col nzSpan="24">
-                  <div class="form-group">
-                    <label class="form-label">Content <span class="required">*</span></label>
-                    <div class="content-editor-wrapper">
-                      <textarea nz-input [(ngModel)]="form.content" placeholder="Enter template HTML content with {{placeholders}}..."
-                        rows="18" class="content-editor"></textarea>
-                    </div>
-                  </div>
+              </div>
+
+              <!-- Center HTML Editor (Takes full available height) -->
+              <div class="editor-section">
+                <div class="label-with-hint">
+                  <label class="dh-field-label"><i nz-icon nzType="code"></i> HTML Content / Letter Body <span class="required">*</span></label>
+                  <span class="editor-hint"><i nz-icon nzType="info-circle"></i> Click placeholders on the right to copy them into the editor</span>
                 </div>
-                <div nz-col nzSpan="24">
-                  <div class="form-group">
-                    <label class="form-label">
-                      Active
-                      <nz-switch [(ngModel)]="form.active" class="active-switch"></nz-switch>
-                    </label>
-                  </div>
+                <div class="content-editor-wrapper">
+                  <textarea nz-input [(ngModel)]="form.content" placeholder="Enter template HTML content with placeholders like [employee_name], [designation]..."
+                    class="content-editor"></textarea>
                 </div>
+              </div>
+
+              <!-- Bottom Status Switch Bar -->
+              <div class="status-switch-row">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="dh-field-label" style="margin-bottom:0;">Active Status:</span>
+                  <nz-switch [(ngModel)]="form.active" nzSize="small" class="active-switch"></nz-switch>
+                  <span class="switch-status-label" [class.active-text]="form.active">{{ form.active ? 'Active (Ready for PDF Generation)' : 'Inactive' }}</span>
+                </div>
+                <span class="char-count" *ngIf="form.content">
+                  {{ form.content.length }} characters
+                </span>
               </div>
             </div>
           </nz-card>
         </div>
 
-        <div nz-col nzXs="24" nzLg="8">
+        <!-- RIGHT COLUMN: ACTIONS & PLACEHOLDERS -->
+        <div nz-col nzXs="24" nzLg="8" class="form-col-right">
           <!-- Actions Card -->
-          <nz-card class="form-card" nzTitle="Actions" nzBorderless>
+          <nz-card class="form-card actions-card" nzTitle="Actions" nzSize="small">
             <div class="actions-section">
               <button nz-button class="btn-primary-gradient" style="width:100%; justify-content:center;" (click)="saveTemplate()"
                 [nzLoading]="isSaving" [disabled]="!form.templateName || !form.templateType">
-                <i nz-icon nzType="save"></i> {{ isEditMode ? 'Update Template' : 'Create Template' }}
+                <i nz-icon nzType="save"></i> {{ isEditMode ? 'Update Template' : 'Save & Publish Template' }}
               </button>
-              <button nz-button nzType="default" class="preview-btn" (click)="showPreview()"
-                [disabled]="!form.content">
-                <i nz-icon nzType="eye"></i> Preview Template
-              </button>
+              <div class="actions-sub-grid">
+                <button nz-button nzType="default" class="preview-btn" (click)="showPreview()"
+                  [disabled]="!form.content">
+                  <i nz-icon nzType="eye"></i> Live PDF Preview
+                </button>
+                <button nz-button nzType="default" class="cancel-btn" (click)="goBack()">
+                  <i nz-icon nzType="close"></i> Cancel
+                </button>
+              </div>
             </div>
           </nz-card>
 
-          <!-- Placeholders Reference Card -->
-          <nz-card class="form-card" nzTitle="Available Placeholders" nzBorderless>
-            <div class="ph-search-box">
-              <nz-input-group [nzPrefix]="phIcon">
-                <input nz-input [(ngModel)]="placeholderSearch" placeholder="Search placeholders (e.g. name, date)..." class="ph-input" />
-              </nz-input-group>
-              <ng-template #phIcon><i nz-icon nzType="search"></i></ng-template>
+          <!-- Placeholders Reference Card (Fills remaining height with internal scroll) -->
+          <nz-card class="form-card ph-card" [nzTitle]="phCardTitle" nzSize="small">
+            <ng-template #phCardTitle>
+              <span class="card-title-text"><i nz-icon nzType="tags"></i> Available Placeholders</span>
+            </ng-template>
+
+            <div class="ph-card-inner">
+              <div class="ph-search-box">
+                <nz-input-group [nzPrefix]="phIcon">
+                  <input nz-input [(ngModel)]="placeholderSearch" placeholder="Search placeholders (e.g. name, date, salary)..." class="ph-input" />
+                </nz-input-group>
+                <ng-template #phIcon><i nz-icon nzType="search" style="color: #94a3b8;"></i></ng-template>
+              </div>
+
+              <div class="ph-collapse-wrapper">
+                <nz-collapse nzAccordion class="dh-collapse">
+                  <nz-collapse-panel [nzHeader]="'Employee Placeholders (' + filteredEmployeePlaceholders.length + ')'" nzActive="true">
+                    <div class="placeholder-item" *ngFor="let ph of filteredEmployeePlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy ' + ph.key">
+                      <code class="placeholder-code">{{ ph.key }}</code>
+                      <span class="placeholder-desc">{{ ph.desc }}</span>
+                    </div>
+                    <div *ngIf="filteredEmployeePlaceholders.length === 0" class="ph-empty">No matching employee placeholders</div>
+                  </nz-collapse-panel>
+
+                  <nz-collapse-panel [nzHeader]="'Company Placeholders (' + filteredCompanyPlaceholders.length + ')'">
+                    <div class="placeholder-item" *ngFor="let ph of filteredCompanyPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy ' + ph.key">
+                      <code class="placeholder-code">{{ ph.key }}</code>
+                      <span class="placeholder-desc">{{ ph.desc }}</span>
+                    </div>
+                    <div *ngIf="filteredCompanyPlaceholders.length === 0" class="ph-empty">No matching company placeholders</div>
+                  </nz-collapse-panel>
+
+                  <nz-collapse-panel [nzHeader]="'System Placeholders (' + filteredSystemPlaceholders.length + ')'">
+                    <div class="placeholder-item" *ngFor="let ph of filteredSystemPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy ' + ph.key">
+                      <code class="placeholder-code">{{ ph.key }}</code>
+                      <span class="placeholder-desc">{{ ph.desc }}</span>
+                    </div>
+                    <div *ngIf="filteredSystemPlaceholders.length === 0" class="ph-empty">No matching system placeholders</div>
+                  </nz-collapse-panel>
+                </nz-collapse>
+              </div>
             </div>
-            <nz-collapse nzAccordion>
-              <nz-collapse-panel [nzHeader]="'Employee Placeholders (' + filteredEmployeePlaceholders.length + ')'" nzActive="true">
-                <div class="placeholder-item" *ngFor="let ph of filteredEmployeePlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
-                  <code class="placeholder-code">{{ ph.key }}</code>
-                  <span class="placeholder-desc">{{ ph.desc }}</span>
-                </div>
-                <div *ngIf="filteredEmployeePlaceholders.length === 0" class="ph-empty">No matching employee placeholders</div>
-              </nz-collapse-panel>
-              <nz-collapse-panel [nzHeader]="'Company Placeholders (' + filteredCompanyPlaceholders.length + ')'">
-                <div class="placeholder-item" *ngFor="let ph of filteredCompanyPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
-                  <code class="placeholder-code">{{ ph.key }}</code>
-                  <span class="placeholder-desc">{{ ph.desc }}</span>
-                </div>
-                <div *ngIf="filteredCompanyPlaceholders.length === 0" class="ph-empty">No matching company placeholders</div>
-              </nz-collapse-panel>
-              <nz-collapse-panel [nzHeader]="'System Placeholders (' + filteredSystemPlaceholders.length + ')'">
-                <div class="placeholder-item" *ngFor="let ph of filteredSystemPlaceholders" (click)="copyPlaceholder(ph.key)" [nz-tooltip]="'Click to copy'">
-                  <code class="placeholder-code">{{ ph.key }}</code>
-                  <span class="placeholder-desc">{{ ph.desc }}</span>
-                </div>
-                <div *ngIf="filteredSystemPlaceholders.length === 0" class="ph-empty">No matching system placeholders</div>
-              </nz-collapse-panel>
-            </nz-collapse>
           </nz-card>
         </div>
       </div>
@@ -166,182 +201,392 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
     </app-template-preview-modal>
   `,
   styles: [`
-    :host { display: block; }
-    .template-form-container { width: 100%; padding: 12px 16px; box-sizing: border-box; }
+    @keyframes page-enter {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .template-form-container.page-enter {
+      animation: page-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-    .form-header-bar {
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .template-form-container {
+      width: 100%;
+      height: calc(100vh - 54px);
+      min-height: 0;
+      padding: 10px 14px 12px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #edf2f7 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* GLASSY SUB NAVIGATION BAR */
+    .pp-sub-nav {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 14px;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 10px;
+      padding: 6px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 20px 0 rgba(31, 38, 135, 0.05);
+      flex-shrink: 0;
     }
-    .back-link-btn {
-      height: 34px !important;
-      padding: 0 14px !important;
-      border-radius: 8px !important;
-      border: 1px solid #e2e5ea !important;
-      background: #ffffff !important;
-      color: #1f3d6e !important;
-      font-weight: 600 !important;
-      font-size: 12px !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+    .pp-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
     }
-    .back-link-btn:hover {
-      border-color: #1f3d6e !important;
-      background: #f0f4ff !important;
-    }
-    .form-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #1f3d6e;
+    .pp-nav-item:hover { background: #f1f5f9; color: #1e3a8a; }
+    .pp-nav-item.active {
+      background: rgba(239, 246, 255, 0.9);
+      color: #1e40af;
+      border: 1px solid rgba(191, 219, 254, 0.8);
     }
 
+    /* MAIN FLEX ROW */
+    .form-main-row {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+    }
+    .form-col-left {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .form-col-right {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      gap: 8px;
+    }
+
+    /* GLASSY FORM CARDS */
+    .form-card {
+      border-radius: 12px !important;
+      border: 1px solid rgba(255, 255, 255, 0.85) !important;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06) !important;
+      background: rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      margin-bottom: 0 !important;
+    }
+    .main-editor-card {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    :host ::ng-deep .main-editor-card > .ant-card-body {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      padding: 10px 14px !important;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .form-card-inner {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    :host ::ng-deep .form-card .ant-card-head {
+      background: rgba(248, 250, 252, 0.65) !important;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85) !important;
+      padding: 8px 14px !important;
+      min-height: auto !important;
+    }
+    .card-header-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title-text {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #1e3a8a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-sub-tag {
+      font-size: 10.5px;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .meta-row { flex-shrink: 0; }
+    .form-group-compact { margin-bottom: 6px; }
+
+    .dh-field-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dh-field-label .required { color: #ef4444; }
+
+    :host ::ng-deep .form-input-compact,
+    :host ::ng-deep .form-select-compact .ant-select-selector {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background: rgba(255, 255, 255, 0.95) !important;
+      height: 30px !important;
+      font-size: 12px !important;
+    }
+    :host ::ng-deep .form-input-compact:hover,
+    :host ::ng-deep .form-select-compact .ant-select-selector:hover {
+      border-color: #2563eb !important;
+    }
+
+    /* EDITOR SECTION (FILLS REMAINING HEIGHT) */
+    .editor-section {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2px;
+    }
+    .label-with-hint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .editor-hint {
+      font-size: 10.5px;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .content-editor-wrapper {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+    }
+    .content-editor {
+      flex: 1;
+      min-height: 0;
+      height: 100% !important;
+      width: 100%;
+      font-family: 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
+      font-size: 12px !important;
+      line-height: 1.5 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      resize: none !important;
+      background: #0f172a !important;
+      color: #e2e8f0 !important;
+      padding: 10px 12px !important;
+      tab-size: 2;
+      box-sizing: border-box;
+      overflow-y: auto !important;
+    }
+    .content-editor:focus { box-shadow: none !important; }
+
+    /* STATUS SWITCH ROW */
+    .status-switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(248, 250, 252, 0.85);
+      backdrop-filter: blur(6px);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      flex-shrink: 0;
+    }
+    .switch-status-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .switch-status-label.active-text { color: #16a34a; }
+    .char-count { font-size: 11px; color: #94a3b8; }
+
+    /* RIGHT COLUMN: ACTIONS & PLACEHOLDERS */
+    .actions-card { flex-shrink: 0; }
+    :host ::ng-deep .actions-card > .ant-card-body { padding: 8px 12px !important; }
+    .actions-section { display: flex; flex-direction: column; gap: 6px; }
+    .actions-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
     .btn-primary-gradient {
-      height: 34px !important;
-      padding: 0 18px !important;
-      font-size: 13px !important;
+      height: 32px !important;
+      padding: 0 14px !important;
+      font-size: 12.5px !important;
       font-weight: 600 !important;
       border: none !important;
-      border-radius: 8px !important;
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
+      border-radius: 6px !important;
+      background: linear-gradient(135deg, #2563eb, #1e40af) !important;
       color: #fff !important;
       display: inline-flex !important;
       align-items: center !important;
       gap: 6px !important;
       transition: all 0.2s ease !important;
-      letter-spacing: 0.3px !important;
-      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
     }
     .btn-primary-gradient:hover {
       transform: translateY(-1px) !important;
-      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
     }
 
     .cancel-btn, .preview-btn {
-      height: 34px !important;
-      padding: 0 16px !important;
-      font-size: 13px !important;
+      height: 30px !important;
+      padding: 0 10px !important;
+      font-size: 11.5px !important;
       font-weight: 600 !important;
-      border-radius: 8px !important;
+      border-radius: 6px !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 6px !important;
-      border: 1px solid #e2e5ea !important;
+      justify-content: center !important;
+      gap: 5px !important;
+      border: 1px solid #cbd5e1 !important;
       color: #475569 !important;
-      background: #f8fafc !important;
+      background: rgba(248, 250, 252, 0.9) !important;
+      backdrop-filter: blur(4px);
       transition: all 0.2s ease !important;
     }
     .cancel-btn:hover, .preview-btn:hover {
       background: #f1f5f9 !important;
       color: #1e293b !important;
-      border-color: #cbd5e1 !important;
+      border-color: #94a3b8 !important;
     }
 
-    .form-card {
-      margin-bottom: 20px;
-      border-radius: 10px !important;
-      border: 1px solid #e8eaed !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-      background: #fff;
+    /* PLACEHOLDERS CARD (FILLS REMAINING HEIGHT) */
+    .ph-card {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
-    .form-card .ant-card-head {
-      border-bottom: 1px solid #e8eaed;
-      padding: 12px 16px;
-      min-height: auto;
+    :host ::ng-deep .ph-card > .ant-card-body {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      padding: 8px 10px !important;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-    .form-card .ant-card-head-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1f3d6e;
+    .ph-card-inner {
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .form-card .ant-card-body { padding: 16px; }
-
-    .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 6px; }
-    .form-label .required { color: #ef4444; }
-
-    .active-switch { margin-left: 12px; }
-
-    :host ::ng-deep .form-input,
-    :host ::ng-deep .form-select .ant-select-selector,
-    :host ::ng-deep .form-textarea {
-      border-radius: 8px !important;
-      border: 1px solid #e2e5ea !important;
-    }
-    :host ::ng-deep .form-input {
-      height: 34px !important;
-    }
-    :host ::ng-deep .form-select .ant-select-selector {
-      height: 34px !important;
-    }
-    :host ::ng-deep .form-input:hover,
-    :host ::ng-deep .form-select .ant-select-selector:hover,
-    :host ::ng-deep .form-textarea:hover {
-      border-color: #1f3d6e !important;
-    }
-
-    .content-editor-wrapper { border: 1px solid #e2e5ea; border-radius: 8px; overflow: hidden; }
-    .content-editor {
-      font-family: 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace !important;
-      font-size: 13px !important;
-      line-height: 1.6 !important;
-      border: none !important;
-      border-radius: 0 !important;
-      resize: vertical;
-      background: #1e1e2e !important;
-      color: #cdd6f4 !important;
-      tab-size: 2;
-    }
-    .content-editor:focus { box-shadow: none !important; }
-
-    .actions-section { display: flex; flex-direction: column; gap: 10px; }
-
-    .ph-search-box {
-      margin-bottom: 12px;
-    }
+    .ph-search-box { flex-shrink: 0; }
     :host ::ng-deep .ph-input {
       border-radius: 6px !important;
-      font-size: 12px !important;
-      height: 32px !important;
+      font-size: 11px !important;
+      height: 28px !important;
+      border: 1px solid #cbd5e1 !important;
     }
+
+    .ph-collapse-wrapper {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .ph-collapse-wrapper::-webkit-scrollbar { width: 5px; }
+    .ph-collapse-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(30, 58, 138, 0.18);
+      border-radius: 3px;
+    }
+
+    :host ::ng-deep .dh-collapse .ant-collapse-header {
+      padding: 6px 10px !important;
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      color: #1e3a8a !important;
+    }
+    :host ::ng-deep .dh-collapse .ant-collapse-content-box {
+      padding: 4px 8px !important;
+    }
+
     .placeholder-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 6px 4px;
-      border-bottom: 1px solid #f0f2f5;
+      gap: 6px;
+      padding: 4px 4px;
+      border-bottom: 1px solid #f1f5f9;
       cursor: pointer;
       border-radius: 4px;
       transition: background 0.15s ease;
     }
     .placeholder-item:hover {
-      background: #f1f5f9;
+      background: #eff6ff;
     }
     .placeholder-item:last-child { border-bottom: none; }
     .placeholder-code {
       font-family: 'Cascadia Code', 'Consolas', monospace;
-      font-size: 11px;
-      background: #f0f4ff;
-      color: #1f3d6e;
-      padding: 2px 8px;
-      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 600;
+      background: #eff6ff;
+      color: #1e40af;
+      padding: 1px 6px;
+      border-radius: 4px;
       white-space: nowrap;
       flex-shrink: 0;
-      border: 1px solid #e0e7ff;
+      border: 1px solid #bfdbfe;
     }
-    .placeholder-desc { font-size: 12px; color: #64748b; }
+    .placeholder-desc { font-size: 11px; color: #475569; }
     .ph-empty {
-      font-size: 11px;
+      font-size: 10.5px;
       color: #94a3b8;
       font-style: italic;
-      padding: 8px 4px;
+      padding: 6px 4px;
     }
 
-    @media (max-width: 768px) {
-      .template-form-container { padding: 12px 8px; }
+    :host ::ng-deep .ant-switch-checked {
+      background-color: #2563eb !important;
     }
   `]
 })
@@ -427,7 +672,7 @@ export class DocumentTemplateFormComponent implements OnInit {
       },
       error: () => {
         this.message.error('Error loading template');
-        this.router.navigate(['/admin/document-templates']);
+        this.router.navigate(['/admin/documents'], { queryParams: { tab: 'templates' } });
       }
     });
   }
@@ -446,7 +691,7 @@ export class DocumentTemplateFormComponent implements OnInit {
           this.isSaving = false;
           if (response.success) {
             this.message.success('Template updated successfully');
-            this.router.navigate(['/admin/document-templates']);
+            this.router.navigate(['/admin/documents'], { queryParams: { tab: 'templates' } });
           }
         },
         error: (err) => {
@@ -460,7 +705,7 @@ export class DocumentTemplateFormComponent implements OnInit {
           this.isSaving = false;
           if (response.success) {
             this.message.success('Template created successfully');
-            this.router.navigate(['/admin/document-templates']);
+            this.router.navigate(['/admin/documents'], { queryParams: { tab: 'templates' } });
           }
         },
         error: (err) => {
@@ -480,6 +725,6 @@ export class DocumentTemplateFormComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/admin/document-templates']);
+    this.router.navigate(['/admin/documents'], { queryParams: { tab: 'templates' } });
   }
 }

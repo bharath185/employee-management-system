@@ -280,6 +280,10 @@ if %ERRORLEVEL% NEQ 0 (
 echo Starting Employee Management System on http://localhost:8085 (or http://ems.parrikar.com:8085)...
 start "Employee Management System Backend" /B "%JAVA_EXE%" -jar "%JAR_FILE%" --spring.profiles.active=production > "%LOGS_DIR%\\ems_startup.log" 2>&1
 
+if "%1"=="--no-browser" goto END_START
+if "%1"=="/background" goto END_START
+if "%1"=="/silent" goto END_START
+
 echo Waiting for EMS to become ready...
 set /a ATTEMPTS=0
 :WAIT_LOOP
@@ -293,6 +297,8 @@ goto WAIT_LOOP
 :LAUNCH_BROWSER
 echo Launching Browser at http://localhost:8085...
 start "" "http://localhost:8085"
+
+:END_START
 """
     with open(os.path.join(PKG_DIR, "bin", "start-ems.bat"), "w", encoding="utf-8") as f:
         f.write(start_ems_bat)
@@ -526,12 +532,72 @@ public class PrigenixUninstaller : Form {
                 KillProcesses("postgres");
                 KillProcesses("pg_ctl");
 
-                UpdateProgress(35, "Removing Desktop and Start Menu Shortcuts...");
-                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                string lnk1 = Path.Combine(desktop, "Prigenix EMS.lnk");
-                string lnk2 = Path.Combine(desktop, "Employee Management System.lnk");
-                if (File.Exists(lnk1)) File.Delete(lnk1);
-                if (File.Exists(lnk2)) File.Delete(lnk2);
+                UpdateProgress(35, "Removing Desktop, Start Menu, and Startup Shortcuts...");
+                
+                string[] desktopFolders = new string[] {
+                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory)
+                };
+                string[] shortcutNames = new string[] {
+                    "Prigenix EMS.lnk", "PRIGENIX EMS.lnk", "Employee Management System.lnk", "EMS.lnk", "Stop PRIGENIX EMS.lnk"
+                };
+                foreach (string d in desktopFolders) {
+                    if (Directory.Exists(d)) {
+                        foreach (string name in shortcutNames) {
+                            string lnk = Path.Combine(d, name);
+                            if (File.Exists(lnk)) {
+                                try { File.Delete(lnk); } catch {}
+                            }
+                        }
+                    }
+                }
+
+                string[] startupFolders = new string[] {
+                    Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup)
+                };
+                foreach (string s in startupFolders) {
+                    if (Directory.Exists(s)) {
+                        foreach (string name in shortcutNames) {
+                            string lnk = Path.Combine(s, name);
+                            if (File.Exists(lnk)) {
+                                try { File.Delete(lnk); } catch {}
+                            }
+                        }
+                    }
+                }
+
+                string[] programFolders = new string[] {
+                    Environment.GetFolderPath(Environment.SpecialFolder.Programs),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms)
+                };
+                foreach (string p in programFolders) {
+                    string smFolder = Path.Combine(p, "PRIGENIX EMS");
+                    if (Directory.Exists(smFolder)) {
+                        try { Directory.Delete(smFolder, true); } catch {}
+                    }
+                }
+
+                // Remove Auto-start Run Registry entries
+                try {
+                    using (RegistryKey runKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true)) {
+                        if (runKey != null) {
+                            runKey.DeleteValue("PrigenixEMS", false);
+                        }
+                    }
+                } catch {}
+                try {
+                    using (RegistryKey runKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true)) {
+                        if (runKey != null) {
+                            runKey.DeleteValue("PrigenixEMS", false);
+                        }
+                    }
+                } catch {}
+
+                // Refresh Windows Shell (instantly removes icons from desktop)
+                try {
+                    SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+                } catch {}
 
                 UpdateProgress(50, "Cleaning Windows Hosts domain mappings...");
                 RemoveHostMapping();
@@ -539,6 +605,13 @@ public class PrigenixUninstaller : Form {
                 UpdateProgress(65, "Removing Windows Control Panel Registry entries...");
                 try {
                     using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
+                        if (key != null) {
+                            key.DeleteSubKeyTree("PrigenixEMS", false);
+                        }
+                    }
+                } catch {}
+                try {
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall", true)) {
                         if (key != null) {
                             key.DeleteSubKeyTree("PrigenixEMS", false);
                         }
@@ -589,6 +662,9 @@ public class PrigenixUninstaller : Form {
         thread.IsBackground = true;
         thread.Start();
     }
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(int wEventId, int uFlags, IntPtr dwItem1, IntPtr dwItem2);
 
     private void KillProcesses(string processName) {
         try {
@@ -652,12 +728,13 @@ using System.Diagnostics;
 
 class Program {
     [STAThread]
-    static void Main() {
+    static void Main(string[] args) {
         try {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
             string startBat = Path.Combine(baseDir, "bin", "start-ems.bat");
             if (File.Exists(startBat)) {
-                ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", "/c \"" + startBat + "\"") {
+                string batArgs = (args != null && args.Length > 0) ? string.Join(" ", args) : "";
+                ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", "/c \"" + startBat + "\" " + batArgs) {
                     WorkingDirectory = baseDir,
                     CreateNoWindow = true,
                     UseShellExecute = false,
@@ -694,7 +771,7 @@ def step5_compile_smart_installer():
     key_file_path = os.path.join(DIST_DIR, "INSTALLATION_KEY.txt")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     key_doc = f"""================================================================================
-PRIGENIX EMPLOYEE MANAGEMENT SYSTEM (EMS) - OFFICIAL INSTALLATION KEY
+WELCOME TO PRIGENIX - EMPLOYEE MANAGEMENT SYSTEM INSTALLATION KEY
 ================================================================================
 Company:           PRIGENIX
 Product:           Employee Management System (Enterprise Standalone Edition)
@@ -765,6 +842,7 @@ public class PrigenixEMSInstaller : Form {
     private Label lblKeyValidation;
 
     private CheckBox chkDesktopShortcut;
+    private CheckBox chkAutoStart;
     private CheckBox chkLaunchAfter;
     
     private Label lblStatus;
@@ -785,7 +863,7 @@ public class PrigenixEMSInstaller : Form {
     private int failedAttempts = 0;
 
     public PrigenixEMSInstaller() {
-        this.Text = "PRIGENIX - Employee Management System Setup v1.0";
+        this.Text = "Welcome to PRIGENIX - Employee Management System Setup v1.0";
         this.Size = new Size(610, 600);
         this.StartPosition = FormStartPosition.CenterScreen;
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -819,7 +897,7 @@ public class PrigenixEMSInstaller : Form {
         this.Controls.Add(headerPanel);
 
         lblHeaderCompany = new Label() {
-            Text = "PRIGENIX",
+            Text = "WELCOME TO PRIGENIX",
             Font = new Font("Segoe UI", 15F, FontStyle.Bold),
             ForeColor = Color.FromArgb(255, 215, 0),
             Location = new Point(24, 12),
@@ -839,7 +917,7 @@ public class PrigenixEMSInstaller : Form {
         headerPanel.Controls.Add(lblHeaderApp);
 
         lblHeaderTagline = new Label() {
-            Text = "Turnkey Standalone Enterprise Installer • Automated In-Place Upgrade Engine",
+            Text = "Welcome to PRIGENIX • Automated Standalone Installation Engine",
             Font = new Font("Segoe UI", 8F),
             ForeColor = Color.FromArgb(186, 215, 255),
             Location = new Point(25, 64),
@@ -945,8 +1023,8 @@ public class PrigenixEMSInstaller : Form {
             Text = "* Key format: PRX-EMS-XXXX-XXXX-XXXX-XXXX (Verification is strictly enforced)",
             Font = new Font("Segoe UI", 8F),
             ForeColor = Color.FromArgb(120, 130, 145),
-            Location = new Point(18, 135),
-            Size = new Size(508, 18)
+            Location = new Point(18, 133),
+            Size = new Size(508, 16)
         };
         cardPanel.Controls.Add(lblKeyValidation);
 
@@ -956,34 +1034,44 @@ public class PrigenixEMSInstaller : Form {
             Checked = true,
             Font = new Font("Segoe UI", 9F),
             ForeColor = Color.FromArgb(51, 65, 85),
-            Location = new Point(18, 156),
-            Size = new Size(440, 22)
+            Location = new Point(18, 150),
+            Size = new Size(508, 20)
         };
         cardPanel.Controls.Add(chkDesktopShortcut);
+
+        chkAutoStart = new CheckBox() {
+            Text = "Automatically start EMS on system boot / restart (Background Service)",
+            Checked = true,
+            Font = new Font("Segoe UI", 9F),
+            ForeColor = Color.FromArgb(51, 65, 85),
+            Location = new Point(18, 172),
+            Size = new Size(508, 20)
+        };
+        cardPanel.Controls.Add(chkAutoStart);
 
         chkLaunchAfter = new CheckBox() {
             Text = "Automatically launch EMS and open browser at http://localhost:8085",
             Checked = true,
             Font = new Font("Segoe UI", 9F),
             ForeColor = Color.FromArgb(51, 65, 85),
-            Location = new Point(18, 178),
-            Size = new Size(508, 22)
+            Location = new Point(18, 194),
+            Size = new Size(508, 20)
         };
         cardPanel.Controls.Add(chkLaunchAfter);
 
         Label lblDivider = new Label() {
             BorderStyle = BorderStyle.Fixed3D,
-            Location = new Point(18, 204),
+            Location = new Point(18, 218),
             Size = new Size(508, 2)
         };
         cardPanel.Controls.Add(lblDivider);
 
         // Status & Animated Transfer Area
         lblStatus = new Label() {
-            Text = "Ready to install PRIGENIX EMS.",
+            Text = "Welcome to PRIGENIX. Ready to install.",
             Font = new Font("Segoe UI", 9F, FontStyle.Bold),
             ForeColor = Color.FromArgb(30, 41, 59),
-            Location = new Point(18, 212),
+            Location = new Point(18, 224),
             Size = new Size(508, 20)
         };
         cardPanel.Controls.Add(lblStatus);
@@ -992,15 +1080,15 @@ public class PrigenixEMSInstaller : Form {
             Text = "Embedded OpenJDK 17 + PostgreSQL 17 + Unified Web Engine on http://localhost:8085",
             Font = new Font("Segoe UI", 8F),
             ForeColor = Color.FromArgb(100, 116, 139),
-            Location = new Point(18, 232),
-            Size = new Size(508, 26)
+            Location = new Point(18, 244),
+            Size = new Size(508, 24)
         };
         cardPanel.Controls.Add(lblSubStatus);
 
         // Visual File Transfer Animation Card
         transferPanel = new Panel() {
-            Location = new Point(18, 262),
-            Size = new Size(508, 70),
+            Location = new Point(18, 272),
+            Size = new Size(508, 66),
             BackColor = Color.FromArgb(248, 250, 252)
         };
         transferPanel.Paint += DrawTransferAnimation;
@@ -1010,7 +1098,7 @@ public class PrigenixEMSInstaller : Form {
             Text = "Waiting for setup confirmation...",
             Font = new Font("Segoe UI", 8F, FontStyle.Italic),
             ForeColor = Color.FromArgb(71, 85, 105),
-            Location = new Point(10, 8),
+            Location = new Point(10, 6),
             Size = new Size(410, 18),
             BackColor = Color.Transparent
         };
@@ -1020,7 +1108,7 @@ public class PrigenixEMSInstaller : Form {
             Text = "0%",
             Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
             ForeColor = Color.FromArgb(15, 80, 160),
-            Location = new Point(445, 6),
+            Location = new Point(445, 4),
             Size = new Size(55, 18),
             TextAlign = ContentAlignment.TopRight,
             BackColor = Color.Transparent
@@ -1028,7 +1116,7 @@ public class PrigenixEMSInstaller : Form {
         transferPanel.Controls.Add(lblPercentBadge);
 
         progressBar = new ProgressBar() {
-            Location = new Point(10, 32),
+            Location = new Point(10, 26),
             Size = new Size(488, 16),
             Style = ProgressBarStyle.Continuous
         };
@@ -1038,7 +1126,7 @@ public class PrigenixEMSInstaller : Form {
             Text = "● Ready",
             Font = new Font("Segoe UI", 7.5F),
             ForeColor = Color.FromArgb(100, 116, 139),
-            Location = new Point(10, 50),
+            Location = new Point(10, 46),
             Size = new Size(488, 16),
             BackColor = Color.Transparent
         };
@@ -1199,6 +1287,7 @@ public class PrigenixEMSInstaller : Form {
 
         string targetDir = txtInstallPath.Text.Trim();
         bool createShortcut = chkDesktopShortcut.Checked;
+        bool autoStart = chkAutoStart.Checked;
         bool launchAfter = chkLaunchAfter.Checked;
 
         Thread thread = new Thread(() => {
@@ -1229,8 +1318,8 @@ public class PrigenixEMSInstaller : Form {
                 Stream payloadStream = asm.GetManifestResourceStream("ems_payload.zip");
 
                 if (payloadStream == null) {
-                    string exePath = Process.GetCurrentProcess().MainModule.FileName;
-                    string localZip = Path.Combine(Path.GetDirectoryName(exePath), "ems_payload.zip");
+                    string selfInstallerPath = Process.GetCurrentProcess().MainModule.FileName;
+                    string localZip = Path.Combine(Path.GetDirectoryName(selfInstallerPath), "ems_payload.zip");
                     if (File.Exists(localZip)) {
                         payloadStream = File.OpenRead(localZip);
                     } else {
@@ -1288,21 +1377,41 @@ public class PrigenixEMSInstaller : Form {
                 UpdateProgress(90, "Registering in Windows Control Panel (Add or Remove Programs)...", "Configuring uninstaller...", "Uninstall.exe", "Writing HKCU Uninstall entries");
                 RegisterWindowsUninstall(targetDir);
 
-                UpdateProgress(96, "Updating PRIGENIX EMS Desktop Shortcut...", "Applying PRIGENIX official icon...", "Prigenix EMS.lnk", "Configuring desktop icon");
+                UpdateProgress(96, "Creating PRIGENIX EMS Shortcuts & Auto-Start Configuration...", "Configuring desktop, start menu and startup...", "Prigenix EMS.lnk", "Configuring shortcuts");
+                
+                string exePath = Path.Combine(targetDir, "EMS.exe");
+                string icoPath = Path.Combine(targetDir, "app.ico");
+                string uninstallExe = Path.Combine(targetDir, "Uninstall.exe");
+
+                // 1. Desktop Shortcut (Directly calls EMS.exe natively)
                 if (createShortcut) {
                     string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                     string shortcutPath = Path.Combine(desktop, "Prigenix EMS.lnk");
-                    string exePath = Path.Combine(targetDir, "EMS.exe");
-                    string icoPath = Path.Combine(targetDir, "app.ico");
-                    
-                    CreateDesktopShortcut(shortcutPath, exePath, icoPath, targetDir);
+                    CreateShortcut(shortcutPath, exePath, icoPath, targetDir, "PRIGENIX Employee Management System", "");
                 }
+
+                // 2. Start Menu Folder & Shortcuts
+                try {
+                    string programsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "PRIGENIX EMS");
+                    if (!Directory.Exists(programsDir)) Directory.CreateDirectory(programsDir);
+                    CreateShortcut(Path.Combine(programsDir, "Prigenix EMS.lnk"), exePath, icoPath, targetDir, "PRIGENIX Employee Management System", "");
+                    CreateShortcut(Path.Combine(programsDir, "Uninstall PRIGENIX EMS.lnk"), uninstallExe, icoPath, targetDir, "Uninstall PRIGENIX EMS", "");
+                } catch {}
+
+                // 3. Auto-start on System Boot / Power on / Restart
+                if (autoStart) {
+                    RegisterAutoStart(exePath, targetDir);
+                }
+
+                // 4. Instantly notify Windows Shell to refresh Desktop icons
+                try {
+                    SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+                } catch {}
 
                 isInstalling = false;
                 UpdateProgress(100, isUpgrade ? "Update Complete!" : "Installation Complete!", "PRIGENIX Employee Management System is ready.", "Setup Complete", "All components deployed successfully");
 
                 if (launchAfter) {
-                    string exePath = Path.Combine(targetDir, "EMS.exe");
                     if (File.Exists(exePath)) {
                         Process.Start(new ProcessStartInfo(exePath) { WorkingDirectory = targetDir });
                     } else {
@@ -1316,10 +1425,10 @@ public class PrigenixEMSInstaller : Form {
                     }
                 }
 
-                string finishTitle = isUpgrade ? "PRIGENIX EMS — Update Complete" : "PRIGENIX EMS — Setup Complete";
+                string finishTitle = isUpgrade ? "Welcome to PRIGENIX — Update Complete" : "Welcome to PRIGENIX — Setup Complete";
                 string finishMsg = isUpgrade 
-                    ? "PRIGENIX Employee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nWeb Access:\n• http://localhost:8085\n• http://ems.parrikar.com:8085"
-                    : "PRIGENIX Employee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nWeb Access:\n• http://localhost:8085\n• http://ems.parrikar.com:8085\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
+                    ? "Welcome to PRIGENIX!\n\nEmployee Management System was successfully UPDATED to the latest version!\n\nAll existing employee records, attendance, and databases have been preserved.\n\nAuto-Start: EMS is configured to automatically run on Windows boot/restart in background.\n\nWeb Access:\n• http://localhost:8085\n• http://ems.parrikar.com:8085"
+                    : "Welcome to PRIGENIX!\n\nEmployee Management System was installed successfully!\n\nDesktop Icon: 'Prigenix EMS'\nAuto-Start: Configured to automatically run on system boot.\nWeb Access:\n• http://localhost:8085\n• http://ems.parrikar.com:8085\n\nDefault Admin Login:\nUsername: ADMIN\nPassword: Admin@123";
 
                 this.Invoke((MethodInvoker)delegate {
                     MessageBox.Show(finishMsg, finishTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1360,6 +1469,45 @@ public class PrigenixEMSInstaller : Form {
         } catch {}
     }
 
+    private void RegisterAutoStart(string exePath, string targetDir) {
+        try {
+            using (RegistryKey runKey = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) {
+                if (runKey != null) {
+                    runKey.SetValue("PrigenixEMS", "\"" + exePath + "\" /background");
+                }
+            }
+        } catch {}
+
+        try {
+            string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+            string startupShortcut = Path.Combine(startupFolder, "Prigenix EMS.lnk");
+            string icoPath = Path.Combine(targetDir, "app.ico");
+            CreateShortcut(startupShortcut, exePath, icoPath, targetDir, "PRIGENIX EMS Background Auto-Start", "/background");
+        } catch {}
+    }
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(int wEventId, int uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+    private void CreateShortcut(string shortcutPath, string targetPath, string iconPath, string workingDir, string description, string arguments) {
+        try {
+            string dir = Path.GetDirectoryName(shortcutPath);
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            Type t = Type.GetTypeFromProgID("WScript.Shell");
+            dynamic shell = Activator.CreateInstance(t);
+            dynamic shortcut = shell.CreateShortcut(shortcutPath);
+            shortcut.TargetPath = targetPath;
+            shortcut.Arguments = arguments ?? "";
+            shortcut.WorkingDirectory = workingDir;
+            shortcut.Description = description;
+            if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath)) {
+                shortcut.IconLocation = iconPath + ", 0";
+            }
+            shortcut.Save();
+        } catch {}
+    }
+
     private void UpdateProgress(int value, string status, string subStatus, string transferFile, string transferRate) {
         if (this.IsHandleCreated) {
             this.Invoke((MethodInvoker)delegate {
@@ -1372,20 +1520,6 @@ public class PrigenixEMSInstaller : Form {
                 lblTransferRate.Text = "● " + transferRate;
             });
         }
-    }
-
-    private void CreateDesktopShortcut(string shortcutPath, string targetPath, string iconPath, string workingDir) {
-        Type t = Type.GetTypeFromProgID("WScript.Shell");
-        dynamic shell = Activator.CreateInstance(t);
-        dynamic shortcut = shell.CreateShortcut(shortcutPath);
-        shortcut.TargetPath = "wscript.exe";
-        shortcut.Arguments = "\"" + targetPath + "\"";
-        shortcut.WorkingDirectory = workingDir;
-        shortcut.Description = "PRIGENIX Employee Management System";
-        if (File.Exists(iconPath)) {
-            shortcut.IconLocation = iconPath + ", 0";
-        }
-        shortcut.Save();
     }
 
     [STAThread]

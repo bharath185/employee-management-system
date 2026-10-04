@@ -52,8 +52,8 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
                     "/swagger-ui.html", "/api-docs/**").permitAll()
-                .requestMatchers("/photos/**", "/company-uploads/**", "/company/logo", "/company/logo/**", "/api/v1/company/logo", "/api/v1/company/logo/**", "/public/**", "/api/v1/public/**").permitAll()
-                .requestMatchers("/api/v1/photos/**").permitAll()
+                .requestMatchers("/photos/**", "/api/v1/photos/**", "/company-uploads/**", "/api/v1/company-uploads/**", "/company/logo", "/company/logo/**", "/api/v1/company/logo", "/api/v1/company/logo/**", "/public/**", "/api/v1/public/**").permitAll()
+                .requestMatchers("/documents/**", "/api/v1/documents/**", "/pending-files/**", "/api/v1/pending-files/**", "/documents/preview/**", "/api/v1/documents/preview/**", "/documents/download/**", "/api/v1/documents/download/**").permitAll()
                 .requestMatchers("/api/v1/form-fields/visible", "/form-fields/visible").permitAll()
                 .requestMatchers("/api/v1/form-fields/**", "/form-fields/**").hasAnyRole("ADMIN", "HR")
                 .requestMatchers("/api/v1/masters/**").hasAnyRole("ADMIN", "HR")

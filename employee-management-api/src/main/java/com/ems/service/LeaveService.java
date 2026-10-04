@@ -35,12 +35,32 @@ public class LeaveService {
     private final CompOffService compOffService;
 
     public List<LeaveType> getLeaveTypes() {
-        return leaveTypeRepository.findByIsActiveTrue();
+        return leaveTypeRepository.findByIsActiveTrueOrderByPriorityAscIdAsc();
+    }
+
+    public List<LeaveType> getAllLeaveTypesOrdered() {
+        return leaveTypeRepository.findAllByOrderByPriorityAscIdAsc();
     }
 
     @Transactional
     public LeaveType createLeaveType(LeaveType leaveType) {
+        if (leaveType.getPriority() == null) {
+            leaveType.setPriority(1);
+        }
         return leaveTypeRepository.save(leaveType);
+    }
+
+    @Transactional
+    public LeaveType updateLeaveType(Long id, LeaveType updated) {
+        LeaveType lt = leaveTypeRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Leave type not found: " + id));
+        if (updated.getName() != null) lt.setName(updated.getName());
+        if (updated.getDescription() != null) lt.setDescription(updated.getDescription());
+        if (updated.getAnnualEntitlement() != null) lt.setAnnualEntitlement(updated.getAnnualEntitlement());
+        if (updated.getIsCarryForward() != null) lt.setIsCarryForward(updated.getIsCarryForward());
+        if (updated.getIsActive() != null) lt.setIsActive(updated.getIsActive());
+        if (updated.getPriority() != null) lt.setPriority(updated.getPriority());
+        return leaveTypeRepository.save(lt);
     }
 
     @Transactional
@@ -73,7 +93,7 @@ public class LeaveService {
         Employee employee = employeeRepository.findById(employeeId)
             .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
 
-        List<LeaveType> leaveTypes = leaveTypeRepository.findByIsActiveTrue();
+        List<LeaveType> leaveTypes = leaveTypeRepository.findByIsActiveTrueOrderByPriorityAscIdAsc();
         for (LeaveType lt : leaveTypes) {
             if (leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(employeeId, lt.getId(), year).isEmpty()) {
                 int entitled = "CO".equalsIgnoreCase(lt.getName()) ? 0 : (lt.getAnnualEntitlement() != null ? lt.getAnnualEntitlement() : 0);
@@ -93,16 +113,23 @@ public class LeaveService {
     @Transactional
     public int initializeAllLeaveBalances(Integer year) {
         List<Employee> employees = employeeRepository.findAll();
+        List<LeaveType> activeTypes = leaveTypeRepository.findByIsActiveTrueOrderByPriorityAscIdAsc();
         int count = 0;
         for (Employee emp : employees) {
-            LeaveType firstType = leaveTypeRepository.findByIsActiveTrue().stream()
-                .findFirst().orElse(null);
-            if (firstType == null) continue;
-            boolean hasBalances = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
-                emp.getId(), firstType.getId(), year).isPresent();
-            if (!hasBalances) {
-                initializeLeaveBalances(emp.getId(), year);
-                count++;
+            for (LeaveType lt : activeTypes) {
+                if (leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(emp.getId(), lt.getId(), year).isEmpty()) {
+                    int entitled = "CO".equalsIgnoreCase(lt.getName()) ? 0 : (lt.getAnnualEntitlement() != null ? lt.getAnnualEntitlement() : 0);
+                    LeaveBalance balance = LeaveBalance.builder()
+                        .employee(emp)
+                        .leaveType(lt)
+                        .year(year)
+                        .entitled(entitled)
+                        .taken(0)
+                        .balance(entitled)
+                        .build();
+                    leaveBalanceRepository.save(balance);
+                    count++;
+                }
             }
         }
         return count;
@@ -160,7 +187,7 @@ public class LeaveService {
             throw new BadRequestException("Leave days must be at least 1");
         }
 
-        if ("CO".equals(leaveType.getName())) {
+        if ("CO".equalsIgnoreCase(leaveType.getName())) {
             long available = compOffService.getAvailableCount(employee.getId());
             if (available == 0) {
                 throw new BadRequestException("No Comp-Off balance available");
@@ -179,9 +206,21 @@ public class LeaveService {
                         .orElseThrow(() -> new BadRequestException("Leave balance not initialized for this year"));
                 });
 
-            if (balance.getBalance() < days) {
-                throw new BadRequestException("Insufficient leave balance. Available: " + balance.getBalance() + " days");
+            boolean isLop = balance.getBalance() < days;
+            if (isLop) {
+                if (dto.getReason() != null && (dto.getReason().contains("[ALLOW_LOP]") || dto.getReason().contains("LOP"))) {
+                    // Allowed with LOP
+                } else {
+                    throw new BadRequestException("NO_LEAVE_AVAILABLE: Insufficient leave balance for " + leaveType.getName() + ". Available: " + balance.getBalance() + " day(s), Requested: " + days + " day(s). Approval will result in Loss of Pay (LOP).");
+                }
             }
+        }
+
+        String finalReason = dto.getReason() != null ? dto.getReason().replace("[ALLOW_LOP]", "").trim() : "";
+        LeaveBalance balCheck = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                employee.getId(), leaveType.getId(), dto.getFromDate().getYear()).orElse(null);
+        if (balCheck != null && balCheck.getBalance() < days && !finalReason.contains("LOP")) {
+            finalReason += " (Loss of Pay / LOP)";
         }
 
         LeaveApplication app = LeaveApplication.builder()
@@ -190,15 +229,77 @@ public class LeaveService {
             .fromDate(dto.getFromDate())
             .toDate(dto.getToDate())
             .days(days)
-            .reason(dto.getReason())
+            .reason(finalReason)
             .status("PENDING")
             .appliedDate(LocalDateTime.now())
             .build();
 
         app = leaveApplicationRepository.save(app);
-        syncAttendanceFromLeave(app);
         log.info("Leave application created: {} days {} for employee {}", days, leaveType.getName(), employee.getEmployeeCode());
         return LeaveApplicationDTO.fromEntity(app);
+    }
+
+    public List<LeaveBalanceDTO> getLopBalances(Integer year) {
+        if (year == null) year = LocalDate.now().getYear();
+        return leaveBalanceRepository.findByYear(year).stream()
+            .filter(lb -> lb.getBalance() != null && lb.getBalance() < 0)
+            .map(LeaveBalanceDTO::fromEntity)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void autoApplyLeaveForAttendance(Employee employee, LocalDate date) {
+        if (employee == null || date == null) return;
+        if (leaveApplicationRepository.existsOverlapping(employee.getId(), date, date)) {
+            return;
+        }
+
+        Integer year = date.getYear();
+        initializeLeaveBalances(employee.getId(), year);
+
+        List<LeaveType> prioritizedTypes = leaveTypeRepository.findByIsActiveTrueOrderByPriorityAscIdAsc();
+        LeaveType selectedType = null;
+        boolean isLopAuto = false;
+
+        for (LeaveType lt : prioritizedTypes) {
+            if ("CO".equalsIgnoreCase(lt.getName())) {
+                long availableCo = compOffService.getAvailableCount(employee.getId());
+                if (availableCo > 0) {
+                    selectedType = lt;
+                    break;
+                }
+            } else {
+                Optional<LeaveBalance> balOpt = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(employee.getId(), lt.getId(), year);
+                if (balOpt.isPresent() && balOpt.get().getBalance() > 0) {
+                    selectedType = lt;
+                    break;
+                }
+            }
+        }
+
+        if (selectedType == null && !prioritizedTypes.isEmpty()) {
+            selectedType = prioritizedTypes.get(0);
+            isLopAuto = true;
+        }
+
+        if (selectedType != null) {
+            String autoReason = isLopAuto 
+                ? "Auto-applied Loss of Pay (LOP) - No leave balance available from Attendance (L) on " + date
+                : "Auto-applied leave from Attendance (L) on " + date;
+
+            LeaveApplication app = LeaveApplication.builder()
+                .employee(employee)
+                .leaveType(selectedType)
+                .fromDate(date)
+                .toDate(date)
+                .days(1)
+                .reason(autoReason)
+                .status("PENDING")
+                .appliedDate(LocalDateTime.now())
+                .build();
+            leaveApplicationRepository.save(app);
+            log.info("Auto-applied PENDING leave ({}, LOP={}) for employee {} on date {}", selectedType.getName(), isLopAuto, employee.getEmployeeCode(), date);
+        }
     }
 
     @Transactional
@@ -210,24 +311,92 @@ public class LeaveService {
             throw new BadRequestException("Only pending applications can be approved");
         }
 
-        if ("CO".equals(app.getLeaveType().getName())) {
+        Integer year = app.getFromDate().getYear();
+        initializeLeaveBalances(app.getEmployee().getId(), year);
+
+        LeaveType targetType = app.getLeaveType();
+        int days = app.getDays();
+        
+        // Check if target type has sufficient balance
+        boolean targetHasBalance = false;
+        if ("CO".equalsIgnoreCase(targetType.getName())) {
+            targetHasBalance = compOffService.getAvailableCount(app.getEmployee().getId()) >= days;
+        } else {
+            Optional<LeaveBalance> targetBal = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                app.getEmployee().getId(), targetType.getId(), year);
+            targetHasBalance = targetBal.isPresent() && targetBal.get().getBalance() >= days;
+        }
+
+        // If target type does NOT have sufficient balance, find the highest-priority leave type that HAS balance!
+        if (!targetHasBalance) {
+            List<LeaveType> prioritizedTypes = leaveTypeRepository.findByIsActiveTrueOrderByPriorityAscIdAsc();
+            for (LeaveType lt : prioritizedTypes) {
+                if ("CO".equalsIgnoreCase(lt.getName())) {
+                    if (compOffService.getAvailableCount(app.getEmployee().getId()) >= days) {
+                        targetType = lt;
+                        targetHasBalance = true;
+                        break;
+                    }
+                } else {
+                    Optional<LeaveBalance> balOpt = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                        app.getEmployee().getId(), lt.getId(), year);
+                    if (balOpt.isPresent() && balOpt.get().getBalance() >= days) {
+                        targetType = lt;
+                        targetHasBalance = true;
+                        break;
+                    }
+                }
+            }
+            if (!targetHasBalance) {
+                for (LeaveType lt : prioritizedTypes) {
+                    if ("CO".equalsIgnoreCase(lt.getName())) {
+                        if (compOffService.getAvailableCount(app.getEmployee().getId()) > 0) {
+                            targetType = lt;
+                            targetHasBalance = true;
+                            break;
+                        }
+                    } else {
+                        Optional<LeaveBalance> balOpt = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                            app.getEmployee().getId(), lt.getId(), year);
+                        if (balOpt.isPresent() && balOpt.get().getBalance() > 0) {
+                            targetType = lt;
+                            targetHasBalance = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!targetType.getId().equals(app.getLeaveType().getId())) {
+            log.info("Switching leave application {} type from {} to {} due to Master Priority balance availability",
+                app.getId(), app.getLeaveType().getName(), targetType.getName());
+            app.setLeaveType(targetType);
+        }
+
+        if ("CO".equalsIgnoreCase(targetType.getName())) {
             for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
                 compOffService.recordCompOffAvailed(app.getEmployee(), d);
             }
         } else {
-            Integer year = app.getFromDate().getYear();
+            final Long finalEmpId = app.getEmployee().getId();
+            final Long finalLtId = targetType.getId();
             LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
-                    app.getEmployee().getId(), app.getLeaveType().getId(), year)
-                .orElseThrow(() -> new BadRequestException("Leave balance not found"));
+                    finalEmpId, finalLtId, year)
+                .orElseGet(() -> {
+                    initializeLeaveBalances(finalEmpId, year);
+                    return leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                        finalEmpId, finalLtId, year).orElseThrow();
+                });
 
-            balance.setTaken(balance.getTaken() + app.getDays());
+            balance.setTaken(balance.getTaken() + days);
             balance.computeBalance();
             leaveBalanceRepository.save(balance);
 
             leaveExcelService.updateAvailed(
                 app.getEmployee().getEmployeeCode(),
-                app.getLeaveType().getName(),
-                app.getDays(),
+                targetType.getName(),
+                days,
                 app.getFromDate().getMonthValue(),
                 app.getFromDate().getYear()
             );
@@ -239,7 +408,7 @@ public class LeaveService {
         app = leaveApplicationRepository.save(app);
         syncAttendanceFromLeave(app);
 
-        log.info("Leave application {} approved by {}", applicationId, approvedBy);
+        log.info("Leave application {} approved as {} by {}", applicationId, targetType.getName(), approvedBy);
         return LeaveApplicationDTO.fromEntity(app);
     }
 
@@ -248,17 +417,21 @@ public class LeaveService {
         LeaveApplication app = leaveApplicationRepository.findById(applicationId)
             .orElseThrow(() -> new ResourceNotFoundException("Leave application not found"));
 
-        if (!"PENDING".equals(app.getStatus())) {
-            throw new BadRequestException("Only pending applications can be rejected");
+        if (!"PENDING".equals(app.getStatus()) && !"APPROVED".equals(app.getStatus())) {
+            throw new BadRequestException("Only pending or approved applications can be rejected");
+        }
+
+        if ("APPROVED".equals(app.getStatus())) {
+            revertLeaveBalanceFull(app);
         }
 
         app.setStatus("REJECTED");
         app.setApprovedBy(rejectedBy);
         app.setApprovedDate(LocalDateTime.now());
         app = leaveApplicationRepository.save(app);
-
         removeAttendanceFromLeave(app);
-        log.info("Leave application {} rejected by {}", applicationId, rejectedBy);
+
+        log.info("Leave application {} rejected by {}. Restored balance and reset attendance to P", applicationId, rejectedBy);
         return LeaveApplicationDTO.fromEntity(app);
     }
 
@@ -268,33 +441,31 @@ public class LeaveService {
             .orElseThrow(() -> new ResourceNotFoundException("Leave application not found"));
 
         if ("APPROVED".equals(app.getStatus())) {
-            if ("CO".equals(app.getLeaveType().getName())) {
-                for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
-                    compOffService.cancelCompOffAvailed(app.getEmployee(), d);
-                }
-            } else {
-                Integer year = app.getFromDate().getYear();
-                LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
-                    app.getEmployee().getId(), app.getLeaveType().getId(), year).orElse(null);
-                if (balance != null) {
-                    balance.setTaken(Math.max(0, balance.getTaken() - app.getDays()));
-                    balance.computeBalance();
-                    leaveBalanceRepository.save(balance);
-
-                    leaveExcelService.restoreAvailed(
-                        app.getEmployee().getEmployeeCode(),
-                        app.getLeaveType().getName(),
-                        app.getDays(),
-                        app.getFromDate().getMonthValue(),
-                        app.getFromDate().getYear()
-                    );
-                }
-            }
+            revertLeaveBalanceFull(app);
         }
 
         app.setStatus("CANCELLED");
         leaveApplicationRepository.save(app);
         removeAttendanceFromLeave(app);
+        log.info("Leave application {} cancelled", applicationId);
+    }
+
+    private void revertLeaveBalanceFull(LeaveApplication app) {
+        if ("CO".equalsIgnoreCase(app.getLeaveType().getName())) {
+            for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
+                compOffService.cancelCompOffAvailed(app.getEmployee(), d);
+            }
+        } else {
+            Integer year = app.getFromDate().getYear();
+            LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                    app.getEmployee().getId(), app.getLeaveType().getId(), year)
+                .orElse(null);
+            if (balance != null) {
+                balance.setTaken(Math.max(0, balance.getTaken() - app.getDays()));
+                balance.computeBalance();
+                leaveBalanceRepository.save(balance);
+            }
+        }
     }
 
     @Transactional
@@ -302,7 +473,7 @@ public class LeaveService {
         LeaveApplication app = leaveApplicationRepository.findById(applicationId)
             .orElseThrow(() -> new ResourceNotFoundException("Leave application not found"));
         if (!app.getEmployee().getId().equals(employeeId)) {
-            throw new com.ems.exception.BadRequestException("You can only cancel your own leave applications");
+            throw new BadRequestException("You can only cancel your own leave applications");
         }
         cancelLeave(applicationId);
     }
@@ -365,21 +536,61 @@ public class LeaveService {
             app.getDays(), status, app.getEmployee().getEmployeeCode(), app.getFromDate(), app.getToDate());
     }
 
-    private void removeAttendanceFromLeave(LeaveApplication app) {
-        int removed = 0;
-        for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
-            Optional<AttendanceRecord> existing = attendanceRepository
-                .findByEmployeeIdAndAttendanceDate(app.getEmployee().getId(), d);
-            if (existing.isPresent()) {
-                String s = existing.get().getStatus();
-                if ("L".equals(s) || "ML".equals(s) || "CO".equals(s) || "COT".equals(s)) {
-                    attendanceRepository.delete(existing.get());
-                    removed++;
-                }
+    @Transactional
+    public void handleAttendanceEditToNonLeave(Employee employee, LocalDate date, String newStatus) {
+        if (employee == null || date == null) return;
+        List<LeaveApplication> apps = leaveApplicationRepository.findOverlappingForEmployeeAndDate(employee.getId(), date);
+        for (LeaveApplication app : apps) {
+            if ("APPROVED".equals(app.getStatus())) {
+                revertLeaveBalanceForDate(app, date);
+                app.setStatus("CANCELLED");
+                app.setReason((app.getReason() != null ? app.getReason() : "") + " (Auto-cancelled due to Attendance edit to " + newStatus + ")");
+                leaveApplicationRepository.save(app);
+                log.info("Reverted 1 day leave balance & cancelled leave application {} for employee {} on date {}",
+                    app.getId(), employee.getEmployeeCode(), date);
+            } else if ("PENDING".equals(app.getStatus())) {
+                app.setStatus("REJECTED");
+                app.setReason((app.getReason() != null ? app.getReason() : "") + " (Auto-rejected due to Attendance edit to " + newStatus + ")");
+                leaveApplicationRepository.save(app);
+                log.info("Auto-rejected pending leave application {} for employee {} on date {}",
+                    app.getId(), employee.getEmployeeCode(), date);
             }
         }
-        log.info("Removed {} leave day(s) from attendance for employee {} ({}-{})",
-            removed, app.getEmployee().getEmployeeCode(), app.getFromDate(), app.getToDate());
+    }
+
+    private void revertLeaveBalanceForDate(LeaveApplication app, LocalDate date) {
+        if ("CO".equalsIgnoreCase(app.getLeaveType().getName())) {
+            compOffService.cancelCompOffAvailed(app.getEmployee(), date);
+        } else {
+            Integer year = date.getYear();
+            LeaveBalance balance = leaveBalanceRepository.findByEmployeeIdAndLeaveTypeIdAndYear(
+                    app.getEmployee().getId(), app.getLeaveType().getId(), year)
+                .orElse(null);
+            if (balance != null) {
+                balance.setTaken(Math.max(0, balance.getTaken() - 1));
+                balance.computeBalance();
+                leaveBalanceRepository.save(balance);
+            }
+        }
+    }
+
+    private void removeAttendanceFromLeave(LeaveApplication app) {
+        int updatedCount = 0;
+        for (LocalDate d = app.getFromDate(); !d.isAfter(app.getToDate()); d = d.plusDays(1)) {
+            final LocalDate currentDay = d;
+            AttendanceRecord record = attendanceRepository
+                .findByEmployeeIdAndAttendanceDate(app.getEmployee().getId(), currentDay)
+                .orElseGet(() -> AttendanceRecord.builder()
+                    .employee(app.getEmployee())
+                    .attendanceDate(currentDay)
+                    .build());
+            record.setStatus(""); // Set explicitly to empty string so cell shows blank
+            record.setLocked(false);
+            attendanceRepository.save(record);
+            updatedCount++;
+        }
+        log.info("Reset {} attendance day(s) to empty blank for employee {} ({}-{})",
+            updatedCount, app.getEmployee().getEmployeeCode(), app.getFromDate(), app.getToDate());
     }
 
     private boolean isMedicalLeave(LeaveType leaveType) {

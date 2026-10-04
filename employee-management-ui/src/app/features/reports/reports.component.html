@@ -1,432 +1,712 @@
-<div class="rp-container">
+<div class="pl-container">
   <!-- Sub Navigation -->
   <div class="pp-sub-nav">
-    <a class="pp-nav-item" [class.active]="activeSection === 'custom'" (click)="activeSection = 'custom'">
-      <i nz-icon nzType="appstore"></i><span>Custom Report Builder</span>
-    </a>
-    <a class="pp-nav-item" [class.active]="activeSection === 'stats'" (click)="activeSection = 'stats'">
-      <i nz-icon nzType="bar-chart"></i><span>HR Statistics & Overview</span>
-    </a>
-    <a class="pp-nav-item" [class.active]="activeSection === 'labour'" (click)="activeSection = 'labour'">
-      <i nz-icon nzType="file-text"></i><span>Labour Reports</span>
-    </a>
+    <div class="sub-nav-left">
+      <span class="pp-nav-item" [class.active]="activeSection === 'custom'" (click)="activeSection = 'custom'">
+        <i class="bi bi-file-earmark-bar-graph-fill"></i><span>Custom Reports</span>
+      </span>
+      <span class="pp-nav-item pp-nav-tab" [class.active]="activeSection === 'labour'" (click)="activeSection = 'labour'">
+        <i class="bi bi-journal-text"></i><span>Labour Reports</span>
+      </span>
+      <span class="sub-nav-count">
+        <i class="bi bi-person-lines-fill"></i> {{ filteredEmployees.length }} Employees
+      </span>
+    </div>
+    <div class="sub-nav-right">
+      <span class="sub-nav-tag"><i class="bi bi-building-check"></i> Live Database</span>
+    </div>
   </div>
 
   <!-- SECTION 1: CUSTOM REPORT BUILDER -->
   <div *ngIf="activeSection === 'custom'" class="custom-report-section">
-    <!-- Top Action & Template Toolbar -->
-    <nz-card class="toolbar-card" nzSize="small">
-      <div class="toolbar-wrapper">
-        <div class="toolbar-left">
-          <div class="template-selector">
-            <span class="toolbar-label"><i nz-icon nzType="folder-open"></i> Report Template:</span>
-            <nz-select [(ngModel)]="selectedTemplateId" (ngModelChange)="onTemplateChange($event)"
-              nzPlaceHolder="📋 Select Saved Template" class="template-dropdown" nzAllowClear>
-              <nz-option *ngFor="let t of savedTemplates" [nzValue]="t.id" [nzLabel]="t.name"></nz-option>
-            </nz-select>
+    <!-- Controls Card -->
+    <nz-card class="pl-controls-card">
+      <div class="report-panel-wrapper">
+        <!-- Row 1: Actions, Templates & Column Customizer Toolbar -->
+        <div class="panel-top-row">
+          <div class="panel-left">
+            <div class="template-selector">
+              <span class="toolbar-label"><i class="bi bi-folder2-open"></i> Template:</span>
+              <nz-select [(ngModel)]="selectedTemplateId" (ngModelChange)="onTemplateChange($event)"
+                nzPlaceHolder="Select Saved Template" class="filter-select template-dropdown" style="width:180px" nzAllowClear>
+                <nz-option *ngFor="let t of savedTemplates" [nzValue]="t.id" [nzLabel]="t.name"></nz-option>
+              </nz-select>
+            </div>
+
+            <button nz-button class="btn-tool" (click)="openSaveTemplateModal()" nz-tooltip="Save Current Preset as Template">
+              <i class="bi bi-folder-plus" style="color: #f59e0b;"></i> Save
+            </button>
+
+            <button *ngIf="selectedTemplateId" nz-button nzDanger nzType="text" class="btn-tool btn-delete-tpl"
+              nz-popconfirm nzPopconfirmTitle="Delete this template?" (nzOnConfirm)="deleteCurrentTemplate()">
+              <i class="bi bi-trash3"></i> Delete
+            </button>
+
+            <button nz-button class="btn-tool btn-columns" (click)="openColumnModal()" nz-tooltip="Customize Columns to Display & Export">
+              <i class="bi bi-layout-three-columns" style="color: #2563eb;"></i> Columns
+              <nz-badge [nzCount]="selectedColumns.length" [nzStyle]="{ backgroundColor: '#4361ee', marginLeft: '4px' }"></nz-badge>
+            </button>
           </div>
 
-          <button nz-button nzType="default" (click)="openSaveTemplateModal()" class="action-btn">
-            <i nz-icon nzType="save"></i> Save Current as Template
-          </button>
+          <div class="panel-right">
+            <button nz-button class="btn-tool btn-analytics" (click)="openAnalyticsDashboard()" nz-tooltip="Graphical Analytics Dashboard for Filtered Data">
+              <i class="bi bi-bar-chart-line-fill" style="color: #6366f1;"></i> Analytics Dashboard
+            </button>
 
-          <button *ngIf="selectedTemplateId" nz-button nzDanger nzType="text"
-            nz-popconfirm nzPopconfirmTitle="Delete this template?" (nzOnConfirm)="deleteCurrentTemplate()">
-            <i nz-icon nzType="delete"></i> Delete Template
-          </button>
-        </div>
+            <button nz-button class="btn-tool" (click)="exportCustomCsv()" nz-tooltip="Download CSV Report">
+              <i class="bi bi-file-earmark-spreadsheet-fill" style="color: #2563eb;"></i> CSV
+            </button>
 
-        <div class="toolbar-right">
-          <button nz-button nzType="default" (click)="openColumnModal()" class="action-btn column-btn">
-            <i nz-icon nzType="setting"></i> Choose Columns
-            <nz-badge [nzCount]="selectedColumns.length" [nzStyle]="{ backgroundColor: '#1890ff', marginLeft: '6px' }"></nz-badge>
-          </button>
+            <button nz-button class="btn-tool btn-export-excel" (click)="exportCustomExcel()" [nzLoading]="isExporting" nz-tooltip="Download Excel Report">
+              <i class="bi bi-file-earmark-excel-fill" style="color: #10b981;"></i> Export
+            </button>
 
-          <button nz-button nzType="primary" (click)="exportCustomExcel()" [nzLoading]="isExporting" class="action-btn export-excel-btn">
-            <i nz-icon nzType="file-excel"></i> Export Excel
-          </button>
-
-          <button nz-button nzType="default" (click)="exportCustomCsv()" class="action-btn">
-            <i nz-icon nzType="download"></i> Export CSV
-          </button>
-
-          <button nz-button nzType="default" (click)="printReport()" class="action-btn print-btn">
-            <i nz-icon nzType="printer"></i> Print
-          </button>
-        </div>
-      </div>
-    </nz-card>
-
-    <!-- Filter Configuration Card -->
-    <nz-card class="filter-card" nzTitle="🔍 Custom Filter & Sorting Criteria" [nzExtra]="filterExtra">
-      <ng-template #filterExtra>
-        <div class="filter-extra-actions">
-          <button nz-button nzType="primary" nzSize="small" (click)="applyFilters()" [nzLoading]="isLoading">
-            <i nz-icon nzType="search"></i> Apply Filters
-          </button>
-          <button nz-button nzType="default" nzSize="small" (click)="resetFilters()">
-            <i nz-icon nzType="reload"></i> Reset All
-          </button>
-        </div>
-      </ng-template>
-
-      <div class="filter-grid">
-        <!-- Row 1: Search & Joining Period -->
-        <div class="filter-group">
-          <label class="filter-label">Quick Employee Search</label>
-          <nz-input-group [nzPrefix]="prefixSearch" [nzSuffix]="suffixSearch">
-            <input nz-input [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()"
-              placeholder="Search by Code, Name, Mobile, Email, Aadhar, PAN..." />
-          </nz-input-group>
-          <ng-template #prefixSearch><i nz-icon nzType="search"></i></ng-template>
-          <ng-template #suffixSearch>
-            <i nz-icon nzType="close-circle" *ngIf="searchTerm" (click)="searchTerm = ''; applyFilters()" style="cursor:pointer;color:#999;"></i>
-          </ng-template>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Joining Date Filter Mode</label>
-          <nz-select [(ngModel)]="dojFilterMode" style="width:100%" (ngModelChange)="applyFilters()">
-            <nz-option nzValue="ALL" nzLabel="All (No Date Filter)"></nz-option>
-            <nz-option nzValue="MONTH_YEAR" nzLabel="📅 By Month & Year"></nz-option>
-            <nz-option nzValue="YEAR" nzLabel="📆 By Year"></nz-option>
-            <nz-option nzValue="RANGE" nzLabel="⏳ Custom Date Range"></nz-option>
-            <nz-option nzValue="THIS_MONTH" nzLabel="✨ Joined This Month"></nz-option>
-            <nz-option nzValue="THIS_YEAR" nzLabel="🌟 Joined This Year"></nz-option>
-          </nz-select>
-        </div>
-
-        <!-- Dynamic Date Sub-controls -->
-        <div class="filter-group" *ngIf="dojFilterMode === 'MONTH_YEAR'">
-          <label class="filter-label">Select Month & Year</label>
-          <div style="display:flex;gap:6px;">
-            <nz-select [(ngModel)]="selectedMonth" style="width:60%" (ngModelChange)="applyFilters()">
-              <nz-option *ngFor="let m of monthsList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
-            </nz-select>
-            <nz-select [(ngModel)]="selectedYear" style="width:40%" (ngModelChange)="applyFilters()">
-              <nz-option *ngFor="let y of yearsList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
-            </nz-select>
+            <button nz-button class="btn-tool" (click)="printReport()" nz-tooltip="Print Report">
+              <i class="bi bi-printer-fill" style="color: #64748b;"></i> Print
+            </button>
           </div>
         </div>
 
-        <div class="filter-group" *ngIf="dojFilterMode === 'YEAR'">
-          <label class="filter-label">Select Year</label>
-          <nz-select [(ngModel)]="selectedYear" style="width:100%" (ngModelChange)="applyFilters()">
-            <nz-option *ngFor="let y of yearsList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+        <!-- Row 2: Search & Filter Toolbar -->
+        <div class="panel-filter-row">
+          <!-- Search Box -->
+          <div class="search-box">
+            <i class="bi bi-search search-ico"></i>
+            <input nz-input [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()" (input)="applyFilters()"
+              placeholder="Search code, name, mobile, email..." class="search-input">
+            <i class="bi bi-x-circle-fill search-clear" *ngIf="searchTerm" (click)="clearFilter('search')"></i>
+          </div>
+
+          <!-- Sort Select -->
+          <nz-select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()" nzPlaceHolder="Sort By" class="filter-select sort-select" style="width:200px">
+            <nz-option-group nzLabel="Status & Code (Default)">
+              <nz-option nzValue="employeeCodeNumeric" nzLabel="🟢 Live First (Code: 0 → 9) [Default]"></nz-option>
+            </nz-option-group>
+            <nz-option-group nzLabel="Employee Code">
+              <nz-option nzValue="employeeCodeNumeric" nzLabel="🔢 Code: 0 → 9"></nz-option>
+            </nz-option-group>
+            <nz-option-group nzLabel="Employee Name">
+              <nz-option nzValue="name" nzLabel="👤 Name: A → Z"></nz-option>
+            </nz-option-group>
+            <nz-option-group nzLabel="Date of Joining">
+              <nz-option nzValue="doj" nzLabel="📅 DOJ: Newest First"></nz-option>
+            </nz-option-group>
+            <nz-option-group nzLabel="Designation">
+              <nz-option nzValue="designation" nzLabel="💼 Designation"></nz-option>
+            </nz-option-group>
           </nz-select>
-        </div>
 
-        <div class="filter-group" *ngIf="dojFilterMode === 'RANGE'">
-          <label class="filter-label">Date Range (From - To)</label>
-          <nz-range-picker [(ngModel)]="dateRange" (ngModelChange)="applyFilters()" style="width:100%"></nz-range-picker>
-        </div>
-
-        <!-- Sorting -->
-        <div class="filter-group">
-          <label class="filter-label">Sort Records By</label>
-          <nz-select [(ngModel)]="sortBy" style="width:100%" (ngModelChange)="applyFilters()">
-            <nz-option nzValue="employeeCodeNumeric" nzLabel="🔢 Employee Code (Numeric: 1, 2, 3...)"></nz-option>
-            <nz-option nzValue="doj" nzLabel="📅 Joining Date (DOJ)"></nz-option>
-            <nz-option nzValue="name" nzLabel="👤 Employee Full Name"></nz-option>
-            <nz-option nzValue="department" nzLabel="🏢 Department"></nz-option>
-            <nz-option nzValue="designation" nzLabel="💼 Designation"></nz-option>
-            <nz-option nzValue="status" nzLabel="🚦 Employment Status"></nz-option>
-            <nz-option nzValue="dob" nzLabel="🎂 Date of Birth"></nz-option>
-          </nz-select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Sort Order</label>
-          <nz-radio-group [(ngModel)]="sortDirection" (ngModelChange)="applyFilters()" nzButtonStyle="solid" style="width:100%">
-            <label nz-radio-button nzValue="asc" style="width:50%;text-align:center"><i nz-icon nzType="sort-ascending"></i> Ascending</label>
-            <label nz-radio-button nzValue="desc" style="width:50%;text-align:center"><i nz-icon nzType="sort-descending"></i> Descending</label>
-          </nz-radio-group>
-        </div>
-
-        <!-- Row 2: Organizational Filters -->
-        <div class="filter-group">
-          <label class="filter-label">Process / Unit</label>
-          <nz-select [(ngModel)]="filterProcess" nzPlaceHolder="All Processes" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Processes"></nz-option>
-            <nz-option *ngFor="let p of processOptions" [nzValue]="p" [nzLabel]="p"></nz-option>
-          </nz-select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Department</label>
-          <nz-select [(ngModel)]="filterDepartment" nzPlaceHolder="All Departments" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Departments"></nz-option>
-            <nz-option *ngFor="let d of departmentOptions" [nzValue]="d" [nzLabel]="d"></nz-option>
-          </nz-select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Designation</label>
-          <nz-select [(ngModel)]="filterDesignation" nzPlaceHolder="All Designations" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Designations"></nz-option>
-            <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
-          </nz-select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Employment Status</label>
-          <nz-select [(ngModel)]="filterStatus" nzPlaceHolder="All Statuses" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
+          <!-- Status Select -->
+          <nz-select [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()" nzPlaceHolder="All Statuses" class="filter-select" style="width:125px" nzAllowClear>
             <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
             <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
           </nz-select>
-        </div>
 
-        <!-- Row 3: Demographics & Categorical -->
-        <div class="filter-group">
-          <label class="filter-label">Gender</label>
-          <nz-select [(ngModel)]="filterGender" nzPlaceHolder="All Genders" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
+          <!-- Gender Select -->
+          <nz-select [(ngModel)]="filterGender" (ngModelChange)="applyFilters()" nzPlaceHolder="All Genders" class="filter-select" style="width:115px" nzAllowClear>
             <nz-option nzValue="" nzLabel="All Genders"></nz-option>
             <nz-option *ngFor="let opt of genderOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
           </nz-select>
-        </div>
 
-        <div class="filter-group">
-          <label class="filter-label">Blood Group</label>
-          <nz-select [(ngModel)]="filterBloodGroup" nzPlaceHolder="All Blood Groups" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Blood Groups"></nz-option>
-            <nz-option *ngFor="let opt of bloodGroupOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+          <!-- Designation Select -->
+          <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="applyFilters()" nzPlaceHolder="All Designations" class="filter-select" style="width:145px" nzShowSearch nzAllowClear>
+            <nz-option nzValue="" nzLabel="All Designations"></nz-option>
+            <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
           </nz-select>
-        </div>
 
-        <div class="filter-group">
-          <label class="filter-label">Social Category</label>
-          <nz-select [(ngModel)]="filterSocialCategory" nzPlaceHolder="All Categories" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Categories"></nz-option>
-            <nz-option *ngFor="let opt of socialCategoryOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+          <!-- Process Select -->
+          <nz-select [(ngModel)]="filterProcess" (ngModelChange)="applyFilters()" nzPlaceHolder="All Processes" class="filter-select" style="width:135px" nzShowSearch nzAllowClear>
+            <nz-option nzValue="" nzLabel="All Processes"></nz-option>
+            <nz-option *ngFor="let p of processOptions" [nzValue]="p" [nzLabel]="p"></nz-option>
           </nz-select>
-        </div>
 
-        <div class="filter-group">
-          <label class="filter-label">Religion</label>
-          <nz-select [(ngModel)]="filterReligion" nzPlaceHolder="All Religions" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Religions"></nz-option>
-            <nz-option *ngFor="let opt of religionOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+          <!-- DOJ Filter Mode -->
+          <nz-select [(ngModel)]="dojFilterMode" (ngModelChange)="applyFilters()" nzPlaceHolder="DOJ Filter" class="filter-select" style="width:130px">
+            <nz-option nzValue="ALL" nzLabel="DOJ: All"></nz-option>
+            <nz-option nzValue="MONTH_YEAR" nzLabel="📅 Month & Year"></nz-option>
+            <nz-option nzValue="YEAR" nzLabel="📆 Year"></nz-option>
+            <nz-option nzValue="RANGE" nzLabel="⏳ Date Range"></nz-option>
+            <nz-option nzValue="THIS_MONTH" nzLabel="✨ This Month"></nz-option>
+            <nz-option nzValue="THIS_YEAR" nzLabel="🌟 This Year"></nz-option>
           </nz-select>
-        </div>
 
-        <div class="filter-group">
-          <label class="filter-label">Qualification</label>
-          <nz-select [(ngModel)]="filterQualification" nzPlaceHolder="All Qualifications" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All Qualifications"></nz-option>
-            <nz-option *ngFor="let opt of qualificationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
-          </nz-select>
-        </div>
+          <!-- More Filters Button -->
+          <button nz-button class="filter-toggle-btn" [class.has-active]="advancedFilterCount > 0" (click)="isAdvancedFiltersOpen = !isAdvancedFiltersOpen">
+            <i class="bi bi-funnel-fill"></i>
+            <span>More Filters</span>
+            <span class="adv-badge" *ngIf="advancedFilterCount > 0">{{ advancedFilterCount }}</span>
+            <i class="bi" [class.bi-chevron-up]="isAdvancedFiltersOpen" [class.bi-chevron-down]="!isAdvancedFiltersOpen" style="font-size:10px;"></i>
+          </button>
 
-        <div class="filter-group">
-          <label class="filter-label">Aadhaar Verified</label>
-          <nz-select [(ngModel)]="filterAadhaarVerification" nzPlaceHolder="All" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear>
-            <nz-option nzValue="" nzLabel="All"></nz-option>
-            <nz-option nzValue="YES" nzLabel="Verified (YES)"></nz-option>
-            <nz-option nzValue="NO" nzLabel="Pending / Not Verified (NO)"></nz-option>
-          </nz-select>
-        </div>
-      </div>
-    </nz-card>
-
-
-
-    <!-- Live Data Table Card -->
-    <nz-card class="table-card" nzSize="small">
-      <div class="table-header-bar">
-        <div class="table-header-left">
-          <h3 class="table-title">Report Data Preview</h3>
-          <span class="table-subtitle">Showing {{ filteredEmployees.length }} matching employees with {{ selectedColumns.length }} custom columns</span>
-        </div>
-        <div class="table-header-right">
-          <span class="sort-indicator">
-            <i nz-icon nzType="swap"></i> Sorted by: <strong>{{ sortBy }} ({{ sortDirection | uppercase }})</strong>
-          </span>
+          <!-- Reset Button -->
+          <button nz-button class="clear-btn" *ngIf="activeFilterCount > 0" (click)="resetFilters()" nz-tooltip="Reset all filters">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
         </div>
       </div>
 
-      <div class="table-scroll-container">
-        <nz-table #empTable [nzData]="filteredEmployees" [nzLoading]="isLoading"
-          [(nzPageIndex)]="pageIndex" [(nzPageSize)]="pageSize" [nzPageSizeOptions]="pageSizeOptions"
-          [nzShowSizeChanger]="true" [nzShowQuickJumper]="true" [nzShowTotal]="totalTemplate"
-          nzSize="small" [nzScroll]="{ x: '1200px' }" class="report-data-table">
-          <thead>
-            <tr>
-              <th nzWidth="50px" style="text-align:center">#</th>
-              <th *ngFor="let col of selectedColumns" [nzWidth]="col.width ? col.width + 'px' : '140px'">
-                {{ col.label }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let emp of empTable.data; let i = index">
-              <td style="text-align:center;color:#888;">{{ (pageIndex - 1) * pageSize + i + 1 }}</td>
-              <td *ngFor="let col of selectedColumns">
-                <ng-container [ngSwitch]="col.key">
-                  <!-- Employee Code with Tag -->
-                  <span *ngSwitchCase="'employeeCode'" class="emp-code-badge">
-                    {{ emp.employeeCode }}
-                  </span>
+      <!-- Dynamic Date Sub-Row (If Month/Year, Year, or Date Range selected) -->
+      <div class="date-sub-row" *ngIf="dojFilterMode === 'MONTH_YEAR' || dojFilterMode === 'YEAR' || dojFilterMode === 'RANGE'">
+        <div class="date-sub-inner">
+          <span class="date-sub-title"><i class="bi bi-calendar-event"></i> Date Criteria:</span>
+          <ng-container *ngIf="dojFilterMode === 'MONTH_YEAR'">
+            <nz-select [(ngModel)]="selectedMonth" style="width:130px" (ngModelChange)="applyFilters()" class="filter-select">
+              <nz-option *ngFor="let m of monthsList" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+            </nz-select>
+            <nz-select [(ngModel)]="selectedYear" style="width:100px" (ngModelChange)="applyFilters()" class="filter-select">
+              <nz-option *ngFor="let y of yearsList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+            </nz-select>
+          </ng-container>
 
-                  <!-- Full Name with Avatar Initial -->
-                  <span *ngSwitchCase="'fullName'" class="emp-name-cell">
-                    <strong>{{ getCellValue(emp, 'fullName') }}</strong>
-                  </span>
+          <ng-container *ngIf="dojFilterMode === 'YEAR'">
+            <nz-select [(ngModel)]="selectedYear" style="width:110px" (ngModelChange)="applyFilters()" class="filter-select">
+              <nz-option *ngFor="let y of yearsList" [nzValue]="y" [nzLabel]="y.toString()"></nz-option>
+            </nz-select>
+          </ng-container>
 
-                  <!-- Status with Color Tag -->
-                  <nz-tag *ngSwitchCase="'employeeStatus'" [nzColor]="emp.employeeStatus === 'ACTIVE' ? 'success' : 'default'">
-                    {{ emp.employeeStatus || 'UNKNOWN' }}
-                  </nz-tag>
-
-                  <!-- Default Render -->
-                  <span *ngSwitchDefault>{{ getCellValue(emp, col.key) }}</span>
-                </ng-container>
-              </td>
-            </tr>
-          </tbody>
-        </nz-table>
+          <ng-container *ngIf="dojFilterMode === 'RANGE'">
+            <nz-range-picker [(ngModel)]="dateRange" (ngModelChange)="applyFilters()" nzFormat="dd/MM/yyyy" style="width:240px"></nz-range-picker>
+          </ng-container>
+        </div>
       </div>
 
-      <ng-template #totalTemplate let-total>
-        Total <strong>{{ total }}</strong> employee records found
-      </ng-template>
-    </nz-card>
-  </div>
+      <!-- Collapsible Advanced Filters Drawer -->
+      <div class="advanced-filter-drawer" *ngIf="isAdvancedFiltersOpen">
+        <div class="advanced-grid">
+          <!-- Designation -->
+          <div class="adv-group">
+            <label class="adv-label">Designation</label>
+            <nz-select [(ngModel)]="filterDesignation" nzPlaceHolder="All Designations" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear nzShowSearch class="filter-select">
+              <nz-option nzValue="" nzLabel="All Designations"></nz-option>
+              <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
 
-  <!-- SECTION 2: HR STATISTICS & OVERVIEW -->
-  <div *ngIf="activeSection === 'stats'">
-    <nz-tabset nzType="card" class="rp-tabs">
-      <nz-tab nzTitle="HR Statistics Summary">
-        <div class="rp-content">
-          <div nz-row [nzGutter]="[12, 12]" class="rp-row">
-            <div nz-col nzXs="24" nzMd="12" class="rp-col">
-              <nz-card class="rp-card">
-                <div class="card-header">
-                  <div class="card-icon-circle"><i nz-icon nzType="bar-chart"></i></div>
-                  <div class="card-header-text">
-                    <h4 class="card-title">Statistics Summary</h4>
-                    <p class="card-subtitle">Quick overview of employee metrics</p>
-                  </div>
-                </div>
-                <div class="card-body card-body-stats">
-                  <div class="stats-summary" *ngIf="stats">
-                    <div *ngFor="let item of statItems; let idx = index; let last = last"
-                         class="stat-row" [class.stat-row-alt]="idx % 2 === 1" [class.stat-row-last]="last">
-                      <div class="stat-left">
-                        <i nz-icon [nzType]="item.icon" class="stat-icon"></i>
-                        <span class="stat-label">{{ item.label }}</span>
-                      </div>
-                      <span class="stat-value">{{ getStatValue(item.key) }}</span>
-                    </div>
-                  </div>
-                  <div class="stats-empty" *ngIf="!stats && !statsLoading">
-                    <button nz-button nzType="default" (click)="loadStats()">
-                      <i nz-icon nzType="reload"></i> Load Statistics
-                    </button>
-                  </div>
-                  <div class="stats-spinner" *ngIf="statsLoading">
-                    <nz-spin nzSimple></nz-spin>
-                  </div>
-                </div>
-              </nz-card>
-            </div>
+          <!-- Gender -->
+          <div class="adv-group">
+            <label class="adv-label">Gender</label>
+            <nz-select [(ngModel)]="filterGender" nzPlaceHolder="All Genders" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All Genders"></nz-option>
+              <nz-option *ngFor="let opt of genderOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
 
-            <div nz-col nzXs="24" nzMd="12" class="rp-col">
-              <nz-card class="rp-card">
-                <div class="card-header">
-                  <div class="card-icon-circle"><i nz-icon nzType="file-text"></i></div>
-                  <div class="card-header-text">
-                    <h4 class="card-title">Quick Excel Export</h4>
-                    <p class="card-subtitle">Export all current staff with standard columns</p>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <p class="report-desc">Includes: Employee Code, Name, Gender, Designation, Department, Date of Joining, Status, and Contact Information.</p>
-                </div>
-                <div class="card-footer">
-                  <button nz-button nzType="primary" (click)="exportCustomExcel()" class="action-btn">
-                    <i nz-icon nzType="download"></i> Generate Full Excel
-                  </button>
-                </div>
-              </nz-card>
-            </div>
+          <!-- Blood Group -->
+          <div class="adv-group">
+            <label class="adv-label">Blood Group</label>
+            <nz-select [(ngModel)]="filterBloodGroup" nzPlaceHolder="All Blood Groups" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All Blood Groups"></nz-option>
+              <nz-option *ngFor="let opt of bloodGroupOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
+
+          <!-- Social Category -->
+          <div class="adv-group">
+            <label class="adv-label">Social Category</label>
+            <nz-select [(ngModel)]="filterSocialCategory" nzPlaceHolder="All Categories" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All Categories"></nz-option>
+              <nz-option *ngFor="let opt of socialCategoryOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
+
+          <!-- Social Subcategory -->
+          <div class="adv-group">
+            <label class="adv-label">Social Subcategory</label>
+            <input nz-input [(ngModel)]="filterSocialSubcategory" placeholder="All Subcategories" (ngModelChange)="applyFilters()" style="height:30px;border-radius:5px;" />
+          </div>
+
+          <!-- Religion -->
+          <div class="adv-group">
+            <label class="adv-label">Religion</label>
+            <nz-select [(ngModel)]="filterReligion" nzPlaceHolder="All Religions" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All Religions"></nz-option>
+              <nz-option *ngFor="let opt of religionOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
+
+          <!-- Qualification -->
+          <div class="adv-group">
+            <label class="adv-label">Qualification</label>
+            <nz-select [(ngModel)]="filterQualification" nzPlaceHolder="All Qualifications" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All Qualifications"></nz-option>
+              <nz-option *ngFor="let opt of qualificationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
+            </nz-select>
+          </div>
+
+          <!-- Aadhaar Verified -->
+          <div class="adv-group">
+            <label class="adv-label">Aadhaar Verified</label>
+            <nz-select [(ngModel)]="filterAadhaarVerification" nzPlaceHolder="All" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All"></nz-option>
+              <nz-option nzValue="YES" nzLabel="Verified (YES)"></nz-option>
+              <nz-option nzValue="NO" nzLabel="Pending (NO)"></nz-option>
+            </nz-select>
+          </div>
+
+          <!-- PAN Verified -->
+          <div class="adv-group">
+            <label class="adv-label">PAN Verified</label>
+            <nz-select [(ngModel)]="filterPanVerification" nzPlaceHolder="All" style="width:100%" (ngModelChange)="applyFilters()" nzAllowClear class="filter-select">
+              <nz-option nzValue="" nzLabel="All"></nz-option>
+              <nz-option nzValue="YES" nzLabel="Verified (YES)"></nz-option>
+              <nz-option nzValue="NO" nzLabel="Pending (NO)"></nz-option>
+            </nz-select>
           </div>
         </div>
-      </nz-tab>
-    </nz-tabset>
+      </div>
+
+      <!-- Active Filter Chips Row -->
+      <div class="active-chips-row" *ngIf="activeFilterCount > 0">
+        <span class="chips-title"><i class="bi bi-funnel"></i> Active Filters:</span>
+        <nz-tag *ngIf="searchTerm" nzMode="closeable" (nzOnClose)="clearFilter('search')">
+          Search: <strong>{{ searchTerm }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterProcess" nzMode="closeable" (nzOnClose)="clearFilter('process')">
+          Process: <strong>{{ filterProcess }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterStatus" nzMode="closeable" (nzOnClose)="clearFilter('status')">
+          Status: <strong>{{ filterStatus }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="dojFilterMode !== 'ALL'" nzMode="closeable" (nzOnClose)="clearFilter('doj')">
+          DOJ: <strong>{{ dojFilterMode }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterDesignation" nzMode="closeable" (nzOnClose)="clearFilter('designation')">
+          Desig: <strong>{{ filterDesignation }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterGender" nzMode="closeable" (nzOnClose)="clearFilter('gender')">
+          Gender: <strong>{{ filterGender }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterBloodGroup" nzMode="closeable" (nzOnClose)="clearFilter('bloodGroup')">
+          Blood: <strong>{{ filterBloodGroup }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterSocialCategory" nzMode="closeable" (nzOnClose)="clearFilter('socialCategory')">
+          Category: <strong>{{ filterSocialCategory }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterSocialSubcategory" nzMode="closeable" (nzOnClose)="clearFilter('socialSubcategory')">
+          Subcategory: <strong>{{ filterSocialSubcategory }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterReligion" nzMode="closeable" (nzOnClose)="clearFilter('religion')">
+          Religion: <strong>{{ filterReligion }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterQualification" nzMode="closeable" (nzOnClose)="clearFilter('qualification')">
+          Qual: <strong>{{ filterQualification }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterAadhaarVerification" nzMode="closeable" (nzOnClose)="clearFilter('aadhaar')">
+          Aadhaar: <strong>{{ filterAadhaarVerification }}</strong>
+        </nz-tag>
+        <nz-tag *ngIf="filterPanVerification" nzMode="closeable" (nzOnClose)="clearFilter('pan')">
+          PAN: <strong>{{ filterPanVerification }}</strong>
+        </nz-tag>
+        <a class="clear-all-link" (click)="resetFilters()">Clear all</a>
+      </div>
+    </nz-card>
+
+    <!-- Table Card (Matched to Reference Staff Master Theme with 1:1 dynamic column matching) -->
+    <nz-card class="pl-table-card">
+      <nz-table
+        #empTable
+        [nzData]="filteredEmployees"
+        [nzFrontPagination]="true"
+        [(nzPageIndex)]="pageIndex"
+        [(nzPageSize)]="pageSize"
+        [nzPageSizeOptions]="pageSizeOptions"
+        nzShowSizeChanger
+        class="theme-table"
+        [nzLoading]="isLoading"
+        nzTableLayout="fixed"
+        nzSize="middle"
+        [nzScroll]="{ x: tableScrollWidth, y: 'calc(100vh - 280px)' }"
+      >
+        <thead>
+          <tr>
+            <th class="th-sno" nzWidth="50px">#</th>
+            <th *ngFor="let col of selectedColumns"
+                [nzWidth]="col.width ? col.width + 'px' : '150px'"
+                [class.th-center]="['employeeCode', 'gender', 'employeeStatus', 'userRole', 'mobile', 'doj', 'dob', 'age'].includes(col.key)"
+                [class.th-name]="col.key === 'fullName' || col.key === 'designation'">
+              <ng-container [ngSwitch]="col.key">
+                <span *ngSwitchCase="'employeeCode'"><i class="bi bi-qr-code th-icon"></i> Code</span>
+                <span *ngSwitchCase="'fullName'"><i class="bi bi-person-circle th-icon"></i> Employee Name</span>
+                <span *ngSwitchCase="'gender'"><i class="bi bi-gender-ambiguous th-icon"></i> Gender</span>
+                <span *ngSwitchCase="'designation'"><i class="bi bi-briefcase-fill th-icon"></i> Designation</span>
+                <span *ngSwitchCase="'employeeStatus'"><i class="bi bi-activity th-icon"></i> Status</span>
+                <span *ngSwitchCase="'userRole'"><i class="bi bi-shield-check th-icon"></i> Role</span>
+                <span *ngSwitchCase="'mobile'"><i class="bi bi-telephone-fill th-icon"></i> Mobile</span>
+                <span *ngSwitchCase="'email'"><i class="bi bi-envelope-fill th-icon"></i> Email</span>
+                <span *ngSwitchCase="'doj'"><i class="bi bi-calendar-check-fill th-icon"></i> DOJ</span>
+                <span *ngSwitchCase="'dob'"><i class="bi bi-calendar-heart th-icon"></i> DOB</span>
+                <span *ngSwitchCase="'processAssigned'"><i class="bi bi-building th-icon"></i> Process / Unit</span>
+                <span *ngSwitchDefault>{{ col.label }}</span>
+              </ng-container>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let emp of empTable.data; let i = index" class="emp-row"
+            [class.row-live]="emp.employeeStatus === 'ACTIVE' || emp.employeeStatus === 'LIVE'">
+            <td class="td-center"><span class="row-num">{{ (pageIndex - 1) * pageSize + i + 1 }}</span></td>
+            <td *ngFor="let col of selectedColumns"
+                [class.td-center]="['employeeCode', 'gender', 'employeeStatus', 'userRole', 'mobile', 'doj', 'dob', 'age'].includes(col.key)"
+                [class.td-name]="col.key === 'fullName' || col.key === 'designation'">
+              <ng-container [ngSwitch]="col.key">
+                <!-- Employee Code -->
+                <span *ngSwitchCase="'employeeCode'" class="emp-code-badge">
+                  <i class="bi bi-hash"></i>{{ emp.employeeCode }}
+                </span>
+
+                <!-- Full Name -->
+                <div *ngSwitchCase="'fullName'" class="emp-info-cell">
+                  <img *ngIf="emp.photoPath" [src]="getPhotoUrl(emp.photoPath)" alt="" class="emp-avatar emp-avatar-img" (error)="onAvatarError($event)" />
+                  <div class="emp-avatar" [style.background]="getAvatarColor(emp.employeeCode)" *ngIf="!emp.photoPath">
+                    {{ (emp.firstName?.charAt(0) || '') + (emp.surname?.charAt(0) || '') }}
+                  </div>
+                  <div class="emp-name-block">
+                    <span class="emp-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.firstName || '' }}{{ emp.middleName ? ' ' + emp.middleName : '' }}{{ emp.surname ? ' ' + emp.surname : '' }}</span>
+                    <span class="emp-process" *ngIf="emp.processAssigned"><i class="bi bi-building"></i> {{ emp.processAssigned }}</span>
+                  </div>
+                </div>
+
+                <!-- Gender -->
+                <span *ngSwitchCase="'gender'" class="emp-gender">{{ emp.gender || '-' }}</span>
+
+                <!-- Designation -->
+                <span *ngSwitchCase="'designation'" class="emp-desig">{{ emp.designation || '-' }}</span>
+
+                <!-- Status -->
+                <span *ngSwitchCase="'employeeStatus'" class="status-badge" [class.status-live]="emp.employeeStatus === 'ACTIVE' || emp.employeeStatus === 'LIVE'" [class.status-quit]="emp.employeeStatus !== 'ACTIVE' && emp.employeeStatus !== 'LIVE'">
+                  <span class="status-dot"></span> {{ emp.employeeStatus || '-' }}
+                </span>
+
+                <!-- Role -->
+                <ng-container *ngSwitchCase="'userRole'">
+                  <span *ngIf="emp.userRole" class="role-tag" [class.role-admin]="emp.userRole === 'ADMIN'" [class.role-hr]="emp.userRole === 'HR'" [class.role-emp]="emp.userRole === 'EMPLOYEE'">
+                    <i class="bi" [class.bi-shield-lock-fill]="emp.userRole === 'ADMIN'" [class.bi-person-badge-fill]="emp.userRole === 'HR'" [class.bi-person-fill]="emp.userRole === 'EMPLOYEE'"></i>
+                    {{ emp.userRole }}
+                  </span>
+                  <span *ngIf="!emp.userRole" class="na-txt">-</span>
+                </ng-container>
+
+                <!-- Mobile -->
+                <span *ngSwitchCase="'mobile'" class="mono-txt">{{ emp.mobile || '-' }}</span>
+
+                <!-- Email -->
+                <span *ngSwitchCase="'email'">{{ emp.email || '-' }}</span>
+
+                <!-- DOJ / DOB / DOE -->
+                <span *ngSwitchCase="'doj'" class="doj-text">{{ formatDate(emp.doj) }}</span>
+                <span *ngSwitchCase="'dob'" class="doj-text">{{ formatDate(emp.dob) }}</span>
+                <span *ngSwitchCase="'doe'" class="doj-text">{{ formatDate(getCellValue(emp, 'doe')) }}</span>
+
+                <!-- Process / Unit -->
+                <span *ngSwitchCase="'processAssigned'">{{ emp.processAssigned || '-' }}</span>
+
+                <!-- Default Render -->
+                <span *ngSwitchDefault>{{ getCellValue(emp, col.key) }}</span>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+
+      <div class="pl-footer" *ngIf="filteredEmployees.length > 0">
+        <span class="pl-total"><i class="bi bi-info-circle"></i> Showing {{ (pageIndex - 1) * pageSize + 1 }}-{{ Math.min(pageIndex * pageSize, filteredEmployees.length) }} of <strong>{{ filteredEmployees.length }}</strong> employees</span>
+      </div>
+    </nz-card>
   </div>
 
-  <!-- SECTION 3: LABOUR REPORTS -->
+  <!-- SECTION 2: LABOUR REPORTS -->
   <div *ngIf="activeSection === 'labour'">
     <app-labour-reports [showHeader]="false"></app-labour-reports>
   </div>
-</div>
 
-<!-- MODAL: COLUMN SELECTOR -->
-<nz-modal [(nzVisible)]="isColumnModalVisible" nzTitle="⚙️ Customize Report Columns & Fields"
-  (nzOnCancel)="isColumnModalVisible = false" (nzOnOk)="isColumnModalVisible = false"
-  nzWidth="960px" nzOkText="Apply Columns" nzCancelText="Close">
-  <ng-container *nzModalContent>
-    <div class="column-modal-container">
-      <!-- Quick Presets -->
-      <div class="column-preset-bar">
-        <span class="preset-label">Quick Presets:</span>
-        <button nz-button nzSize="small" (click)="applyColumnPreset('standard')">📋 Standard HR</button>
-        <button nz-button nzSize="small" (click)="applyColumnPreset('onboarding')">🚀 New Joinees</button>
-        <button nz-button nzSize="small" (click)="applyColumnPreset('payroll')">💰 Bank & Payroll</button>
-        <button nz-button nzSize="small" (click)="applyColumnPreset('demographics')">📊 Demographics</button>
-        <button nz-button nzSize="small" (click)="applyColumnPreset('custom')" style="background: #eef2ff; color: #4338ca; border-color: #c7d2fe; font-weight: 600;">✨ Custom Fields</button>
-        <button nz-button nzSize="small" nzType="dashed" (click)="applyColumnPreset('all')">Select All</button>
-        <button nz-button nzSize="small" nzDanger nzType="dashed" (click)="applyColumnPreset('clear')">Clear All</button>
-      </div>
+  <!-- MODAL: COLUMN SELECTOR & REORDER -->
+  <nz-modal
+    [(nzVisible)]="isColumnModalVisible"
+    nzTitle="Choose &amp; Customize Columns for Export &amp; Preview"
+    (nzOnCancel)="isColumnModalVisible = false"
+    (nzOnOk)="isColumnModalVisible = false"
+    nzWidth="820px"
+    [nzOkText]="'Apply Columns (' + selectedColumns.length + ' selected)'"
+    class="column-selector-modal">
+    <ng-template nzModalContent>
+      <div class="column-modal-container">
+        <!-- Preset Buttons Bar -->
+        <div class="column-preset-bar">
+          <span class="preset-label">Quick Presets:</span>
+          <button nz-button nzSize="small" (click)="applyColumnPreset('standard')">Standard</button>
+          <button nz-button nzSize="small" (click)="applyColumnPreset('onboarding')">Onboarding / Statutory</button>
+          <button nz-button nzSize="small" (click)="applyColumnPreset('payroll')">Bank / Payroll</button>
+          <button nz-button nzSize="small" (click)="applyColumnPreset('demographics')">Demographics</button>
+          <button nz-button nzSize="small" (click)="applyColumnPreset('custom')">Custom Fields</button>
+          <button nz-button nzSize="small" nzType="dashed" (click)="applyColumnPreset('all')">Select All</button>
+          <button nz-button nzSize="small" nzDanger nzType="text" (click)="applyColumnPreset('clear')">Clear All</button>
+        </div>
 
-      <div class="column-search-bar" style="margin: 12px 0;">
-        <nz-input-group [nzPrefix]="prefixColSearch">
-          <input nz-input [(ngModel)]="columnSearch" placeholder="Filter columns by name or key..." />
-        </nz-input-group>
-        <ng-template #prefixColSearch><i nz-icon nzType="search"></i></ng-template>
-      </div>
+        <nz-divider style="margin: 10px 0;"></nz-divider>
 
-      <!-- Categories Grid -->
-      <div class="column-categories-grid">
-        <div *ngFor="let cat of columnCategories" class="column-category-box" [class.custom-box]="cat === 'Custom Fields'">
-          <div class="category-header">
-            <h4>
-              <i nz-icon [nzType]="cat === 'Custom Fields' ? 'appstore-add' : 'folder'" *ngIf="cat === 'Custom Fields'" style="color: #6366f1; margin-right: 4px;"></i>
-              {{ cat === 'Custom Fields' ? 'Custom Fields' : (cat + ' Fields') }}
-            </h4>
-            <span class="category-badge" [class.custom-badge]="cat === 'Custom Fields'">{{ getColumnsByCategory(cat).length }} fields</span>
-          </div>
-          <div class="category-items">
-            <label nz-checkbox *ngFor="let col of getColumnsByCategory(cat)" [(ngModel)]="col.selected" class="col-checkbox">
-              {{ col.label }}
-            </label>
+        <!-- Categories Columns Grid -->
+        <div class="column-categories-grid">
+          <div *ngFor="let cat of columnCategories" class="column-category-box" [class.custom-box]="cat === 'Custom Fields'">
+            <div class="category-header">
+              <h4>{{ cat }}</h4>
+              <span class="category-badge">{{ getColumnsByCategory(cat).length }} fields</span>
+            </div>
+            <div class="category-items">
+              <label *ngFor="let col of getColumnsByCategory(cat)"
+                nz-checkbox
+                [(ngModel)]="col.selected"
+                class="col-checkbox">
+                {{ col.label }}
+              </label>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </ng-container>
-</nz-modal>
+    </ng-template>
+  </nz-modal>
 
-<!-- MODAL: SAVE REPORT TEMPLATE -->
-<nz-modal [(nzVisible)]="isSaveTemplateModalVisible" nzTitle="💾 Save Custom Report Template"
-  (nzOnCancel)="isSaveTemplateModalVisible = false" (nzOnOk)="saveCurrentAsTemplate()"
-  nzOkText="Save Template" nzCancelText="Cancel">
-  <ng-container *nzModalContent>
-    <div class="save-template-modal">
-      <p class="modal-hint">Save your current active filters, sorting preferences, and selected columns as a reusable template for 1-click reports.</p>
-      <div class="form-item">
-        <label>Template Name <span style="color:red">*</span></label>
-        <input nz-input [(ngModel)]="templateFormName" placeholder="e.g. Monthly IT Joinees Report, Bank Transfer List..." />
+  <!-- MODAL: SAVE AS TEMPLATE -->
+  <nz-modal
+    [(nzVisible)]="isSaveTemplateModalVisible"
+    nzTitle="💾 Save Current Filters &amp; Columns as Template"
+    (nzOnCancel)="isSaveTemplateModalVisible = false"
+    (nzOnOk)="saveCurrentAsTemplate()"
+    nzWidth="520px"
+    nzOkText="Save Template">
+    <ng-template nzModalContent>
+      <div class="template-form-container">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px;">Template Name *</label>
+          <input nz-input [(ngModel)]="templateFormName" placeholder="e.g. Monthly Active Joinees, Bank Audit List" />
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 4px;">Description (Optional)</label>
+          <textarea nz-input [(ngModel)]="templateFormDesc" rows="3" placeholder="Brief note explaining when to use this template..."></textarea>
+        </div>
       </div>
-      <div class="form-item" style="margin-top:12px;">
-        <label>Description (Optional)</label>
-        <textarea nz-input [(ngModel)]="templateFormDesc" rows="2" placeholder="Brief note on what this report is used for..."></textarea>
+    </ng-template>
+  </nz-modal>
+
+  <!-- MODAL: GRAPHICAL ANALYTICS DASHBOARD -->
+  <nz-modal
+    [(nzVisible)]="isAnalyticsModalVisible"
+    [nzTitle]="analyticsModalTitleTpl"
+    (nzOnCancel)="closeAnalyticsDashboard()"
+    nzWidth="1180px"
+    [nzFooter]="analyticsModalFooterTpl"
+    [nzBodyStyle]="{ padding: '20px 24px', background: '#f8fafc', maxHeight: '82vh', overflowY: 'auto' }">
+
+    <ng-template #analyticsModalTitleTpl>
+      <div class="analytics-modal-header">
+        <div class="header-left">
+          <div class="header-icon-box">
+            <i class="bi bi-bar-chart-line-fill"></i>
+          </div>
+          <div class="header-text-block">
+            <h3 class="modal-title">Custom Report Analytics &amp; Visual Intelligence</h3>
+            <p class="modal-subtitle">Executive metrics &amp; multi-dimensional distribution for {{ filteredEmployees.length }} filtered staff records</p>
+          </div>
+        </div>
+        <div class="header-filter-badges">
+          <nz-tag *ngFor="let f of analyticsActiveFilterSummary" class="filter-chip">
+            <i class="bi bi-funnel-fill"></i> {{ f }}
+          </nz-tag>
+        </div>
       </div>
-      <div class="template-summary-preview" style="margin-top:16px;">
-        <div class="preview-row"><strong>Active Columns:</strong> {{ selectedColumns.length }} fields chosen</div>
-        <div class="preview-row"><strong>Sort Order:</strong> {{ sortBy }} ({{ sortDirection | uppercase }})</div>
-        <div class="preview-row" *ngIf="dojFilterMode !== 'ALL'"><strong>Joining Filter:</strong> {{ dojFilterMode }}</div>
+    </ng-template>
+
+    <ng-template nzModalContent>
+      <!-- Row 1: KPI Executive Summary Cards -->
+      <div class="analytics-kpi-grid">
+        <div class="kpi-card card-total">
+          <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Filtered Dataset</span>
+            <span class="kpi-val">{{ analyticsTotalCount }}</span>
+            <span class="kpi-sub"><i class="bi bi-check-circle-fill"></i> 100% of Active Filters</span>
+          </div>
+        </div>
+
+        <div class="kpi-card card-live">
+          <div class="kpi-icon"><i class="bi bi-person-check-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Active Retention (Live)</span>
+            <span class="kpi-val">{{ analyticsLiveCount }}</span>
+            <span class="kpi-sub badge-live"><i class="bi bi-graph-up-arrow"></i> {{ analyticsLivePercent }}% Active Ratio</span>
+          </div>
+        </div>
+
+        <div class="kpi-card card-gender">
+          <div class="kpi-icon"><i class="bi bi-gender-ambiguous"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Gender Diversity</span>
+            <span class="kpi-val">{{ analyticsMaleCount }} M / {{ analyticsFemaleCount }} F</span>
+            <span class="kpi-sub">{{ analyticsMalePercent }}% Male &bull; {{ analyticsFemalePercent }}% Female</span>
+          </div>
+        </div>
+
+        <div class="kpi-card card-designation">
+          <div class="kpi-icon"><i class="bi bi-briefcase-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-label">Dominant Role</span>
+            <span class="kpi-val truncate-text" [title]="analyticsDesignationBreakdown[0]?.label || 'N/A'">{{ analyticsDesignationBreakdown[0]?.label || 'N/A' }}</span>
+            <span class="kpi-sub">{{ analyticsDesignationBreakdown[0]?.count || 0 }} Staff Members ({{ analyticsDesignationBreakdown[0]?.percent || 0 }}%)</span>
+          </div>
+        </div>
       </div>
-    </div>
-  </ng-container>
-</nz-modal>
+
+      <!-- Row 2: Status Breakdown & Gender Ratio Charts -->
+      <div class="analytics-grid-two">
+        <!-- Status Distribution -->
+        <div class="analytics-card">
+          <div class="card-head">
+            <div class="head-title-wrap">
+              <i class="bi bi-pie-chart-fill head-ico" style="color: #10b981;"></i>
+              <span class="head-title">Employment Status Distribution</span>
+            </div>
+            <span class="head-badge">{{ analyticsStatusBreakdown.length }} Categories</span>
+          </div>
+          <div class="card-body">
+            <div class="status-bars-list">
+              <div *ngFor="let s of analyticsStatusBreakdown" class="status-bar-item">
+                <div class="item-info">
+                  <span class="item-name">
+                    <span class="status-dot" [style.background]="s.color"></span>
+                    {{ s.label }}
+                  </span>
+                  <span class="item-count">
+                    <strong>{{ s.count }}</strong> <span class="pct-tag">({{ s.percent }}%)</span>
+                  </span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" [style.width.%]="s.percent" [style.background]="s.color"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gender Distribution Card -->
+        <div class="analytics-card">
+          <div class="card-head">
+            <div class="head-title-wrap">
+              <i class="bi bi-gender-male head-ico" style="color: #ec4899;"></i>
+              <span class="head-title">Gender Balance &amp; Diversity Index</span>
+            </div>
+            <span class="head-badge">Demographics</span>
+          </div>
+          <div class="card-body">
+            <div class="gender-visual-box">
+              <div class="gender-donut-bar">
+                <div class="seg-male" [style.width.%]="analyticsMalePercent" [nz-tooltip]="'Male: ' + analyticsMaleCount + ' (' + analyticsMalePercent + '%)'"></div>
+                <div class="seg-female" [style.width.%]="analyticsFemalePercent" [nz-tooltip]="'Female: ' + analyticsFemaleCount + ' (' + analyticsFemalePercent + '%)'"></div>
+                <div class="seg-other" [style.width.%]="analyticsOtherGenderPercent" *ngIf="analyticsOtherGenderPercent > 0" [nz-tooltip]="'Other: ' + analyticsOtherGenderCount"></div>
+              </div>
+              <div class="gender-cards-row">
+                <div class="gender-pill g-male">
+                  <div class="g-icon-circle"><i class="bi bi-gender-male"></i></div>
+                  <div class="g-info">
+                    <span class="g-num">{{ analyticsMaleCount }}</span>
+                    <span class="g-lbl">Male Staff ({{ analyticsMalePercent }}%)</span>
+                  </div>
+                </div>
+                <div class="gender-pill g-female">
+                  <div class="g-icon-circle"><i class="bi bi-gender-female"></i></div>
+                  <div class="g-info">
+                    <span class="g-num">{{ analyticsFemaleCount }}</span>
+                    <span class="g-lbl">Female Staff ({{ analyticsFemalePercent }}%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Designation & Process Distribution -->
+      <div class="analytics-grid-two">
+        <!-- Designation Breakdown -->
+        <div class="analytics-card">
+          <div class="card-head">
+            <div class="head-title-wrap">
+              <i class="bi bi-diagram-3-fill head-ico" style="color: #2563eb;"></i>
+              <span class="head-title">Designation Breakdown (Top Roles)</span>
+            </div>
+            <span class="head-badge">Ranked</span>
+          </div>
+          <div class="card-body">
+            <div class="horiz-bar-list">
+              <div *ngFor="let d of analyticsDesignationBreakdown" class="horiz-item">
+                <div class="h-label" [title]="d.label">{{ d.label }}</div>
+                <div class="h-track">
+                  <div class="h-fill" [style.width.%]="d.percent"></div>
+                </div>
+                <div class="h-val"><strong>{{ d.count }}</strong> <span class="pct-tag">({{ d.percent }}%)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Process / Unit Distribution -->
+        <div class="analytics-card">
+          <div class="card-head">
+            <div class="head-title-wrap">
+              <i class="bi bi-boxes head-ico" style="color: #8b5cf6;"></i>
+              <span class="head-title">Process / Business Unit Share</span>
+            </div>
+            <span class="head-badge">{{ analyticsProcessBreakdown.length }} Units</span>
+          </div>
+          <div class="card-body">
+            <div class="process-pill-grid">
+              <div *ngFor="let p of analyticsProcessBreakdown" class="proc-badge-card" [style.border-left-color]="p.color">
+                <div class="p-title" [title]="p.label">{{ p.label }}</div>
+                <div class="p-stats">
+                  <span class="p-count" [style.color]="p.color">{{ p.count }}</span>
+                  <span class="p-pct">{{ p.percent }}% share</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Joining Year Trend Timeline -->
+      <div class="analytics-card full-width" *ngIf="analyticsJoiningTrend.length > 0">
+        <div class="card-head">
+          <div class="head-title-wrap">
+            <i class="bi bi-calendar-event-fill head-ico" style="color: #f59e0b;"></i>
+            <span class="head-title">Onboarding &amp; Date of Joining Timeline</span>
+          </div>
+          <span class="head-badge">Yearly Volume</span>
+        </div>
+        <div class="card-body">
+          <div class="timeline-chart-container">
+            <div *ngFor="let t of analyticsJoiningTrend" class="timeline-col">
+              <div class="col-count-bubble">{{ t.count }}</div>
+              <div class="col-bar-wrap">
+                <div class="col-bar-fill" [style.height.%]="t.heightPercent"></div>
+              </div>
+              <div class="col-year-lbl">{{ t.year }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #analyticsModalFooterTpl>
+      <div class="analytics-footer">
+        <span class="footer-note">
+          <i class="bi bi-shield-check" style="color: #10b981;"></i> Filtered dataset analytics updated automatically.
+        </span>
+        <div class="footer-actions">
+          <button nz-button class="btn-print-analytics" (click)="printReport()">
+            <i class="bi bi-printer-fill"></i> Print Visual Summary
+          </button>
+          <button nz-button nzType="primary" class="btn-close-analytics" (click)="closeAnalyticsDashboard()">
+            Close Dashboard
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </nz-modal>
+</div>

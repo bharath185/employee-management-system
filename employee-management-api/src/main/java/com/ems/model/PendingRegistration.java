@@ -240,6 +240,9 @@ public class PendingRegistration {
     @Column(name = "pan_doc_path", length = 255)
     private String panDocPath;
 
+    @Column(name = "additional_docs_json", columnDefinition = "TEXT")
+    private String additionalDocsJson;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     @Builder.Default

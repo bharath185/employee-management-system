@@ -13,4 +13,8 @@ public interface LeaveTypeRepository extends JpaRepository<LeaveType, Long> {
     Optional<LeaveType> findByName(String name);
 
     List<LeaveType> findByIsActiveTrue();
+
+    List<LeaveType> findByIsActiveTrueOrderByPriorityAscIdAsc();
+
+    List<LeaveType> findAllByOrderByPriorityAscIdAsc();
 }

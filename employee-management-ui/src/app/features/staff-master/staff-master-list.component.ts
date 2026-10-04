@@ -52,75 +52,89 @@ import * as XLSX from 'xlsx';
   template: `
     <div class="pl-container">
       <div class="pp-sub-nav">
-        <span class="pp-nav-item active">
-          <i class="bi bi-people-fill"></i><span>Staff Master</span>
-        </span>
-        <span class="sub-nav-count">{{ totalElements }} Employees</span>
+        <div class="sub-nav-left">
+          <span class="pp-nav-item active">
+            <i class="bi bi-people-fill"></i><span>Staff Master</span>
+          </span>
+          <span class="sub-nav-count">
+            <i class="bi bi-person-lines-fill"></i> {{ totalElements }} Employees
+          </span>
+        </div>
+        <div class="sub-nav-right">
+          <span class="sub-nav-tag"><i class="bi bi-building-check"></i> Live Database</span>
+        </div>
       </div>
 
-      <nz-card class="pl-controls-card" nzSize="small">
+      <nz-card class="pl-controls-card">
         <div class="pl-controls">
           <div class="pl-filters">
             <div class="search-box">
               <i class="bi bi-search search-ico"></i>
-              <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Name, code, email, mobile..." class="search-input">
-              <i class="bi bi-x-lg search-clear" *ngIf="searchTerm" (click)="clearSearch()"></i>
+              <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search code, name, mobile, email..." class="search-input">
+              <i class="bi bi-x-circle-fill search-clear" *ngIf="searchTerm" (click)="clearSearch()"></i>
             </div>
+
             <nz-select [(ngModel)]="currentSort" (ngModelChange)="onSortDropdownChange($event)" nzPlaceHolder="Sort By" class="filter-select sort-select" style="width:230px">
               <nz-option-group nzLabel="Status & Code (Default)">
-                <nz-option nzValue="employeeStatus,asc;employeeCode,asc" nzLabel="Live First (Code: 0 → 9) [Default]"></nz-option>
-                <nz-option nzValue="employeeStatus,asc;employeeCode,desc" nzLabel="Live First (Code: 9 → 0)"></nz-option>
-                <nz-option nzValue="employeeStatus,desc;employeeCode,asc" nzLabel="Quit/Left First (Code: 0 → 9)"></nz-option>
+                <nz-option nzValue="employeeStatus,asc;employeeCode,asc" nzLabel="🟢 Live First (Code: 0 → 9) [Default]"></nz-option>
+                <nz-option nzValue="employeeStatus,asc;employeeCode,desc" nzLabel="🟢 Live First (Code: 9 → 0)"></nz-option>
+                <nz-option nzValue="employeeStatus,desc;employeeCode,asc" nzLabel="🔴 Quit/Left First (Code: 0 → 9)"></nz-option>
               </nz-option-group>
               <nz-option-group nzLabel="Employee Code Only">
-                <nz-option nzValue="employeeCode,asc" nzLabel="Code: Ascending (0 → 9)"></nz-option>
-                <nz-option nzValue="employeeCode,desc" nzLabel="Code: Descending (9 → 0)"></nz-option>
+                <nz-option nzValue="employeeCode,asc" nzLabel="🔢 Code: Ascending (0 → 9)"></nz-option>
+                <nz-option nzValue="employeeCode,desc" nzLabel="🔢 Code: Descending (9 → 0)"></nz-option>
               </nz-option-group>
               <nz-option-group nzLabel="Employee Name">
-                <nz-option nzValue="employeeStatus,asc;surname,asc;firstName,asc" nzLabel="Live First (Name: A → Z)"></nz-option>
-                <nz-option nzValue="surname,asc;firstName,asc" nzLabel="Name: A → Z (Surname)"></nz-option>
-                <nz-option nzValue="surname,desc;firstName,desc" nzLabel="Name: Z → A (Surname)"></nz-option>
+                <nz-option nzValue="employeeStatus,asc;surname,asc;firstName,asc" nzLabel="👤 Live First (Name: A → Z)"></nz-option>
+                <nz-option nzValue="surname,asc;firstName,asc" nzLabel="👤 Name: A → Z (Surname)"></nz-option>
+                <nz-option nzValue="surname,desc;firstName,desc" nzLabel="👤 Name: Z → A (Surname)"></nz-option>
               </nz-option-group>
               <nz-option-group nzLabel="Date of Joining">
-                <nz-option nzValue="employeeStatus,asc;doj,desc" nzLabel="Live First (DOJ: Newest First)"></nz-option>
-                <nz-option nzValue="doj,desc" nzLabel="DOJ: Newest First"></nz-option>
-                <nz-option nzValue="doj,asc" nzLabel="DOJ: Oldest First"></nz-option>
+                <nz-option nzValue="employeeStatus,asc;doj,desc" nzLabel="📅 Live First (DOJ: Newest First)"></nz-option>
+                <nz-option nzValue="doj,desc" nzLabel="📅 DOJ: Newest First"></nz-option>
+                <nz-option nzValue="doj,asc" nzLabel="📅 DOJ: Oldest First"></nz-option>
               </nz-option-group>
             </nz-select>
+
             <nz-select [(ngModel)]="filterStatus" (ngModelChange)="loadEmployees()" nzPlaceHolder="Status" class="filter-select" style="width:130px">
               <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
               <nz-option *ngFor="let opt of statusOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
             </nz-select>
+
             <nz-select [(ngModel)]="filterGender" (ngModelChange)="loadEmployees()" nzPlaceHolder="Gender" class="filter-select" style="width:120px">
               <nz-option nzValue="" nzLabel="All Genders"></nz-option>
               <nz-option *ngFor="let opt of genderOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="loadEmployees()" nzPlaceHolder="Designation" class="filter-select" style="width:160px">
+
+            <nz-select [(ngModel)]="filterDesignation" (ngModelChange)="loadEmployees()" nzPlaceHolder="Designation" class="filter-select" style="width:160px" nzShowSearch nzAllowClear>
               <nz-option nzValue="" nzLabel="All Designations"></nz-option>
               <nz-option *ngFor="let opt of designationOptions" [nzValue]="opt.value" [nzLabel]="opt.label"></nz-option>
             </nz-select>
-            <nz-select [(ngModel)]="filterProcess" (ngModelChange)="loadEmployees()" nzPlaceHolder="Process" class="filter-select" style="width:150px">
+
+            <nz-select [(ngModel)]="filterProcess" (ngModelChange)="loadEmployees()" nzPlaceHolder="Process" class="filter-select" style="width:150px" nzShowSearch nzAllowClear>
               <nz-option nzValue="" nzLabel="All Processes"></nz-option>
               <nz-option *ngFor="let p of processOptions" [nzValue]="p" [nzLabel]="p"></nz-option>
             </nz-select>
+
             <button nz-button class="clear-btn" *ngIf="hasActiveFilters" (click)="clearFilters()" nz-tooltip="Reset search, filters and sort order">
               <i class="bi bi-arrow-counterclockwise"></i> Reset
             </button>
           </div>
+
           <div class="pp-actions">
             <ng-container *ngIf="canImportExport">
-              <button nz-button nzType="default" (click)="downloadSampleExcel()" nz-tooltip="Download Sample">
-                <i class="bi bi-file-earmark-text"></i> Sample
+              <button nz-button nzType="default" (click)="downloadSampleExcel()" nz-tooltip="Download Sample Import Template" class="btn-tool">
+                <i class="bi bi-file-earmark-spreadsheet-fill" style="color: #2563eb;"></i> Sample
               </button>
-              <button nz-button nzType="default" (click)="exportToExcel()" nz-tooltip="Export Excel">
-                <i class="bi bi-download"></i> Export
+              <button nz-button nzType="default" (click)="exportToExcel()" nz-tooltip="Download Complete Excel Report" class="btn-tool">
+                <i class="bi bi-file-earmark-excel-fill" style="color: #10b981;"></i> Export
               </button>
-              <button nz-button nzType="default" (click)="triggerImport()" nz-tooltip="Import Excel">
-                <i class="bi bi-upload"></i> Import
+              <button nz-button nzType="default" (click)="triggerImport()" nz-tooltip="Bulk Import from Excel" class="btn-tool">
+                <i class="bi bi-cloud-arrow-up-fill" style="color: #8b5cf6;"></i> Import
               </button>
             </ng-container>
             <button nz-button class="btn-primary-gradient" routerLink="/admin/employees/new" *ngIf="canAddEmployee">
-              <i class="bi bi-plus-lg"></i> Add Employee
+              <i class="bi bi-person-plus-fill"></i> Add Employee
             </button>
           </div>
         </div>
@@ -128,8 +142,9 @@ import * as XLSX from 'xlsx';
 
       <input #fileInput type="file" accept=".xlsx,.xls" style="display:none" (change)="importFromExcel($event)">
 
-      <nz-card class="pl-table-card" nzSize="small">
+      <nz-card class="pl-table-card">
         <nz-table
+          #staffTable
           [nzData]="dataSource"
           [nzFrontPagination]="false"
           [nzPageIndex]="pageIndex + 1"
@@ -143,45 +158,73 @@ import * as XLSX from 'xlsx';
           class="theme-table"
           [nzLoading]="isLoading"
           nzTableLayout="fixed"
+          nzSize="middle"
+          [nzScroll]="{ x: '1205px', y: 'calc(100vh - 235px)' }"
         >
           <thead>
             <tr>
-              <th class="th-sno">#</th>
-              <th class="th-code" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeCode')" (nzSortOrderChange)="onTableSort('employeeCode', $event)">Code</th>
-              <th class="th-name" [nzShowSort]="true" [nzSortOrder]="getSortOrder('surname')" (nzSortOrderChange)="onTableSort('surname', $event)">Employee Name</th>
-              <th class="th-gen" [nzShowSort]="true" [nzSortOrder]="getSortOrder('gender')" (nzSortOrderChange)="onTableSort('gender', $event)">Gender</th>
-              <th class="th-desig" [nzShowSort]="true" [nzSortOrder]="getSortOrder('designation')" (nzSortOrderChange)="onTableSort('designation', $event)">Designation</th>
-              <th class="th-status" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeStatus')" (nzSortOrderChange)="onTableSort('employeeStatus', $event)">Status</th>
-              <th class="th-role">Role</th>
-              <th class="th-mob">Mobile</th>
-              <th class="th-doj" [nzShowSort]="true" [nzSortOrder]="getSortOrder('doj')" (nzSortOrderChange)="onTableSort('doj', $event)">DOJ</th>
-              <th class="th-actions">Actions</th>
+              <th class="th-sno" nzWidth="50px">#</th>
+              <th class="th-code" nzWidth="110px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeCode')" (nzSortOrderChange)="onTableSort('employeeCode', $event)">
+                <i class="bi bi-qr-code th-icon"></i> Code
+              </th>
+              <th class="th-name" nzWidth="260px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('surname')" (nzSortOrderChange)="onTableSort('surname', $event)">
+                <i class="bi bi-person-circle th-icon"></i> Employee Name
+              </th>
+              <th class="th-gen" nzWidth="95px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('gender')" (nzSortOrderChange)="onTableSort('gender', $event)">
+                <i class="bi bi-gender-ambiguous th-icon"></i> Gender
+              </th>
+              <th class="th-desig" nzWidth="180px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('designation')" (nzSortOrderChange)="onTableSort('designation', $event)">
+                <i class="bi bi-briefcase-fill th-icon"></i> Designation
+              </th>
+              <th class="th-status" nzWidth="115px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('employeeStatus')" (nzSortOrderChange)="onTableSort('employeeStatus', $event)">
+                <i class="bi bi-activity th-icon"></i> Status
+              </th>
+              <th class="th-role" nzWidth="120px">
+                <i class="bi bi-shield-check th-icon"></i> Role
+              </th>
+              <th class="th-mob" nzWidth="135px">
+                <i class="bi bi-telephone-fill th-icon"></i> Mobile
+              </th>
+              <th class="th-doj" nzWidth="125px" [nzShowSort]="true" [nzSortOrder]="getSortOrder('doj')" (nzSortOrderChange)="onTableSort('doj', $event)">
+                <i class="bi bi-calendar-check-fill th-icon"></i> DOJ
+              </th>
+              <th class="th-actions" nzWidth="115px">
+                <i class="bi bi-gear-fill th-icon"></i> Actions
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let emp of dataSource; let i = index" class="emp-row"
+            <tr *ngFor="let emp of staffTable.data; let i = index" class="emp-row"
                 [routerLink]="['/admin/employees', emp.id]"
                 [class.row-live]="emp.employeeStatus === 'LIVE'">
               <td class="td-center"><span class="row-num">{{ (pageIndex * pageSize) + i + 1 }}</span></td>
-              <td class="td-center"><span class="emp-code-badge">{{ emp.employeeCode }}</span></td>
+              <td class="td-center">
+                <span class="emp-code-badge">
+                  <i class="bi bi-hash"></i>{{ emp.employeeCode }}
+                </span>
+              </td>
               <td class="td-name">
                 <div class="emp-info-cell">
                   <img *ngIf="emp.photoPath" [src]="getPhotoUrl(emp.photoPath)" alt="" class="emp-avatar emp-avatar-img" (error)="onAvatarError($event)" />
                   <div class="emp-avatar" [style.background]="getAvatarColor(emp.employeeCode)" *ngIf="!emp.photoPath">
-                    {{ (emp.surname?.charAt(0) || '') + (emp.firstName?.charAt(0) || '') }}
+                    {{ (emp.firstName?.charAt(0) || '') + (emp.surname?.charAt(0) || '') }}
                   </div>
                   <div class="emp-name-block">
-                    <span class="emp-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.surname ? emp.surname + ' ' : '' }}{{ emp.firstName || '' }}{{ emp.middleName ? ' ' + emp.middleName : '' }}</span>
+                    <span class="emp-name">{{ emp.prefix ? emp.prefix + '. ' : '' }}{{ emp.firstName || '' }}{{ emp.middleName ? ' ' + emp.middleName : '' }}{{ emp.surname ? ' ' + emp.surname : '' }}</span>
+                    <span class="emp-process" *ngIf="emp.processAssigned"><i class="bi bi-building"></i> {{ emp.processAssigned }}</span>
                   </div>
                 </div>
               </td>
               <td class="td-center"><span class="emp-gender">{{ emp.gender || '-' }}</span></td>
               <td class="td-name"><span class="emp-desig">{{ emp.designation || '-' }}</span></td>
               <td class="td-center">
-                <nz-tag [nzColor]="emp.employeeStatus === 'LIVE' ? 'green' : 'default'" class="status-tag">{{ emp.employeeStatus || '-' }}</nz-tag>
+                <span class="status-badge" [class.status-live]="emp.employeeStatus === 'LIVE'" [class.status-quit]="emp.employeeStatus !== 'LIVE'">
+                  <span class="status-dot"></span> {{ emp.employeeStatus || '-' }}
+                </span>
               </td>
               <td class="td-center">
-                <span *ngIf="emp.userRole" class="role-tag" [class.role-admin]="emp.userRole === 'ADMIN'" [class.role-hr]="emp.userRole === 'HR'">
+                <span *ngIf="emp.userRole" class="role-tag" [class.role-admin]="emp.userRole === 'ADMIN'" [class.role-hr]="emp.userRole === 'HR'" [class.role-emp]="emp.userRole === 'EMPLOYEE'">
+                  <i class="bi" [class.bi-shield-lock-fill]="emp.userRole === 'ADMIN'" [class.bi-person-badge-fill]="emp.userRole === 'HR'" [class.bi-person-fill]="emp.userRole === 'EMPLOYEE'"></i>
                   {{ emp.userRole }}
                 </span>
                 <span *ngIf="!emp.userRole" class="na-txt">-</span>
@@ -191,16 +234,16 @@ import * as XLSX from 'xlsx';
               <td class="td-actions" (click)="$event.stopPropagation()">
                 <div class="actions-wrapper">
                   <button nz-button nzType="text" class="action-btn action-view"
-                    [routerLink]="['/admin/employees', emp.id]" nz-tooltip="View Details">
-                    <i class="bi bi-eye"></i>
+                    [routerLink]="['/admin/employees', emp.id]" nz-tooltip="View Full Profile">
+                    <i class="bi bi-eye-fill"></i>
                   </button>
                   <button nz-button nzType="text" class="action-btn action-edit"
                     [routerLink]="['/admin/employees', emp.id, 'edit']" nz-tooltip="Edit Employee">
-                    <i class="bi bi-pencil"></i>
+                    <i class="bi bi-pencil-square"></i>
                   </button>
                   <button nz-button nzType="text" class="action-btn action-delete"
                     (click)="deleteEmployee(emp)" nz-tooltip="Delete Employee" *ngIf="isAdmin">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash3-fill"></i>
                   </button>
                 </div>
               </td>
@@ -208,7 +251,7 @@ import * as XLSX from 'xlsx';
           </tbody>
         </nz-table>
         <div class="pl-footer" *ngIf="totalElements > 0">
-          <span class="pl-total">Showing {{ (pageIndex * pageSize) + 1 }}-{{ Math.min((pageIndex + 1) * pageSize, totalElements) }} of {{ totalElements }} employees</span>
+          <span class="pl-total"><i class="bi bi-info-circle"></i> Showing {{ (pageIndex * pageSize) + 1 }}-{{ Math.min((pageIndex + 1) * pageSize, totalElements) }} of <strong>{{ totalElements }}</strong> employees</span>
         </div>
       </nz-card>
 
@@ -221,16 +264,16 @@ import * as XLSX from 'xlsx';
           <p *ngIf="hasActiveFilters">Try adjusting your search or filter criteria</p>
           <p *ngIf="!hasActiveFilters">Get started by adding your first employee</p>
           <button nz-button class="btn-primary-gradient" routerLink="/admin/employees/new">
-            <i class="bi bi-plus-lg"></i> Add Employee
+            <i class="bi bi-person-plus-fill"></i> Add Employee
           </button>
         </div>
       </ng-template>
     </div>
   `,
   styles: [`
-    :host { display: block; }
+    :host { display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
     .pl-container {
-      padding: 14px 18px;
+      padding: 8px 14px 10px;
       width: 100%;
       min-width: 0;
       box-sizing: border-box;
@@ -240,50 +283,63 @@ import * as XLSX from 'xlsx';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
-      background: #f0f4ff;
-      border-radius: 10px;
-      padding: 4px 8px 4px 4px;
-      border: 1px solid #e0e7ff;
+      margin-bottom: 8px;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 4px 10px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+    .sub-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .pp-nav-item {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 5px;
+      font-size: 12.5px;
       font-weight: 600;
-      color: #6c757d;
+      color: #fff;
+      background: linear-gradient(135deg, #4361ee, #3a0ca3);
+      box-shadow: 0 1px 4px rgba(67, 97, 238, 0.2);
       text-decoration: none;
-      transition: all 0.2s ease;
       white-space: nowrap;
     }
-    .pp-nav-item i { font-size: 16px; }
-    .pp-nav-item.active {
-      background: #ffffff;
-      color: #1f3d6e;
-      box-shadow: 0 1px 4px rgba(31,61,110,0.1);
-    }
+    .pp-nav-item i { font-size: 14px; }
     .sub-nav-count {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
-      color: #1f3d6e;
-      background: #ffffff;
-      padding: 3px 10px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 1px solid #dbeafe;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sub-nav-tag {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .pl-controls-card, .pl-table-card {
-      border-radius: 10px !important;
-      border: 1px solid #e8eaed !important;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
-      margin-bottom: 12px;
+      border-radius: 6px !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+      margin-bottom: 8px;
       width: 100% !important;
       background: #ffffff;
     }
-    :host ::ng-deep .pl-controls-card .ant-card-body { padding: 10px 14px !important; }
+    :host ::ng-deep .pl-controls-card .ant-card-body { padding: 6px 10px !important; }
     :host ::ng-deep .pl-table-card .ant-card-body { padding: 0 !important; }
 
     .pl-controls {
@@ -291,18 +347,18 @@ import * as XLSX from 'xlsx';
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 6px;
     }
     .pl-filters {
       display: flex;
-      gap: 10px;
+      gap: 6px;
       align-items: center;
       flex-wrap: wrap;
       flex: 1;
     }
     .pp-actions {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       flex-wrap: wrap;
       margin-left: auto;
@@ -313,139 +369,202 @@ import * as XLSX from 'xlsx';
       align-items: center;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 0 10px;
-      height: 36px;
-      min-width: 240px;
+      border-radius: 5px;
+      padding: 0 8px;
+      height: 30px;
+      min-width: 220px;
       transition: all 0.2s ease;
     }
     .search-box:focus-within {
       border-color: #4361ee;
       background: #ffffff;
-      box-shadow: 0 0 0 2px rgba(67,97,238,0.12);
+      box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.12);
     }
-    .search-ico { font-size: 14px; color: #94a3b8; margin-right: 6px; }
+    .search-ico { font-size: 13px; color: #94a3b8; margin-right: 5px; }
     .search-input {
       flex: 1;
       border: none !important;
       background: transparent !important;
-      height: 34px;
-      font-size: 13px;
+      height: 28px;
+      font-size: 12px;
       padding: 0;
       outline: none;
       box-shadow: none !important;
     }
-    .search-clear { cursor: pointer; font-size: 12px; color: #94a3b8; transition: color 0.15s; margin-left: 6px; }
+    .search-clear { cursor: pointer; font-size: 12px; color: #94a3b8; transition: color 0.15s; margin-left: 5px; }
     .search-clear:hover { color: #ef4444; }
 
-    .filter-select { width: 140px; }
+    .filter-select { width: 130px; }
     :host ::ng-deep .filter-select .ant-select-selector {
-      border-radius: 8px !important;
+      border-radius: 5px !important;
       border: 1px solid #e2e8f0 !important;
-      height: 36px !important;
-      padding: 0 10px !important;
+      height: 30px !important;
+      padding: 0 8px !important;
       background: #f8fafc !important;
     }
     :host ::ng-deep .filter-select .ant-select-selector:hover,
     :host ::ng-deep .filter-select.ant-select-focused .ant-select-selector {
-      border-color: #1f3d6e !important;
+      border-color: #4361ee !important;
       background: #ffffff !important;
     }
     :host ::ng-deep .filter-select .ant-select-selection-item {
-      font-size: 13px !important;
-      line-height: 34px !important;
+      font-size: 12px !important;
+      line-height: 28px !important;
       color: #334155;
     }
     :host ::ng-deep .sort-select .ant-select-selection-item {
       font-weight: 600 !important;
-      color: #1f3d6e !important;
-    }
-
-    .clear-btn {
-      height: 36px !important;
-      padding: 0 12px !important;
-      font-size: 13px !important;
-      border-radius: 8px !important;
-      border: 1px solid #e2e8f0 !important;
-      color: #64748b !important;
-      background: #f8fafc !important;
-    }
-    .clear-btn:hover {
-      background: #f1f5f9 !important;
       color: #1e293b !important;
     }
 
+    .clear-btn {
+      height: 30px !important;
+      padding: 0 10px !important;
+      font-size: 12px !important;
+      border-radius: 5px !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #64748b !important;
+      background: #f8fafc !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+    }
+    .clear-btn:hover {
+      background: #f1f5f9 !important;
+      color: #ef4444 !important;
+      border-color: #fca5a5 !important;
+    }
+
     .btn-primary-gradient {
-      height: 36px !important;
-      padding: 0 16px !important;
-      font-size: 13px !important;
+      height: 30px !important;
+      padding: 0 12px !important;
+      font-size: 12px !important;
       font-weight: 600 !important;
       border: none !important;
-      border-radius: 8px !important;
+      border-radius: 5px !important;
       background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
       color: #fff !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 6px !important;
-      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
+      gap: 5px !important;
+      box-shadow: 0 1px 4px rgba(67, 97, 238, 0.25) !important;
       transition: all 0.2s ease !important;
     }
     .btn-primary-gradient:hover {
       transform: translateY(-1px) !important;
-      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+      box-shadow: 0 3px 8px rgba(67, 97, 238, 0.35) !important;
     }
 
-    :host ::ng-deep .pp-actions .ant-btn:not(.btn-primary-gradient) {
-      height: 36px !important;
-      padding: 0 14px !important;
-      font-size: 13px !important;
-      border-radius: 8px !important;
+    .btn-tool {
+      height: 30px !important;
+      padding: 0 10px !important;
+      font-size: 12px !important;
+      border-radius: 5px !important;
       border: 1px solid #e2e8f0 !important;
-      color: #475569 !important;
+      color: #334155 !important;
       background: #ffffff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      transition: all 0.15s ease !important;
     }
-    :host ::ng-deep .pp-actions .ant-btn:not(.btn-primary-gradient):hover {
-      border-color: #1f3d6e !important;
-      color: #1f3d6e !important;
-      background: #f0f4ff !important;
+    .btn-tool:hover {
+      border-color: #cbd5e1 !important;
+      background: #f8fafc !important;
     }
 
     /* ── Table Styling ── */
     :host ::ng-deep .theme-table { width: 100% !important; }
-    :host ::ng-deep .theme-table .ant-table { font-size: 13px; border-radius: 0 !important; }
+    :host ::ng-deep .theme-table .ant-table { font-size: 13px; border-radius: 8px 8px 0 0 !important; }
+
+    :host ::ng-deep .theme-table .ant-table-body,
+    :host ::ng-deep .theme-table .ant-table-content {
+      overflow-x: auto !important;
+      overflow-y: auto !important;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+
+      &::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+      }
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+    }
+
     :host ::ng-deep .theme-table .ant-table-thead > tr > th {
-      background: #f8f9fc !important;
-      color: #1f3d6e !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.6px !important;
-      padding: 10px 12px !important;
-      border-bottom: 2px solid #1f3d6e !important;
+      background: #f8fafc !important;
+      color: #1e293b !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      padding: 11px 12px !important;
+      border-bottom: 1px solid #e2e8f0 !important;
       white-space: nowrap;
     }
+    .th-icon {
+      font-size: 13px;
+      color: #64748b;
+      margin-right: 4px;
+    }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th.ant-table-column-has-sorters:hover {
-      background: #edf2f7 !important;
+      background: #f1f5f9 !important;
     }
     :host ::ng-deep .theme-table .ant-table-column-sorters {
       display: inline-flex;
       align-items: center;
-      justify-content: space-between;
       width: 100%;
     }
-    :host ::ng-deep .theme-table .ant-table-thead > tr > th:not(:last-child) { border-right: 1px solid #edf2f7; }
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-sno,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-code,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-gen,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-status,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-role,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-mob,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-doj,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-actions {
+      text-align: center !important;
+    }
+
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-code .ant-table-column-sorters,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-gen .ant-table-column-sorters,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-status .ant-table-column-sorters,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-doj .ant-table-column-sorters {
+      justify-content: center !important;
+      gap: 4px;
+    }
+
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-name .ant-table-column-sorters,
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th.th-desig .ant-table-column-sorters {
+      justify-content: flex-start !important;
+      gap: 6px;
+    }
+
+    :host ::ng-deep .theme-table .ant-table-thead > tr > th:last-child,
+    :host ::ng-deep .theme-table .ant-table-tbody > tr > td:last-child {
+      padding-right: 16px !important;
+    }
+
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
-      padding: 9px 12px !important;
+      padding: 10px 12px !important;
       border-bottom: 1px solid #f1f5f9 !important;
       font-size: 13px;
       color: #334155;
       vertical-align: middle;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
-      background: rgba(31,61,110,0.04) !important;
+      background: rgba(67, 97, 238, 0.03) !important;
     }
 
-    .emp-row { cursor: pointer; }
+    .emp-row { cursor: pointer; transition: background 0.15s; }
     .emp-row td.ant-table-cell:first-child { position: relative; }
     .emp-row.row-live td.ant-table-cell:first-child::before {
       content: '';
@@ -461,27 +580,31 @@ import * as XLSX from 'xlsx';
     .th-sno { width: 50px !important; text-align: center !important; }
     .th-code { width: 110px !important; text-align: center !important; }
     .th-name { width: 260px !important; text-align: left !important; }
-    .th-gen { width: 90px !important; text-align: center !important; }
-    .th-desig { width: 160px !important; text-align: left !important; }
-    .th-status { width: 100px !important; text-align: center !important; }
-    .th-role { width: 100px !important; text-align: center !important; }
-    .th-mob { width: 130px !important; text-align: center !important; }
-    .th-doj { width: 120px !important; text-align: center !important; }
-    .th-actions { width: 110px !important; text-align: center !important; }
+    .th-gen { width: 95px !important; text-align: center !important; }
+    .th-desig { width: 180px !important; text-align: left !important; }
+    .th-status { width: 115px !important; text-align: center !important; }
+    .th-role { width: 120px !important; text-align: center !important; }
+    .th-mob { width: 135px !important; text-align: center !important; }
+    .th-doj { width: 125px !important; text-align: center !important; }
+    .th-actions { width: 115px !important; text-align: center !important; }
 
     .td-center { text-align: center !important; }
+    .td-actions { text-align: center !important; }
     .td-name { font-weight: 500; }
 
     .row-num { font-size: 12px; font-weight: 600; color: #94a3b8; }
     .emp-code-badge {
-      font-weight: 700;
-      color: #1f3d6e;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 600;
+      color: #2563eb;
       font-size: 12px;
-      background: #f0f4ff;
-      padding: 3px 8px;
+      background: #eff6ff;
+      padding: 2px 8px;
       border-radius: 6px;
-      border: 1px solid #e0e7ff;
-      display: inline-block;
+      border: 1px solid #dbeafe;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
     }
 
     .emp-info-cell {
@@ -491,63 +614,101 @@ import * as XLSX from 'xlsx';
       min-width: 0;
     }
     .emp-avatar {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #fff;
       flex-shrink: 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
     .emp-avatar-img {
       object-fit: cover;
-      border: 1px solid #e2e5ea;
+      border: 1px solid #e2e8f0;
     }
     .emp-name-block {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      line-height: 1.25;
     }
     .emp-name {
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
-      color: #1e293b;
+      color: #0f172a;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .emp-process {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
 
-    .emp-gender { font-size: 12px; color: #475569; }
-    .emp-desig { font-size: 12px; font-weight: 500; color: #334155; }
+    .emp-gender { font-size: 12.5px; color: #475569; }
+    .emp-desig { font-size: 13px; font-weight: 500; color: #334155; }
 
-    .status-tag {
-      font-size: 11px !important;
-      font-weight: 600 !important;
-      padding: 1px 8px !important;
-      border-radius: 6px !important;
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .status-live {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      .status-dot { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+    }
+    .status-quit {
+      background: #fff1f2;
+      color: #e11d48;
+      border: 1px solid #fecdd3;
+      .status-dot { background: #f43f5e; }
     }
 
     .role-tag {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       padding: 2px 8px;
       border-radius: 6px;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
     }
-    .role-admin { background: #eef2ff; color: #4361ee; border: 1px solid #e0e7ff; }
-    .role-hr { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+    .role-admin { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+    .role-hr { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+    .role-emp { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
     .na-txt { color: #94a3b8; font-size: 12px; }
-    .mono-txt { font-size: 12px; color: #475569; font-weight: 500; }
-    .doj-text { font-size: 12px; color: #64748b; }
+    .mono-txt {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: #475569;
+      font-weight: 500;
+    }
+    .doj-text { font-size: 12.5px; color: #64748b; }
 
     .actions-wrapper {
       display: inline-flex;
       align-items: center;
-      gap: 2px;
+      gap: 3px;
     }
     .action-btn {
       width: 28px !important;
@@ -557,14 +718,14 @@ import * as XLSX from 'xlsx';
       align-items: center !important;
       justify-content: center !important;
       border-radius: 6px !important;
-      font-size: 14px !important;
+      font-size: 13px !important;
       transition: all 0.15s ease !important;
       color: #64748b !important;
     }
-    .action-btn:hover { background: #f0f4ff !important; }
-    .action-view:hover { color: #1f3d6e !important; }
-    .action-edit:hover { color: #4361ee !important; }
-    .action-delete:hover { color: #ef4444 !important; }
+    .action-btn:hover { background: #f1f5f9 !important; }
+    .action-view:hover { color: #2563eb !important; background: #eff6ff !important; }
+    .action-edit:hover { color: #4f46e5 !important; background: #eef2ff !important; }
+    .action-delete:hover { color: #ef4444 !important; background: #fef2f2 !important; }
 
     .pl-footer {
       display: flex;
@@ -574,7 +735,14 @@ import * as XLSX from 'xlsx';
       border-top: 1px solid #f1f5f9;
       background: #ffffff;
     }
-    .pl-total { font-size: 12px; font-weight: 500; color: #64748b; }
+    .pl-total {
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #64748b;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     :host ::ng-deep .theme-table .ant-table-pagination {
       margin: 10px 16px !important;
@@ -584,10 +752,10 @@ import * as XLSX from 'xlsx';
     }
     :host ::ng-deep .theme-table .ant-table-pagination .ant-pagination-item {
       border-radius: 6px;
-      font-size: 12px;
-      min-width: 30px;
-      height: 30px;
-      line-height: 28px;
+      font-size: 12.5px;
+      min-width: 32px;
+      height: 32px;
+      line-height: 30px;
       border-color: #e2e8f0;
     }
     :host ::ng-deep .theme-table .ant-table-pagination .ant-pagination-item-active {
@@ -611,15 +779,13 @@ import * as XLSX from 'xlsx';
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: #f0f4ff;
+      background: #eff6ff;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .empty-icon-wrapper .empty-icon { font-size: 28px; color: #4361ee; }
+    .empty-icon-wrapper .empty-icon { font-size: 28px; color: #2563eb; }
     .empty-state-content h3 { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0; }
-    .empty-state-content p { font-size: 13px; color: #64748b; margin: 0; }
-
     @media (max-width: 768px) {
       .pl-controls { flex-direction: column; align-items: stretch; }
       .pl-filters { flex-wrap: wrap; }
@@ -853,7 +1019,7 @@ export class StaffMasterListComponent implements OnInit, OnDestroy {
   deleteEmployee(emp: Employee): void {
     this.modal.confirm({
       nzTitle: 'Delete Employee',
-      nzContent: `Are you sure you want to delete ${emp.surname || ''} ${emp.firstName || ''} (${emp.employeeCode})?`,
+      nzContent: `Are you sure you want to delete ${(emp.prefix ? emp.prefix + '. ' : '') + (emp.firstName || '') + (emp.middleName ? ' ' + emp.middleName : '') + (emp.surname ? ' ' + emp.surname : '')} (${emp.employeeCode})?`,
       nzOkText: 'Delete',
       nzOkDanger: true,
       nzOnOk: () => {

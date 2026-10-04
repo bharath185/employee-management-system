@@ -49,48 +49,70 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   ],
   template: `
     <div class="template-list-container page-enter">
-      <!-- Unified Controls & Filters Card -->
-      <nz-card class="pp-controls-card" nzSize="small">
-        <div class="filter-controls-row">
-          <div class="filter-field search-box">
+      <!-- Modern Single-Line Filter Panel matching Document Hub -->
+      <div class="dh-filter-card">
+        <div class="filter-single-row">
+          <!-- 1. Search Box -->
+          <div class="filter-col filter-col-search">
+            <label class="dh-field-label"><i nz-icon nzType="search"></i> 1. Search Template</label>
             <nz-input-group [nzPrefix]="searchIcon" class="search-input-group">
-              <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search templates by name..." class="filter-input">
+              <input nz-input [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search templates by name, type, or description..." class="filter-input" />
             </nz-input-group>
-            <ng-template #searchIcon><i nz-icon nzType="search"></i></ng-template>
+            <ng-template #searchIcon><i nz-icon nzType="search" style="color: #94a3b8;"></i></ng-template>
           </div>
-          <div class="filter-field select-box">
-            <nz-select [(ngModel)]="filterType" (ngModelChange)="loadTemplates()" nzPlaceHolder="All Types" class="filter-select">
-              <nz-option nzValue="" nzLabel="All Types"></nz-option>
+
+          <!-- 2. Template Type -->
+          <div class="filter-col filter-col-type">
+            <div class="label-with-actions">
+              <label class="dh-field-label"><i nz-icon nzType="folder"></i> 2. Template Type</label>
+              <button nz-button nzType="link" nzSize="small" *ngIf="filterType" (click)="filterType = ''; loadTemplates()" class="link-btn">Reset</button>
+            </div>
+            <nz-select [(ngModel)]="filterType" (ngModelChange)="loadTemplates()" nzPlaceHolder="All Types" class="w-full">
+              <nz-option nzValue="" nzLabel="All Types (All Formats)"></nz-option>
               <nz-option *ngFor="let t of typeOptions" [nzValue]="t.code" [nzLabel]="t.display"></nz-option>
             </nz-select>
           </div>
-          <div class="filter-field select-box">
-            <nz-select [(ngModel)]="filterActive" (ngModelChange)="loadTemplates()" nzPlaceHolder="All Status" class="filter-select">
+
+          <!-- 3. Status -->
+          <div class="filter-col filter-col-status">
+            <div class="label-with-actions">
+              <label class="dh-field-label"><i nz-icon nzType="check-circle"></i> 3. Status</label>
+              <button nz-button nzType="link" nzSize="small" *ngIf="filterActive" (click)="filterActive = ''; loadTemplates()" class="link-btn">Reset</button>
+            </div>
+            <nz-select [(ngModel)]="filterActive" (ngModelChange)="loadTemplates()" nzPlaceHolder="All Status" class="w-full">
               <nz-option nzValue="" nzLabel="All Status"></nz-option>
               <nz-option nzValue="true" nzLabel="Active Only"></nz-option>
               <nz-option nzValue="false" nzLabel="Inactive Only"></nz-option>
             </nz-select>
           </div>
-          <div class="filter-field clear-box" *ngIf="hasActiveFilters">
-            <button nz-button (click)="clearFilters()" class="clear-filter-btn">
-              <i nz-icon nzType="clear"></i> Clear
-            </button>
-          </div>
-          <div class="filter-field add-btn-box">
-            <button nz-button class="btn-primary-gradient" routerLink="/admin/document-templates/new">
-              <i nz-icon nzType="plus"></i> Add Template
-            </button>
+
+          <!-- 4. Actions & Count Pill -->
+          <div class="filter-col filter-col-actions">
+            <div class="actions-wrapper">
+              <button nz-button class="btn-primary-gradient" routerLink="/admin/document-templates/new">
+                <i nz-icon nzType="plus"></i> Add New Template
+              </button>
+              <button nz-button nzType="default" (click)="clearFilters()" *ngIf="hasActiveFilters" nz-tooltip="Reset All Filters" class="btn-reset">
+                <i nz-icon nzType="reload"></i>
+              </button>
+              <span class="records-pill">
+                <i nz-icon nzType="file-text"></i> {{ totalElements }} Templates Available
+              </span>
+            </div>
           </div>
         </div>
-      </nz-card>
+      </div>
 
-      <!-- Table Card -->
-      <div class="table-container">
-        <div class="table-header">
-          <div class="table-title">
-            <i nz-icon nzType="file-text" class="title-icon"></i>
-            <span>Document Templates</span>
-            <span class="table-count">{{ totalElements }} records</span>
+      <!-- Table Card matching Document Hub -->
+      <div class="dh-table-card">
+        <div class="table-card-header">
+          <div class="table-card-title">
+            <i nz-icon nzType="file-word" class="card-title-icon"></i>
+            <span>Letter Templates & Document Formats</span>
+            <span class="table-count-badge">{{ totalElements }} records</span>
+          </div>
+          <div class="table-card-hint">
+            Configure dynamic HTML templates with placeholders (e.g. <code>{{ '{{employee_name}}' }}</code>) to auto-generate PDF letters.
           </div>
         </div>
 
@@ -99,9 +121,12 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
             <div class="empty-icon-wrapper">
               <i nz-icon nzType="file-text" class="empty-icon"></i>
             </div>
-            <h3>No templates found</h3>
-            <p *ngIf="hasActiveFilters">Try adjusting your search or filter criteria</p>
-            <p *ngIf="!hasActiveFilters">No document templates available in the system</p>
+            <h3>No letter templates found</h3>
+            <p *ngIf="hasActiveFilters">Try adjusting your search keyword or type filter.</p>
+            <p *ngIf="!hasActiveFilters">No document templates available in the system yet.</p>
+            <button nz-button nzType="primary" class="btn-primary-gradient" routerLink="/admin/document-templates/new" style="margin-top: 8px;">
+              <i nz-icon nzType="plus"></i> Create First Template
+            </button>
           </div>
         </ng-template>
 
@@ -115,7 +140,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
           (nzPageSizeChange)="onPageSizeChange($event)"
           nzShowSizeChanger
           [nzPageSizeOptions]="[10, 20, 50]"
-          [nzScroll]="{ x: '800px' }"
+          [nzScroll]="{ y: 'calc(100vh - 275px)', x: '800px' }"
           [nzNoResult]="emptyTemplate"
           class="theme-table"
           [nzLoading]="isLoading">
@@ -127,7 +152,7 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
               <th>Description</th>
               <th nzWidth="140px" class="th-center">Status</th>
               <th nzWidth="160px">Created At</th>
-              <th nzWidth="100px" class="th-center">Actions</th>
+              <th nzWidth="130px" class="th-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -135,7 +160,9 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
               <td class="td-center row-num">{{ (pageIndex * pageSize) + i + 1 }}</td>
               <td>
                 <div class="tpl-name-wrapper">
-                  <span class="tpl-icon"><i nz-icon nzType="file-word" nzTheme="outline"></i></span>
+                  <div class="tpl-icon-box">
+                    <i nz-icon nzType="file-word"></i>
+                  </div>
                   <div class="tpl-info">
                     <span class="template-name">{{ tpl.templateName }}</span>
                     <span class="template-code">{{ tpl.templateType }}</span>
@@ -166,14 +193,14 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
               </td>
               <td class="td-center" (click)="$event.stopPropagation()">
                 <div class="row-actions-cell">
-                  <button nz-button nzType="text" nz-tooltip="Preview Template (PDF)" (click)="openPreview(tpl)" class="action-btn preview-btn">
+                  <button nz-button nzType="link" nzSize="small" nz-tooltip="Preview Template (PDF)" (click)="openPreview(tpl)" class="action-btn preview-btn">
                     <i nz-icon nzType="eye"></i>
                   </button>
-                  <button nz-button nzType="text" nz-tooltip="Edit Template" [routerLink]="['/admin/document-templates', tpl.id, 'edit']" class="action-btn edit-btn">
+                  <button nz-button nzType="link" nzSize="small" nz-tooltip="Edit Template" [routerLink]="['/admin/document-templates', tpl.id, 'edit']" class="action-btn edit-btn">
                     <i nz-icon nzType="edit"></i>
                   </button>
-                  <button nz-button nzType="text" [nz-tooltip]="tpl.active ? 'Deactivate' : 'Activate'" (click)="toggleActive(tpl)" class="action-btn toggle-btn">
-                    <i nz-icon [nzType]="tpl.active ? 'stop' : 'check-circle'"></i>
+                  <button nz-button nzType="link" nzDanger nzSize="small" nz-tooltip="Delete Template" (click)="deleteTemplate(tpl)" class="action-btn delete-btn">
+                    <i nz-icon nzType="delete"></i>
                   </button>
                 </div>
               </td>
@@ -194,257 +221,327 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
   styles: [`
     /* ── Page Enter Animation ── */
     @keyframes page-enter {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
     .template-list-container.page-enter {
-      animation: page-enter 0.35s ease-out;
-    }
-    .pp-sub-nav {
-      display: flex;
-      gap: 2px;
-      margin-bottom: 12px;
-      background: #f0f4ff;
-      border-radius: 10px;
-      padding: 4px;
-      border: 1px solid #e0e7ff;
-    }
-    .pp-nav-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #6c757d;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-    .pp-nav-item i { font-size: 16px; width: 16px; display: inline-flex; align-items: center; justify-content: center; }
-    .pp-nav-item:hover { background: rgba(31,61,110,0.06); color: #1f3d6e; }
-    .pp-nav-item.active {
-      background: #ffffff;
-      color: #1f3d6e;
-      box-shadow: 0 2px 8px rgba(31,61,110,0.1);
-    }
-    .pp-nav-item.active i { color: #1f3d6e; }
-
-    .btn-primary-gradient {
-      height: 34px !important;
-      padding: 0 18px !important;
-      font-size: 13px !important;
-      font-weight: 600 !important;
-      border: none !important;
-      border-radius: 8px !important;
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
-      color: #fff !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      transition: all 0.2s ease !important;
-      letter-spacing: 0.3px !important;
-      box-shadow: 0 2px 8px rgba(67,97,238,0.3) !important;
-    }
-    .btn-primary-gradient:hover {
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 14px rgba(67,97,238,0.4) !important;
+      animation: page-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* ── Scrollbar Styling ── */
-    .template-list-container ::-webkit-scrollbar { width: 6px; height: 6px; }
-    .template-list-container ::-webkit-scrollbar-track { background: transparent; }
-    .template-list-container ::-webkit-scrollbar-thumb { background: rgba(31,61,110,0.2); border-radius: 3px; }
-    .template-list-container ::-webkit-scrollbar-thumb:hover { background: rgba(31,61,110,0.35); }
-
-    :host { display: block; height: 100%; }
-    .template-list-container {
-      width: 100%;
-      padding: 12px 16px;
-      height: 100%;
-      overflow-y: auto;
+    :host {
       display: flex;
       flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .template-list-container {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .w-full { width: 100%; }
+
+    /* ── FILTER CARD (GLASSY SINGLE LINE) ── */
+    .dh-filter-card {
+      background: rgba(248, 250, 252, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      border-radius: 10px;
+      padding: 8px 14px;
+      box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.03);
+      flex-shrink: 0;
+    }
+
+    .filter-single-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .filter-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .filter-col-search { flex: 2; min-width: 220px; }
+    .filter-col-type { flex: 1.2; min-width: 180px; }
+    .filter-col-status { width: 140px; flex-shrink: 0; }
+    .filter-col-actions {
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .actions-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 30px;
+    }
+
+    .dh-field-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .label-with-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .label-with-actions .dh-field-label { margin-bottom: 0; }
+    .link-btn {
+      font-size: 10.5px !important;
+      padding: 0 !important;
+      height: auto !important;
+      color: #2563eb !important;
+    }
+
+    .btn-reset {
+      height: 30px !important;
+      padding: 0 8px !important;
+      border-radius: 6px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    :host ::ng-deep .search-input-group input,
+    :host ::ng-deep .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+      border-radius: 6px !important;
+      border: 1px solid #cbd5e1 !important;
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(4px);
+      height: 30px !important;
+      font-size: 12px !important;
+    }
+    :host ::ng-deep .search-input-group input:hover,
+    :host ::ng-deep .ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector {
+      border-color: #2563eb !important;
+    }
+
+    .records-pill {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #1e3a8a;
+      background: rgba(239, 246, 255, 0.85);
+      backdrop-filter: blur(6px);
+      padding: 3px 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(191, 219, 254, 0.8);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      height: 28px;
       box-sizing: border-box;
     }
 
-    .pp-controls-card {
-      border-radius: 10px !important;
-      border: 1px solid #e8eaed !important;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-      margin-bottom: 12px;
-      width: 100% !important;
-      background: #fff;
+    /* ── PRIMARY GRADIENT BUTTON ── */
+    .btn-primary-gradient {
+      height: 30px !important;
+      padding: 0 14px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      border: none !important;
+      border-radius: 6px !important;
+      background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+      color: #fff !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      transition: all 0.2s ease !important;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
     }
-    :host ::ng-deep .pp-controls-card .ant-card-body { padding: 10px 14px !important; }
-    .filter-field-wrapper { min-width: 0; }
-    .filter-field { min-width: 0; }
-    .filter-field .ant-select { width: 100%; }
-    :host ::ng-deep .filter-select .ant-select-selector,
-    :host ::ng-deep .search-input-group input {
-      border-radius: 8px !important;
-      border: 1px solid #e2e5ea !important;
-      height: 34px !important;
-    }
-    :host ::ng-deep .filter-select .ant-select-selector:hover,
-    :host ::ng-deep .search-input-group input:hover {
-      border-color: #1f3d6e !important;
-    }
-    .filter-actions-col { display: flex; align-items: center; }
-    .clear-filter-btn {
-      font-size: 13px;
-      height: 34px;
-      padding: 0 14px;
-      border-radius: 8px;
-      border: 1px solid #e2e5ea;
-      background: #f8fafc;
-      color: #64748b;
-    }
-    .clear-filter-btn:hover {
-      background: #f1f5f9;
-      color: #1e293b;
+    .btn-primary-gradient:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
     }
 
-    .filter-controls-row {
+    /* ── TABLE CARD CONTAINER (GLASSY & FLEX EXPAND) ── */
+    .dh-table-card {
+      flex: 1;
+      min-height: 0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-card-header {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: rgba(248, 250, 252, 0.8);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(226, 232, 240, 0.85);
       flex-wrap: wrap;
-      gap: 10px;
-    }
-    .filter-field.search-box {
-      flex: 1;
-      min-width: 200px;
-    }
-    .filter-field.select-box {
-      width: 160px;
-    }
-    .filter-field.clear-box {
-      margin-left: auto;
-    }
-    .filter-field.add-btn-box {
-      margin-left: auto;
-    }
-    .filter-field.clear-box + .filter-field.add-btn-box {
-      margin-left: 0;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
-    .table-container {
-      background: #fff;
+    .table-card-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #1e3a8a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-title-icon { font-size: 15px; color: #2563eb; }
+
+    .table-count-badge {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 1px 7px;
       border-radius: 10px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      border: 1px solid #e8eaed;
+    }
+
+    .table-card-hint {
+      font-size: 10.5px;
+      color: #64748b;
+    }
+    .table-card-hint code {
+      background: #e2e8f0;
+      color: #1e40af;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    /* ── THEME TABLE ── */
+    .theme-table {
       flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
-    .table-header {
+    :host ::ng-deep .theme-table .ant-spin-nested-loading {
+      flex: 1;
+      min-height: 0;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-      border-bottom: 1px solid #e8eaed;
-      background: #ffffff;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+    }
+    :host ::ng-deep .theme-table .ant-spin-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+    }
+    :host ::ng-deep .theme-table .ant-table {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+    }
+    :host ::ng-deep .theme-table .ant-table-container {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    :host ::ng-deep .theme-table .ant-table-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto !important;
+    }
+    :host ::ng-deep .theme-table .ant-table-pagination.ant-pagination {
+      margin: 6px 12px !important;
       flex-shrink: 0;
     }
-    .table-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1f3d6e;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .table-title .title-icon { font-size: 16px; color: #4361ee; }
-    .table-count {
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      background: #f0f4ff;
-      padding: 2px 8px;
-      border-radius: 12px;
-      border: 1px solid #e0e7ff;
-    }
 
-    .theme-table { width: 100%; }
     :host ::ng-deep .theme-table .ant-table-thead > tr > th {
-      background: #f8f9fc !important;
-      border-bottom: 2px solid #1f3d6e !important;
-      font-size: 11px !important;
+      background: rgba(248, 250, 252, 0.85) !important;
+      border-bottom: 2px solid #2563eb !important;
+      font-size: 10.5px !important;
       font-weight: 700 !important;
-      color: #1f3d6e !important;
+      color: #1e3a8a !important;
       text-transform: uppercase !important;
-      letter-spacing: 0.8px !important;
-      padding: 8px 12px !important;
+      letter-spacing: 0.5px !important;
+      padding: 8px 10px !important;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr > td {
-      padding: 10px 12px !important;
-      font-size: 13px !important;
-      border-bottom: 1px solid #f0f2f5 !important;
+      padding: 8px 10px !important;
+      font-size: 12px !important;
+      border-bottom: 1px solid rgba(241, 245, 249, 0.8) !important;
       vertical-align: middle !important;
+      background: transparent !important;
     }
     :host ::ng-deep .theme-table .ant-table-tbody > tr:hover > td {
-      background: rgba(31,61,110,0.04) !important;
+      background: rgba(37, 99, 235, 0.04) !important;
     }
 
-    .th-center, .td-center {
-      text-align: center !important;
-    }
-    .row-num {
-      font-size: 12px;
-      font-weight: 600;
-      color: #64748b;
-    }
+    .th-center, .td-center { text-align: center !important; }
+    .row-num { font-size: 10.5px; font-weight: 600; color: #94a3b8; }
 
     .tpl-name-wrapper {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
-    .tpl-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      background: #f0f4ff;
-      color: #4361ee;
+    .tpl-icon-box {
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #dbeafe;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 14px;
       flex-shrink: 0;
-      border: 1px solid #e0e7ff;
     }
-    .tpl-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .template-name {
-      font-weight: 600;
-      color: #1e293b;
-      font-size: 13px;
-      line-height: 1.3;
-    }
-    .template-code {
-      font-size: 11px;
-      color: #64748b;
-      margin-top: 1px;
-    }
+    .tpl-info { display: flex; flex-direction: column; gap: 0px; }
+    .template-name { font-weight: 600; color: #0f172a; font-size: 12.5px; }
+    .template-code { font-size: 10px; color: #64748b; }
 
     .type-badge {
-      font-size: 11px !important;
+      font-size: 10px !important;
       font-weight: 600 !important;
-      padding: 2px 8px !important;
-      border-radius: 6px !important;
+      border-radius: 4px !important;
+      padding: 0 6px !important;
     }
 
     .desc-text {
-      font-size: 12px;
+      font-size: 11.5px;
       color: #475569;
-      max-width: 260px;
+      max-width: 280px;
       display: block;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -454,111 +551,54 @@ import { TemplatePreviewModalComponent } from './template-preview-modal.componen
     .status-cell {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
-    .status-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #94a3b8;
-    }
-    .status-label.active-text {
-      color: #16a34a;
-    }
+    .status-label { font-size: 10.5px; font-weight: 600; color: #94a3b8; }
+    .status-label.active-text { color: #16a34a; }
 
-    .date-text {
-      font-size: 12px;
-      color: #64748b;
-      white-space: nowrap;
-    }
+    .date-text { font-size: 11px; color: #64748b; white-space: nowrap; }
 
     .row-actions-cell {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      gap: 2px;
     }
     .action-btn {
-      width: 28px !important;
-      height: 28px !important;
-      padding: 0 !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      border-radius: 6px !important;
-      color: #64748b !important;
-      transition: all 0.15s ease !important;
+      padding: 0 4px !important;
+      height: 24px !important;
+      font-size: 12px !important;
     }
-    .action-btn:hover {
-      background: #f0f4ff !important;
-      color: #1f3d6e !important;
-    }
-    .preview-btn:hover {
-      color: #0284c7 !important;
-      background: #e0f2fe !important;
-    }
-    .edit-btn:hover {
-      color: #4361ee !important;
-    }
-    .toggle-btn:hover {
-      color: #e11d48 !important;
-    }
+    .preview-btn { color: #2563eb !important; }
+    .edit-btn { color: #0284c7 !important; }
+    .delete-btn { color: #ef4444 !important; }
 
     .empty-state-content {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 40px 16px;
+      gap: 6px;
+      padding: 28px 16px;
       text-align: center;
       color: #64748b;
     }
     .empty-icon-wrapper {
-      width: 48px;
-      height: 48px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
-      background: #f0f4ff;
+      background: #eff6ff;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #4361ee;
-      font-size: 24px;
-      margin-bottom: 4px;
+      color: #2563eb;
+      font-size: 20px;
+      margin-bottom: 2px;
     }
-    .empty-icon-wrapper .empty-icon { font-size: 28px; color: #4361ee; }
-    .empty-state-content h3 { font-size: 15px; font-weight: 600; color: #334155; margin: 0; }
-    .empty-state-content p { font-size: 13px; color: #64748b; margin: 0; max-width: 320px; }
+    .empty-state-content h3 { font-size: 13.5px; font-weight: 600; color: #334155; margin: 0; }
+    .empty-state-content p { font-size: 11.5px; color: #64748b; margin: 0; max-width: 320px; }
 
-    .theme-table .ant-table-pagination {
-      margin: 12px 16px !important;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    @media (max-width: 768px) {
-      .filter-field { min-width: 140px; }
-      .table-header { flex-direction: column; align-items: flex-start; }
-      .template-list-container { padding: 8px; }
-    }
-
-    /* ── Switch Active Color ── */
-    ::ng-deep .ant-switch-checked {
-      background-color: #1f3d6e !important;
-    }
-
-    /* ── Primary Button Gradient ── */
-    button[nz-button][nzType="primary"] {
-      background: linear-gradient(135deg, #4361ee, #3a0ca3) !important;
-      border: none !important;
-      box-shadow: 0 2px 6px rgba(67,97,238,0.3) !important;
-      transition: all 0.2s ease !important;
-    }
-    button[nz-button][nzType="primary"]:hover {
-      box-shadow: 0 4px 12px rgba(67,97,238,0.45) !important;
-      transform: translateY(-1px);
-    }
-    button[nz-button][nzType="primary"]:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 4px rgba(67,97,238,0.3) !important;
+    :host ::ng-deep .ant-switch-checked {
+      background-color: #2563eb !important;
     }
   `]
 })

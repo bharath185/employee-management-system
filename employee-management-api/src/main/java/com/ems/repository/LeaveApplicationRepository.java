@@ -37,6 +37,9 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
     @Query("SELECT COUNT(la) > 0 FROM LeaveApplication la WHERE la.employee.id = :employeeId AND la.status IN ('PENDING','APPROVED') AND la.fromDate <= :toDate AND la.toDate >= :fromDate")
     boolean existsOverlapping(@Param("employeeId") Long employeeId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
+    @Query("SELECT la FROM LeaveApplication la WHERE la.employee.id = :employeeId AND la.status IN ('PENDING','APPROVED') AND la.fromDate <= :date AND la.toDate >= :date")
+    List<LeaveApplication> findOverlappingForEmployeeAndDate(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
+
     @Query("SELECT la FROM LeaveApplication la WHERE la.fromDate >= :from AND la.toDate <= :to ORDER BY la.employee.employeeCode, la.fromDate")
     List<LeaveApplication> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

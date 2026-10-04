@@ -142,6 +142,7 @@ export interface LeaveType {
   annualEntitlement: number;
   isCarryForward: boolean;
   isActive: boolean;
+  priority?: number;
 }
 
 export interface LeaveBalance {
@@ -156,6 +157,8 @@ export interface LeaveBalance {
   taken: number;
   encashed: number;
   balance: number;
+  lopDays?: number;
+  isLop?: boolean;
 }
 
 export interface LeaveApplication {

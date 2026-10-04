@@ -52,8 +52,7 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
   { code: 'YES_NO', name: 'Yes/No', count: null, icon: 'bi bi-toggle2-on' },
   { code: 'LANGUAGE', name: 'Language', count: null, icon: 'bi bi-translate' },
   { code: 'DOCUMENT_TYPE', name: 'Document Type', count: null, icon: 'bi bi-file-earmark-text' },
-  { code: 'OCCUPATION_SUB', name: 'Occupation Sub', count: null, icon: 'bi bi-diagram-3-fill' },
-  { code: 'DEPARTMENT', name: 'Department', count: null, icon: 'bi bi-hdd-stack-fill' }
+  { code: 'OCCUPATION_SUB', name: 'Occupation Sub', count: null, icon: 'bi bi-diagram-3-fill' }
 ];
 
 @Component({
@@ -175,9 +174,9 @@ const MASTER_CATEGORIES: CategoryInfo[] = [
             #fieldTable 
             [nzData]="filteredFieldConfigs" 
             [nzFrontPagination]="true" 
-            [nzPageSize]="15"
+            [nzPageSize]="10"
             [nzShowSizeChanger]="true" 
-            [nzPageSizeOptions]="[15, 30, 50, 100]"
+            [nzPageSizeOptions]="[10, 20, 50, 100]"
             [nzLoading]="isLoading"
             nzBordered 
             nzSize="small" 

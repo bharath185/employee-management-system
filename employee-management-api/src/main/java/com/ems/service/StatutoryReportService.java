@@ -571,10 +571,19 @@ public class StatutoryReportService {
     // 3. FORM XXV REGISTER OF LEAVE (form-xxv-sampleleave.xlsx)
     // =========================================================================
 
-    public String generateLeaveRegister(Integer year) {
+    public String generateLeaveRegister(Integer year, String employeeIds) {
         Company company = getCompany();
         List<LeaveType> leaveTypes = leaveTypeRepository.findByIsActiveTrue();
         List<Employee> employees = employeeRepository.findAllLiveEmployees();
+
+        Set<Long> filterIds = null;
+        if (employeeIds != null && !employeeIds.isEmpty()) {
+            Set<Long> parsed = new java.util.HashSet<>();
+            for (String id : employeeIds.split(",")) {
+                try { parsed.add(Long.parseLong(id.trim())); } catch (Exception ignored) {}
+            }
+            filterIds = parsed;
+        }
 
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html><html><head><meta charset='UTF-8'>");
@@ -599,6 +608,7 @@ public class StatutoryReportService {
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
         for (Employee emp : employees) {
+            if (filterIds != null && !filterIds.contains(emp.getId())) continue;
             List<LeaveBalance> empBalances = leaveBalanceRepository.findByEmployeeIdAndYear(emp.getId(), year);
             List<LeaveApplication> empApps = leaveApplicationRepository.findByEmployeeIdAndYear(emp.getId(), year);
 
