@@ -44,7 +44,7 @@ export class AuthService {
     return this.http.post<APIResponse<LoginResponse>>(`${this.baseUrl}/auth/login`, credentials)
       .pipe(
         tap(response => {
-          if (response.success && response.data) {
+          if (response?.success && response?.data) {
             this.storeSession(response.data);
           }
         })
@@ -125,7 +125,7 @@ export class AuthService {
       refreshToken: this.getRefreshToken()
     }).pipe(
       tap(response => {
-        if (response.success && response.data) {
+        if (response?.success && response?.data) {
           this.storeSession(response.data);
         }
       })

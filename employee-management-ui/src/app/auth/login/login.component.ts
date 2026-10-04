@@ -481,11 +481,15 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.loginForm.value).subscribe({
       next: (response) => {
         this.isLoading = false;
-        if (response.success) this.navigateToHome();
+        if (response?.success) {
+          this.navigateToHome();
+        } else {
+          this.errorMessage = response?.message || 'Invalid username or password';
+        }
       },
       error: (error) => {
         this.isLoading = false;
-        this.errorMessage = error.message || 'Invalid username or password';
+        this.errorMessage = typeof error === 'string' ? error : (error?.message || 'Invalid username or password');
       }
     });
   }
