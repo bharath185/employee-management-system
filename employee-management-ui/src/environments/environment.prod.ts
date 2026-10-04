@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://prigenix-ems-api.loca.lt/api/v1'
+  apiUrl: 'https://ems.prigenix.com/api/v1'
 };
