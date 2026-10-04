@@ -98,19 +98,14 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedAdminUser() {
-        if (!userRepository.existsByUsername("ADMIN")) {
-            User admin = User.builder()
-                .username("ADMIN")
-                .password(passwordEncoder.encode("Admin@123"))
-                .role("ADMIN")
-                .enabled(true)
-                .accountNonLocked(true)
-                .build();
-            userRepository.save(admin);
-            log.info("Default ADMIN user created with username: ADMIN");
-        } else {
-            log.debug("ADMIN user already exists, skipping seed");
-        }
+        User admin = userRepository.findByUsernameIgnoreCase("ADMIN")
+            .orElseGet(() -> User.builder().username("ADMIN").build());
+        admin.setPassword(passwordEncoder.encode("Admin@123"));
+        admin.setRole("ADMIN");
+        admin.setEnabled(true);
+        admin.setAccountNonLocked(true);
+        userRepository.save(admin);
+        log.info("Default ADMIN user ensured with password: Admin@123");
     }
 
     private void seedMasterData() {
