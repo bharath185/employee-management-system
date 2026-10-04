@@ -1,35 +1,28 @@
 services:
+  # Spring Boot API Backend Service
   - type: web
-    name: employee-management-api
-    env: docker
-    region: singapore
-    plan: free
+    name: ems-backend-api
+    runtime: docker
     rootDir: employee-management-api
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: Dockerfile
+    plan: free
     envVars:
       - key: PORT
         value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
       - key: SPRING_DATASOURCE_URL
-        sync: false
-      - key: SPRING_DATASOURCE_USERNAME
-        sync: false
-      - key: SPRING_DATASOURCE_PASSWORD
-        sync: false
-      - key: SPRING_DATASOURCE_DRIVER
-        value: org.postgresql.Driver
-      - key: SPRING_JPA_DIALECT
-        value: org.hibernate.dialect.PostgreSQLDialect
-      - key: APP_BASE_URL
-        sync: false
-      - key: CORS_ORIGINS
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: UPLOAD_DIR
-        value: /tmp/uploads/photos
-      - key: UPLOAD_DIR_DOCS
-        value: /tmp/uploads/documents
-      - key: UPLOAD_DIR_COMPANY
-        value: /tmp/uploads/company
-      - key: LOG_LEVEL
-        value: INFO
+        fromDatabase:
+          name: ems-postgres-db
+          property: connectionString
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: APP_DATA_SEED_ON_STARTUP
+        value: "true"
+
+databases:
+  # PostgreSQL Cloud Database
+  - name: ems-postgres-db
+    databaseName: employee_management
+    user: ems_user
+    plan: free
