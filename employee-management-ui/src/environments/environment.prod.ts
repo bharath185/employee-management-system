@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://ems.prigenix.com/api/v1'
+  apiUrl: 'https://personnel-excluded-polar-seating.trycloudflare.com/api/v1'
 };
