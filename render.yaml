@@ -1,5 +1,5 @@
 services:
-  # Spring Boot API Backend Service
+  # Spring Boot API Backend Service connected to Neon Cloud Database
   - type: web
     name: ems-backend-api
     runtime: docker
@@ -10,19 +10,14 @@ services:
       - key: PORT
         value: 8080
       - key: SPRING_PROFILES_ACTIVE
-        value: production
+        value: neon
       - key: SPRING_DATASOURCE_URL
-        fromDatabase:
-          name: ems-postgres-db
-          property: connectionString
+        value: jdbc:postgresql://ep-young-glitter-aps6eefy-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require
+      - key: SPRING_DATASOURCE_USERNAME
+        value: neondb_owner
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: npg_wK1Ivjou5LBh
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
       - key: APP_DATA_SEED_ON_STARTUP
         value: "true"
-
-databases:
-  # PostgreSQL Cloud Database
-  - name: ems-postgres-db
-    databaseName: employee_management
-    user: ems_user
-    plan: free
