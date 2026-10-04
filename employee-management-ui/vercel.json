@@ -2,7 +2,7 @@
   "buildCommand": "npm install && npm run build -- --configuration=production",
   "outputDirectory": "dist/employee-management-ui/browser",
   "rewrites": [
-    { "source": "/api/v1/:path*", "destination": "https://ems-backend-api.onrender.com/api/v1/:path*" },
+    { "source": "/api/v1/:path*", "destination": "https://ems-backend-api-rneh.onrender.com/api/v1/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
