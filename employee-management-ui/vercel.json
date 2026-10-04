@@ -1,5 +1,8 @@
 {
   "buildCommand": "npm install && npm run build -- --configuration=production",
   "outputDirectory": "dist/employee-management-ui/browser",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/v1/:path*", "destination": "https://prigenix-ems-api.loca.lt/api/v1/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
