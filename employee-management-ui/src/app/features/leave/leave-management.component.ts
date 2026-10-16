@@ -270,7 +270,7 @@ import { saveAs } from 'file-saver';
                     <td class="text-center">{{ row.doj || '—' }}</td>
                     
                     <!-- Vintage in Months -->
-                    <td class="text-center col-shaded font-bold">{{ row.vintageInMonths != null ? row.vintageInMonths : '—' }}</td>
+                    <td class="text-center col-shaded font-bold">{{ row.vintageMonths != null ? row.vintageMonths : (row.vintageInMonths != null ? row.vintageInMonths : '—') }}</td>
                     
                     <!-- CL Opening (Prev Month Balance) -->
                     <td class="text-center">

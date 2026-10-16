@@ -185,6 +185,7 @@ export interface MonthlyLeaveBalanceDTO {
   department?: string;
   gender?: string;
   doj?: string;
+  vintageMonths?: number;
   vintageInMonths?: number;
   year: number;
   month: number;

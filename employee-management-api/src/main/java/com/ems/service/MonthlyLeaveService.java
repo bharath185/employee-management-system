@@ -39,7 +39,7 @@ public class MonthlyLeaveService {
     private final LeaveBalanceRepository leaveBalanceRepository;
 
     @Transactional
-    public List<MonthlyLeaveBalanceDTO> getMonthlyBalances(int year, int month) {
+    public synchronized List<MonthlyLeaveBalanceDTO> getMonthlyBalances(int year, int month) {
         List<MonthlyLeaveBalance> existing = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
         List<Employee> allEmployees = employeeRepository.findAllLiveEmployees();
         if (allEmployees.isEmpty()) {
@@ -48,15 +48,21 @@ public class MonthlyLeaveService {
 
         Set<Long> existingEmpIds = existing.stream()
                 .map(m -> m.getEmployee().getId())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
 
         boolean hasNew = false;
         for (Employee emp : allEmployees) {
-            if (!existingEmpIds.contains(emp.getId())) {
-                MonthlyLeaveBalance newRecord = initializeRecordForEmployee(emp, year, month);
-                monthlyLeaveBalanceRepository.save(newRecord);
-                existing.add(newRecord);
-                hasNew = true;
+            if (emp != null && emp.getId() != null && !existingEmpIds.contains(emp.getId())) {
+                existingEmpIds.add(emp.getId());
+                Optional<MonthlyLeaveBalance> already = monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(emp.getId(), year, month);
+                if (already.isPresent()) {
+                    existing.add(already.get());
+                } else {
+                    MonthlyLeaveBalance newRecord = initializeRecordForEmployee(emp, year, month);
+                    monthlyLeaveBalanceRepository.save(newRecord);
+                    existing.add(newRecord);
+                    hasNew = true;
+                }
             }
         }
 
