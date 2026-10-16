@@ -127,38 +127,60 @@ public class MonthlyLeaveService {
     public List<MonthlyLeaveBalanceDTO> batchUpdate(List<MonthlyLeaveBalanceDTO> dtoList) {
         if (dtoList == null || dtoList.isEmpty()) return Collections.emptyList();
 
-        List<MonthlyLeaveBalance> updatedList = new ArrayList<>();
+        List<Long> ids = dtoList.stream()
+                .map(MonthlyLeaveBalanceDTO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        Map<Long, MonthlyLeaveBalance> entityMap = new HashMap<>();
+        if (!ids.isEmpty()) {
+            monthlyLeaveBalanceRepository.findAllById(ids).forEach(e -> entityMap.put(e.getId(), e));
+        }
+
+        List<MonthlyLeaveBalance> toSave = new ArrayList<>();
 
         for (MonthlyLeaveBalanceDTO dto : dtoList) {
-            Optional<MonthlyLeaveBalance> opt = Optional.empty();
+            MonthlyLeaveBalance entity = null;
             if (dto.getId() != null) {
-                opt = monthlyLeaveBalanceRepository.findById(dto.getId());
+                entity = entityMap.get(dto.getId());
             } else if (dto.getEmployeeId() != null && dto.getYear() != null && dto.getMonth() != null) {
-                opt = monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(dto.getEmployeeId(), dto.getYear(), dto.getMonth());
+                entity = monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(dto.getEmployeeId(), dto.getYear(), dto.getMonth()).orElse(null);
             }
 
-            if (opt.isPresent()) {
-                MonthlyLeaveBalance entity = opt.get();
-                if (dto.getClOpening() != null) entity.setClOpening(dto.getClOpening());
-                if (dto.getPlOpening() != null) entity.setPlOpening(dto.getPlOpening());
-                if (dto.getClAdded() != null) entity.setClAdded(dto.getClAdded());
-                if (dto.getPlAdded() != null) entity.setPlAdded(dto.getPlAdded());
-                if (dto.getClAvailed() != null) entity.setClAvailed(dto.getClAvailed());
-                if (dto.getPlAvailed() != null) entity.setPlAvailed(dto.getPlAvailed());
-                if (dto.getLop() != null) entity.setLop(dto.getLop());
-                if (dto.getLastWorkingDay() != null) entity.setLastWorkingDay(dto.getLastWorkingDay());
-                if (dto.getRemarks() != null) entity.setRemarks(dto.getRemarks());
+            if (entity != null) {
+                boolean changed = false;
 
-                entity.calculateValues();
-                updatedList.add(monthlyLeaveBalanceRepository.save(entity));
+                if (dto.getClOpening() != null && !Objects.equals(entity.getClOpening(), dto.getClOpening())) { entity.setClOpening(dto.getClOpening()); changed = true; }
+                if (dto.getPlOpening() != null && !Objects.equals(entity.getPlOpening(), dto.getPlOpening())) { entity.setPlOpening(dto.getPlOpening()); changed = true; }
+                if (dto.getClAdded() != null && !Objects.equals(entity.getClAdded(), dto.getClAdded())) { entity.setClAdded(dto.getClAdded()); changed = true; }
+                if (dto.getPlAdded() != null && !Objects.equals(entity.getPlAdded(), dto.getPlAdded())) { entity.setPlAdded(dto.getPlAdded()); changed = true; }
+                if (dto.getClAvailed() != null && !Objects.equals(entity.getClAvailed(), dto.getClAvailed())) { entity.setClAvailed(dto.getClAvailed()); changed = true; }
+                if (dto.getPlAvailed() != null && !Objects.equals(entity.getPlAvailed(), dto.getPlAvailed())) { entity.setPlAvailed(dto.getPlAvailed()); changed = true; }
+                if (dto.getLop() != null && !Objects.equals(entity.getLop(), dto.getLop())) { entity.setLop(dto.getLop()); changed = true; }
+                if (dto.getLastWorkingDay() != null && !Objects.equals(entity.getLastWorkingDay(), dto.getLastWorkingDay())) { entity.setLastWorkingDay(dto.getLastWorkingDay()); changed = true; }
+                if (dto.getRemarks() != null && !Objects.equals(entity.getRemarks(), dto.getRemarks())) { entity.setRemarks(dto.getRemarks()); changed = true; }
+
+                if (changed) {
+                    entity.calculateValues();
+                    toSave.add(entity);
+                }
             }
         }
 
-        monthlyLeaveBalanceRepository.flush();
+        if (!toSave.isEmpty()) {
+            monthlyLeaveBalanceRepository.saveAll(toSave);
+            monthlyLeaveBalanceRepository.flush();
+        }
 
-        return updatedList.stream()
-                .map(MonthlyLeaveBalanceDTO::fromEntity)
-                .collect(Collectors.toList());
+        Integer year = dtoList.get(0).getYear();
+        Integer month = dtoList.get(0).getMonth();
+        if (year != null && month != null) {
+            return monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month).stream()
+                    .map(MonthlyLeaveBalanceDTO::fromEntity)
+                    .collect(Collectors.toList());
+        }
+
+        return dtoList;
     }
 
     @Transactional(readOnly = true)
@@ -462,6 +484,25 @@ public class MonthlyLeaveService {
             if (colLwd == -1) colLwd = 19;
             if (colRemarks == -1) colRemarks = 20;
 
+            List<MonthlyLeaveBalance> existingRecords = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
+            Map<Long, MonthlyLeaveBalance> recordByEmpId = new HashMap<>();
+            for (MonthlyLeaveBalance r : existingRecords) {
+                if (r.getEmployee() != null && r.getEmployee().getId() != null) {
+                    recordByEmpId.put(r.getEmployee().getId(), r);
+                }
+            }
+
+            List<Employee> allEmployees = employeeRepository.findAll();
+            Map<String, Employee> empByCode = new HashMap<>();
+            for (Employee emp : allEmployees) {
+                if (emp.getEmployeeCode() != null) {
+                    empByCode.put(emp.getEmployeeCode().trim().toUpperCase(), emp);
+                    empByCode.put(normalizeCode(emp.getEmployeeCode()), emp);
+                }
+            }
+
+            List<MonthlyLeaveBalance> recordsToSave = new ArrayList<>();
+
             for (int r = headerRowIdx + 1; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
                 if (row == null) continue;
@@ -470,28 +511,27 @@ public class MonthlyLeaveService {
                 if (empCode == null || empCode.isBlank()) continue;
 
                 String normCode = empCode.trim().toUpperCase();
-                Optional<Employee> empOpt = employeeRepository.findByEmployeeCode(normCode);
-                if (empOpt.isEmpty()) {
-                    // Try without leading zeros or with standard prefix
-                    normCode = normalizeCode(normCode);
-                    empOpt = employeeRepository.findByEmployeeCode(normCode);
+                Employee emp = empByCode.get(normCode);
+                if (emp == null) {
+                    emp = empByCode.get(normalizeCode(normCode));
                 }
 
-                if (empOpt.isEmpty()) {
+                if (emp == null) {
                     errors.add("Row " + (r + 1) + ": Employee not found for code '" + empCode + "'");
                     continue;
                 }
 
-                Employee emp = empOpt.get();
-                MonthlyLeaveBalance record = monthlyLeaveBalanceRepository
-                        .findByEmployeeIdAndYearAndMonth(emp.getId(), year, month)
-                        .orElseGet(() -> MonthlyLeaveBalance.builder()
-                                .employee(emp)
-                                .year(year)
-                                .month(month)
-                                .build());
-
-                boolean isNew = record.getId() == null;
+                MonthlyLeaveBalance record = recordByEmpId.get(emp.getId());
+                boolean isNew = false;
+                if (record == null) {
+                    record = MonthlyLeaveBalance.builder()
+                            .employee(emp)
+                            .year(year)
+                            .month(month)
+                            .build();
+                    isNew = true;
+                    recordByEmpId.put(emp.getId(), record);
+                }
 
                 Double clOpen = getCellNumeric(row.getCell(colClOpen));
                 Double plOpen = getCellNumeric(row.getCell(colPlOpen));
@@ -514,9 +554,14 @@ public class MonthlyLeaveService {
                 if (remarks != null) record.setRemarks(remarks);
 
                 record.calculateValues();
-                monthlyLeaveBalanceRepository.save(record);
+                recordsToSave.add(record);
 
                 if (isNew) imported++; else updated++;
+            }
+
+            if (!recordsToSave.isEmpty()) {
+                monthlyLeaveBalanceRepository.saveAll(recordsToSave);
+                monthlyLeaveBalanceRepository.flush();
             }
         }
 
