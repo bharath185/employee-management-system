@@ -18,7 +18,7 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
 
-import { LeaveService } from '../../core/services/leave.service';
+import { LeaveService, MonthlyLeaveBalanceDTO } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
 import { HolidayService } from '../../core/services/holiday.service';
@@ -118,90 +118,237 @@ import { saveAs } from 'file-saver';
 
         <nz-tab nzTitle="Leave Balances">
           <div class="leave-card">
-            <div class="tab-filters">
-              <nz-select [(ngModel)]="balanceYear" (ngModelChange)="loadBalances()" class="filter-select" style="width:110px">
-                <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
-              </nz-select>
-              <nz-select [(ngModel)]="balanceEmployeeId" (ngModelChange)="loadBalances()" class="filter-select" nzPlaceHolder="All Employees" style="width:240px" nzShowSearch nzAllowClear>
-                <nz-option [nzValue]="null" nzLabel="All Employees"></nz-option>
-                <nz-option *ngFor="let e of employees" [nzValue]="e.id" [nzLabel]="e.employeeCode + ' - ' + (e.prefix ? e.prefix + '. ' : '') + (e.firstName || '') + (e.middleName ? ' ' + e.middleName : '') + (e.surname ? ' ' + e.surname : '')"></nz-option>
-              </nz-select>
-              <nz-input-group [nzPrefix]="searchBalIcon" style="width:200px">
-                <input nz-input [(ngModel)]="balanceSearchText" (ngModelChange)="applyBalanceFilter()" placeholder="Search code / name..." />
-              </nz-input-group>
-              <ng-template #searchBalIcon><i nz-icon nzType="search"></i></ng-template>
-              
-              <button nz-button [class.btn-danger-active]="showOnlyLop" class="filter-action-btn" (click)="toggleShowOnlyLop()" nz-tooltip="Filter Loss of Pay (LOP) Employees">
-                <i nz-icon nzType="warning" style="color:#ef4444;"></i>
-                <span [style.color]="showOnlyLop ? '#ef4444' : 'inherit'">LOP Only ({{ lopCount }})</span>
-              </button>
+            <!-- Filter & Action Controls Bar -->
+            <div class="monthly-header-bar">
+              <div class="filter-controls-group">
+                <!-- Year Selector -->
+                <div class="control-item">
+                  <label class="control-label">Year</label>
+                  <nz-select [(ngModel)]="selectedYear" (ngModelChange)="onMonthYearChange()" class="filter-select" style="width:95px">
+                    <nz-option *ngFor="let y of years" [nzValue]="y" [nzLabel]="y"></nz-option>
+                  </nz-select>
+                </div>
 
-              <button nz-button class="filter-action-btn" (click)="fileInput.click()" [nzLoading]="uploading"
-                      *ngIf="authService.canManageStaff()" nz-tooltip="Upload Excel file and sync to database">
-                <i nz-icon nzType="upload"></i> Upload Excel
-              </button>
-              <input #fileInput type="file" accept=".xlsx" (change)="onFileSelected($event)" style="display:none">
-              <button nz-button class="filter-action-btn" (click)="exportToExcel()" [nzLoading]="exporting"
-                      *ngIf="authService.canManageStaff()" nz-tooltip="Download Excel with current data">
-                <i nz-icon nzType="download"></i> Download Excel
-              </button>
-              <button nz-button class="filter-action-btn" (click)="downloadSample()" [nzLoading]="sampling"
-                      *ngIf="authService.canManageStaff()" nz-tooltip="Download sample Excel file">
-                <i nz-icon nzType="file"></i> Sample
-              </button>
+                <!-- Month Selector -->
+                <div class="control-item">
+                  <label class="control-label">Month</label>
+                  <nz-select [(ngModel)]="selectedMonth" (ngModelChange)="onMonthYearChange()" class="filter-select" style="width:130px">
+                    <nz-option *ngFor="let m of months" [nzValue]="m.value" [nzLabel]="m.label"></nz-option>
+                  </nz-select>
+                </div>
+
+                <!-- Department Selector -->
+                <div class="control-item">
+                  <label class="control-label">Department</label>
+                  <nz-select [(ngModel)]="selectedDepartment" (ngModelChange)="applyMonthlyFilters()" class="filter-select" style="width:150px" nzPlaceHolder="All Depts" nzAllowClear>
+                    <nz-option nzValue="" nzLabel="All Depts"></nz-option>
+                    <nz-option *ngFor="let d of uniqueDepartments" [nzValue]="d" [nzLabel]="d"></nz-option>
+                  </nz-select>
+                </div>
+
+                <!-- Gender Selector -->
+                <div class="control-item">
+                  <label class="control-label">Gender</label>
+                  <nz-select [(ngModel)]="selectedGender" (ngModelChange)="applyMonthlyFilters()" class="filter-select" style="width:105px" nzPlaceHolder="All" nzAllowClear>
+                    <nz-option nzValue="" nzLabel="All"></nz-option>
+                    <nz-option nzValue="Male" nzLabel="Male"></nz-option>
+                    <nz-option nzValue="Female" nzLabel="Female"></nz-option>
+                  </nz-select>
+                </div>
+
+                <!-- Search Input -->
+                <div class="control-item">
+                  <label class="control-label">Search</label>
+                  <nz-input-group [nzPrefix]="searchBalIcon" style="width:180px">
+                    <input nz-input [(ngModel)]="monthlySearchText" (ngModelChange)="applyMonthlyFilters()" placeholder="Code / Name..." />
+                  </nz-input-group>
+                  <ng-template #searchBalIcon><i nz-icon nzType="search"></i></ng-template>
+                </div>
+
+                <!-- LOP Filter Button -->
+                <div class="control-item" style="align-self: flex-end;">
+                  <button nz-button [class.btn-danger-active]="showOnlyMonthlyLop" class="filter-action-btn" (click)="toggleMonthlyLop()" nz-tooltip="Show only records with Loss of Pay (LOP)">
+                    <i nz-icon nzType="warning" style="color:#ef4444;"></i>
+                    <span [style.color]="showOnlyMonthlyLop ? '#ef4444' : 'inherit'">LOP Only ({{ monthlyLopCount }})</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Buttons: Edit/Save/Cancel, Export, Import, Sample -->
+              <div class="action-buttons-group">
+                <!-- Edit / Save / Cancel -->
+                <ng-container *ngIf="authService.canManageStaff()">
+                  <button nz-button nzType="primary" class="action-btn-ctrl edit-btn" *ngIf="!isEditing" (click)="enableEdit()" nz-tooltip="Edit balances inline in the grid">
+                    <i nz-icon nzType="edit"></i> Edit
+                  </button>
+                  <button nz-button nzType="primary" class="action-btn-ctrl save-btn" *ngIf="isEditing" [nzLoading]="savingBatch" (click)="saveBatch()" nz-tooltip="Save modified balances to database">
+                    <i nz-icon nzType="save"></i> Save
+                  </button>
+                  <button nz-button nzType="default" class="action-btn-ctrl cancel-btn" *ngIf="isEditing" (click)="cancelEdit()" nz-tooltip="Discard modifications">
+                    <i nz-icon nzType="close"></i> Cancel
+                  </button>
+                </ng-container>
+
+                <!-- Export Excel -->
+                <button nz-button class="filter-action-btn excel-btn" (click)="exportMonthlyExcel()" [nzLoading]="exportingExcel"
+                        *ngIf="authService.canManageStaff()" nz-tooltip="Export exact Excel sheet for selected month">
+                  <i nz-icon nzType="download"></i> Export Excel
+                </button>
+
+                <!-- Import Excel -->
+                <button nz-button class="filter-action-btn excel-btn" (click)="monthlyFileInput.click()" [nzLoading]="uploadingExcel"
+                        *ngIf="authService.canManageStaff()" nz-tooltip="Upload monthly Excel file to sync balances">
+                  <i nz-icon nzType="upload"></i> Import Excel
+                </button>
+                <input #monthlyFileInput type="file" accept=".xlsx" (change)="onMonthlyFileSelected($event)" style="display:none">
+
+                <!-- Download Sample -->
+                <button nz-button class="filter-action-btn" (click)="downloadMonthlySample()" [nzLoading]="samplingExcel"
+                        *ngIf="authService.canManageStaff()" nz-tooltip="Download blank template Excel sheet for this month">
+                  <i nz-icon nzType="file-excel"></i> Sample
+                </button>
+              </div>
             </div>
 
-            <!-- LOP Summary Warning Banner -->
-            <div *ngIf="lopCount > 0" style="margin-bottom:12px; padding:10px 14px; background:#fff2f0; border:1px solid #ffccc7; border-radius:8px; display:flex; align-items:center; justify-content:space-between;">
-              <span style="color:#cf1322; font-weight:600; font-size:13px;">
-                <i nz-icon nzType="warning"></i> Attention HR: <strong>{{ lopCount }} Employee Record(s)</strong> currently have <strong>Loss of Pay (LOP)</strong> totaling {{ totalLopDays }} day(s).
-              </span>
-              <button nz-button nzSize="small" nzType="primary" nzDanger (click)="toggleShowOnlyLop()">
-                {{ showOnlyLop ? 'Show All Balances' : 'View LOP Records' }}
-              </button>
+            <!-- Banner indicating active edit mode -->
+            <div *ngIf="isEditing" class="edit-mode-banner">
+              <i nz-icon nzType="info-circle" style="font-size:16px;"></i>
+              <span><strong>Edit Mode Active:</strong> You can edit CL/PL opening balances, additions, availed days, and LOP directly in the cells. "After Adding", "Total Availed", and Closing Balances recalculate automatically. Click <strong>Save</strong> when done.</span>
             </div>
 
-            <nz-table #balTable [nzData]="filteredBalances" [nzLoading]="loadingBals" class="theme-table" nzSize="small"
-                      [(nzPageIndex)]="balPageIndex" [(nzPageSize)]="balPageSize"
-                      [nzPageSizeOptions]="[10, 20, 50, 100]" [nzShowSizeChanger]="true" [nzShowPagination]="true">
-              <thead>
-                <tr>
-                  <th>Employee Code</th>
-                  <th>Name</th>
-                  <th>Leave Type</th>
-                  <th class="td-center">Entitled</th>
-                  <th class="td-center">Taken</th>
-                  <th class="td-center">Encashed</th>
-                  <th class="td-center">Balance</th>
-                  <th class="th-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let b of balTable.data">
-                  <td><span class="emp-code-text">{{ b.employeeCode }}</span></td>
-                  <td>{{ b.employeeName }}</td>
-                  <td>{{ b.leaveTypeName }}</td>
-                  <td class="td-center">{{ b.entitled }}</td>
-                  <td class="td-center">{{ b.taken }}</td>
-                  <td class="td-center">{{ b.encashed || 0 }}</td>
-                  <td class="td-center">
-                    <nz-tag nzColor="error" *ngIf="b.balance < 0" style="font-weight:700;">
-                      <i nz-icon nzType="warning"></i> LOP ({{ mathAbs(b.balance) }})
-                    </nz-tag>
-                    <span *ngIf="b.balance >= 0" class="balance-badge" [class.balance-low]="b.balance <= 2">{{ b.balance }}</span>
-                  </td>
-                  <td class="td-actions">
-                    <button nz-button nzType="link" nzSize="small" class="action-btn action-edit" (click)="editBalance(b)" *ngIf="authService.canManageStaff()" nz-tooltip="Edit Balance">
-                      <i nz-icon nzType="edit"></i>
-                    </button>
-                    <span *ngIf="!authService.canManageStaff()" class="text-muted">—</span>
-                  </td>
-                </tr>
-                <tr *ngIf="filteredBalances.length === 0 && !loadingBals">
-                  <td colspan="8" class="empty-cell">No balances found</td>
-                </tr>
-              </tbody>
-            </nz-table>
+            <!-- Excel-style Table -->
+            <div class="excel-table-container">
+              <nz-table #monthlyTable [nzData]="filteredMonthlyBalances" [nzLoading]="loadingMonthly"
+                        nzSize="small" [nzBordered]="true"
+                        [nzFrontPagination]="true"
+                        [(nzPageIndex)]="monthlyPageIndex" [(nzPageSize)]="monthlyPageSize"
+                        [nzPageSizeOptions]="[15, 30, 50, 100, 200]" [nzShowSizeChanger]="true"
+                        [nzScroll]="{ x: '2150px' }">
+                <thead>
+                  <tr class="excel-header-row">
+                    <th class="th-green col-sno" nzWidth="55px">S No</th>
+                    <th class="th-green" nzWidth="80px">Gender</th>
+                    <th class="th-green" nzWidth="110px">Emp.Code</th>
+                    <th class="th-green" nzWidth="170px">Emp.Name</th>
+                    <th class="th-green" nzWidth="130px">Department</th>
+                    <th class="th-green" nzWidth="110px">Doj</th>
+                    <th class="th-green col-shaded" nzWidth="90px">Vintage in Months</th>
+                    <th class="th-green" nzWidth="110px">CL Leave Balance as on {{ prevMonthLabel }}</th>
+                    <th class="th-green" nzWidth="110px">PL Leave Balance as on {{ prevMonthLabel }}</th>
+                    <th class="th-green" nzWidth="95px">CL added in {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="95px">PL added in {{ currMonthLabel }}</th>
+                    <th class="th-maroon" nzWidth="130px">After Adding CL leave balance as on {{ currMonthLabel }}</th>
+                    <th class="th-maroon" nzWidth="130px">After Adding PL leave balance as on {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="95px">CL Availed in {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="95px">PL Availed in {{ currMonthLabel }}</th>
+                    <th class="th-navy" nzWidth="85px">LOP</th>
+                    <th class="th-green col-total" nzWidth="105px">Total leave Availed</th>
+                    <th class="th-vivid-green" nzWidth="125px">CL Leave Balance as on {{ currMonthLabel }}</th>
+                    <th class="th-vivid-green" nzWidth="130px">Final PL Leave Balance as on {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="120px">Last Working Day</th>
+                    <th class="th-green" nzWidth="160px">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of monthlyTable.data; let i = index" class="excel-data-row">
+                    <!-- S No -->
+                    <td class="text-center">{{ (monthlyPageIndex - 1) * monthlyPageSize + i + 1 }}</td>
+                    
+                    <!-- Gender -->
+                    <td class="text-center">{{ row.gender || '—' }}</td>
+                    
+                    <!-- Emp Code -->
+                    <td class="font-bold emp-code-cell">{{ row.employeeCode }}</td>
+                    
+                    <!-- Emp Name -->
+                    <td class="font-bold">{{ row.employeeName }}</td>
+                    
+                    <!-- Department -->
+                    <td>{{ row.department || '—' }}</td>
+                    
+                    <!-- Doj -->
+                    <td class="text-center">{{ row.doj || '—' }}</td>
+                    
+                    <!-- Vintage in Months -->
+                    <td class="text-center col-shaded font-bold">{{ row.vintageInMonths != null ? row.vintageInMonths : '—' }}</td>
+                    
+                    <!-- CL Opening (Prev Month Balance) -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.clOpening }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.clOpening" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- PL Opening (Prev Month Balance) -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.plOpening }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.plOpening" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- CL Added -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.clAdded }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.clAdded" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- PL Added -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.plAdded }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.plAdded" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- After Adding CL (Formula) -->
+                    <td class="text-center col-maroon-cell font-bold">{{ row.clAfterAdd }}</td>
+                    
+                    <!-- After Adding PL (Formula) -->
+                    <td class="text-center col-maroon-cell font-bold">{{ row.plAfterAdd }}</td>
+                    
+                    <!-- CL Availed -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.clAvailed }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.clAvailed" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- PL Availed -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.plAvailed }}</ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.plAvailed" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- LOP -->
+                    <td class="text-center" [class.col-lop-alert]="row.lop > 0">
+                      <ng-container *ngIf="!isEditing">
+                        <span [class.lop-value-bad]="row.lop > 0">{{ row.lop }}</span>
+                      </ng-container>
+                      <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.lop" (ngModelChange)="recalculateRow(row)" />
+                    </td>
+                    
+                    <!-- Total leave Availed (Formula) -->
+                    <td class="text-center font-bold col-total-cell">{{ row.totalAvailed }}</td>
+                    
+                    <!-- CL Closing (Formula) -->
+                    <td class="text-center col-closing-cl font-bold">{{ row.clClosing }}</td>
+                    
+                    <!-- Final PL Closing (Formula) -->
+                    <td class="text-center col-closing-pl font-bold">{{ row.plClosing }}</td>
+                    
+                    <!-- Last Working Day -->
+                    <td class="text-center">
+                      <ng-container *ngIf="!isEditing">{{ row.lastWorkingDay || '—' }}</ng-container>
+                      <input *ngIf="isEditing" type="text" placeholder="DD-MMM-YYYY" class="cell-input cell-input-text" [(ngModel)]="row.lastWorkingDay" />
+                    </td>
+                    
+                    <!-- Remarks -->
+                    <td>
+                      <ng-container *ngIf="!isEditing">{{ row.remarks || '—' }}</ng-container>
+                      <input *ngIf="isEditing" type="text" placeholder="Remarks..." class="cell-input cell-input-text" [(ngModel)]="row.remarks" />
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredMonthlyBalances.length === 0 && !loadingMonthly">
+                    <td colspan="21" class="empty-cell" style="text-align:center; padding: 24px; color:#64748b;">No leave records found for {{ currMonthLabel }}</td>
+                  </tr>
+                </tbody>
+              </nz-table>
+            </div>
           </div>
         </nz-tab>
 
@@ -939,6 +1086,174 @@ import { saveAs } from 'file-saver';
       background: #f9fafb !important;
       color: #374151 !important;
     }
+
+    /* ===== MONTHLY LEAVE BALANCE EXCEL SHEET STYLES ===== */
+    .monthly-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .filter-controls-group {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .control-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .action-buttons-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .action-btn-ctrl {
+      height: 34px !important;
+      padding: 0 14px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+    .edit-btn {
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+      color: #fff !important;
+    }
+    .save-btn {
+      background: #16a34a !important;
+      border-color: #16a34a !important;
+      color: #fff !important;
+      box-shadow: 0 2px 6px rgba(22,163,74,0.3) !important;
+    }
+    .cancel-btn {
+      border: 1px solid #cbd5e1 !important;
+      color: #475569 !important;
+      background: #fff !important;
+    }
+    .excel-btn {
+      color: #1e3a8a !important;
+      border-color: #bfdbfe !important;
+      background: #eff6ff !important;
+    }
+    .excel-btn:hover {
+      background: #dbeafe !important;
+      border-color: #93c5fd !important;
+    }
+    .edit-mode-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      color: #1e40af;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .excel-table-container {
+      overflow-x: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+    }
+    :host ::ng-deep .excel-header-row th {
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
+      line-height: 1.3 !important;
+      text-align: center !important;
+      padding: 8px 4px !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      vertical-align: middle !important;
+    }
+    :host ::ng-deep .th-green {
+      background: #008000 !important;
+    }
+    :host ::ng-deep .th-maroon {
+      background: #b30000 !important;
+    }
+    :host ::ng-deep .th-navy {
+      background: #1e3a8a !important;
+    }
+    :host ::ng-deep .th-vivid-green {
+      background: #16a34a !important;
+    }
+    :host ::ng-deep .excel-data-row td {
+      font-size: 12px !important;
+      padding: 4px 6px !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #1e293b !important;
+    }
+    .col-shaded {
+      background: #f1f5f9 !important;
+      color: #334155 !important;
+    }
+    .col-maroon-cell {
+      background: #fff1f2 !important;
+      color: #9f1239 !important;
+    }
+    .col-total-cell {
+      background: #f0fdf4 !important;
+      color: #166534 !important;
+    }
+    .col-closing-cl {
+      background: #dcfce7 !important;
+      color: #15803d !important;
+    }
+    .col-closing-pl {
+      background: #bbf7d0 !important;
+      color: #14532d !important;
+    }
+    .col-lop-alert {
+      background: #fee2e2 !important;
+    }
+    .lop-value-bad {
+      color: #dc2626 !important;
+      font-weight: 700 !important;
+    }
+    .emp-code-cell {
+      color: #1e40af;
+    }
+    .cell-input {
+      width: 100%;
+      height: 26px;
+      padding: 2px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      border: 1px solid #3b82f6;
+      border-radius: 4px;
+      background: #fef9c3;
+      color: #1e293b;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .cell-input:focus {
+      background: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+    .cell-input-text {
+      text-align: left;
+    }
   `]
 })
 export class LeaveManagementComponent implements OnInit {
@@ -990,11 +1305,70 @@ export class LeaveManagementComponent implements OnInit {
   totalLopDays = 0;
   mathAbs = Math.abs;
 
+  // Monthly Leave Sheet state
+  months = [
+    { value: 1, label: '01 - Jan' },
+    { value: 2, label: '02 - Feb' },
+    { value: 3, label: '03 - Mar' },
+    { value: 4, label: '04 - Apr' },
+    { value: 5, label: '05 - May' },
+    { value: 6, label: '06 - Jun' },
+    { value: 7, label: '07 - Jul' },
+    { value: 8, label: '08 - Aug' },
+    { value: 9, label: '09 - Sep' },
+    { value: 10, label: '10 - Oct' },
+    { value: 11, label: '11 - Nov' },
+    { value: 12, label: '12 - Dec' }
+  ];
+
+  selectedYear = new Date().getFullYear();
+  selectedMonth = new Date().getMonth() + 1;
+  selectedDepartment = '';
+  selectedGender = '';
+  monthlySearchText = '';
+  showOnlyMonthlyLop = false;
+  monthlyLopCount = 0;
+  monthlyPageIndex = 1;
+  monthlyPageSize = 20;
+
+  monthlyBalances: MonthlyLeaveBalanceDTO[] = [];
+  originalMonthlyBalances: MonthlyLeaveBalanceDTO[] = [];
+  filteredMonthlyBalances: MonthlyLeaveBalanceDTO[] = [];
+
+  loadingMonthly = false;
+  isEditing = false;
+  savingBatch = false;
+  exportingExcel = false;
+  uploadingExcel = false;
+  samplingExcel = false;
+
+  get prevMonthLabel(): string {
+    const d = new Date(this.selectedYear, this.selectedMonth - 2, 1);
+    const m = d.toLocaleString('en-US', { month: 'short' });
+    const y = String(d.getFullYear()).slice(-2);
+    return `${m}'${y}`;
+  }
+
+  get currMonthLabel(): string {
+    const d = new Date(this.selectedYear, this.selectedMonth - 1, 1);
+    const m = d.toLocaleString('en-US', { month: 'short' });
+    const y = String(d.getFullYear()).slice(-2);
+    return `${m}'${y}`;
+  }
+
+  get uniqueDepartments(): string[] {
+    const set = new Set<string>();
+    this.monthlyBalances.forEach(b => {
+      if (b.department && b.department.trim()) set.add(b.department.trim());
+    });
+    return Array.from(set).sort();
+  }
+
   constructor(
     private leaveService: LeaveService,
     private employeeService: EmployeeService,
     private holidayService: HolidayService,
-    private compOffService: CompOffService,
+    public compOffService: CompOffService,
     public authService: AuthService,
     private msg: NzMessageService,
     private modalService: NzModalService
@@ -1005,6 +1379,7 @@ export class LeaveManagementComponent implements OnInit {
     this.loadEmployees();
     this.loadApplications();
     this.loadBalances();
+    this.loadMonthlyBalances();
     this.loadHolidays();
   }
 
@@ -1403,6 +1778,176 @@ export class LeaveManagementComponent implements OnInit {
       error: () => {
         this.clearing = false;
         this.msg.error('Error clearing balances');
+      }
+    });
+  }
+
+  // ==================== Monthly Leave Balance Grid Methods ====================
+
+  loadMonthlyBalances(): void {
+    this.loadingMonthly = true;
+    this.isEditing = false;
+    this.leaveService.getMonthlyBalances(this.selectedYear, this.selectedMonth).subscribe({
+      next: (res) => {
+        this.loadingMonthly = false;
+        if (res.success && res.data) {
+          this.monthlyBalances = res.data.map(item => ({ ...item }));
+          this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
+          this.applyMonthlyFilters();
+        }
+      },
+      error: (err) => {
+        this.loadingMonthly = false;
+        this.msg.error(err.error?.message || 'Error loading monthly leave balances');
+      }
+    });
+  }
+
+  onMonthYearChange(): void {
+    if (this.isEditing) {
+      this.modalService.confirm({
+        nzTitle: 'Unsaved Changes',
+        nzContent: 'You have unsaved changes. Changing month/year will discard them. Do you want to proceed?',
+        nzOkText: 'Discard & Switch',
+        nzCancelText: 'Keep Editing',
+        nzOnOk: () => {
+          this.loadMonthlyBalances();
+        }
+      });
+    } else {
+      this.loadMonthlyBalances();
+    }
+  }
+
+  applyMonthlyFilters(): void {
+    let list = [...this.monthlyBalances];
+    this.monthlyLopCount = this.monthlyBalances.filter(b => (b.lop || 0) > 0).length;
+
+    if (this.selectedDepartment) {
+      list = list.filter(b => (b.department || '').toLowerCase() === this.selectedDepartment.toLowerCase());
+    }
+
+    if (this.selectedGender) {
+      const g = this.selectedGender.toLowerCase().charAt(0);
+      list = list.filter(b => (b.gender || '').toLowerCase().startsWith(g));
+    }
+
+    if (this.monthlySearchText && this.monthlySearchText.trim()) {
+      const q = this.monthlySearchText.toLowerCase().trim();
+      list = list.filter(b =>
+        (b.employeeCode || '').toLowerCase().includes(q) ||
+        (b.employeeName || '').toLowerCase().includes(q) ||
+        (b.department || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (this.showOnlyMonthlyLop) {
+      list = list.filter(b => (b.lop || 0) > 0);
+    }
+
+    this.filteredMonthlyBalances = list;
+  }
+
+  toggleMonthlyLop(): void {
+    this.showOnlyMonthlyLop = !this.showOnlyMonthlyLop;
+    this.applyMonthlyFilters();
+  }
+
+  enableEdit(): void {
+    this.isEditing = true;
+  }
+
+  cancelEdit(): void {
+    this.monthlyBalances = JSON.parse(JSON.stringify(this.originalMonthlyBalances));
+    this.isEditing = false;
+    this.applyMonthlyFilters();
+  }
+
+  recalculateRow(row: MonthlyLeaveBalanceDTO): void {
+    const clOpen = Number(row.clOpening) || 0;
+    const clAdd = Number(row.clAdded) || 0;
+    const clAv = Number(row.clAvailed) || 0;
+    
+    const plOpen = Number(row.plOpening) || 0;
+    const plAdd = Number(row.plAdded) || 0;
+    const plAv = Number(row.plAvailed) || 0;
+    
+    const lop = Number(row.lop) || 0;
+
+    row.clAfterAdd = Math.round((clOpen + clAdd) * 100) / 100;
+    row.plAfterAdd = Math.round((plOpen + plAdd) * 100) / 100;
+    row.totalAvailed = Math.round((clAv + plAv + lop) * 100) / 100;
+    row.clClosing = Math.round((row.clAfterAdd - clAv) * 100) / 100;
+    row.plClosing = Math.round((row.plAfterAdd - plAv) * 100) / 100;
+  }
+
+  saveBatch(): void {
+    this.savingBatch = true;
+    this.leaveService.batchUpdateMonthlyBalances(this.monthlyBalances).subscribe({
+      next: (res) => {
+        this.savingBatch = false;
+        if (res.success && res.data) {
+          this.msg.success('Leave balances saved successfully');
+          this.monthlyBalances = res.data.map(item => ({ ...item }));
+          this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
+          this.isEditing = false;
+          this.applyMonthlyFilters();
+        }
+      },
+      error: (err) => {
+        this.savingBatch = false;
+        this.msg.error(err.error?.message || 'Failed to save leave balances');
+      }
+    });
+  }
+
+  exportMonthlyExcel(): void {
+    this.exportingExcel = true;
+    this.leaveService.exportMonthlyBalances(this.selectedYear, this.selectedMonth).subscribe({
+      next: (blob) => {
+        this.exportingExcel = false;
+        saveAs(blob, `Leave_Balance_${this.selectedYear}_${String(this.selectedMonth).padStart(2, '0')}.xlsx`);
+        this.msg.success('Excel exported successfully');
+      },
+      error: () => {
+        this.exportingExcel = false;
+        this.msg.error('Failed to export Excel file');
+      }
+    });
+  }
+
+  onMonthlyFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.uploadingExcel = true;
+      this.leaveService.importMonthlyBalances(file, this.selectedYear, this.selectedMonth).subscribe({
+        next: (res) => {
+          this.uploadingExcel = false;
+          if (res.success) {
+            this.msg.success(res.message || 'Excel imported successfully');
+            this.loadMonthlyBalances();
+          }
+          event.target.value = '';
+        },
+        error: (err) => {
+          this.uploadingExcel = false;
+          this.msg.error(err.error?.message || 'Error importing Excel file');
+          event.target.value = '';
+        }
+      });
+    }
+  }
+
+  downloadMonthlySample(): void {
+    this.samplingExcel = true;
+    this.leaveService.downloadMonthlySample(this.selectedYear, this.selectedMonth).subscribe({
+      next: (blob) => {
+        this.samplingExcel = false;
+        saveAs(blob, `Leave_Balance_Sample_${this.selectedYear}_${String(this.selectedMonth).padStart(2, '0')}.xlsx`);
+      },
+      error: () => {
+        this.samplingExcel = false;
+        this.msg.error('Error downloading sample Excel');
       }
     });
   }

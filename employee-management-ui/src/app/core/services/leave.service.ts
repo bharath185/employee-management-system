@@ -146,4 +146,61 @@ export class LeaveService {
   clearAllBalances(): Observable<APIResponse<string>> {
     return this.http.delete<APIResponse<string>>(`${this.apiUrl}/clear`);
   }
+
+  // ==================== Monthly Leave Balance Grid & Excel Endpoints ====================
+
+  getMonthlyBalances(year: number, month: number): Observable<APIResponse<MonthlyLeaveBalanceDTO[]>> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get<APIResponse<MonthlyLeaveBalanceDTO[]>>(`${this.apiUrl}/monthly-balances`, { params });
+  }
+
+  batchUpdateMonthlyBalances(dtos: MonthlyLeaveBalanceDTO[]): Observable<APIResponse<MonthlyLeaveBalanceDTO[]>> {
+    return this.http.put<APIResponse<MonthlyLeaveBalanceDTO[]>>(`${this.apiUrl}/monthly-balances/batch`, dtos);
+  }
+
+  exportMonthlyBalances(year: number, month: number): Observable<Blob> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get(`${this.apiUrl}/monthly-balances/export`, { params, responseType: 'blob' });
+  }
+
+  importMonthlyBalances(file: File, year: number, month: number): Observable<APIResponse<string>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('year', year.toString());
+    formData.append('month', month.toString());
+    return this.http.post<APIResponse<string>>(`${this.apiUrl}/monthly-balances/import`, formData);
+  }
+
+  downloadMonthlySample(year: number, month: number): Observable<Blob> {
+    const params = new HttpParams().set('year', year.toString()).set('month', month.toString());
+    return this.http.get(`${this.apiUrl}/monthly-balances/sample`, { params, responseType: 'blob' });
+  }
 }
+
+export interface MonthlyLeaveBalanceDTO {
+  id?: number;
+  employeeId: number;
+  employeeCode?: string;
+  employeeName?: string;
+  department?: string;
+  gender?: string;
+  doj?: string;
+  vintageInMonths?: number;
+  year: number;
+  month: number;
+  clOpening: number;
+  plOpening: number;
+  clAdded: number;
+  plAdded: number;
+  clAfterAdd?: number;
+  plAfterAdd?: number;
+  clAvailed: number;
+  plAvailed: number;
+  lop: number;
+  totalAvailed?: number;
+  clClosing?: number;
+  plClosing?: number;
+  lastWorkingDay?: string;
+  remarks?: string;
+}
+

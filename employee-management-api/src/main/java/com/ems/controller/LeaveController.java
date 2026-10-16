@@ -5,8 +5,10 @@ import com.ems.dto.LeaveApplicationDTO;
 import com.ems.dto.LeaveBalanceDTO;
 import com.ems.model.LeaveType;
 import com.ems.security.CustomUserDetails;
+import com.ems.dto.MonthlyLeaveBalanceDTO;
 import com.ems.service.LeaveExcelService;
 import com.ems.service.LeaveService;
+import com.ems.service.MonthlyLeaveService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -32,6 +34,7 @@ public class LeaveController {
 
     private final LeaveService leaveService;
     private final LeaveExcelService leaveExcelService;
+    private final MonthlyLeaveService monthlyLeaveService;
 
     @GetMapping("/types")
     public ResponseEntity<APIResponse<List<LeaveType>>> getLeaveTypes() {
@@ -267,5 +270,62 @@ public class LeaveController {
     public ResponseEntity<APIResponse<String>> clearAllBalances() {
         leaveService.clearAllLeaveBalances();
         return ResponseEntity.ok(APIResponse.<String>success("All leave balances cleared successfully", null));
+    }
+
+    // ==================== Monthly Leave Balance Grid & Excel Endpoints ====================
+
+    @GetMapping("/monthly-balances")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<List<MonthlyLeaveBalanceDTO>>> getMonthlyBalances(
+            @RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok(APIResponse.success(monthlyLeaveService.getMonthlyBalances(year, month)));
+    }
+
+    @PutMapping("/monthly-balances/batch")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<List<MonthlyLeaveBalanceDTO>>> saveMonthlyBalances(
+            @RequestBody List<MonthlyLeaveBalanceDTO> dtos) {
+        return ResponseEntity.ok(APIResponse.success("Leave balances updated successfully", monthlyLeaveService.batchUpdate(dtos)));
+    }
+
+    @GetMapping("/monthly-balances/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> exportMonthlyBalances(
+            @RequestParam int year,
+            @RequestParam int month) throws IOException {
+        byte[] bytes = monthlyLeaveService.exportToExcel(year, month);
+        String filename = "Leave_Balance_" + year + "_" + String.format("%02d", month) + ".xlsx";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(bytes);
+    }
+
+    @PostMapping(value = "/monthly-balances/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> importMonthlyBalances(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam int year,
+            @RequestParam int month) {
+        try {
+            java.util.Map<String, Object> result = monthlyLeaveService.importFromExcel(file, year, month);
+            return ResponseEntity.ok(APIResponse.success("Successfully processed Excel sheet: imported " + result.get("imported") + ", updated " + result.get("updated")));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(APIResponse.error("Import failed: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/monthly-balances/sample")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<byte[]> downloadSampleMonthlyBalances(
+            @RequestParam int year,
+            @RequestParam int month) throws IOException {
+        byte[] bytes = monthlyLeaveService.generateSampleExcel(year, month);
+        String filename = "Leave_Balance_Sample_" + year + "_" + String.format("%02d", month) + ".xlsx";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(bytes);
     }
 }
