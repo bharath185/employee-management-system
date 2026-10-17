@@ -194,17 +194,197 @@ public class PayrollService {
                 }
             }
 
+            int colEmpCode = 2;
+            int colName = 1;
+            int colSlNo = 0;
+            int colDoj = 3;
+
+            // Fixed Rate of wages (Set 1)
+            int colRateBasic = 4;
+            int colRateHra = 5;
+            int colRateFpa = 6;
+            int colRateOa = 7;
+            int colRateGross = 8;
+
+            // Actual / Normal earned wages (Set 2)
+            int colEarnedBasic = 9;
+            int colEarnedHra = 10;
+            int colEarnedFpa = 11;
+            int colEarnedOa = 12;
+            int colEarnedGross = 13;
+
+            // Workdays
+            int colWorkingDays = 14;
+            int colLop = 15;
+            int colEffWorkdays = 16;
+            int colOvertime = 17;
+            int colGrossWages = 18;
+
+            // Deductions & Pay
+            int colPf = 19;
+            int colEsi = 20;
+            int colPt = 21;
+            int colHi = -1;
+            int colActualWages = -1;
+            int colDateOfPayment = -1;
+
+            Row h1 = headerRowIdx != -1 ? sheet.getRow(headerRowIdx) : null;
+            Row h2 = (headerRowIdx != -1 && headerRowIdx + 1 <= lastRowNum) ? sheet.getRow(headerRowIdx + 1) : null;
+
+            if (h1 != null) {
+                int maxCols = Math.max(h1.getLastCellNum(), h2 != null ? h2.getLastCellNum() : 0);
+                List<Integer> basicCols = new ArrayList<>();
+                List<Integer> hraCols = new ArrayList<>();
+                List<Integer> fpaCols = new ArrayList<>();
+                List<Integer> oaCols = new ArrayList<>();
+                List<Integer> grossCols = new ArrayList<>();
+
+                for (int c = 0; c < maxCols; c++) {
+                    String v1 = getCellString(h1, c).trim().toLowerCase();
+                    String v2 = h2 != null ? getCellString(h2, c).trim().toLowerCase() : "";
+                    String comb = (v1 + " " + v2).trim();
+
+                    if (comb.contains("emp.code") || comb.contains("employee code") || comb.contains("emp code")) {
+                        colEmpCode = c;
+                    } else if (comb.contains("name of the employee") || comb.contains("employee name")) {
+                        colName = c;
+                    } else if (comb.contains("sl.no") || comb.contains("sl no") || comb.equals("s no") || comb.equals("sno")) {
+                        colSlNo = c;
+                    } else if (comb.contains("date of appointment") || comb.contains("appointment")) {
+                        colDoj = c;
+                    } else if (comb.contains("working day") && !comb.contains("effective")) {
+                        colWorkingDays = c;
+                    } else if (comb.contains("lop") || comb.contains("loss of pay")) {
+                        colLop = c;
+                    } else if (comb.contains("effective workday") || comb.contains("effective work day") || comb.contains("effective days")) {
+                        colEffWorkdays = c;
+                    } else if (comb.contains("overtime")) {
+                        colOvertime = c;
+                    } else if (comb.contains("gross wages payable") || (comb.contains("gross wages") && !comb.contains("rate"))) {
+                        colGrossWages = c;
+                    } else if (v2.equals("pf") || comb.equals("pf") || comb.contains("provident fund")) {
+                        colPf = c;
+                    } else if (v2.equals("esi") || comb.equals("esi")) {
+                        colEsi = c;
+                    } else if (v2.equals("pt") || comb.equals("pt") || comb.contains("prof tax") || comb.contains("professional tax")) {
+                        colPt = c;
+                    } else if (comb.contains("health insurance") || comb.contains("insurance")) {
+                        colHi = c;
+                    } else if (comb.contains("actual wages paid") || comb.contains("net pay") || comb.contains("net salary") || comb.contains("actual paid")) {
+                        colActualWages = c;
+                    } else if (comb.contains("date of payment") || comb.contains("payment date")) {
+                        colDateOfPayment = c;
+                    }
+
+                    if (v2.equals("basic") || comb.endsWith("basic")) {
+                        basicCols.add(c);
+                    } else if (v2.equals("hra") || comb.endsWith("hra")) {
+                        hraCols.add(c);
+                    } else if (v2.contains("fixed personal") || comb.contains("fixed personal")) {
+                        fpaCols.add(c);
+                    } else if (v2.contains("oth. allowance") || v2.contains("other allowance") || comb.contains("other allowance")) {
+                        oaCols.add(c);
+                    } else if (v2.contains("gross salary") || comb.contains("gross salary")) {
+                        grossCols.add(c);
+                    }
+                }
+
+                if (basicCols.size() >= 2) {
+                    colRateBasic = basicCols.get(0);
+                    colEarnedBasic = basicCols.get(1);
+                } else if (basicCols.size() == 1) {
+                    colEarnedBasic = basicCols.get(0);
+                }
+
+                if (hraCols.size() >= 2) {
+                    colRateHra = hraCols.get(0);
+                    colEarnedHra = hraCols.get(1);
+                } else if (hraCols.size() == 1) {
+                    colEarnedHra = hraCols.get(0);
+                }
+
+                if (fpaCols.size() >= 2) {
+                    colRateFpa = fpaCols.get(0);
+                    colEarnedFpa = fpaCols.get(1);
+                } else if (fpaCols.size() == 1) {
+                    colEarnedFpa = fpaCols.get(0);
+                }
+
+                if (oaCols.size() >= 2) {
+                    colRateOa = oaCols.get(0);
+                    colEarnedOa = oaCols.get(1);
+                } else if (oaCols.size() == 1) {
+                    colEarnedOa = oaCols.get(0);
+                }
+
+                if (grossCols.size() >= 2) {
+                    colRateGross = grossCols.get(0);
+                    colEarnedGross = grossCols.get(1);
+                } else if (grossCols.size() == 1) {
+                    colEarnedGross = grossCols.get(0);
+                }
+
+                if (colActualWages == -1) {
+                    if (colHi != -1) {
+                        colActualWages = colHi + 1;
+                    } else if (colPt != -1) {
+                        colActualWages = colPt + 1;
+                    } else {
+                        colActualWages = 22;
+                    }
+                }
+                if (colDateOfPayment == -1 && colActualWages != -1) {
+                    colDateOfPayment = colActualWages + 1;
+                }
+            }
+
+            // Preload lookup maps to avoid remote roundtrip per row
+            List<Employee> allEmployees = employeeRepository.findAll();
+            Map<String, Employee> empMap = new HashMap<>();
+            for (Employee e : allEmployees) {
+                if (e.getEmployeeCode() != null) {
+                    String c = e.getEmployeeCode().toUpperCase().trim();
+                    empMap.put(c, e);
+                    empMap.put(normalizeCode(c), e);
+                }
+            }
+
+            Map<Long, SalaryMaster> masterMap = new HashMap<>();
+            for (SalaryMaster sm : salaryMasterRepository.findAll()) {
+                if (sm.getEmployee() != null && sm.getEmployee().getId() != null) {
+                    masterMap.put(sm.getEmployee().getId(), sm);
+                }
+            }
+
+            Map<Long, Salary> salaryMap = new HashMap<>();
+            for (Salary s : salaryRepository.findByWageYearAndWageMonth(year, month)) {
+                if (s.getEmployee() != null && s.getEmployee().getId() != null) {
+                    salaryMap.put(s.getEmployee().getId(), s);
+                }
+            }
+
+            Map<Long, Payslip> payslipMap = new HashMap<>();
+            for (Payslip p : payslipRepository.findByWageYearAndWageMonth(year, month)) {
+                if (p.getEmployee() != null && p.getEmployee().getId() != null) {
+                    payslipMap.put(p.getEmployee().getId(), p);
+                }
+            }
+
+            Map<Long, SalaryMaster> mastersToSave = new HashMap<>();
+            List<Salary> salariesToSave = new ArrayList<>();
+            List<Payslip> payslipsToSave = new ArrayList<>();
+
             for (int i = dataStartRow; i <= lastRowNum; i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String slNo = getCellString(row, 0).trim();
-                String name = getCellString(row, 1).trim();
-                String empCode = getCellString(row, 2).trim();
+                String slNo = getCellString(row, colSlNo).trim();
+                String name = getCellString(row, colName).trim();
+                String empCode = getCellString(row, colEmpCode).trim();
 
                 // Skip note rows, empty rows, and Grand Total row
                 if (slNo.toLowerCase().startsWith("note") || name.toLowerCase().startsWith("note")) break;
-                if ("Grand Total".equalsIgnoreCase(slNo) || "Grand Total".equalsIgnoreCase(name)) break;
+                if ("Grand Total".equalsIgnoreCase(slNo) || "Grand Total".equalsIgnoreCase(name) || "Grand Total".equalsIgnoreCase(empCode)) break;
                 if (empCode.isEmpty() && name.isEmpty()) continue;
 
                 totalRows++;
@@ -217,9 +397,9 @@ public class PayrollService {
                         continue;
                     }
                     String cleanCode = empCode.trim().toUpperCase();
-                    Employee employee = employeeRepository.findByEmployeeCode(cleanCode).orElse(null);
+                    Employee employee = empMap.get(cleanCode);
                     if (employee == null) {
-                        employee = employeeRepository.findByEmployeeCode(normalizeCode(cleanCode)).orElse(null);
+                        employee = empMap.get(normalizeCode(cleanCode));
                     }
                     if (employee == null) {
                         failureCount++;
@@ -228,35 +408,70 @@ public class PayrollService {
                     }
                     final Employee finalEmp = employee;
 
-                    // Parse numeric fields
-                    BigDecimal basic = parseDecimal(getCellString(row, 9));
-                    BigDecimal hra = parseDecimal(getCellString(row, 10));
-                    BigDecimal fpa = parseDecimal(getCellString(row, 11));
-                    BigDecimal oa = parseDecimal(getCellString(row, 12));
-                    BigDecimal overtime = parseDecimal(getCellString(row, 17));
-                    BigDecimal grossWages = parseDecimal(getCellString(row, 18));
-                    BigDecimal pf = parseDecimal(getCellString(row, 19));
-                    BigDecimal esi = parseDecimal(getCellString(row, 20));
-                    BigDecimal pt = parseDecimal(getCellString(row, 21));
-                    BigDecimal hi = parseDecimal(getCellString(row, 22));
-                    BigDecimal actualWages = parseDecimal(getCellString(row, 23));
+                    // Parse rate of wages (fixed structure)
+                    BigDecimal rateBasic = parseDecimal(getCellString(row, colRateBasic));
+                    BigDecimal rateHra = parseDecimal(getCellString(row, colRateHra));
+                    BigDecimal rateFpa = parseDecimal(getCellString(row, colRateFpa));
+                    BigDecimal rateOa = parseDecimal(getCellString(row, colRateOa));
+                    BigDecimal rateGross = parseDecimal(getCellString(row, colRateGross));
 
-                    // Parse integer fields
-                    Integer workingDays = parseInt(getCellString(row, 14));
-                    Integer lop = parseInt(getCellString(row, 15));
-                    Integer effWorkdays = parseInt(getCellString(row, 16));
+                    // Parse actual earned numeric fields
+                    BigDecimal basic = parseDecimal(getCellString(row, colEarnedBasic));
+                    BigDecimal hra = parseDecimal(getCellString(row, colEarnedHra));
+                    BigDecimal fpa = parseDecimal(getCellString(row, colEarnedFpa));
+                    BigDecimal oa = parseDecimal(getCellString(row, colEarnedOa));
+                    BigDecimal earnedGross = parseDecimal(getCellString(row, colEarnedGross));
+
+                    // Parse workdays and overtime
+                    Integer workingDays = parseInt(getCellString(row, colWorkingDays));
+                    Integer lop = parseInt(getCellString(row, colLop));
+                    Integer effWorkdays = parseInt(getCellString(row, colEffWorkdays));
+                    BigDecimal overtime = parseDecimal(getCellString(row, colOvertime));
+                    BigDecimal grossWages = parseDecimal(getCellString(row, colGrossWages));
+
+                    if (grossWages.compareTo(BigDecimal.ZERO) == 0 && earnedGross.compareTo(BigDecimal.ZERO) > 0) {
+                        grossWages = earnedGross;
+                    }
+
+                    // Parse deductions
+                    BigDecimal pf = parseDecimal(getCellString(row, colPf));
+                    BigDecimal esi = parseDecimal(getCellString(row, colEsi));
+                    BigDecimal pt = parseDecimal(getCellString(row, colPt));
+                    BigDecimal hi = colHi != -1 ? parseDecimal(getCellString(row, colHi)) : BigDecimal.ZERO;
+                    BigDecimal totalDeductions = pf.add(esi).add(pt).add(hi);
+
+                    BigDecimal actualWages = parseDecimal(getCellString(row, colActualWages));
+                    if (actualWages.compareTo(BigDecimal.ZERO) == 0 && grossWages.compareTo(BigDecimal.ZERO) > 0) {
+                        actualWages = grossWages.subtract(totalDeductions);
+                    }
 
                     // Parse date of payment
-                    LocalDateTime dateOfPayment = parseDate(getCellString(row, 24));
+                    LocalDateTime dateOfPayment = colDateOfPayment != -1 ? parseDate(getCellString(row, colDateOfPayment)) : null;
+
+                    // Sync SalaryMaster structure if rateGross > 0
+                    if (rateGross.compareTo(BigDecimal.ZERO) > 0) {
+                        SalaryMaster sm = masterMap.computeIfAbsent(finalEmp.getId(), id -> SalaryMaster.builder().employee(finalEmp).build());
+                        sm.setBasic(rateBasic);
+                        sm.setHra(rateHra);
+                        sm.setFixedPersonalAllowance(rateFpa);
+                        sm.setOtherAllowance(rateOa);
+                        sm.setPfDeduction(pf);
+                        sm.setEsiDeduction(esi);
+                        sm.setPtDeduction(pt);
+                        sm.setHealthInsurance(hi);
+                        mastersToSave.put(finalEmp.getId(), sm);
+                    }
 
                     // Find or create Salary record
-                    Salary salary = salaryRepository
-                        .findByEmployeeIdAndWageYearAndWageMonth(finalEmp.getId(), year, month)
-                        .orElseGet(() -> Salary.builder()
+                    Salary salary = salaryMap.get(finalEmp.getId());
+                    if (salary == null) {
+                        salary = Salary.builder()
                             .employee(finalEmp)
                             .wageMonth(month)
                             .wageYear(year)
-                            .build());
+                            .build();
+                        salaryMap.put(finalEmp.getId(), salary);
+                    }
 
                     // Set all fields from file, skip auto-computation
                     salary.setSkipComputation(true);
@@ -278,17 +493,18 @@ public class PayrollService {
                     salary.setWorkingHoursPerDay(8);
                     salary.setWeeklyOff("Allowed");
                     salary.setWorkerType("Permanent");
-                    salaryRepository.save(salary);
+                    salariesToSave.add(salary);
 
                     // Create or update Payslip snapshot (avoid duplicates per employee+month+year)
-                    BigDecimal totalDeductions = pf.add(esi).add(pt).add(hi);
-                    Payslip payslip = payslipRepository
-                        .findByEmployeeIdAndWageYearAndWageMonth(finalEmp.getId(), year, month)
-                        .orElseGet(() -> Payslip.builder()
+                    Payslip payslip = payslipMap.get(finalEmp.getId());
+                    if (payslip == null) {
+                        payslip = Payslip.builder()
                             .employee(finalEmp)
                             .wageMonth(month)
                             .wageYear(year)
-                            .build());
+                            .build();
+                        payslipMap.put(finalEmp.getId(), payslip);
+                    }
                     payslip.setBasic(basic);
                     payslip.setHra(hra);
                     payslip.setFixedPersonalAllowance(fpa);
@@ -312,14 +528,25 @@ public class PayrollService {
                     payslip.setEffectiveWorkdays(effWorkdays);
                     payslip.setStatus("GENERATED");
                     payslip.setGeneratedAt(LocalDateTime.now());
-                    payslipRepository.save(payslip);
-                    successCount++;
+                    payslipsToSave.add(payslip);
 
+                    successCount++;
                 } catch (Exception e) {
                     log.error("Error processing row {}: {}", i + 1, e.getMessage());
                     failureCount++;
-                    errors.add(Map.of("row", String.valueOf(i + 1), "message", e.getMessage()));
+                    errors.add(Map.of("row", String.valueOf(i + 1), "message", e.getMessage() != null ? e.getMessage() : "Unknown error"));
                 }
+            }
+
+            // Fast batch persistence
+            if (!mastersToSave.isEmpty()) {
+                salaryMasterRepository.saveAll(mastersToSave.values());
+            }
+            if (!salariesToSave.isEmpty()) {
+                salaryRepository.saveAll(salariesToSave);
+            }
+            if (!payslipsToSave.isEmpty()) {
+                payslipRepository.saveAll(payslipsToSave);
             }
         } catch (Exception e) {
             log.error("Failed to parse uploaded Excel: {}", e.getMessage());
