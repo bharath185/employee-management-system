@@ -161,21 +161,51 @@ public class PayrollService {
         int failureCount = 0;
         List<Map<String, String>> errors = new ArrayList<>();
 
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
             int lastRowNum = sheet.getLastRowNum();
 
-            for (int i = 11; i <= lastRowNum; i++) {
+            // Dynamically locate header row
+            int headerRowIdx = -1;
+            for (int r = 0; r <= Math.min(15, lastRowNum); r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+                for (int c = 0; c < row.getLastCellNum(); c++) {
+                    String str = getCellString(row, c).toLowerCase();
+                    if (str.contains("employee code") || str.contains("emp.code") || str.contains("rate of wages") || str.contains("name of the employee")) {
+                        headerRowIdx = r;
+                        break;
+                    }
+                }
+                if (headerRowIdx != -1) break;
+            }
+
+            int dataStartRow = headerRowIdx != -1 ? headerRowIdx + 1 : 8;
+            if (headerRowIdx != -1 && headerRowIdx + 1 <= lastRowNum) {
+                Row nextRow = sheet.getRow(headerRowIdx + 1);
+                if (nextRow != null) {
+                    for (int c = 0; c < nextRow.getLastCellNum(); c++) {
+                        String str = getCellString(nextRow, c).toLowerCase();
+                        if (str.contains("basic") || str.contains("hra") || str.contains("pf") || str.contains("esi")) {
+                            dataStartRow = headerRowIdx + 2;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (int i = dataStartRow; i <= lastRowNum; i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String slNo = getCellString(row, 0);
-                String name = getCellString(row, 1);
-                String empCode = getCellString(row, 2);
+                String slNo = getCellString(row, 0).trim();
+                String name = getCellString(row, 1).trim();
+                String empCode = getCellString(row, 2).trim();
 
-                // Skip empty rows and Grand Total row
-                if (empCode.isEmpty() && name.isEmpty()) continue;
+                // Skip note rows, empty rows, and Grand Total row
+                if (slNo.toLowerCase().startsWith("note") || name.toLowerCase().startsWith("note")) break;
                 if ("Grand Total".equalsIgnoreCase(slNo) || "Grand Total".equalsIgnoreCase(name)) break;
+                if (empCode.isEmpty() && name.isEmpty()) continue;
 
                 totalRows++;
 
@@ -186,12 +216,17 @@ public class PayrollService {
                         errors.add(Map.of("row", String.valueOf(i + 1), "message", "Employee Code empty"));
                         continue;
                     }
-                    Employee employee = employeeRepository.findByEmployeeCode(empCode).orElse(null);
+                    String cleanCode = empCode.trim().toUpperCase();
+                    Employee employee = employeeRepository.findByEmployeeCode(cleanCode).orElse(null);
+                    if (employee == null) {
+                        employee = employeeRepository.findByEmployeeCode(normalizeCode(cleanCode)).orElse(null);
+                    }
                     if (employee == null) {
                         failureCount++;
                         errors.add(Map.of("row", String.valueOf(i + 1), "message", "Employee not found: " + empCode));
                         continue;
                     }
+                    final Employee finalEmp = employee;
 
                     // Parse numeric fields
                     BigDecimal basic = parseDecimal(getCellString(row, 9));
@@ -216,9 +251,9 @@ public class PayrollService {
 
                     // Find or create Salary record
                     Salary salary = salaryRepository
-                        .findByEmployeeIdAndWageYearAndWageMonth(employee.getId(), year, month)
+                        .findByEmployeeIdAndWageYearAndWageMonth(finalEmp.getId(), year, month)
                         .orElseGet(() -> Salary.builder()
-                            .employee(employee)
+                            .employee(finalEmp)
                             .wageMonth(month)
                             .wageYear(year)
                             .build());
@@ -248,9 +283,9 @@ public class PayrollService {
                     // Create or update Payslip snapshot (avoid duplicates per employee+month+year)
                     BigDecimal totalDeductions = pf.add(esi).add(pt).add(hi);
                     Payslip payslip = payslipRepository
-                        .findByEmployeeIdAndWageYearAndWageMonth(employee.getId(), year, month)
+                        .findByEmployeeIdAndWageYearAndWageMonth(finalEmp.getId(), year, month)
                         .orElseGet(() -> Payslip.builder()
-                            .employee(employee)
+                            .employee(finalEmp)
                             .wageMonth(month)
                             .wageYear(year)
                             .build());
@@ -303,9 +338,17 @@ public class PayrollService {
     private String getCellString(Row row, int idx) {
         Cell cell = row.getCell(idx);
         if (cell == null) return "";
-        return switch (cell.getCellType()) {
+        CellType type = cell.getCellType();
+        if (type == CellType.FORMULA) {
+            type = cell.getCachedFormulaResultType();
+        }
+        return switch (type) {
             case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    LocalDate ld = cell.getLocalDateTimeCellValue().toLocalDate();
+                    yield ld.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                }
                 double val = cell.getNumericCellValue();
                 yield (val == Math.floor(val) && !Double.isInfinite(val))
                     ? String.valueOf((long) val)
@@ -314,6 +357,15 @@ public class PayrollService {
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             default -> "";
         };
+    }
+
+    private String normalizeCode(String code) {
+        if (code == null) return "";
+        String clean = code.replaceAll("[^a-zA-Z0-9]", "");
+        String digits = clean.replaceAll("[^0-9]", "");
+        String alpha = clean.replaceAll("[0-9]", "");
+        if (digits.isEmpty()) return clean.toUpperCase();
+        return alpha.toUpperCase() + String.format("%04d", Integer.parseInt(digits));
     }
 
     private BigDecimal parseDecimal(String val) {
