@@ -634,37 +634,94 @@ public class MonthlyLeaveService {
             }
 
             Row headerRow = sheet.getRow(headerRowIdx);
-            Map<String, Integer> colMap = new HashMap<>();
+            Map<String, Integer> colMap = new LinkedHashMap<>();
             for (int c = 0; c < headerRow.getLastCellNum(); c++) {
                 Cell cell = headerRow.getCell(c);
                 if (cell != null) {
-                    String val = cell.getStringCellValue().replaceAll("\\s+", " ").trim().toLowerCase();
-                    colMap.put(val, c);
+                    String val = getCellString(cell);
+                    if (val != null && !val.isBlank()) {
+                        colMap.put(val.replaceAll("\\s+", " ").trim().toLowerCase(), c);
+                    }
                 }
             }
 
-            int colEmpCode = findColumnIndex(colMap, "emp.code", "emp code", "code", "empcode");
-            int colClOpen = findColumnIndex(colMap, "cl leave balance", "cl opening", "cl open");
-            int colPlOpen = findColumnIndex(colMap, "pl leave balance", "pl opening", "pl open");
-            int colClAdd = findColumnIndex(colMap, "cl added", "cl add");
-            int colPlAdd = findColumnIndex(colMap, "pl added", "pl add");
-            int colClAvail = findColumnIndex(colMap, "cl availed", "cl avail");
-            int colPlAvail = findColumnIndex(colMap, "pl availed", "pl avail");
-            int colLop = findColumnIndex(colMap, "lop", "loss of pay");
-            int colLwd = findColumnIndex(colMap, "last working day", "lwd", "last working");
-            int colRemarks = findColumnIndex(colMap, "remarks", "remark", "notes");
+            int colEmpCode = -1;
+            int colClOpen = -1;
+            int colPlOpen = -1;
+            int colClAdd = -1;
+            int colPlAdd = -1;
+            int colClAfterAdd = -1;
+            int colPlAfterAdd = -1;
+            int colClAvail = -1;
+            int colPlAvail = -1;
+            int colLop = -1;
+            int colClClose = -1;
+            int colPlClose = -1;
+            int colLwd = -1;
+            int colRemarks = -1;
 
-            if (colEmpCode == -1) {
-                // Fallback to fixed column index 2
-                colEmpCode = 2;
+            for (Map.Entry<String, Integer> entry : colMap.entrySet()) {
+                String h = entry.getKey();
+                int idx = entry.getValue();
+
+                if (colEmpCode == -1 && (h.contains("emp.code") || h.contains("emp code") || h.contains("empcode") || h.equals("code") || h.contains("employee code"))) {
+                    colEmpCode = idx;
+                }
+                if (colClAdd == -1 && (h.contains("cl added") || h.contains("cl add") || h.contains("cl credit")) && !h.contains("after")) {
+                    colClAdd = idx;
+                }
+                if (colPlAdd == -1 && (h.contains("pl added") || h.contains("pl add") || h.contains("pl credit")) && !h.contains("after")) {
+                    colPlAdd = idx;
+                }
+                if (colClAfterAdd == -1 && h.contains("after") && h.contains("cl")) {
+                    colClAfterAdd = idx;
+                }
+                if (colPlAfterAdd == -1 && h.contains("after") && h.contains("pl")) {
+                    colPlAfterAdd = idx;
+                }
+                if (colClAvail == -1 && (h.contains("cl availed") || h.contains("cl avail") || h.contains("cl taken") || h.contains("cl used"))) {
+                    colClAvail = idx;
+                }
+                if (colPlAvail == -1 && (h.contains("pl availed") || h.contains("pl avail") || h.contains("pl taken") || h.contains("pl used"))) {
+                    colPlAvail = idx;
+                }
+                if (colLop == -1 && (h.contains("lop") || h.contains("loss of pay"))) {
+                    colLop = idx;
+                }
+                if (colLwd == -1 && (h.contains("last working") || h.contains("lwd"))) {
+                    colLwd = idx;
+                }
+                if (colRemarks == -1 && (h.contains("remark") || h.contains("notes") || h.contains("comment"))) {
+                    colRemarks = idx;
+                }
+                if (h.contains("cl") && !h.contains("after") && !h.contains("add") && !h.contains("avail") && !h.contains("gender") && !h.contains("name")) {
+                    if (h.contains("opening") || h.contains("open") || h.contains("sep") || h.contains("prev") || (h.contains("balance") && !h.contains("closing") && !h.contains("close") && !h.contains("oct") && !h.contains("final"))) {
+                        if (colClOpen == -1) colClOpen = idx;
+                    } else if (h.contains("closing") || h.contains("close") || h.contains("oct") || h.contains("final")) {
+                        if (colClClose == -1) colClClose = idx;
+                    }
+                }
+                if (h.contains("pl") && !h.contains("after") && !h.contains("add") && !h.contains("avail") && !h.contains("department")) {
+                    if (h.contains("opening") || h.contains("open") || h.contains("sep") || h.contains("prev") || (h.contains("balance") && !h.contains("closing") && !h.contains("close") && !h.contains("oct") && !h.contains("final"))) {
+                        if (colPlOpen == -1) colPlOpen = idx;
+                    } else if (h.contains("closing") || h.contains("close") || h.contains("oct") || h.contains("final")) {
+                        if (colPlClose == -1) colPlClose = idx;
+                    }
+                }
             }
+
+            if (colEmpCode == -1) colEmpCode = 2;
             if (colClOpen == -1) colClOpen = 7;
             if (colPlOpen == -1) colPlOpen = 8;
             if (colClAdd == -1) colClAdd = 9;
             if (colPlAdd == -1) colPlAdd = 10;
+            if (colClAfterAdd == -1) colClAfterAdd = 11;
+            if (colPlAfterAdd == -1) colPlAfterAdd = 12;
             if (colClAvail == -1) colClAvail = 13;
             if (colPlAvail == -1) colPlAvail = 14;
             if (colLop == -1) colLop = 15;
+            if (colClClose == -1) colClClose = 17;
+            if (colPlClose == -1) colPlClose = 18;
             if (colLwd == -1) colLwd = 19;
             if (colRemarks == -1) colRemarks = 20;
 
@@ -721,21 +778,34 @@ public class MonthlyLeaveService {
                 Double plOpen = getCellNumeric(row.getCell(colPlOpen));
                 Double clAdd = getCellNumeric(row.getCell(colClAdd));
                 Double plAdd = getCellNumeric(row.getCell(colPlAdd));
+                Double clAfter = colClAfterAdd != -1 ? getCellNumeric(row.getCell(colClAfterAdd)) : null;
+                Double plAfter = colPlAfterAdd != -1 ? getCellNumeric(row.getCell(colPlAfterAdd)) : null;
                 Double clAvail = getCellNumeric(row.getCell(colClAvail));
                 Double plAvail = getCellNumeric(row.getCell(colPlAvail));
                 Double lop = getCellNumeric(row.getCell(colLop));
+                Double clClose = colClClose != -1 ? getCellNumeric(row.getCell(colClClose)) : null;
+                Double plClose = colPlClose != -1 ? getCellNumeric(row.getCell(colPlClose)) : null;
                 String lwd = getCellString(row.getCell(colLwd));
                 String remarks = getCellString(row.getCell(colRemarks));
 
-                double[] accrual = calculateMonthlyAccrual(emp, year, month);
-
                 if (clOpen != null) record.setClOpening(clOpen);
                 if (plOpen != null) record.setPlOpening(plOpen);
+
+                if (clAdd == null && clAfter != null && record.getClOpening() != null) {
+                    clAdd = Math.max(0.0, Math.round((clAfter - record.getClOpening()) * 10.0) / 10.0);
+                }
+                if (plAdd == null && plAfter != null && record.getPlOpening() != null) {
+                    plAdd = Math.max(0.0, Math.round((plAfter - record.getPlOpening()) * 10.0) / 10.0);
+                }
+
+                double[] accrual = calculateMonthlyAccrual(emp, year, month);
 
                 if (clAdd != null) {
                     record.setClAdded(clAdd);
                 } else if (isNew) {
                     record.setClAdded(accrual[0]);
+                } else {
+                    record.setClAdded(0.0);
                 }
 
                 if (plAdd != null) {
@@ -747,15 +817,21 @@ public class MonthlyLeaveService {
                     }
                 } else if (isNew) {
                     record.setPlAdded(accrual[1]);
+                } else {
+                    record.setPlAdded(0.0);
                 }
 
-                if (clAvail != null) record.setClAvailed(clAvail);
-                if (plAvail != null) record.setPlAvailed(plAvail);
-                if (lop != null) record.setLop(lop);
+                if (clAvail != null) record.setClAvailed(clAvail); else if (isNew) record.setClAvailed(0.0);
+                if (plAvail != null) record.setPlAvailed(plAvail); else if (isNew) record.setPlAvailed(0.0);
+                if (lop != null) record.setLop(lop); else if (isNew) record.setLop(0.0);
                 if (lwd != null) record.setLastWorkingDay(lwd);
                 if (remarks != null) record.setRemarks(remarks);
 
                 record.calculateValues();
+
+                if (clClose != null) record.setClClosing(clClose);
+                if (plClose != null) record.setPlClosing(plClose);
+
                 recordsToSave.add(record);
 
                 if (isNew) imported++; else updated++;
@@ -782,10 +858,13 @@ public class MonthlyLeaveService {
             if (row == null) continue;
             for (int c = 0; c < row.getLastCellNum(); c++) {
                 Cell cell = row.getCell(c);
-                if (cell != null && cell.getCellType() == CellType.STRING) {
-                    String str = cell.getStringCellValue().toLowerCase();
-                    if (str.contains("emp.code") || str.contains("emp code") || str.contains("gender")) {
-                        return r;
+                if (cell != null) {
+                    String str = getCellString(cell);
+                    if (str != null) {
+                        str = str.toLowerCase();
+                        if (str.contains("emp.code") || str.contains("emp code") || str.contains("gender") || str.contains("empcode")) {
+                            return r;
+                        }
                     }
                 }
             }
@@ -842,7 +921,11 @@ public class MonthlyLeaveService {
 
     private String getCellString(Cell cell) {
         if (cell == null) return null;
-        return switch (cell.getCellType()) {
+        CellType type = cell.getCellType();
+        if (type == CellType.FORMULA) {
+            type = cell.getCachedFormulaResultType();
+        }
+        return switch (type) {
             case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
                 double val = cell.getNumericCellValue();
@@ -862,15 +945,21 @@ public class MonthlyLeaveService {
 
     private Double getCellNumeric(Cell cell) {
         if (cell == null) return null;
-        return switch (cell.getCellType()) {
+        CellType type = cell.getCellType();
+        if (type == CellType.FORMULA) {
+            type = cell.getCachedFormulaResultType();
+        }
+        return switch (type) {
             case NUMERIC -> cell.getNumericCellValue();
             case STRING -> {
                 try {
-                    yield Double.parseDouble(cell.getStringCellValue().trim());
+                    String s = cell.getStringCellValue().trim();
+                    yield s.isEmpty() ? null : Double.parseDouble(s);
                 } catch (Exception e) {
                     yield null;
                 }
             }
+            case BOOLEAN -> cell.getBooleanCellValue() ? 1.0 : 0.0;
             default -> null;
         };
     }

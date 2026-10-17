@@ -81,7 +81,7 @@ public class MonthlyLeaveBalance {
     @Builder.Default
     private Double plClosing = 1.5;
 
-    @Column(name = "last_working_day", length = 30)
+    @Column(name = "last_working_day", length = 255)
     private String lastWorkingDay;
 
     @Column(name = "remarks", length = 500)
@@ -98,10 +98,10 @@ public class MonthlyLeaveBalance {
         if (plAvailed == null) plAvailed = 0.0;
         if (lop == null) lop = 0.0;
 
-        this.clAfterAdd = this.clOpening + this.clAdded;
-        this.plAfterAdd = this.plOpening + this.plAdded;
-        this.totalAvailed = this.clAvailed + this.plAvailed + this.lop;
-        this.clClosing = this.clAfterAdd - this.clAvailed;
-        this.plClosing = this.plAfterAdd - this.plAvailed;
+        this.clAfterAdd = Math.round((this.clOpening + this.clAdded) * 100.0) / 100.0;
+        this.plAfterAdd = Math.round((this.plOpening + this.plAdded) * 100.0) / 100.0;
+        this.totalAvailed = Math.round((this.clAvailed + this.plAvailed + this.lop) * 100.0) / 100.0;
+        this.clClosing = Math.max(0.0, Math.round((this.clAfterAdd - this.clAvailed) * 100.0) / 100.0);
+        this.plClosing = Math.max(0.0, Math.round((this.plAfterAdd - this.plAvailed) * 100.0) / 100.0);
     }
 }
