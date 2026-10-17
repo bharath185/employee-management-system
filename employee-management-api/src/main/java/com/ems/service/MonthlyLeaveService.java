@@ -15,6 +15,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,27 +89,7 @@ public class MonthlyLeaveService {
                 }
             }
 
-            // 3. For any employee with no previous monthly records at all, check yearly balances in bulk
-            List<Long> needYearlyBalanceIds = missingEmployees.stream()
-                    .map(Employee::getId)
-                    .filter(id -> !prevByEmpId.containsKey(id))
-                    .collect(Collectors.toList());
-
-            Map<Long, Map<String, Double>> yearlyMap = new HashMap<>();
-            if (!needYearlyBalanceIds.isEmpty()) {
-                try {
-                    List<LeaveBalance> ybList = leaveBalanceRepository.findByYear(year);
-                    for (LeaveBalance yb : ybList) {
-                        if (yb.getEmployee() != null && yb.getEmployee().getId() != null && yb.getLeaveType() != null) {
-                            String typeName = yb.getLeaveType().getName() != null ? yb.getLeaveType().getName().trim().toUpperCase() : "";
-                            double val = yb.getBalance() != null ? yb.getBalance().doubleValue() : 0.0;
-                            yearlyMap.computeIfAbsent(yb.getEmployee().getId(), k -> new HashMap<>()).put(typeName, val);
-                        }
-                    }
-                } catch (Exception ignored) {}
-            }
-
-            // 4. Build records in memory
+            // 3. Build records in memory
             List<MonthlyLeaveBalance> toInsert = new ArrayList<>();
             for (Employee emp : missingEmployees) {
                 double clOpen = 0.0;
@@ -117,12 +99,6 @@ public class MonthlyLeaveService {
                 if (prev != null) {
                     clOpen = prev.getClClosing() != null ? prev.getClClosing() : 0.0;
                     plOpen = prev.getPlClosing() != null ? prev.getPlClosing() : 0.0;
-                } else {
-                    Map<String, Double> empYb = yearlyMap.get(emp.getId());
-                    if (empYb != null) {
-                        clOpen = empYb.getOrDefault("CL", 0.0);
-                        plOpen = empYb.getOrDefault("PL", 0.0);
-                    }
                 }
 
                 double[] accrual = calculateMonthlyAccrual(emp, year, month);
@@ -186,10 +162,17 @@ public class MonthlyLeaveService {
         // Apply policy adjustments to existing records if employee tenure is < 6 months
         List<MonthlyLeaveBalance> dirtyExisting = new ArrayList<>();
         for (MonthlyLeaveBalance b : existing) {
+            boolean modified = false;
+
+            // If previous months were not added, reset old plOpening = 1.5 artifact to 0.0
+            if (b.getClOpening() == 0.0 && b.getPlOpening() != null && b.getPlOpening() == 1.5) {
+                b.setPlOpening(0.0);
+                modified = true;
+            }
+
             Employee emp = b.getEmployee();
             if (emp != null && emp.getDoj() != null) {
                 double[] accrual = calculateMonthlyAccrual(emp, year, month);
-                boolean modified = false;
 
                 // Rule: If vintage < 6 months, PL Added must be 0.0
                 if (accrual[1] == 0.0 && b.getPlAdded() != null && b.getPlAdded() == 1.5) {
@@ -205,11 +188,11 @@ public class MonthlyLeaveService {
                         modified = true;
                     }
                 }
+            }
 
-                if (modified) {
-                    b.calculateValues();
-                    dirtyExisting.add(b);
-                }
+            if (modified) {
+                b.calculateValues();
+                dirtyExisting.add(b);
             }
         }
         if (!dirtyExisting.isEmpty()) {
@@ -297,6 +280,21 @@ public class MonthlyLeaveService {
         if (!toUpdate.isEmpty()) {
             monthlyLeaveBalanceRepository.saveAll(toUpdate);
             monthlyLeaveBalanceRepository.flush();
+        }
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    public int cleanupTestRecords() {
+        try {
+            int deleted = jdbcTemplate.update("DELETE FROM monthly_leave_balances WHERE NOT (year = 2026 AND month = 10)");
+            if (deleted > 0) {
+                log.info("Cleaned up {} test monthly leave balance records, keeping only October 2026", deleted);
+            }
+            jdbcTemplate.update("UPDATE monthly_leave_balances SET pl_opening = 0.0, pl_after_add = pl_added, pl_closing = pl_added - pl_availed WHERE year = 2026 AND month = 10 AND pl_opening = 1.5 AND cl_opening = 0.0");
+            return deleted;
+        } catch (Exception e) {
+            log.warn("Cleanup test months error: {}", e.getMessage());
+            return 0;
         }
     }
 

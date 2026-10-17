@@ -328,4 +328,11 @@ public class LeaveController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .body(bytes);
     }
+
+    @DeleteMapping("/monthly-balances/cleanup-tests")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public ResponseEntity<APIResponse<String>> cleanupTests() {
+        int deleted = monthlyLeaveService.cleanupTestRecords();
+        return ResponseEntity.ok(APIResponse.success("Cleaned up " + deleted + " test records. Kept October 2026 only."));
+    }
 }
