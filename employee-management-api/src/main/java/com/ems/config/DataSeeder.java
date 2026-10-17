@@ -605,7 +605,11 @@ public class DataSeeder implements CommandLineRunner {
 
     @Transactional
     private void seedPermissions() {
-        rolePermissionRepository.deleteAll();
+        if (rolePermissionRepository.count() > 0) {
+            log.debug("Role permissions already exist, skipping seed");
+            return;
+        }
+        rolePermissionRepository.deleteAllInBatch();
 
         String[][] resources = {
             {"dashboard", "1,1,1,1", "1,1,1,1", "1,0,0,0"},
