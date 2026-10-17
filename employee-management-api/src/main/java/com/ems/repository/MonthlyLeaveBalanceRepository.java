@@ -24,4 +24,7 @@ public interface MonthlyLeaveBalanceRepository extends JpaRepository<MonthlyLeav
 
     @Query("SELECT m FROM MonthlyLeaveBalance m WHERE m.employee.id IN :employeeIds AND ((m.year = :year AND m.month < :month) OR (m.year < :year)) ORDER BY m.year DESC, m.month DESC")
     List<MonthlyLeaveBalance> findPreviousMonthsForEmployees(@Param("employeeIds") java.util.Collection<Long> employeeIds, @Param("year") Integer year, @Param("month") Integer month);
+
+    @Query("SELECT m FROM MonthlyLeaveBalance m JOIN FETCH m.employee e WHERE m.employee.id IN :employeeIds AND ((m.year = :year AND m.month > :month) OR (m.year > :year)) ORDER BY m.year ASC, m.month ASC")
+    List<MonthlyLeaveBalance> findFutureMonthsForEmployees(@Param("employeeIds") java.util.Collection<Long> employeeIds, @Param("year") Integer year, @Param("month") Integer month);
 }

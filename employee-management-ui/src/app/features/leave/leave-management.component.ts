@@ -1903,6 +1903,7 @@ export class LeaveManagementComponent implements OnInit {
           this.msg.success('Leave balances saved successfully');
           this.monthlyBalances = res.data.map(item => ({ ...item }));
           this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
+          this.monthlyCache.clear();
           this.monthlyCache.set(`${this.selectedYear}-${this.selectedMonth}`, res.data.map(item => ({ ...item })));
           this.isEditing = false;
           this.applyMonthlyFilters();
