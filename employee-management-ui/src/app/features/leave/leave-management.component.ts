@@ -1334,6 +1334,7 @@ export class LeaveManagementComponent implements OnInit {
   monthlyBalances: MonthlyLeaveBalanceDTO[] = [];
   originalMonthlyBalances: MonthlyLeaveBalanceDTO[] = [];
   filteredMonthlyBalances: MonthlyLeaveBalanceDTO[] = [];
+  private monthlyCache = new Map<string, MonthlyLeaveBalanceDTO[]>();
 
   loadingMonthly = false;
   isEditing = false;
@@ -1784,13 +1785,25 @@ export class LeaveManagementComponent implements OnInit {
 
   // ==================== Monthly Leave Balance Grid Methods ====================
 
-  loadMonthlyBalances(): void {
-    this.loadingMonthly = true;
+  loadMonthlyBalances(forceRefresh: boolean = false): void {
+    const cacheKey = `${this.selectedYear}-${this.selectedMonth}`;
     this.isEditing = false;
+
+    if (!forceRefresh && this.monthlyCache.has(cacheKey)) {
+      const cached = this.monthlyCache.get(cacheKey)!;
+      this.monthlyBalances = cached.map(item => ({ ...item }));
+      this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
+      this.applyMonthlyFilters();
+      this.loadingMonthly = false;
+      return;
+    }
+
+    this.loadingMonthly = true;
     this.leaveService.getMonthlyBalances(this.selectedYear, this.selectedMonth).subscribe({
       next: (res) => {
         this.loadingMonthly = false;
         if (res.success && res.data) {
+          this.monthlyCache.set(cacheKey, res.data.map(item => ({ ...item })));
           this.monthlyBalances = res.data.map(item => ({ ...item }));
           this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
           this.applyMonthlyFilters();
@@ -1890,6 +1903,7 @@ export class LeaveManagementComponent implements OnInit {
           this.msg.success('Leave balances saved successfully');
           this.monthlyBalances = res.data.map(item => ({ ...item }));
           this.originalMonthlyBalances = JSON.parse(JSON.stringify(this.monthlyBalances));
+          this.monthlyCache.set(`${this.selectedYear}-${this.selectedMonth}`, res.data.map(item => ({ ...item })));
           this.isEditing = false;
           this.applyMonthlyFilters();
         }
@@ -1925,7 +1939,8 @@ export class LeaveManagementComponent implements OnInit {
           this.uploadingExcel = false;
           if (res.success) {
             this.msg.success(res.message || 'Excel imported successfully');
-            this.loadMonthlyBalances();
+            this.monthlyCache.clear();
+            this.loadMonthlyBalances(true);
           }
           event.target.value = '';
         },
