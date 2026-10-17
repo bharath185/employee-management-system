@@ -19,6 +19,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -255,6 +258,23 @@ public class SalaryMasterService {
 
     @Transactional(readOnly = true)
     public byte[] generateSampleExcelTemplate() {
+        try (InputStream is = getClass().getResourceAsStream("/templates/Salary_Statement_Auditor_Template.xlsx")) {
+            if (is != null) {
+                return is.readAllBytes();
+            }
+        } catch (Exception e) {
+            log.warn("Could not read template from classpath: {}", e.getMessage());
+        }
+
+        try {
+            Path path = Paths.get("data", "Salary Statement_September_dummy.xlsx");
+            if (Files.exists(path)) {
+                return Files.readAllBytes(path);
+            }
+        } catch (Exception e) {
+            log.warn("Could not read template from disk: {}", e.getMessage());
+        }
+
         List<Employee> employees = employeeRepository.findAllLiveEmployees();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {

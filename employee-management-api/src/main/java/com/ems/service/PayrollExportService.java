@@ -22,7 +22,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
@@ -321,6 +325,33 @@ public class PayrollExportService {
      */
     public ResponseEntity<byte[]> generateSampleStatement() {
         String filename = "Salary_Statement_Sample.xlsx";
+
+        byte[] templateBytes = null;
+        try (InputStream is = getClass().getResourceAsStream("/templates/Salary_Statement_Auditor_Template.xlsx")) {
+            if (is != null) {
+                templateBytes = is.readAllBytes();
+            }
+        } catch (Exception e) {
+            log.warn("Could not read template from classpath: {}", e.getMessage());
+        }
+
+        if (templateBytes == null) {
+            try {
+                Path path = Paths.get("data", "Salary Statement_September_dummy.xlsx");
+                if (Files.exists(path)) {
+                    templateBytes = Files.readAllBytes(path);
+                }
+            } catch (Exception e) {
+                log.warn("Could not read template from disk: {}", e.getMessage());
+            }
+        }
+
+        if (templateBytes != null) {
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(templateBytes);
+        }
 
         Company company = companyService.getCompany();
         String companyName = company != null && company.getCompanyName() != null && !company.getCompanyName().isBlank()
