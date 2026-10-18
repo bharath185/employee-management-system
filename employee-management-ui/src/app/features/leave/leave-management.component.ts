@@ -17,8 +17,9 @@ import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzModalModule, NzModalService } from 'ng-zorro-antd/modal';
+import { NzPopoverModule } from 'ng-zorro-antd/popover';
 
-import { LeaveService, MonthlyLeaveBalanceDTO } from '../../core/services/leave.service';
+import { LeaveService, MonthlyLeaveBalanceDTO, LeaveDetailDTO } from '../../core/services/leave.service';
 import { EmployeeService } from '../../core/services/employee.service';
 import { AuthService } from '../../core/services/auth.service';
 import { HolidayService } from '../../core/services/holiday.service';
@@ -37,7 +38,7 @@ import { saveAs } from 'file-saver';
     CommonModule, FormsModule, NzTableModule, NzButtonModule, NzSelectModule,
     NzIconModule, NzInputModule, NzInputNumberModule, NzDatePickerModule,
     NzTabsModule, NzCardModule, NzTagModule, NzPopconfirmModule, NzSpinModule,
-    NzToolTipModule, NzModalModule,
+    NzToolTipModule, NzModalModule, NzPopoverModule,
     HolidayListComponent, CompOffTrackingComponent, EncashmentComponent,
     DateFormatPipe
   ],
@@ -45,22 +46,31 @@ import { saveAs } from 'file-saver';
     <div class="leave-container page-enter">
 
       <!-- ===== TABS ===== -->
-      <nz-tabset class="employee-tabs">
+      <nz-tabset class="employee-tabs" [(nzSelectedIndex)]="selectedTabIndex">
         <nz-tab nzTitle="Applications">
           <div class="leave-card">
             <div class="tab-filters">
-              <nz-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()" nzPlaceHolder="Filter by status" class="filter-select">
+              <nz-select [(ngModel)]="statusFilter" (ngModelChange)="onStatusFilterChange()" nzPlaceHolder="Filter by status" class="filter-select" style="width:140px;">
                 <nz-option nzValue="" nzLabel="All Statuses"></nz-option>
                 <nz-option nzValue="PENDING" nzLabel="Pending"></nz-option>
                 <nz-option nzValue="APPROVED" nzLabel="Approved"></nz-option>
                 <nz-option nzValue="REJECTED" nzLabel="Rejected"></nz-option>
               </nz-select>
+
+              <nz-input-group [nzPrefix]="searchAppIcon" style="width:230px; margin-left: 8px;">
+                <input nz-input [(ngModel)]="appSearchText" (ngModelChange)="onAppSearchChange()" placeholder="Filter employee code / name..." />
+              </nz-input-group>
+              <ng-template #searchAppIcon><i nz-icon nzType="search"></i></ng-template>
+              <button nz-button *ngIf="appSearchText" (click)="clearAppSearch()" nzType="default" nzSize="small" style="margin-left:4px;">
+                <i nz-icon nzType="close"></i>
+              </button>
+
               <button nz-button class="apply-leave-btn" (click)="showApplyModal()">
                 <i nz-icon nzType="plus"></i> Apply Leave
               </button>
             </div>
 
-            <nz-table #appTable [nzData]="applications" [nzLoading]="loadingApps" class="theme-table" nzSize="small"
+            <nz-table #appTable [nzData]="displayedApplications" [nzLoading]="loadingApps" class="theme-table" nzSize="small"
               [nzFrontPagination]="false"
               [nzShowPagination]="appTotal > appSize"
               [nzPageIndex]="appPage + 1"
@@ -239,8 +249,8 @@ import { saveAs } from 'file-saver';
                     <th class="th-green" nzWidth="95px">PL added in {{ currMonthLabel }}</th>
                     <th class="th-maroon" nzWidth="130px">After Adding CL leave balance as on {{ currMonthLabel }}</th>
                     <th class="th-maroon" nzWidth="130px">After Adding PL leave balance as on {{ currMonthLabel }}</th>
-                    <th class="th-green" nzWidth="95px">CL Availed in {{ currMonthLabel }}</th>
-                    <th class="th-green" nzWidth="95px">PL Availed in {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="110px">CL Leaves Taken in {{ currMonthLabel }}</th>
+                    <th class="th-green" nzWidth="110px">PL Leaves Taken in {{ currMonthLabel }}</th>
                     <th class="th-navy" nzWidth="85px">LOP</th>
                     <th class="th-green col-total" nzWidth="105px">Total leave Availed</th>
                     <th class="th-vivid-green" nzWidth="125px">CL Leave Balance as on {{ currMonthLabel }}</th>
@@ -302,15 +312,97 @@ import { saveAs } from 'file-saver';
                     <!-- After Adding PL (Formula) -->
                     <td class="text-center col-maroon-cell font-bold">{{ row.plAfterAdd }}</td>
                     
-                    <!-- CL Availed -->
-                    <td class="text-center">
-                      <ng-container *ngIf="!isEditing">{{ row.clAvailed }}</ng-container>
+                    <!-- CL Leaves Taken -->
+                    <td class="text-center td-leave-cell">
+                      <ng-container *ngIf="!isEditing">
+                        <ng-container *ngIf="row.clAvailed && row.clAvailed > 0; else zeroCl">
+                          <span class="leave-taken-badge has-leave"
+                                nz-popover
+                                [nzPopoverTitle]="clPopTitle"
+                                [nzPopoverContent]="clPopContent"
+                                nzPopoverTrigger="hover"
+                                nzPopoverPlacement="top"
+                                (click)="viewEmployeeLeaves(row, 'CL')">
+                            {{ row.clAvailed }} <i nz-icon nzType="info-circle" class="leave-info-icon"></i>
+                          </span>
+                          <ng-template #clPopTitle>
+                            <div class="popover-title-row">
+                              <strong>{{ row.employeeCode }} - {{ row.employeeName }}</strong>
+                              <nz-tag nzColor="blue">CL Taken: {{ row.clAvailed }} Day(s)</nz-tag>
+                            </div>
+                          </ng-template>
+                          <ng-template #clPopContent>
+                            <div class="leave-popover-content">
+                              <div class="pop-header-sub">Casual Leave(s) Taken in {{ currMonthLabel }}:</div>
+                              <div *ngFor="let l of (row.clLeaveDetails || [])" class="leave-detail-item">
+                                <div class="detail-row">
+                                  <i nz-icon nzType="calendar" style="color:#1d4ed8;"></i>
+                                  <strong style="margin-left:4px;">{{ l.fromDate }}<span *ngIf="l.fromDate !== l.toDate"> to {{ l.toDate }}</span></strong>
+                                  <span class="detail-days">({{ l.days }} day{{ l.days > 1 ? 's' : '' }})</span>
+                                  <nz-tag [nzColor]="l.status === 'APPROVED' ? 'green' : 'orange'" style="margin-left:auto; font-size:10px;">{{ l.status }}</nz-tag>
+                                </div>
+                                <div class="detail-reason" *ngIf="l.reason">Reason: <em>{{ l.reason }}</em></div>
+                              </div>
+                              <div *ngIf="!row.clLeaveDetails || row.clLeaveDetails.length === 0" class="no-details-hint">
+                                Leave recorded in monthly register.
+                              </div>
+                              <div class="pop-click-hint" (click)="viewEmployeeLeaves(row, 'CL')">
+                                <i nz-icon nzType="eye"></i> Click to view / filter applications
+                              </div>
+                            </div>
+                          </ng-template>
+                        </ng-container>
+                        <ng-template #zeroCl>
+                          <span class="zero-leave-text" nz-tooltip nzTooltipTitle="0 leaves taken in {{ currMonthLabel }}">0</span>
+                        </ng-template>
+                      </ng-container>
                       <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.clAvailed" (ngModelChange)="recalculateRow(row)" />
                     </td>
                     
-                    <!-- PL Availed -->
-                    <td class="text-center">
-                      <ng-container *ngIf="!isEditing">{{ row.plAvailed }}</ng-container>
+                    <!-- PL Leaves Taken -->
+                    <td class="text-center td-leave-cell">
+                      <ng-container *ngIf="!isEditing">
+                        <ng-container *ngIf="row.plAvailed && row.plAvailed > 0; else zeroPl">
+                          <span class="leave-taken-badge has-leave"
+                                nz-popover
+                                [nzPopoverTitle]="plPopTitle"
+                                [nzPopoverContent]="plPopContent"
+                                nzPopoverTrigger="hover"
+                                nzPopoverPlacement="top"
+                                (click)="viewEmployeeLeaves(row, 'PL')">
+                            {{ row.plAvailed }} <i nz-icon nzType="info-circle" class="leave-info-icon"></i>
+                          </span>
+                          <ng-template #plPopTitle>
+                            <div class="popover-title-row">
+                              <strong>{{ row.employeeCode }} - {{ row.employeeName }}</strong>
+                              <nz-tag nzColor="green">PL Taken: {{ row.plAvailed }} Day(s)</nz-tag>
+                            </div>
+                          </ng-template>
+                          <ng-template #plPopContent>
+                            <div class="leave-popover-content">
+                              <div class="pop-header-sub">Privilege Leave(s) Taken in {{ currMonthLabel }}:</div>
+                              <div *ngFor="let l of (row.plLeaveDetails || [])" class="leave-detail-item">
+                                <div class="detail-row">
+                                  <i nz-icon nzType="calendar" style="color:#16a34a;"></i>
+                                  <strong style="margin-left:4px;">{{ l.fromDate }}<span *ngIf="l.fromDate !== l.toDate"> to {{ l.toDate }}</span></strong>
+                                  <span class="detail-days">({{ l.days }} day{{ l.days > 1 ? 's' : '' }})</span>
+                                  <nz-tag [nzColor]="l.status === 'APPROVED' ? 'green' : 'orange'" style="margin-left:auto; font-size:10px;">{{ l.status }}</nz-tag>
+                                </div>
+                                <div class="detail-reason" *ngIf="l.reason">Reason: <em>{{ l.reason }}</em></div>
+                              </div>
+                              <div *ngIf="!row.plLeaveDetails || row.plLeaveDetails.length === 0" class="no-details-hint">
+                                Leave recorded in monthly register.
+                              </div>
+                              <div class="pop-click-hint" (click)="viewEmployeeLeaves(row, 'PL')">
+                                <i nz-icon nzType="eye"></i> Click to view / filter applications
+                              </div>
+                            </div>
+                          </ng-template>
+                        </ng-container>
+                        <ng-template #zeroPl>
+                          <span class="zero-leave-text" nz-tooltip nzTooltipTitle="0 leaves taken in {{ currMonthLabel }}">0</span>
+                        </ng-template>
+                      </ng-container>
                       <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.plAvailed" (ngModelChange)="recalculateRow(row)" />
                     </td>
                     
@@ -1254,9 +1346,102 @@ import { saveAs } from 'file-saver';
     .cell-input-text {
       text-align: left;
     }
+    .td-leave-cell {
+      position: relative;
+    }
+    .leave-taken-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .leave-taken-badge.has-leave {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .leave-taken-badge.has-leave:hover {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      box-shadow: 0 2px 5px rgba(37,99,235,0.25);
+      transform: scale(1.05);
+    }
+    .leave-info-icon {
+      font-size: 11px;
+      color: #3b82f6;
+    }
+    .zero-leave-text {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+    .popover-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 4px;
+    }
+    .leave-popover-content {
+      max-width: 320px;
+      font-size: 12px;
+    }
+    .pop-header-sub {
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .leave-detail-item {
+      padding: 6px 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .detail-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+    .detail-days {
+      color: #2563eb;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .detail-reason {
+      color: #64748b;
+      font-size: 11px;
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+    .pop-click-hint {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #2563eb;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: underline;
+    }
+    .no-details-hint {
+      color: #64748b;
+      font-style: italic;
+      font-size: 11px;
+    }
   `]
 })
 export class LeaveManagementComponent implements OnInit {
+  selectedTabIndex = 0;
+  appSearchText = '';
   applications: LeaveApplication[] = [];
   balances: LeaveBalance[] = [];
   leaveTypes: LeaveType[] = [];
@@ -1444,6 +1629,78 @@ export class LeaveManagementComponent implements OnInit {
   onAppPageSizeChange(size: number): void {
     this.appSize = size;
     this.appPage = 0;
+    this.loadApplications();
+  }
+
+  get displayedApplications(): LeaveApplication[] {
+    if (!this.appSearchText || !this.appSearchText.trim()) {
+      return this.applications;
+    }
+    const q = this.appSearchText.trim().toLowerCase();
+    return this.applications.filter(a =>
+      (a.employeeCode && a.employeeCode.toLowerCase().includes(q)) ||
+      (a.employeeName && a.employeeName.toLowerCase().includes(q)) ||
+      (a.reason && a.reason.toLowerCase().includes(q)) ||
+      (a.leaveTypeName && a.leaveTypeName.toLowerCase().includes(q))
+    );
+  }
+
+  onAppSearchChange(): void {
+    if (this.appSearchText && this.appSearchText.trim() && this.displayedApplications.length === 0 && this.appTotal > this.applications.length) {
+      this.appSize = 100;
+      this.appPage = 0;
+      this.loadApplications();
+    }
+  }
+
+  clearAppSearch(): void {
+    this.appSearchText = '';
+  }
+
+  viewEmployeeLeaves(row: MonthlyLeaveBalanceDTO, leaveType: string): void {
+    const details = leaveType === 'CL' ? row.clLeaveDetails : row.plLeaveDetails;
+    const leaveName = leaveType === 'CL' ? 'Casual Leave (CL)' : 'Privilege Leave (PL)';
+    const daysTaken = leaveType === 'CL' ? row.clAvailed : row.plAvailed;
+
+    if (details && details.length > 0) {
+      const itemsHtml = details.map(d => `
+        <div style="padding:10px 12px; background:#f8fafc; border-radius:6px; margin-bottom:8px; border:1px solid #e2e8f0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:600; color:#1e293b;">📅 ${d.fromDate} ${d.fromDate !== d.toDate ? 'to ' + d.toDate : ''}</span>
+            <span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; color:${d.status === 'APPROVED' ? '#15803d' : '#d97706'}; background:${d.status === 'APPROVED' ? '#dcfce7' : '#fef3c7'}">${d.status}</span>
+          </div>
+          <div style="margin-top:4px; color:#475569; font-size:12px;"><strong>Duration:</strong> ${d.days} day${d.days > 1 ? 's' : ''} (${d.leaveType || leaveType})</div>
+          <div style="margin-top:2px; color:#64748b; font-size:12px;"><strong>Reason:</strong> ${d.reason || 'None provided'}</div>
+          ${d.appliedDate ? `<div style="font-size:11px; color:#94a3b8; margin-top:3px;">Applied: ${d.appliedDate} ${d.approvedBy ? ' | Approved by: ' + d.approvedBy : ''}</div>` : ''}
+        </div>
+      `).join('');
+
+      this.modalService.info({
+        nzTitle: `${row.employeeCode} - ${row.employeeName} (${leaveName}: ${daysTaken} Day(s) in ${this.currMonthLabel})`,
+        nzWidth: 550,
+        nzContent: `<div style="margin-top:8px;">${itemsHtml}</div>`,
+        nzOkText: 'View in Applications Tab',
+        nzCancelText: 'Close',
+        nzOnOk: () => {
+          this.navigateToApplicationsForEmployee(row.employeeCode || '');
+        }
+      });
+    } else {
+      this.modalService.info({
+        nzTitle: `${row.employeeCode} - ${row.employeeName}`,
+        nzContent: `<p style="margin-top:8px;">This employee has <strong>${daysTaken} day(s)</strong> of ${leaveName} recorded in the monthly register for ${this.currMonthLabel}.</p>`,
+        nzOkText: 'Filter in Applications Tab',
+        nzOnOk: () => {
+          this.navigateToApplicationsForEmployee(row.employeeCode || '');
+        }
+      });
+    }
+  }
+
+  navigateToApplicationsForEmployee(employeeCode: string): void {
+    this.selectedTabIndex = 0;
+    this.appSearchText = employeeCode;
+    this.appSize = 50;
     this.loadApplications();
   }
 

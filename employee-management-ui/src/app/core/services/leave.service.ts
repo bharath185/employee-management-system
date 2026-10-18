@@ -177,6 +177,18 @@ export class LeaveService {
   }
 }
 
+export interface LeaveDetailDTO {
+  id: number;
+  leaveType: string;
+  fromDate: string;
+  toDate: string;
+  days: number;
+  reason: string;
+  status: string;
+  appliedDate?: string;
+  approvedBy?: string;
+}
+
 export interface MonthlyLeaveBalanceDTO {
   id?: number;
   employeeId: number;
@@ -203,5 +215,7 @@ export interface MonthlyLeaveBalanceDTO {
   plClosing?: number;
   lastWorkingDay?: string;
   remarks?: string;
+  clLeaveDetails?: LeaveDetailDTO[];
+  plLeaveDetails?: LeaveDetailDTO[];
 }
 

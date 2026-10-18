@@ -44,6 +44,25 @@ public class MonthlyLeaveBalanceDTO {
     private String lastWorkingDay;
     private String remarks;
 
+    private java.util.List<LeaveDetailDTO> clLeaveDetails;
+    private java.util.List<LeaveDetailDTO> plLeaveDetails;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LeaveDetailDTO {
+        private Long id;
+        private String leaveType;
+        private String fromDate;
+        private String toDate;
+        private Double days;
+        private String reason;
+        private String status;
+        private String appliedDate;
+        private String approvedBy;
+    }
+
     public static MonthlyLeaveBalanceDTO fromEntity(MonthlyLeaveBalance entity) {
         if (entity == null) return null;
         Employee emp = entity.getEmployee();

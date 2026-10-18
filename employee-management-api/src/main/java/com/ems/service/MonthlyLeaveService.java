@@ -31,6 +31,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.ems.model.LeaveApplication;
+import com.ems.repository.LeaveApplicationRepository;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,20 +43,102 @@ public class MonthlyLeaveService {
     private final EmployeeRepository employeeRepository;
     private final LeaveTypeRepository leaveTypeRepository;
     private final LeaveBalanceRepository leaveBalanceRepository;
+    private final LeaveApplicationRepository leaveApplicationRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<MonthlyLeaveBalanceDTO> getMonthlyBalances(int year, int month) {
         List<MonthlyLeaveBalance> existing = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
         if (existing.isEmpty()) {
             return Collections.emptyList();
         }
 
-        existing.sort(Comparator.comparing(m -> m.getEmployee() != null && m.getEmployee().getEmployeeCode() != null ? m.getEmployee().getEmployeeCode() : ""));
+        // Fetch all leave applications overlapping this month
+        List<LeaveApplication> monthApps = leaveApplicationRepository.findByMonth(year, month);
+        Map<Long, List<LeaveApplication>> appsByEmp = monthApps.stream()
+                .filter(a -> a.getEmployee() != null && a.getEmployee().getId() != null)
+                .collect(Collectors.groupingBy(a -> a.getEmployee().getId()));
 
-        return existing.stream()
-                .map(MonthlyLeaveBalanceDTO::fromEntity)
-                .collect(Collectors.toList());
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        DateTimeFormatter dtfTime = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
+        List<MonthlyLeaveBalanceDTO> dtoList = new ArrayList<>();
+        List<MonthlyLeaveBalance> toUpdate = new ArrayList<>();
+
+        for (MonthlyLeaveBalance b : existing) {
+            Long empId = b.getEmployee() != null ? b.getEmployee().getId() : null;
+            List<LeaveApplication> empApps = empId != null ? appsByEmp.getOrDefault(empId, Collections.emptyList()) : Collections.emptyList();
+
+            List<MonthlyLeaveBalanceDTO.LeaveDetailDTO> clDetails = new ArrayList<>();
+            List<MonthlyLeaveBalanceDTO.LeaveDetailDTO> plDetails = new ArrayList<>();
+
+            double approvedClDays = 0.0;
+            double approvedPlDays = 0.0;
+
+            for (LeaveApplication app : empApps) {
+                String typeName = app.getLeaveType() != null && app.getLeaveType().getName() != null 
+                        ? app.getLeaveType().getName().trim().toUpperCase() : "";
+                double days = app.getDays() != null ? app.getDays() : 1.0;
+                boolean isApproved = "APPROVED".equalsIgnoreCase(app.getStatus());
+
+                MonthlyLeaveBalanceDTO.LeaveDetailDTO detail = MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                        .id(app.getId())
+                        .leaveType(typeName)
+                        .fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                        .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "")
+                        .days(days)
+                        .reason(app.getReason() != null ? app.getReason() : "")
+                        .status(app.getStatus() != null ? app.getStatus() : "PENDING")
+                        .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                        .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "")
+                        .build();
+
+                if ("CL".equals(typeName) || typeName.contains("CASUAL")) {
+                    clDetails.add(detail);
+                    if (isApproved) {
+                        approvedClDays += days;
+                    }
+                } else if ("PL".equals(typeName) || typeName.contains("PRIVILEGE")) {
+                    plDetails.add(detail);
+                    if (isApproved) {
+                        approvedPlDays += days;
+                    }
+                } else {
+                    clDetails.add(detail);
+                    if (isApproved) {
+                        approvedClDays += days;
+                    }
+                }
+            }
+
+            boolean changed = false;
+            if (approvedClDays > 0 && (b.getClAvailed() == null || b.getClAvailed() < approvedClDays)) {
+                b.setClAvailed(approvedClDays);
+                changed = true;
+            }
+            if (approvedPlDays > 0 && (b.getPlAvailed() == null || b.getPlAvailed() < approvedPlDays)) {
+                b.setPlAvailed(approvedPlDays);
+                changed = true;
+            }
+
+            if (changed) {
+                b.calculateValues();
+                toUpdate.add(b);
+            }
+
+            MonthlyLeaveBalanceDTO dto = MonthlyLeaveBalanceDTO.fromEntity(b);
+            dto.setClLeaveDetails(clDetails);
+            dto.setPlLeaveDetails(plDetails);
+            dtoList.add(dto);
+        }
+
+        if (!toUpdate.isEmpty()) {
+            monthlyLeaveBalanceRepository.saveAll(toUpdate);
+            monthlyLeaveBalanceRepository.flush();
+        }
+
+        dtoList.sort(Comparator.comparing(m -> m.getEmployeeCode() != null ? m.getEmployeeCode() : ""));
+        return dtoList;
     }
 
     public static double[] calculateMonthlyAccrual(Employee emp, int year, int month) {
