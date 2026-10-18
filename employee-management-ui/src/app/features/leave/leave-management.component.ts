@@ -407,9 +407,48 @@ import { saveAs } from 'file-saver';
                     </td>
                     
                     <!-- LOP -->
-                    <td class="text-center" [class.col-lop-alert]="row.lop > 0">
+                    <td class="text-center td-leave-cell" [class.col-lop-alert]="row.lop > 0">
                       <ng-container *ngIf="!isEditing">
-                        <span [class.lop-value-bad]="row.lop > 0">{{ row.lop }}</span>
+                        <ng-container *ngIf="row.lop && row.lop > 0; else zeroLop">
+                          <span class="leave-taken-badge has-lop"
+                                nz-popover
+                                [nzPopoverTitle]="lopPopTitle"
+                                [nzPopoverContent]="lopPopContent"
+                                nzPopoverTrigger="hover"
+                                nzPopoverPlacement="top"
+                                (click)="viewEmployeeLeaves(row, 'LOP')">
+                            {{ row.lop }} <i nz-icon nzType="warning" class="leave-info-icon" style="color:#ef4444;"></i>
+                          </span>
+                          <ng-template #lopPopTitle>
+                            <div class="popover-title-row">
+                              <strong>{{ row.employeeCode }} - {{ row.employeeName }}</strong>
+                              <nz-tag nzColor="red">Loss of Pay: {{ row.lop }} Day(s)</nz-tag>
+                            </div>
+                          </ng-template>
+                          <ng-template #lopPopContent>
+                            <div class="leave-popover-content">
+                              <div class="pop-header-sub" style="color:#dc2626;">Loss of Pay Leave(s) in {{ currMonthLabel }}:</div>
+                              <div *ngFor="let l of (row.lopLeaveDetails || [])" class="leave-detail-item">
+                                <div class="detail-row">
+                                  <i nz-icon nzType="alert" style="color:#dc2626;"></i>
+                                  <strong style="margin-left:4px;">{{ l.fromDate }}<span *ngIf="l.fromDate !== l.toDate"> to {{ l.toDate }}</span></strong>
+                                  <span class="detail-days">({{ l.days }} day{{ l.days > 1 ? 's' : '' }})</span>
+                                  <nz-tag nzColor="red" style="margin-left:auto; font-size:10px;">{{ l.status }}</nz-tag>
+                                </div>
+                                <div class="detail-reason" *ngIf="l.reason">Reason: <em>{{ l.reason }}</em></div>
+                              </div>
+                              <div *ngIf="!row.lopLeaveDetails || row.lopLeaveDetails.length === 0" class="no-details-hint">
+                                Leave balance exhausted. Loss of pay recorded in monthly register.
+                              </div>
+                              <div class="pop-click-hint" (click)="viewEmployeeLeaves(row, 'LOP')">
+                                <i nz-icon nzType="eye"></i> Click to view / filter applications
+                              </div>
+                            </div>
+                          </ng-template>
+                        </ng-container>
+                        <ng-template #zeroLop>
+                          <span class="zero-leave-text" nz-tooltip nzTooltipTitle="0 LOP in {{ currMonthLabel }}">0</span>
+                        </ng-template>
                       </ng-container>
                       <input *ngIf="isEditing" type="number" step="0.5" class="cell-input" [(ngModel)]="row.lop" (ngModelChange)="recalculateRow(row)" />
                     </td>
@@ -1371,6 +1410,17 @@ import { saveAs } from 'file-saver';
       box-shadow: 0 2px 5px rgba(37,99,235,0.25);
       transform: scale(1.05);
     }
+    .leave-taken-badge.has-lop {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+    }
+    .leave-taken-badge.has-lop:hover {
+      background: #fee2e2;
+      border-color: #ef4444;
+      box-shadow: 0 2px 5px rgba(220,38,38,0.25);
+      transform: scale(1.05);
+    }
     .leave-info-icon {
       font-size: 11px;
       color: #3b82f6;
@@ -1658,9 +1708,9 @@ export class LeaveManagementComponent implements OnInit {
   }
 
   viewEmployeeLeaves(row: MonthlyLeaveBalanceDTO, leaveType: string): void {
-    const details = leaveType === 'CL' ? row.clLeaveDetails : row.plLeaveDetails;
-    const leaveName = leaveType === 'CL' ? 'Casual Leave (CL)' : 'Privilege Leave (PL)';
-    const daysTaken = leaveType === 'CL' ? row.clAvailed : row.plAvailed;
+    const details = leaveType === 'CL' ? row.clLeaveDetails : (leaveType === 'PL' ? row.plLeaveDetails : row.lopLeaveDetails);
+    const leaveName = leaveType === 'CL' ? 'Casual Leave (CL)' : (leaveType === 'PL' ? 'Privilege Leave (PL)' : 'Loss of Pay (LOP)');
+    const daysTaken = leaveType === 'CL' ? row.clAvailed : (leaveType === 'PL' ? row.plAvailed : row.lop);
 
     if (details && details.length > 0) {
       const itemsHtml = details.map(d => `

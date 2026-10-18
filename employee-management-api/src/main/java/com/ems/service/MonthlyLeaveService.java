@@ -71,54 +71,152 @@ public class MonthlyLeaveService {
 
             List<MonthlyLeaveBalanceDTO.LeaveDetailDTO> clDetails = new ArrayList<>();
             List<MonthlyLeaveBalanceDTO.LeaveDetailDTO> plDetails = new ArrayList<>();
+            List<MonthlyLeaveBalanceDTO.LeaveDetailDTO> lopDetails = new ArrayList<>();
 
-            double approvedClDays = 0.0;
-            double approvedPlDays = 0.0;
+            double clAvailable = b.getClAfterAdd() != null ? b.getClAfterAdd() : 0.0;
+            double plAvailable = b.getPlAfterAdd() != null ? b.getPlAfterAdd() : 0.0;
 
-            for (LeaveApplication app : empApps) {
+            double remCl = clAvailable;
+            double remPl = plAvailable;
+            double calculatedClAvailed = 0.0;
+            double calculatedPlAvailed = 0.0;
+            double calculatedLop = 0.0;
+
+            // Sort applications by date ascending so earliest leaves deduct first
+            List<LeaveApplication> sortedApps = new ArrayList<>(empApps);
+            sortedApps.sort(Comparator.comparing(LeaveApplication::getFromDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                    .thenComparing(LeaveApplication::getId, Comparator.nullsLast(Comparator.naturalOrder())));
+
+            for (LeaveApplication app : sortedApps) {
                 String typeName = app.getLeaveType() != null && app.getLeaveType().getName() != null 
                         ? app.getLeaveType().getName().trim().toUpperCase() : "";
                 double days = app.getDays() != null ? app.getDays() : 1.0;
                 boolean isApproved = "APPROVED".equalsIgnoreCase(app.getStatus());
 
-                MonthlyLeaveBalanceDTO.LeaveDetailDTO detail = MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
-                        .id(app.getId())
-                        .leaveType(typeName)
-                        .fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
-                        .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "")
-                        .days(days)
-                        .reason(app.getReason() != null ? app.getReason() : "")
-                        .status(app.getStatus() != null ? app.getStatus() : "PENDING")
-                        .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
-                        .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "")
-                        .build();
+                if (isApproved) {
+                    if ("PL".equals(typeName) || typeName.contains("PRIVILEGE")) {
+                        // Priority to PL
+                        double fromPl = Math.min(remPl, days);
+                        remPl -= fromPl;
+                        calculatedPlAvailed += fromPl;
+                        if (fromPl > 0) {
+                            plDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                    .id(app.getId()).leaveType("PL").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                    .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(fromPl)
+                                    .reason(app.getReason() != null ? app.getReason() : "").status("APPROVED")
+                                    .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                    .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                        }
 
-                if ("CL".equals(typeName) || typeName.contains("CASUAL")) {
-                    clDetails.add(detail);
-                    if (isApproved) {
-                        approvedClDays += days;
+                        double rem = days - fromPl;
+                        if (rem > 0) {
+                            double fromCl = Math.min(remCl, rem);
+                            remCl -= fromCl;
+                            calculatedClAvailed += fromCl;
+                            if (fromCl > 0) {
+                                clDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                        .id(app.getId()).leaveType("CL").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                        .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(fromCl)
+                                        .reason((app.getReason() != null ? app.getReason() : "") + " (Overflow to CL)")
+                                        .status("APPROVED")
+                                        .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                        .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                            }
+                            rem -= fromCl;
+                        }
+
+                        if (rem > 0) {
+                            calculatedLop += rem;
+                            lopDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                    .id(app.getId()).leaveType("LOP").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                    .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(rem)
+                                    .reason((app.getReason() != null ? app.getReason() : "") + " (Loss of Pay / LOP)")
+                                    .status("APPROVED")
+                                    .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                    .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                        }
+                    } else {
+                        // Priority to CL (for CL, attendance auto-applied, or general leaves)
+                        double fromCl = Math.min(remCl, days);
+                        remCl -= fromCl;
+                        calculatedClAvailed += fromCl;
+                        if (fromCl > 0) {
+                            clDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                    .id(app.getId()).leaveType("CL").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                    .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(fromCl)
+                                    .reason(app.getReason() != null ? app.getReason() : "").status("APPROVED")
+                                    .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                    .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                        }
+
+                        double rem = days - fromCl;
+                        if (rem > 0) {
+                            double fromPl = Math.min(remPl, rem);
+                            remPl -= fromPl;
+                            calculatedPlAvailed += fromPl;
+                            if (fromPl > 0) {
+                                plDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                        .id(app.getId()).leaveType("PL").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                        .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(fromPl)
+                                        .reason((app.getReason() != null ? app.getReason() : "") + " (Overflow to PL)")
+                                        .status("APPROVED")
+                                        .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                        .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                            }
+                            rem -= fromPl;
+                        }
+
+                        if (rem > 0) {
+                            calculatedLop += rem;
+                            lopDetails.add(MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                                    .id(app.getId()).leaveType("LOP").fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                                    .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "").days(rem)
+                                    .reason((app.getReason() != null ? app.getReason() : "") + " (Loss of Pay / LOP)")
+                                    .status("APPROVED")
+                                    .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                                    .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "").build());
+                        }
                     }
-                } else if ("PL".equals(typeName) || typeName.contains("PRIVILEGE")) {
-                    plDetails.add(detail);
-                    if (isApproved) {
-                        approvedPlDays += days;
-                    }
-                } else {
-                    clDetails.add(detail);
-                    if (isApproved) {
-                        approvedClDays += days;
+                } else if ("PENDING".equalsIgnoreCase(app.getStatus())) {
+                    // Pending applications
+                    MonthlyLeaveBalanceDTO.LeaveDetailDTO detail = MonthlyLeaveBalanceDTO.LeaveDetailDTO.builder()
+                            .id(app.getId())
+                            .leaveType(typeName)
+                            .fromDate(app.getFromDate() != null ? app.getFromDate().format(dtf) : "")
+                            .toDate(app.getToDate() != null ? app.getToDate().format(dtf) : "")
+                            .days(days)
+                            .reason(app.getReason() != null ? app.getReason() : "")
+                            .status(app.getStatus() != null ? app.getStatus() : "PENDING")
+                            .appliedDate(app.getAppliedDate() != null ? app.getAppliedDate().format(dtfTime) : "")
+                            .approvedBy(app.getApprovedBy() != null ? app.getApprovedBy() : "")
+                            .build();
+
+                    if ("PL".equals(typeName) || typeName.contains("PRIVILEGE")) {
+                        plDetails.add(detail);
+                    } else {
+                        clDetails.add(detail);
                     }
                 }
             }
 
             boolean changed = false;
-            if (approvedClDays > 0 && (b.getClAvailed() == null || b.getClAvailed() < approvedClDays)) {
-                b.setClAvailed(approvedClDays);
-                changed = true;
-            }
-            if (approvedPlDays > 0 && (b.getPlAvailed() == null || b.getPlAvailed() < approvedPlDays)) {
-                b.setPlAvailed(approvedPlDays);
-                changed = true;
+            if (!empApps.isEmpty()) {
+                double roundedCl = Math.round(calculatedClAvailed * 100.0) / 100.0;
+                double roundedPl = Math.round(calculatedPlAvailed * 100.0) / 100.0;
+                double roundedLop = Math.round(calculatedLop * 100.0) / 100.0;
+
+                if (!Objects.equals(b.getClAvailed(), roundedCl)) {
+                    b.setClAvailed(roundedCl);
+                    changed = true;
+                }
+                if (!Objects.equals(b.getPlAvailed(), roundedPl)) {
+                    b.setPlAvailed(roundedPl);
+                    changed = true;
+                }
+                if (!Objects.equals(b.getLop(), roundedLop)) {
+                    b.setLop(roundedLop);
+                    changed = true;
+                }
             }
 
             if (changed) {
@@ -129,6 +227,7 @@ public class MonthlyLeaveService {
             MonthlyLeaveBalanceDTO dto = MonthlyLeaveBalanceDTO.fromEntity(b);
             dto.setClLeaveDetails(clDetails);
             dto.setPlLeaveDetails(plDetails);
+            dto.setLopLeaveDetails(lopDetails);
             dtoList.add(dto);
         }
 

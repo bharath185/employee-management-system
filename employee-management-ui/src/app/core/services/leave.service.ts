@@ -217,5 +217,6 @@ export interface MonthlyLeaveBalanceDTO {
   remarks?: string;
   clLeaveDetails?: LeaveDetailDTO[];
   plLeaveDetails?: LeaveDetailDTO[];
+  lopLeaveDetails?: LeaveDetailDTO[];
 }
 

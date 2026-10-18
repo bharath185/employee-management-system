@@ -183,6 +183,12 @@ public class AttendanceService {
                 }
             }
 
+            if (record.getId() == null) {
+                record = attendanceRepository
+                    .findByEmployeeIdAndAttendanceDate(emp.getId(), date)
+                    .orElse(record);
+            }
+
             record.setStatus(newStatus);
             record.setLocked(false);
             record.setEmployee(emp);
@@ -419,6 +425,12 @@ public class AttendanceService {
                 }
             }
 
+            if (record.getId() == null) {
+                record = attendanceRepository
+                    .findByEmployeeIdAndAttendanceDate(dto.getEmployeeId(), dto.getDate())
+                    .orElse(record);
+            }
+
             record.setStatus(newStatus);
             record.setLocked(false);
             record.setEmployee(employee);
@@ -613,7 +625,8 @@ public class AttendanceService {
                         }
                     }
 
-                    AttendanceRecord record = existingOpt
+                    AttendanceRecord record = attendanceRepository
+                        .findByEmployeeIdAndAttendanceDate(emp.getId(), date)
                         .orElseGet(() -> AttendanceRecord.builder()
                             .employee(emp)
                             .attendanceDate(date)

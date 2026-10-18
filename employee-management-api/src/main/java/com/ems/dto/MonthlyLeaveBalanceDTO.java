@@ -46,6 +46,7 @@ public class MonthlyLeaveBalanceDTO {
 
     private java.util.List<LeaveDetailDTO> clLeaveDetails;
     private java.util.List<LeaveDetailDTO> plLeaveDetails;
+    private java.util.List<LeaveDetailDTO> lopLeaveDetails;
 
     @Data
     @Builder

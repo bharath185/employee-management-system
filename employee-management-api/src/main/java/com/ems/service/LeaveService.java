@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -298,8 +299,14 @@ public class LeaveService {
                 .status("PENDING")
                 .appliedDate(LocalDateTime.now())
                 .build();
-            leaveApplicationRepository.save(app);
-            log.info("Auto-applied PENDING leave ({}, LOP={}) for employee {} on date {}", selectedType.getName(), isLopAuto, employee.getEmployeeCode(), date);
+            app = leaveApplicationRepository.save(app);
+
+            try {
+                approveLeave(app.getId(), "ADMIN");
+                log.info("Auto-applied & APPROVED leave ({}, LOP={}) for employee {} on date {}", selectedType.getName(), isLopAuto, employee.getEmployeeCode(), date);
+            } catch (Exception ex) {
+                log.warn("Auto-approval failed for leave application {}: {}", app.getId(), ex.getMessage());
+            }
         }
     }
 
@@ -410,25 +417,7 @@ public class LeaveService {
         syncAttendanceFromLeave(app);
 
         // Also update monthly_leave_balances if record exists for this employee, year, month
-        int appYear = app.getFromDate().getYear();
-        int appMonth = app.getFromDate().getMonthValue();
-        final String finalTargetTypeName = targetType.getName().toUpperCase();
-        final int finalDays = days;
-        monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(app.getEmployee().getId(), appYear, appMonth)
-            .ifPresent(m -> {
-                if (finalTargetTypeName.contains("CL") || finalTargetTypeName.contains("CASUAL")) {
-                    double current = m.getClAvailed() != null ? m.getClAvailed() : 0.0;
-                    m.setClAvailed(current + finalDays);
-                } else if (finalTargetTypeName.contains("PL") || finalTargetTypeName.contains("PRIVILEGE")) {
-                    double current = m.getPlAvailed() != null ? m.getPlAvailed() : 0.0;
-                    m.setPlAvailed(current + finalDays);
-                } else {
-                    double current = m.getClAvailed() != null ? m.getClAvailed() : 0.0;
-                    m.setClAvailed(current + finalDays);
-                }
-                m.calculateValues();
-                monthlyLeaveBalanceRepository.save(m);
-            });
+        syncMonthlyLeaveBalance(app.getEmployee().getId(), app.getFromDate().getYear(), app.getFromDate().getMonthValue());
 
         log.info("Leave application {} approved as {} by {}", applicationId, targetType.getName(), approvedBy);
         return LeaveApplicationDTO.fromEntity(app);
@@ -488,25 +477,7 @@ public class LeaveService {
                 leaveBalanceRepository.save(balance);
             }
 
-            int appYear = app.getFromDate().getYear();
-            int appMonth = app.getFromDate().getMonthValue();
-            monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(app.getEmployee().getId(), appYear, appMonth)
-                .ifPresent(m -> {
-                    String tName = app.getLeaveType() != null && app.getLeaveType().getName() != null ? app.getLeaveType().getName().toUpperCase() : "";
-                    double days = app.getDays() != null ? app.getDays() : 1.0;
-                    if (tName.contains("CL") || tName.contains("CASUAL")) {
-                        double current = m.getClAvailed() != null ? m.getClAvailed() : 0.0;
-                        m.setClAvailed(Math.max(0.0, current - days));
-                    } else if (tName.contains("PL") || tName.contains("PRIVILEGE")) {
-                        double current = m.getPlAvailed() != null ? m.getPlAvailed() : 0.0;
-                        m.setPlAvailed(Math.max(0.0, current - days));
-                    } else {
-                        double current = m.getClAvailed() != null ? m.getClAvailed() : 0.0;
-                        m.setClAvailed(Math.max(0.0, current - days));
-                    }
-                    m.calculateValues();
-                    monthlyLeaveBalanceRepository.save(m);
-                });
+            syncMonthlyLeaveBalance(app.getEmployee().getId(), app.getFromDate().getYear(), app.getFromDate().getMonthValue());
         }
     }
 
@@ -614,6 +585,7 @@ public class LeaveService {
                 leaveBalanceRepository.save(balance);
             }
         }
+        syncMonthlyLeaveBalance(app.getEmployee().getId(), date.getYear(), date.getMonthValue());
     }
 
     private void removeAttendanceFromLeave(LeaveApplication app) {
@@ -639,5 +611,71 @@ public class LeaveService {
         if (leaveType == null || leaveType.getName() == null) return false;
         String name = leaveType.getName().toUpperCase();
         return name.equals("SL") || name.contains("SICK") || name.contains("MEDICAL");
+    }
+
+    @Transactional
+    public void syncMonthlyLeaveBalance(Long employeeId, int year, int month) {
+        if (employeeId == null) return;
+        monthlyLeaveBalanceRepository.findByEmployeeIdAndYearAndMonth(employeeId, year, month)
+            .ifPresent(b -> {
+                List<LeaveApplication> apps = leaveApplicationRepository.findByEmployeeIdAndYear(employeeId, year)
+                    .stream()
+                    .filter(a -> a.getFromDate() != null && a.getFromDate().getMonthValue() == month)
+                    .filter(a -> "APPROVED".equalsIgnoreCase(a.getStatus()))
+                    .sorted(Comparator.comparing(LeaveApplication::getFromDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                            .thenComparing(LeaveApplication::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+
+                double clAvail = b.getClAfterAdd() != null ? b.getClAfterAdd() : 0.0;
+                double plAvail = b.getPlAfterAdd() != null ? b.getPlAfterAdd() : 0.0;
+
+                double remCl = clAvail;
+                double remPl = plAvail;
+                double calculatedCl = 0.0;
+                double calculatedPl = 0.0;
+                double calculatedLop = 0.0;
+
+                for (LeaveApplication app : apps) {
+                    double days = app.getDays() != null ? app.getDays() : 1.0;
+                    String type = app.getLeaveType() != null && app.getLeaveType().getName() != null
+                        ? app.getLeaveType().getName().trim().toUpperCase() : "CL";
+
+                    if ("PL".equals(type) || type.contains("PRIVILEGE")) {
+                        double fromPl = Math.min(remPl, days);
+                        remPl -= fromPl;
+                        calculatedPl += fromPl;
+                        double rem = days - fromPl;
+                        if (rem > 0) {
+                            double fromCl = Math.min(remCl, rem);
+                            remCl -= fromCl;
+                            calculatedCl += fromCl;
+                            rem -= fromCl;
+                        }
+                        if (rem > 0) {
+                            calculatedLop += rem;
+                        }
+                    } else {
+                        double fromCl = Math.min(remCl, days);
+                        remCl -= fromCl;
+                        calculatedCl += fromCl;
+                        double rem = days - fromCl;
+                        if (rem > 0) {
+                            double fromPl = Math.min(remPl, rem);
+                            remPl -= fromPl;
+                            calculatedPl += fromPl;
+                            rem -= fromPl;
+                        }
+                        if (rem > 0) {
+                            calculatedLop += rem;
+                        }
+                    }
+                }
+
+                b.setClAvailed(Math.round(calculatedCl * 100.0) / 100.0);
+                b.setPlAvailed(Math.round(calculatedPl * 100.0) / 100.0);
+                b.setLop(Math.round(calculatedLop * 100.0) / 100.0);
+                b.calculateValues();
+                monthlyLeaveBalanceRepository.save(b);
+            });
     }
 }
