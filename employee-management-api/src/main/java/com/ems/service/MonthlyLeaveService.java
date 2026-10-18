@@ -42,162 +42,11 @@ public class MonthlyLeaveService {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final JdbcTemplate jdbcTemplate;
 
-    @Transactional
-    public synchronized List<MonthlyLeaveBalanceDTO> getMonthlyBalances(int year, int month) {
+    @Transactional(readOnly = true)
+    public List<MonthlyLeaveBalanceDTO> getMonthlyBalances(int year, int month) {
         List<MonthlyLeaveBalance> existing = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
-        List<Employee> allEmployees = employeeRepository.findAllLiveEmployees();
-        if (allEmployees.isEmpty()) {
-            allEmployees = employeeRepository.findAll();
-        }
-
-        Set<Long> existingEmpIds = existing.stream()
-                .filter(m -> m.getEmployee() != null && m.getEmployee().getId() != null)
-                .map(m -> m.getEmployee().getId())
-                .collect(Collectors.toCollection(HashSet::new));
-
-        List<Employee> missingEmployees = allEmployees.stream()
-                .filter(emp -> emp != null && emp.getId() != null && !existingEmpIds.contains(emp.getId()))
-                .collect(Collectors.toList());
-
-        if (!missingEmployees.isEmpty()) {
-            LocalDate targetDate = LocalDate.of(year, month, 1);
-            LocalDate prevDate = targetDate.minusMonths(1);
-            int prevYear = prevDate.getYear();
-            int prevMonth = prevDate.getMonthValue();
-
-            // 1. Fetch immediate preceding month in bulk
-            List<MonthlyLeaveBalance> prevMonthList = monthlyLeaveBalanceRepository.findByYearAndMonth(prevYear, prevMonth);
-            Map<Long, MonthlyLeaveBalance> prevByEmpId = new HashMap<>();
-            for (MonthlyLeaveBalance p : prevMonthList) {
-                if (p.getEmployee() != null && p.getEmployee().getId() != null) {
-                    prevByEmpId.put(p.getEmployee().getId(), p);
-                }
-            }
-
-            // 2. For employees missing from immediate previous month, check any earlier months in bulk
-            List<Long> stillMissingIds = missingEmployees.stream()
-                    .map(Employee::getId)
-                    .filter(id -> !prevByEmpId.containsKey(id))
-                    .collect(Collectors.toList());
-
-            if (!stillMissingIds.isEmpty()) {
-                List<MonthlyLeaveBalance> olderRecords = monthlyLeaveBalanceRepository.findPreviousMonthsForEmployees(stillMissingIds, year, month);
-                for (MonthlyLeaveBalance o : olderRecords) {
-                    if (o.getEmployee() != null && o.getEmployee().getId() != null) {
-                        prevByEmpId.putIfAbsent(o.getEmployee().getId(), o);
-                    }
-                }
-            }
-
-            // 3. Build records in memory
-            List<MonthlyLeaveBalance> toInsert = new ArrayList<>();
-            for (Employee emp : missingEmployees) {
-                double clOpen = 0.0;
-                double plOpen = 0.0;
-
-                MonthlyLeaveBalance prev = prevByEmpId.get(emp.getId());
-                if (prev != null) {
-                    clOpen = prev.getClClosing() != null ? prev.getClClosing() : 0.0;
-                    plOpen = prev.getPlClosing() != null ? prev.getPlClosing() : 0.0;
-                }
-
-                double[] accrual = calculateMonthlyAccrual(emp, year, month);
-
-                MonthlyLeaveBalance record = MonthlyLeaveBalance.builder()
-                        .employee(emp)
-                        .year(year)
-                        .month(month)
-                        .clOpening(clOpen)
-                        .plOpening(plOpen)
-                        .clAdded(accrual[0])
-                        .plAdded(accrual[1])
-                        .clAvailed(0.0)
-                        .plAvailed(0.0)
-                        .lop(0.0)
-                        .lastWorkingDay("")
-                        .remarks("")
-                        .build();
-
-                record.calculateValues();
-                toInsert.add(record);
-            }
-
-            if (!toInsert.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("INSERT INTO monthly_leave_balances (employee_id, \"year\", \"month\", ")
-                  .append("cl_opening, pl_opening, cl_added, pl_added, cl_after_add, pl_after_add, ")
-                  .append("cl_availed, pl_availed, lop, total_availed, cl_closing, pl_closing, ")
-                  .append("last_working_day, remarks) VALUES ");
-
-                List<Object> params = new ArrayList<>();
-                for (int i = 0; i < toInsert.size(); i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append("(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    MonthlyLeaveBalance rec = toInsert.get(i);
-                    params.add(rec.getEmployee().getId());
-                    params.add(rec.getYear());
-                    params.add(rec.getMonth());
-                    params.add(rec.getClOpening() != null ? rec.getClOpening() : 0.0);
-                    params.add(rec.getPlOpening() != null ? rec.getPlOpening() : 0.0);
-                    params.add(rec.getClAdded() != null ? rec.getClAdded() : 1.0);
-                    params.add(rec.getPlAdded() != null ? rec.getPlAdded() : 0.0);
-                    params.add(rec.getClAfterAdd() != null ? rec.getClAfterAdd() : 1.0);
-                    params.add(rec.getPlAfterAdd() != null ? rec.getPlAfterAdd() : 0.0);
-                    params.add(rec.getClAvailed() != null ? rec.getClAvailed() : 0.0);
-                    params.add(rec.getPlAvailed() != null ? rec.getPlAvailed() : 0.0);
-                    params.add(rec.getLop() != null ? rec.getLop() : 0.0);
-                    params.add(rec.getTotalAvailed() != null ? rec.getTotalAvailed() : 0.0);
-                    params.add(rec.getClClosing() != null ? rec.getClClosing() : 1.0);
-                    params.add(rec.getPlClosing() != null ? rec.getPlClosing() : 0.0);
-                    params.add(rec.getLastWorkingDay() != null ? rec.getLastWorkingDay() : "");
-                    params.add(rec.getRemarks() != null ? rec.getRemarks() : "");
-                }
-                sb.append(" ON CONFLICT (employee_id, \"year\", \"month\") DO NOTHING");
-                jdbcTemplate.update(sb.toString(), params.toArray());
-
-                existing = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
-            }
-        }
-
-        // Apply policy adjustments to existing records if employee tenure is < 6 months
-        List<MonthlyLeaveBalance> dirtyExisting = new ArrayList<>();
-        for (MonthlyLeaveBalance b : existing) {
-            boolean modified = false;
-
-            // If previous months were not added, reset old plOpening = 1.5 artifact to 0.0
-            if (b.getClOpening() == 0.0 && b.getPlOpening() != null && b.getPlOpening() == 1.5) {
-                b.setPlOpening(0.0);
-                modified = true;
-            }
-
-            Employee emp = b.getEmployee();
-            if (emp != null && emp.getDoj() != null) {
-                double[] accrual = calculateMonthlyAccrual(emp, year, month);
-
-                // Rule: If vintage < 6 months, PL Added must be 0.0
-                if (accrual[1] == 0.0 && b.getPlAdded() != null && b.getPlAdded() == 1.5) {
-                    b.setPlAdded(0.0);
-                    modified = true;
-                }
-
-                // If target month is prior to employee's DOJ, no leave should be credited
-                if (accrual[0] == 0.0 && accrual[1] == 0.0) {
-                    if ((b.getClAdded() != null && b.getClAdded() > 0) || (b.getPlAdded() != null && b.getPlAdded() > 0)) {
-                        b.setClAdded(0.0);
-                        b.setPlAdded(0.0);
-                        modified = true;
-                    }
-                }
-            }
-
-            if (modified) {
-                b.calculateValues();
-                dirtyExisting.add(b);
-            }
-        }
-        if (!dirtyExisting.isEmpty()) {
-            monthlyLeaveBalanceRepository.saveAll(dirtyExisting);
-            monthlyLeaveBalanceRepository.flush();
+        if (existing.isEmpty()) {
+            return Collections.emptyList();
         }
 
         existing.sort(Comparator.comparing(m -> m.getEmployee() != null && m.getEmployee().getEmployeeCode() != null ? m.getEmployee().getEmployeeCode() : ""));
@@ -369,12 +218,13 @@ public class MonthlyLeaveService {
         return dtoList;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public byte[] exportToExcel(int year, int month) throws IOException {
-        getMonthlyBalances(year, month);
         List<MonthlyLeaveBalance> records = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
+        return generateExcelFromRecords(year, month, records);
+    }
 
-
+    private byte[] generateExcelFromRecords(int year, int month, List<MonthlyLeaveBalance> records) throws IOException {
         LocalDate currentDate = LocalDate.of(year, month, 1);
         String currentMonthName = currentDate.format(DateTimeFormatter.ofPattern("MMM''uu"));
         String prevMonthName = currentDate.minusMonths(1).format(DateTimeFormatter.ofPattern("MMM''uu"));
@@ -609,12 +459,38 @@ public class MonthlyLeaveService {
         }
     }
 
+    @Transactional(readOnly = true)
     public byte[] generateSampleExcel(int year, int month) throws IOException {
         List<MonthlyLeaveBalance> records = monthlyLeaveBalanceRepository.findByYearAndMonthWithEmployee(year, month);
-        if (records.isEmpty()) {
-            getMonthlyBalances(year, month);
+        if (!records.isEmpty()) {
+            return generateExcelFromRecords(year, month, records.subList(0, 1));
         }
-        return exportToExcel(year, month);
+
+        List<Employee> activeEmps = employeeRepository.findAll().stream()
+                .filter(e -> "LIVE".equalsIgnoreCase(e.getEmployeeStatus()) || "ACTIVE".equalsIgnoreCase(e.getEmployeeStatus()) || e.getEmployeeStatus() == null)
+                .sorted(Comparator.comparing(e -> e.getEmployeeCode() != null ? e.getEmployeeCode() : ""))
+                .limit(1)
+                .collect(Collectors.toList());
+
+        if (!activeEmps.isEmpty()) {
+            Employee sampleEmp = activeEmps.get(0);
+            MonthlyLeaveBalance sample = new MonthlyLeaveBalance();
+            sample.setEmployee(sampleEmp);
+            sample.setYear(year);
+            sample.setMonth(month);
+            sample.setClOpening(1.0);
+            sample.setPlOpening(1.5);
+            double[] accrual = calculateMonthlyAccrual(sampleEmp, year, month);
+            sample.setClAdded(accrual[0]);
+            sample.setPlAdded(accrual[1]);
+            sample.setClAvailed(0.0);
+            sample.setPlAvailed(0.0);
+            sample.setLop(0.0);
+            sample.calculateValues();
+            return generateExcelFromRecords(year, month, Collections.singletonList(sample));
+        }
+
+        return generateExcelFromRecords(year, month, Collections.emptyList());
     }
 
     @Transactional
