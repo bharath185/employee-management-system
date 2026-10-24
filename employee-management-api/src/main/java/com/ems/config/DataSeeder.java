@@ -41,7 +41,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private final DataSource dataSource;
 
-    @org.springframework.beans.factory.annotation.Value("${app.data.seed-on-startup:true}")
+    @org.springframework.beans.factory.annotation.Value("${app.data.seed-on-startup:false}")
     private boolean seedOnStartup;
 
     private List<String> seededEmployeeCodes = new ArrayList<>();
@@ -54,9 +54,12 @@ public class DataSeeder implements CommandLineRunner {
         seedLeaveTypes();
         seedCompany();
         if (seedOnStartup) {
+            log.info("app.data.seed-on-startup is true: seeding demo employees and balances");
             seedEmployees();
             seedEmployeeUsers();
             seedLeaveBalances();
+        } else {
+            log.info("Clean Production Mode: Demo employee data seeding is DISABLED (No data seed).");
         }
         seedDocumentTemplates();
         seedPermissions();
@@ -303,20 +306,12 @@ public class DataSeeder implements CommandLineRunner {
     private void seedCompany() {
         if (companyRepository.count() == 0) {
             companyRepository.save(Company.builder()
-                .companyName("Sri Venkateswara Enterprises")
-                .address("42, Industrial Estate, Guntur, Andhra Pradesh - 522002")
-                .phone("0863-2234567")
-                .email("contact@sventerprises.com")
-                .website("www.sventerprises.com")
+                .companyName("Parikar Business and Knowledge Services PVT LTD")
+                .address("ECO GREENS UPADYAYA NAGAR, Karakambadi Rd, Tirupati, Andhra Pradesh 517501, India\nTirupati, Andhra Pradesh, India")
                 .registrationNumber("AP-GDR-2024-01234")
-                .gstNumber("37ABCDE1234F1Z5")
-                .panNumber("ABCDE1234F")
-                .tanNumber("HYDX01234A")
-                .cinNumber("U12345AP2024PTC123456")
-                .incorporatedDate(LocalDate.of(2020, 4, 1))
-                .authorizedSignatory("S. Venkata Ramana")
+                .cinNumber("U74140KA2009PTC051963")
                 .build());
-            log.info("Company seeded: Sri Venkateswara Enterprises");
+            log.info("Company seeded: Parikar Business and Knowledge Services PVT LTD");
         } else {
             log.debug("Company already exists, skipping seed");
         }

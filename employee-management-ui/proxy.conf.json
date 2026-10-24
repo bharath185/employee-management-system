@@ -1,11 +1,8 @@
 {
   "/api": {
-    "target": "https://ems.prigenix.com",
+    "target": "http://localhost:8085",
     "secure": false,
     "logLevel": "debug",
-    "changeOrigin": true,
-    "pathRewrite": {
-      "^/api": "/api/v1"
-    }
+    "changeOrigin": true
   }
 }
